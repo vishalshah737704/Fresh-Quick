@@ -1,0 +1,55 @@
+{
+  "name": "03 - Restaurant Accepts / Status Change",
+  "nodes": [
+    {
+      "id": "webhook-order-update",
+      "name": "Supabase Webhook: orders update",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "foodhub/order-status-changed",
+        "responseMode": "onReceived"
+      },
+      "notes": "Configure as a Supabase Database Webhook on orders (UPDATE, column: status). See docs/n8n-webhook-setup.md."
+    },
+    {
+      "id": "filter-vendor-statuses",
+      "name": "Filter: status in (accepted, preparing, ready)",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [460, 300],
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{['accepted','preparing','ready'].includes($json[\"record\"][\"status\"])}}",
+              "value2": "true"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "notify-customer",
+      "name": "Push Realtime Notification (placeholder)",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [680, 220],
+      "notes": "The customer order page (app/customer/orders/[id]/page.tsx) already polls orders.status directly every 3s, independent of this workflow -- this node is a placeholder for a push notification channel, not required for the customer to see the status change."
+    }
+  ],
+  "connections": {
+    "Supabase Webhook: orders update": {
+      "main": [[{ "node": "Filter: status in (accepted, preparing, ready)", "type": "main", "index": 0 }]]
+    },
+    "Filter: status in (accepted, preparing, ready)": {
+      "main": [[{ "node": "Push Realtime Notification (placeholder)", "type": "main", "index": 0 }], []]
+    }
+  },
+  "active": false,
+  "settings": {},
+  "_untested_reference_only": true,
+  "_note": "Hand-authored to n8n's export JSON shape; never imported into or run against a real n8n instance. See docs/superpowers/specs/2026-09-25-phase7-n8n-automation-design.md."
+}

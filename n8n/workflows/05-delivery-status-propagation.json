@@ -1,0 +1,86 @@
+{
+  "name": "05 - Delivery Status Propagation",
+  "nodes": [
+    {
+      "id": "webhook-order-update-2",
+      "name": "Supabase Webhook: orders update",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "foodhub/order-delivery-status-changed",
+        "responseMode": "onReceived"
+      },
+      "notes": "Configure as a Supabase Database Webhook on orders (UPDATE, column: status)."
+    },
+    {
+      "id": "filter-delivery-statuses",
+      "name": "Filter: status in (picked_up, delivered)",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [460, 300],
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{['picked_up','delivered'].includes($json[\"record\"][\"status\"])}}",
+              "value2": "true"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "notify-customer-2",
+      "name": "Push Realtime Notification (placeholder)",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [680, 220],
+      "notes": "As with workflow 3, the customer order page already polls status directly -- placeholder for a push notification channel."
+    },
+    {
+      "id": "check-delivered",
+      "name": "Filter: status = delivered",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [680, 380],
+      "parameters": {
+        "conditions": {
+          "string": [
+            { "value1": "={{$json[\"record\"][\"status\"]}}", "value2": "delivered" }
+          ]
+        }
+      }
+    },
+    {
+      "id": "finalize-payment",
+      "name": "Finalize Payment + Prompt Review (placeholder)",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [900, 380],
+      "notes": "Phase 3's payment already resolves at checkout time (success/failed), not at delivery time, so 'finalize' here means marking it settled for accounting purposes -- no payments.status transition is defined for this in the current schema. Needs a design decision before implementing for real: either add a payments.status='settled' state or treat 'success' as already final and skip this step. Review-prompt (reviews table) has no write path built yet -- see MEMORY.md's reviews-table stub-policy deferred item."
+    }
+  ],
+  "connections": {
+    "Supabase Webhook: orders update": {
+      "main": [[{ "node": "Filter: status in (picked_up, delivered)", "type": "main", "index": 0 }]]
+    },
+    "Filter: status in (picked_up, delivered)": {
+      "main": [
+        [{ "node": "Push Realtime Notification (placeholder)", "type": "main", "index": 0 }],
+        []
+      ]
+    },
+    "Push Realtime Notification (placeholder)": {
+      "main": [[{ "node": "Filter: status = delivered", "type": "main", "index": 0 }]]
+    },
+    "Filter: status = delivered": {
+      "main": [[{ "node": "Finalize Payment + Prompt Review (placeholder)", "type": "main", "index": 0 }], []]
+    }
+  },
+  "active": false,
+  "settings": {},
+  "_untested_reference_only": true,
+  "_note": "Hand-authored to n8n's export JSON shape; never imported into or run against a real n8n instance. See docs/superpowers/specs/2026-09-25-phase7-n8n-automation-design.md."
+}

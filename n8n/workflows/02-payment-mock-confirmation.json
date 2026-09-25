@@ -1,0 +1,75 @@
+{
+  "name": "02 - Payment Mock Confirmation",
+  "nodes": [
+    {
+      "id": "webhook-payment-insert",
+      "name": "Supabase Webhook: payments insert",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "foodhub/payment-created",
+        "responseMode": "onReceived"
+      },
+      "notes": "Configure as a Supabase Database Webhook on payments (INSERT). See docs/n8n-webhook-setup.md."
+    },
+    {
+      "id": "wait-gateway-delay",
+      "name": "Simulate Gateway Delay",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [460, 300],
+      "parameters": { "amount": 2, "unit": "seconds" },
+      "notes": "Phase 3's synchronous checkout already resolves payment in-process without this delay -- this workflow is the async alternative for when real n8n wiring replaces that path."
+    },
+    {
+      "id": "decide-outcome",
+      "name": "Decide Success/Failure (weighted random)",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [680, 300],
+      "parameters": {
+        "functionCode": "const method = $input.item.json.record.method;\nconst success = method === 'mock_cod' ? true : Math.random() < 0.8;\nreturn [{ json: { ...$input.item.json, status: success ? 'success' : 'failed' } }];"
+      },
+      "notes": "Mirrors lib/order-constants.ts's PAYMENT_SUCCESS_RATE (0.8) and mock_cod-always-succeeds rule -- keep these in sync if either changes."
+    },
+    {
+      "id": "call-internal-result",
+      "name": "POST /api/internal/payments/:id/result",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [900, 300],
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.APP_BASE_URL}}/api/internal/payments/{{$json[\"record\"][\"id\"]}}/result",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "X-Internal-Secret", "value": "={{$env.N8N_INTERNAL_SECRET}}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [{ "name": "status", "value": "={{$json[\"status\"]}}" }]
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Supabase Webhook: payments insert": {
+      "main": [[{ "node": "Simulate Gateway Delay", "type": "main", "index": 0 }]]
+    },
+    "Simulate Gateway Delay": {
+      "main": [[{ "node": "Decide Success/Failure (weighted random)", "type": "main", "index": 0 }]]
+    },
+    "Decide Success/Failure (weighted random)": {
+      "main": [[{ "node": "POST /api/internal/payments/:id/result", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": false,
+  "settings": {},
+  "_untested_reference_only": true,
+  "_note": "Hand-authored to n8n's export JSON shape; never imported into or run against a real n8n instance. See docs/superpowers/specs/2026-09-25-phase7-n8n-automation-design.md."
+}

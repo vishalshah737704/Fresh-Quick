@@ -1,0 +1,109 @@
+{
+  "name": "04 - Delivery Partner Assignment",
+  "nodes": [
+    {
+      "id": "webhook-order-ready",
+      "name": "Supabase Webhook: orders update (status=ready)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "foodhub/order-ready",
+        "responseMode": "onReceived"
+      },
+      "notes": "Configure as a Supabase Database Webhook on orders (UPDATE, column: status). Filter to status=ready either in the webhook condition or the next node."
+    },
+    {
+      "id": "filter-ready",
+      "name": "Filter: status = ready",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [460, 300],
+      "parameters": {
+        "conditions": {
+          "string": [
+            { "value1": "={{$json[\"record\"][\"status\"]}}", "value2": "ready" }
+          ]
+        }
+      }
+    },
+    {
+      "id": "get-restaurant-location",
+      "name": "GET restaurant lat/lng (Supabase REST)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [680, 220],
+      "parameters": {
+        "method": "GET",
+        "url": "={{$env.SUPABASE_URL}}/rest/v1/restaurants?id=eq.{{$json[\"record\"][\"restaurant_id\"]}}&select=lat,lng",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{$env.SUPABASE_SERVICE_ROLE_KEY}}" },
+            { "name": "Authorization", "value": "=Bearer {{$env.SUPABASE_SERVICE_ROLE_KEY}}" }
+          ]
+        }
+      }
+    },
+    {
+      "id": "get-candidates",
+      "name": "GET /api/internal/orders/:id/assign (candidates)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [900, 220],
+      "parameters": {
+        "method": "GET",
+        "url": "={{$env.APP_BASE_URL}}/api/internal/orders/{{$('Supabase Webhook: orders update (status=ready)').item.json[\"record\"][\"id\"]}}/assign?lat={{$json[0][\"lat\"]}}&lng={{$json[0][\"lng\"]}}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [{ "name": "X-Internal-Secret", "value": "={{$env.N8N_INTERNAL_SECRET}}" }]
+        }
+      },
+      "notes": "Returns candidates sorted by Haversine distance ascending (nearest first) -- the GET handler in app/api/internal/orders/[id]/assign/route.ts does the distance math server-side rather than in n8n's function node, so this workflow just picks candidates[0]."
+    },
+    {
+      "id": "assign-nearest",
+      "name": "POST /api/internal/orders/:id/assign (nearest)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [1120, 220],
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.APP_BASE_URL}}/api/internal/orders/{{$('Supabase Webhook: orders update (status=ready)').item.json[\"record\"][\"id\"]}}/assign",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "X-Internal-Secret", "value": "={{$env.N8N_INTERNAL_SECRET}}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "deliveryPartnerId", "value": "={{$json[\"candidates\"][0][\"partnerId\"]}}" }
+          ]
+        }
+      },
+      "notes": "v1: single attempt, no fallback-to-next-nearest-on-timeout -- matches spec's stated v1 scope (admin can manually reassign via Phase 6's /admin/dashboard if this attempt doesn't work out)."
+    }
+  ],
+  "connections": {
+    "Supabase Webhook: orders update (status=ready)": {
+      "main": [[{ "node": "Filter: status = ready", "type": "main", "index": 0 }]]
+    },
+    "Filter: status = ready": {
+      "main": [[{ "node": "GET restaurant lat/lng (Supabase REST)", "type": "main", "index": 0 }], []]
+    },
+    "GET restaurant lat/lng (Supabase REST)": {
+      "main": [[{ "node": "GET /api/internal/orders/:id/assign (candidates)", "type": "main", "index": 0 }]]
+    },
+    "GET /api/internal/orders/:id/assign (candidates)": {
+      "main": [[{ "node": "POST /api/internal/orders/:id/assign (nearest)", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": false,
+  "settings": {},
+  "_untested_reference_only": true,
+  "_note": "Hand-authored to n8n's export JSON shape; never imported into or run against a real n8n instance. See docs/superpowers/specs/2026-09-25-phase7-n8n-automation-design.md. Phase 5's self-claim model is the tested, working assignment path today -- this workflow is additive."
+}

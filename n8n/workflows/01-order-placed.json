@@ -1,0 +1,55 @@
+{
+  "name": "01 - Order Placed",
+  "nodes": [
+    {
+      "id": "webhook-order-placed",
+      "name": "Supabase Webhook: orders insert",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "foodhub/order-placed",
+        "responseMode": "onReceived"
+      },
+      "notes": "Configure as a Supabase Database Webhook on orders (INSERT). See docs/n8n-webhook-setup.md."
+    },
+    {
+      "id": "filter-status-placed",
+      "name": "Filter: status = placed",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [460, 300],
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json[\"record\"][\"status\"]}}",
+              "value2": "placed"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "notify-restaurant",
+      "name": "Notify Restaurant (placeholder)",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [680, 220],
+      "notes": "Replace with an email/notification node (e.g. Supabase email, or a webhook back to the vendor dashboard) once a notification channel is decided."
+    }
+  ],
+  "connections": {
+    "Supabase Webhook: orders insert": {
+      "main": [[{ "node": "Filter: status = placed", "type": "main", "index": 0 }]]
+    },
+    "Filter: status = placed": {
+      "main": [[{ "node": "Notify Restaurant (placeholder)", "type": "main", "index": 0 }], []]
+    }
+  },
+  "active": false,
+  "settings": {},
+  "_untested_reference_only": true,
+  "_note": "Hand-authored to n8n's export JSON shape; never imported into or run against a real n8n instance. See docs/superpowers/specs/2026-09-25-phase7-n8n-automation-design.md."
+}
