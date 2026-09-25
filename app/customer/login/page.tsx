@@ -4,14 +4,21 @@ import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 
+function getSafeRedirect(raw: string): string {
+  try {
+    const url = new URL(raw, window.location.origin);
+    return url.origin === window.location.origin
+      ? url.pathname + url.search + url.hash
+      : "/customer";
+  } catch {
+    return "/customer";
+  }
+}
+
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const rawRedirectTo = searchParams.get("redirectTo") ?? "/customer";
-  const redirectTo =
-    rawRedirectTo.startsWith("/") && !rawRedirectTo.startsWith("//")
-      ? rawRedirectTo
-      : "/customer";
 
   const [mode, setMode] = useState<"login" | "signup">("login");
   const [email, setEmail] = useState("");
@@ -32,7 +39,7 @@ function LoginForm() {
       setError(signInError.message);
       return;
     }
-    router.push(redirectTo);
+    router.push(getSafeRedirect(rawRedirectTo));
   }
 
   async function handleSignup() {
