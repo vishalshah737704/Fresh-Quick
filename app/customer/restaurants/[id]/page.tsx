@@ -80,7 +80,7 @@ export default function RestaurantMenuPage() {
 
   return (
     <div>
-      <div className="relative mb-4 h-56 w-full overflow-hidden rounded-xl bg-brand-accent/10">
+      <div className="relative mb-6 h-64 w-full overflow-hidden rounded-2xl bg-brand-accent/10 shadow-sm">
         {restaurant.banner_url ? (
           <Image
             src={restaurant.banner_url}
@@ -93,7 +93,10 @@ export default function RestaurantMenuPage() {
           <div className="flex h-full w-full items-center justify-center text-6xl">🍽️</div>
         )}
       </div>
-      <h1 className="mb-4 text-xl font-bold text-brand-ink">{restaurant.name}</h1>
+      <h1 className="mb-1 text-2xl font-bold text-brand-ink">{restaurant.name}</h1>
+      <p className="mb-4 text-sm text-brand-ink-muted">
+        {restaurant.cuisine_tags.join(", ")} · ⭐ {restaurant.rating.toFixed(1)} · {restaurant.avg_prep_minutes} min
+      </p>
       {isUnavailable && (
         <div className="mb-4 rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
           {restaurant.is_suspended
@@ -101,7 +104,7 @@ export default function RestaurantMenuPage() {
             : "This restaurant is currently closed."}
         </div>
       )}
-      <div className="flex flex-col">
+      <div className="flex flex-col divide-y divide-brand-ink-muted/10 rounded-xl border border-brand-ink-muted/10 bg-brand-surface">
         {menuItems.map((item) => (
           <MenuItemRow
             key={item.id}
