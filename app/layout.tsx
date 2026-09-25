@@ -18,7 +18,7 @@ export const metadata: Metadata = {
   description: `${BRAND.name} — food delivery, ordering, and vendor management.`,
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html
       lang="en"
