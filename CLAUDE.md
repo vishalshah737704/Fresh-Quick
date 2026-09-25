@@ -141,6 +141,37 @@ See [MEMORY.md](MEMORY.md) for phase-by-phase progress and decisions.
   own Task 6 verification ran entirely via curl and missed a
   login-breaking RLS recursion bug that the final whole-branch review
   only caught by loading `/admin/login` in an actual browser.
+- **A "no `<a href>` tags exist" claim in MEMORY.md/CLAUDE.md is a
+  snapshot, not a standing guarantee — re-grep before trusting it.** The
+  post-Phase-8 triage recorded that claim after investigating a stale
+  doc entry, but `RestaurantCard.tsx` had a raw `<a href>` the whole time
+  (missed because that file wasn't touched by the triage's own search
+  scope); found and fixed during the DoorDash-layout-rebuild plan simply
+  because that plan happened to touch the file. `npm run build`/`tsc`
+  never catches this class of bug — only a deliberate grep does.
+- **A UI restructuring that changes *how* existing data is grouped or
+  filtered (e.g. flat list → grouped-by-category rows) can silently drop
+  rows the old flat view always showed, even with zero logic touched on
+  the data-fetching side.** The DoorDash-layout-rebuild's cuisine-grouped
+  carousel view initially had no fallback for a restaurant with no
+  matching taxonomy tag (e.g. a freshly-signed-up vendor's
+  `cuisine_tags: []` default) or an empty/failed `cuisine_taxonomy`
+  fetch — both cases silently showed nothing where the old flat grid
+  always rendered every open restaurant. Caught only by the final
+  whole-branch review reading the diff against the data shape, not by
+  any live click-through (every seeded restaurant in this app happens to
+  have real cuisine tags, so the missing case never surfaced in
+  Playwright testing). When restructuring a listing's grouping/filter
+  logic, always add an explicit fallback path for items the new grouping
+  doesn't cover, not just for the zero-items-total case.
+- **A client-side search filter must match against every string form the
+  UI actually displays to the user, not just the underlying data's raw
+  value.** The DoorDash-layout-rebuild's home-page search matched
+  `cuisine_tags` slugs (`fast_food`) but the visible chips/headings show
+  taxonomy labels (`Fast Food`) — typing what's on screen returned zero
+  results. Build a slug-to-label lookup whenever a filter's visible
+  chrome and its underlying data use different strings for the same
+  concept.
 
 ## Standing phrase: "Commit Work" — NON-NEGOTIABLE
 
@@ -162,3 +193,13 @@ If step 2's commit would include anything that looks like a secret, or if
 `origin` isn't reachable/authorized (as has happened before in this repo —
 see `md_version/HANDOFF_2.md` for the collaborator-access issue), stop and
 report the problem rather than silently skipping the step.
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+# This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->

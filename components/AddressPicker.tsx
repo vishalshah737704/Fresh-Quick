@@ -19,7 +19,7 @@ export function AddressPicker() {
   }
 
   return (
-    <div className="border-b border-gray-200 p-3">
+    <div className="relative">
       <button
         onClick={() => {
           if (!open) {
