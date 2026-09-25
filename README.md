@@ -40,6 +40,19 @@ Add at least one menu item at `/vendor/menu`, then place a customer order
 against that restaurant (once opened) to see it appear in `/vendor/orders`
 and advance it through accepted → preparing → ready.
 
+## Trying the delivery partner flow
+
+Sign up at `/delivery/login` (toggle to "New partner? Sign up") — collects
+email/password, full name, and vehicle type. Toggle online on the
+dashboard (`/delivery/dashboard`); a `ready` order with no partner
+assigned yet will appear under "Available orders" for any online partner
+to claim (no admin-assignment step — see MEMORY.md's Phase 5 entry for
+why). After claiming, advance the order picked_up → delivered from the
+same dashboard. While online, the dashboard pings a manual lat/lng every
+15 seconds; the customer's order-confirmation page shows that location as
+a plain coordinate readout once the order reaches `assigned` (access
+expires once the order is `delivered`).
+
 ## Local service URLs
 - App: http://localhost:3000
 - Supabase Studio: http://localhost:54323

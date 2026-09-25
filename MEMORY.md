@@ -58,7 +58,34 @@ Claude at the start of work in this repo per project CLAUDE.md.
   `status` (closes both a TOCTOU gap and a real lost-update race).
   Plan: docs/superpowers/plans/2026-09-25-phase4-vendor-panel.md
   Spec: docs/superpowers/specs/2026-09-25-phase4-vendor-panel-design.md
-- **Phase 5 — Delivery partner app + live tracking**: not started.
+- **Phase 5 — Delivery partner app + live tracking**: ✅ Complete, merged
+  to `main`. Delivery partner signup/login (mirrors Phase 4's vendor
+  pattern), online/offline toggle, a **self-claim model instead of
+  admin-assignment** (ruling: the spec's "manual assignment via admin"
+  verify step assumed Phase 6's admin dashboard, which doesn't exist yet
+  — any online partner can claim one unassigned `ready` order via a
+  race-safe atomic UPDATE), status chain
+  assigned→picked_up→delivered (ownership+status guarded, same atomic-
+  UPDATE pattern), a 15s location-ping loop from the delivery dashboard
+  (manual lat/lng inputs, no Google Maps key), and a lat/lng readout
+  added to the customer's existing order-confirmation poll (no new
+  Realtime subscription — reused the existing 3s poll instead, simpler
+  and consistent with Phase 3's pattern). Live verification (not just
+  per-task review) caught a real Critical: migration 1's permissive
+  `stub_allow_authenticated_read` policy on `delivery_partners` was
+  never dropped when Phase 3/4 tightened other tables, so any
+  authenticated user — not just a customer's own assigned order — could
+  read any delivery partner's live location. Fixed by dropping the stub
+  in the new migration. Final whole-branch review then caught a second,
+  narrower version of the same class of bug: the new
+  `customer_can_read_assigned_partner_location` policy didn't expire —
+  a customer could keep reading a partner's live location forever after
+  their own delivery was complete. Fixed by scoping the policy to
+  `orders.status in ('assigned', 'picked_up')` and removing `delivered`
+  from the client's location-display gate. See the new CLAUDE.md rule on
+  auditing a table's *existing* policies before adding new ones.
+  Plan: docs/superpowers/plans/2026-09-25-phase5-delivery-partner.md
+  Spec: docs/superpowers/specs/2026-09-25-phase5-delivery-partner-design.md
 - **Phase 6 — Admin dashboard**: not started.
 - **Phase 7 — n8n automation wiring**: not started.
 - **Phase 8 — Polish/testing**: not started.
@@ -78,6 +105,35 @@ Claude at the start of work in this repo per project CLAUDE.md.
 - Mobile app is in scope but sequenced after the web platform ships.
 
 ## Known deferred items (carried from phase reviews, not yet addressed)
+
+- **`reviews` table still has its original Phase 1 permissive
+  `stub_allow_authenticated_read` policy** (`using (true)` — anyone,
+  including anon, can read every review row with its `customer_id` and
+  `order_id`). No phase has written to `reviews` yet, so this isn't
+  currently exploitable for writes, but it's the one remaining un-audited
+  stub from Phase 1's original 9-table sweep (Phase 5's final review
+  confirmed it while auditing all tables for the delivery_partners-class
+  leak). Whichever future phase first builds real review functionality
+  must replace this with an owner/public-appropriate policy before that
+  table holds real user-submitted content.
+- Delivery partner location ping uses manual lat/lng inputs only — the
+  spec's fallback-to-manual design was kept, but the "use
+  `navigator.geolocation` when available" half was dropped from the
+  Phase 5 plan for simplicity. Low priority; add if real device testing
+  becomes relevant before Google Maps integration.
+- Delivery dashboard doesn't auto-refresh the available-orders list —
+  only reloads after the partner's own actions (toggle/claim/advance).
+  A newly-ready order won't appear until the partner does something.
+  Acceptable for now; Phase 7's n8n auto-assignment likely replaces this
+  self-claim UI's need for polling entirely.
+- Delivery partner has no way to see the customer's delivery address —
+  no route returns it and RLS doesn't grant partner read access to
+  `addresses`. Needed for a real delivery flow; deferred since Phase 5's
+  spec only asked for status/location tracking, not address handoff.
+- Vendor and delivery signup routes both have loose input validation
+  (no length/type checks on names, no vehicle-type whitelist) — low risk,
+  same looseness in both, worth a shared validation helper in a polish
+  pass.
 
 - **No in-product way for a vendor to open their restaurant** — signup
   sets `is_open=false` and nothing in Phase 4 ever sets it back to `true`.

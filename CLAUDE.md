@@ -87,3 +87,19 @@ See [MEMORY.md](MEMORY.md) for phase-by-phase progress and decisions.
   policy for a table a client is actually meant to write to directly; read
   policies are fine since they're the intended defense layer for session-
   scoped browser reads.
+- **When adding RLS policies to a table in a new migration, first list
+  every EXISTING policy on that table (`select * from pg_policies where
+  tablename = '...'`, or just grep every prior migration file for the
+  table name) — don't just review the policies being added.** Phase 1's
+  original permissive `stub_allow_authenticated_read` policies were meant
+  to be replaced table-by-table as each table gained real data, but
+  `delivery_partners` was missed by both the phase that should have
+  caught it (there wasn't one, until Phase 5) and Phase 5's own first
+  pass — live verification caught it only because a live cross-customer
+  read test happened to be run, not because any code review inspected
+  the table's full policy list. A new policy that looks correctly scoped
+  in isolation can still sit next to an old one that quietly overrides
+  it (RLS policies are OR'd together — the strictest new policy doesn't
+  narrow an existing permissive one). `reviews` still has its original
+  Phase 1 stub as of Phase 5 — deliberately left for whichever phase
+  first gives that table real write traffic to close, see MEMORY.md.
