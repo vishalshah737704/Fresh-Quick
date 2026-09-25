@@ -43,7 +43,7 @@ expected reference-integration work anyway, not a regression.
   status to `assigned` (mirrors what Phase 5's self-claim already does
   from the partner's side — this is the "push" counterpart to Phase 5's
   "pull").
-- `n8n/workflows/*.json` — six workflow export stubs matching spec §5's
+- `n8n/workflows/*.json` — five workflow export stubs matching spec §5's
   six numbered workflows, built by hand to n8n's export JSON shape
   (nodes + connections), each with a webhook trigger and an HTTP Request
   node pointed at the matching `/api/internal/*` route or Supabase REST

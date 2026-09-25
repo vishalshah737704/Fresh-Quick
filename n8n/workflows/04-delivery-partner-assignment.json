@@ -23,7 +23,7 @@
       "parameters": {
         "conditions": {
           "string": [
-            { "value1": "={{$json[\"record\"][\"status\"]}}", "value2": "ready" }
+            { "value1": "={{$json[\"body\"][\"record\"][\"status\"]}}", "value2": "ready" }
           ]
         }
       }
@@ -36,7 +36,7 @@
       "position": [680, 220],
       "parameters": {
         "method": "GET",
-        "url": "={{$env.SUPABASE_URL}}/rest/v1/restaurants?id=eq.{{$json[\"record\"][\"restaurant_id\"]}}&select=lat,lng",
+        "url": "={{$env.SUPABASE_URL}}/rest/v1/restaurants?id=eq.{{$json[\"body\"][\"record\"][\"restaurant_id\"]}}&select=lat,lng",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -54,7 +54,7 @@
       "position": [900, 220],
       "parameters": {
         "method": "GET",
-        "url": "={{$env.APP_BASE_URL}}/api/internal/orders/{{$('Supabase Webhook: orders update (status=ready)').item.json[\"record\"][\"id\"]}}/assign?lat={{$json[0][\"lat\"]}}&lng={{$json[0][\"lng\"]}}",
+        "url": "={{$env.APP_BASE_URL}}/api/internal/orders/{{$('Supabase Webhook: orders update (status=ready)').item.json[\"body\"][\"record\"][\"id\"]}}/assign?lat={{$json[0][\"lat\"]}}&lng={{$json[0][\"lng\"]}}",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [{ "name": "X-Internal-Secret", "value": "={{$env.N8N_INTERNAL_SECRET}}" }]
@@ -70,7 +70,7 @@
       "position": [1120, 220],
       "parameters": {
         "method": "POST",
-        "url": "={{$env.APP_BASE_URL}}/api/internal/orders/{{$('Supabase Webhook: orders update (status=ready)').item.json[\"record\"][\"id\"]}}/assign",
+        "url": "={{$env.APP_BASE_URL}}/api/internal/orders/{{$('Supabase Webhook: orders update (status=ready)').item.json[\"body\"][\"record\"][\"id\"]}}/assign",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [

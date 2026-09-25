@@ -24,7 +24,7 @@
         "conditions": {
           "string": [
             {
-              "value1": "={{['picked_up','delivered'].includes($json[\"record\"][\"status\"])}}",
+              "value1": "={{['picked_up','delivered'].includes($json[\"body\"][\"record\"][\"status\"])}}",
               "value2": "true"
             }
           ]
@@ -48,7 +48,7 @@
       "parameters": {
         "conditions": {
           "string": [
-            { "value1": "={{$json[\"record\"][\"status\"]}}", "value2": "delivered" }
+            { "value1": "={{$json[\"body\"][\"record\"][\"status\"]}}", "value2": "delivered" }
           ]
         }
       }

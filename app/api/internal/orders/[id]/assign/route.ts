@@ -22,7 +22,13 @@ export async function POST(
     return NextResponse.json({ error: "Not authorized" }, { status: 401 });
   }
   const { id } = await params;
-  const { deliveryPartnerId } = await request.json();
+  let deliveryPartnerId: unknown;
+  try {
+    const body = await request.json();
+    deliveryPartnerId = body?.deliveryPartnerId;
+  } catch {
+    return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
+  }
 
   if (!deliveryPartnerId || typeof deliveryPartnerId !== "string") {
     return NextResponse.json({ error: "deliveryPartnerId is required" }, { status: 400 });
@@ -61,8 +67,13 @@ export async function GET(request: NextRequest) {
   if (!verifyInternalSecret(request)) {
     return NextResponse.json({ error: "Not authorized" }, { status: 401 });
   }
-  const restaurantLat = Number(request.nextUrl.searchParams.get("lat"));
-  const restaurantLng = Number(request.nextUrl.searchParams.get("lng"));
+  const rawLat = request.nextUrl.searchParams.get("lat");
+  const rawLng = request.nextUrl.searchParams.get("lng");
+  if (!rawLat || !rawLat.trim().length || !rawLng || !rawLng.trim().length) {
+    return NextResponse.json({ error: "lat and lng query params are required" }, { status: 400 });
+  }
+  const restaurantLat = Number(rawLat);
+  const restaurantLng = Number(rawLng);
   if (!Number.isFinite(restaurantLat) || !Number.isFinite(restaurantLng)) {
     return NextResponse.json({ error: "lat and lng query params are required" }, { status: 400 });
   }

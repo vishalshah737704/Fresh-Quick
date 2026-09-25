@@ -10,6 +10,13 @@ the full design and what stays on the tested synchronous path in the
 meantime (checkout payment, vendor status updates, delivery self-claim all
 still work today without n8n).
 
+Supabase Database Webhooks fire on every row event for the table they're
+configured on — there is no column-level or conditional filtering on the
+Supabase side (the `UPDATE(status)` label in the table below describes
+intent, not an enforceable filter). Each workflow's own `IF`/filter node is
+what actually narrows execution to the specific status values it cares
+about.
+
 ## Prerequisites
 
 - A running n8n instance (self-hosted, matching the project's "no cloud

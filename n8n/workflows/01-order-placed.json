@@ -24,7 +24,7 @@
         "conditions": {
           "string": [
             {
-              "value1": "={{$json[\"record\"][\"status\"]}}",
+              "value1": "={{$json[\"body\"][\"record\"][\"status\"]}}",
               "value2": "placed"
             }
           ]

@@ -16,7 +16,13 @@ export async function POST(
     return NextResponse.json({ error: "Not authorized" }, { status: 401 });
   }
   const { id } = await params;
-  const { status } = await request.json();
+  let status: unknown;
+  try {
+    const body = await request.json();
+    status = body?.status;
+  } catch {
+    return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
+  }
 
   if (status !== "success" && status !== "failed") {
     return NextResponse.json({ error: "status must be 'success' or 'failed'" }, { status: 400 });
@@ -29,11 +35,12 @@ export async function POST(
       paid_at: status === "success" ? new Date().toISOString() : null,
     })
     .eq("id", id)
+    .eq("status", "pending")
     .select("id, order_id, status")
     .single();
 
   if (paymentError || !payment) {
-    return NextResponse.json({ error: "Payment not found" }, { status: 404 });
+    return NextResponse.json({ error: "Payment is not pending" }, { status: 409 });
   }
 
   if (status === "failed") {
