@@ -103,3 +103,27 @@ See [MEMORY.md](MEMORY.md) for phase-by-phase progress and decisions.
   narrow an existing permissive one). `reviews` still has its original
   Phase 1 stub as of Phase 5 — deliberately left for whichever phase
   first gives that table real write traffic to close, see MEMORY.md.
+- **Never write an RLS policy on `users` (or any table) whose own USING
+  clause queries that same table** (`exists (select 1 from public.users
+  where ...)` inside a policy ON `public.users`) — Postgres cannot
+  evaluate this and throws "infinite recursion detected in policy",
+  breaking every browser-side read of that table (and transitively any
+  table whose policies join through it) for every role, not just the
+  one the broken policy was meant to gate. Phase 6 shipped exactly this
+  (an "admin can read all users" policy that checked the caller's own
+  admin-ness by querying `users` from within a `users` policy) and it
+  broke login-time role checks for customer/vendor/delivery/admin alike,
+  caught only by a final-review live audit that actually drove the login
+  UI in a browser — curl tests against service-role-backed API routes
+  never touch RLS at all and cannot catch this class of bug. If a table
+  needs a self-referential admin check, either query a different table
+  that already carries the caller's role, or use a `security definer`
+  helper function (`create function is_admin() ... security definer set
+  search_path = ''`) rather than a same-table subquery.
+- **A phase's live verification pass must include actually driving the
+  browser-facing UI for every login surface the migration could affect**
+  — not just curl/REST calls against service-role-backed API routes,
+  which bypass RLS entirely and cannot catch an RLS bug at all. Phase 6's
+  own Task 6 verification ran entirely via curl and missed a
+  login-breaking RLS recursion bug that the final whole-branch review
+  only caught by loading `/admin/login` in an actual browser.

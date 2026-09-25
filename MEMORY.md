@@ -86,7 +86,45 @@ Claude at the start of work in this repo per project CLAUDE.md.
   auditing a table's *existing* policies before adding new ones.
   Plan: docs/superpowers/plans/2026-09-25-phase5-delivery-partner.md
   Spec: docs/superpowers/specs/2026-09-25-phase5-delivery-partner-design.md
-- **Phase 6 — Admin dashboard**: not started.
+- **Phase 6 — Admin dashboard**: ✅ Complete, merged to `main`. One
+  seeded demo admin account (`admin@foodhub.local` /
+  `admin-demo-password`, seed.sql — no self-service signup, matching real
+  admin-provisioning norms), read-only oversight of all
+  orders/restaurants/delivery partners, restaurant suspend/unsuspend
+  (new `restaurants.is_suspended` column, independent of the vendor's own
+  `is_open`), and a manual order-reassignment tool (admin picks a
+  different *online* delivery partner for an `assigned`/`picked_up`
+  order; rejects offline targets and terminal-status orders). **Ruling**:
+  built self-claim-compatible admin oversight rather than the spec's
+  literal "manual assignment via admin" as the *only* assignment path,
+  since Phase 5 already shipped self-claim (itself a ruling made when
+  Phase 6 didn't exist yet) — admin reassignment is additive, not a
+  replacement. Final whole-branch review caught the most serious bug of
+  the build so far: migration 9's own `admin_can_read_all_users` RLS
+  policy queried `public.users` from within a policy defined ON
+  `public.users`, which Postgres cannot evaluate — "infinite recursion
+  detected in policy" broke every browser-side (anon-key) read of
+  `users`, and transitively `orders`/`order_items`/`payments`/
+  `delivery_partners`, for every role. This broke the post-login role
+  check on all four login pages (customer/vendor/delivery/admin) and the
+  customer order-tracking page. The task's own live verification (Task
+  6) missed it completely because it tested every admin action via curl
+  against service-role-backed API routes, which bypass RLS entirely and
+  can't exercise this bug at all — the final review only caught it by
+  actually driving `/admin/login` in a real browser. Fixed by deleting
+  the three unnecessary admin read policies outright (every admin read
+  already goes through service-role routes; nothing needed them). Also
+  fixed in the same pass: the plan's promised reassignment UI control had
+  been silently dropped during implementation (API-only until final
+  review caught the gap); the admin seed account lived in a migration
+  with a false justification comment (moved to `seed.sql`, matching
+  every other demo account); restaurant visibility only checked
+  `is_open`, not independently `is_suspended` (both now checked in
+  customer browse and checkout). See new CLAUDE.md rules on
+  same-table-referencing RLS policies and on live-verifying through the
+  actual browser UI, not just service-role curl calls.
+  Plan: docs/superpowers/plans/2026-09-25-phase6-admin-dashboard.md
+  Spec: docs/superpowers/specs/2026-09-25-phase6-admin-dashboard-design.md
 - **Phase 7 — n8n automation wiring**: not started.
 - **Phase 8 — Polish/testing**: not started.
 - **Mobile app (React Native + Expo, sub-project)**: not started — begins
@@ -106,6 +144,18 @@ Claude at the start of work in this repo per project CLAUDE.md.
 
 ## Known deferred items (carried from phase reviews, not yet addressed)
 
+- **`menu_items` still has three unused vendor RLS write policies from
+  Phase 4** (`vendor_can_insert/update/delete_own_menu_items`, migration
+  7) that let a vendor bypass their own API route's validation via direct
+  PostgREST — e.g. setting an image URL that skips the allowed-host
+  check, or a price of 0.001 that skips the `price > 0`/integer-paise
+  rounding. Confirmed live during Phase 6's full-migration audit (a
+  rolled-back transaction proved the bypass). Damage is scoped to the
+  vendor's own restaurant only, so it wasn't treated as a Phase 6
+  blocker, but it's the same class of bug Phase 4's own final review
+  fixed for `orders`/`restaurants` and missed for `menu_items` — should
+  be closed in its own small migration (drop the three policies; every
+  menu-item write already goes through `/api/vendor/menu-items/*`).
 - **`reviews` table still has its original Phase 1 permissive
   `stub_allow_authenticated_read` policy** (`using (true)` — anyone,
   including anon, can read every review row with its `customer_id` and

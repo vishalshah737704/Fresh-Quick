@@ -53,6 +53,17 @@ same dashboard. While online, the dashboard pings a manual lat/lng every
 a plain coordinate readout once the order reaches `assigned` (access
 expires once the order is `delivered`).
 
+## Trying the admin flow
+
+Log in at `/admin/login` with the seeded demo account —
+`admin@foodhub.local` / `admin-demo-password` (no signup; admin accounts
+are seeded, not self-service). The dashboard (`/admin/dashboard`) shows
+every order, restaurant, and delivery partner. Suspend/unsuspend a
+restaurant to see it disappear from/reappear on `/customer` browse. For
+an order in `assigned` or `picked_up` status, use the reassign dropdown
+(lists currently-online delivery partners) to move it to a different
+partner.
+
 ## Local service URLs
 - App: http://localhost:3000
 - Supabase Studio: http://localhost:54323
