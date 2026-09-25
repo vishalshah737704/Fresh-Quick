@@ -125,6 +125,7 @@ export default function AdminDashboardPage() {
             )}
           </li>
         ))}
+        {orders.length === 0 && <p className="text-gray-500">No orders yet.</p>}
       </ul>
 
       <h2 className="mb-2 font-semibold">Restaurants ({restaurants.length})</h2>
@@ -142,6 +143,7 @@ export default function AdminDashboardPage() {
             </button>
           </li>
         ))}
+        {restaurants.length === 0 && <p className="text-gray-500">No restaurants yet.</p>}
       </ul>
 
       <h2 className="mb-2 font-semibold">Delivery partners ({partners.length})</h2>
@@ -152,6 +154,7 @@ export default function AdminDashboardPage() {
             {p.vehicle_type ?? "—"}
           </li>
         ))}
+        {partners.length === 0 && <p className="text-gray-500">No delivery partners yet.</p>}
       </ul>
     </div>
   );

@@ -174,7 +174,27 @@ Claude at the start of work in this repo per project CLAUDE.md.
   Plan: (none — built directly given explicitly-untested nature, see
   spec's own "Ruling" section on scope)
   Spec: docs/superpowers/specs/2026-09-25-phase7-n8n-automation-design.md
-- **Phase 8 — Polish/testing**: not started.
+- **Phase 8 — Polish/testing**: ✅ Complete, merged to `main`. Smoke-tested
+  all four surfaces (customer, vendor, delivery, admin) at a 390×844
+  mobile viewport via Playwright — no console errors found on any of the
+  eight pages checked (customer home, restaurant detail, and all four
+  role login pages, spot-checked further after fixes). Confirmed existing
+  loading/error/empty-state coverage on every data-fetching page (added
+  during Phases 2-7, not new here) and closed the two real gaps found:
+  admin dashboard's three lists (orders/restaurants/partners) had no
+  empty-state message (just showed "(0)" with a blank list — now says
+  "No orders/restaurants/delivery partners yet."), and — closing the
+  deferred item below — vendor menu's availability toggle plus vendor
+  orders' and delivery dashboard's claim/status-advance buttons now
+  surface a write failure instead of silently no-op'ing. **Deliberately
+  not touched**: the four login pages' benign "password field not in a
+  form" browser console hint — fixing it means editing Phase 3's
+  already-reviewed, security-sensitive redirect-safe login/signup flow
+  across 4 files for a cosmetic-only warning, not a real bug; judged not
+  worth the risk of reopening tested auth code for this.
+  Plan: (none — direct polish pass given the phase's own "various" scope
+  per spec §7, matching how review/fix work was done throughout this
+  build rather than the full brainstorm→plan cycle)
 - **Mobile app (React Native + Expo, sub-project)**: not started — begins
   after Phase 8.
 
@@ -245,11 +265,11 @@ Claude at the start of work in this repo per project CLAUDE.md.
 - Vendor menu UI only supports an availability toggle and delete; there's
   no edit form for name/price/category/veg despite the PATCH route
   supporting all of them. Low priority — add if vendors need it.
-- Vendor pages (`menu`, `orders`) don't surface every write failure to the
-  UI equally — delete now does (Phase 4 final-review fix), but the
-  availability toggle and status-advance buttons still fail silently on a
-  non-2xx response. Worth a shared error-surfacing pattern in a polish
-  pass rather than three separate fixes.
+- ~~Vendor pages don't surface every write failure~~ — **closed in
+  Phase 8**. Vendor menu's availability toggle, vendor orders' and
+  delivery dashboard's status-advance/claim buttons now all show an
+  error message on a non-2xx response, matching the pattern the delete
+  button and admin dashboard's reassign control already used.
 - Currency display is inconsistent between customer pages (`.toFixed(2)`)
   and the new vendor pages (raw `₹{value}`, no fixed decimals) — cosmetic,
   fine for now.

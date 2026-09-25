@@ -27,6 +27,7 @@ async function authHeader() {
 export default function VendorOrdersPage() {
   const { loading } = useVendorSession();
   const [orders, setOrders] = useState<Order[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
   async function loadOrders() {
     const res = await fetch("/api/vendor/orders", { headers: await authHeader() });
@@ -39,10 +40,16 @@ export default function VendorOrdersPage() {
   }, [loading]);
 
   async function advance(orderId: string) {
-    await fetch(`/api/vendor/orders/${orderId}/status`, {
+    setError(null);
+    const res = await fetch(`/api/vendor/orders/${orderId}/status`, {
       method: "POST",
       headers: await authHeader(),
     });
+    if (!res.ok) {
+      const body = await res.json().catch(() => null);
+      setError(body?.error ?? "Failed to update order status");
+      return;
+    }
     await loadOrders();
   }
 
@@ -51,6 +58,7 @@ export default function VendorOrdersPage() {
   return (
     <div className="mx-auto max-w-2xl">
       <h1 className="mb-4 text-xl font-bold">Orders</h1>
+      {error && <p className="mb-2 text-sm text-red-600">{error}</p>}
       <ul className="flex flex-col gap-3">
         {orders.map((order) => (
           <li key={order.id} className="rounded border p-3">

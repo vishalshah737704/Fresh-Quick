@@ -28,6 +28,7 @@ export default function DeliveryDashboardPage() {
   const [mine, setMine] = useState<OrderRow[]>([]);
   const [lat, setLat] = useState("12.9716");
   const [lng, setLng] = useState("77.5946");
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!loading) setOnline(initialOnline);
@@ -72,18 +73,30 @@ export default function DeliveryDashboardPage() {
   }
 
   async function claim(orderId: string) {
-    await fetch(`/api/delivery/orders/${orderId}/claim`, {
+    setError(null);
+    const res = await fetch(`/api/delivery/orders/${orderId}/claim`, {
       method: "POST",
       headers: await authHeader(),
     });
+    if (!res.ok) {
+      const body = await res.json().catch(() => null);
+      setError(body?.error ?? "Failed to claim order");
+      return;
+    }
     await loadOrders();
   }
 
   async function advance(orderId: string) {
-    await fetch(`/api/delivery/orders/${orderId}/status`, {
+    setError(null);
+    const res = await fetch(`/api/delivery/orders/${orderId}/status`, {
       method: "POST",
       headers: await authHeader(),
     });
+    if (!res.ok) {
+      const body = await res.json().catch(() => null);
+      setError(body?.error ?? "Failed to update order status");
+      return;
+    }
     await loadOrders();
   }
 
@@ -92,6 +105,7 @@ export default function DeliveryDashboardPage() {
   return (
     <div className="mx-auto max-w-2xl">
       <h1 className="mb-4 text-xl font-bold">Delivery dashboard</h1>
+      {error && <p className="mb-2 text-sm text-red-600">{error}</p>}
       <div className="mb-4 flex items-center gap-3">
         <button
           onClick={toggleOnline}

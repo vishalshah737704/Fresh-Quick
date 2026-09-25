@@ -16,7 +16,10 @@ for the full design.
 3. Copy the API URL and anon key printed by step 2 into `.env.local`
    (see `.env.example` for the required variable names). Also add a
    `PEXELS_API_KEY` if you plan to re-run the menu-image fetch (optional —
-   the seeded demo data already has image URLs baked in).
+   the seeded demo data already has image URLs baked in). `N8N_INTERNAL_SECRET`
+   only matters if you're wiring up the n8n reference workflows (see below);
+   any non-empty value works for local testing of the `/api/internal/*`
+   routes directly.
 4. `npx supabase db reset` — applies migrations and seed data
 5. `npm run dev` — starts the Next.js app at http://localhost:3000, redirects to `/customer`
 
@@ -75,6 +78,21 @@ See `docs/n8n-webhook-setup.md` before attempting to wire it up for real.
 Everything else in this README (checkout, vendor, delivery, admin flows)
 works today without n8n — those synchronous paths stay as the tested
 demo behavior regardless of whether n8n is ever connected.
+
+## Status
+
+All 8 phases of the web platform (spec §7) are built: customer browse/
+cart/checkout, vendor panel, delivery partner app, admin dashboard, an
+n8n-facing internal API (workflows themselves unverified — no n8n
+instance was available while building them), and a Phase 8 polish pass
+(loading/error/empty states audited across all four surfaces at a 390px
+mobile viewport, no console errors found on any of the eight pages
+checked). See [MEMORY.md](MEMORY.md) for the phase-by-phase build log,
+including every bug found and fixed along the way, and its "Known
+deferred items" section for what's intentionally left for later (e.g.
+vendor restaurants still need a Supabase Studio flip to open, since
+there's no in-product toggle yet). The React Native mobile app is a
+planned follow-on, not started.
 
 ## Local service URLs
 - App: http://localhost:3000
