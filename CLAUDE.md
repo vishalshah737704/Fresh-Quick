@@ -75,3 +75,15 @@ See [MEMORY.md](MEMORY.md) for phase-by-phase progress and decisions.
   hash`) if it matches** — reassembling parts reintroduces an open-redirect
   bypass via dot-segment/protocol-relative tricks (took 3 review rounds to
   close in Phase 3's login page).
+- **Never add an RLS write policy (insert/update/delete) "for defense in
+  depth" on a table that only ever gets written through a service-role API
+  route.** An unused RLS write policy isn't dead code — it's a live,
+  directly-reachable PostgREST bypass for anyone with their own anon-key
+  session token, and it skips every check the API route enforces (status
+  chains, ownership, field-level restrictions). Phase 4's final review
+  caught three such policies (vendor order/restaurant updates, restaurant
+  inserts) that let any authenticated user skip the vendor order-status
+  chain or create their own orderable restaurant. Only add an RLS write
+  policy for a table a client is actually meant to write to directly; read
+  policies are fine since they're the intended defense layer for session-
+  scoped browser reads.

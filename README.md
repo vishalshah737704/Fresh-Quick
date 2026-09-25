@@ -29,6 +29,17 @@ locally. Complete checkout with any mock payment method ("Cash on
 Delivery" always succeeds; card/UPI resolve randomly ~80% success) to see
 the order confirmation page.
 
+## Trying the vendor flow
+
+Sign up a restaurant at `/vendor/login` (toggle to "New restaurant? Sign
+up") — collects email/password, restaurant name, cuisine tags, and a
+lat/lng stub for location. The new restaurant starts closed (`is_open =
+false`); there is no in-product "open restaurant" toggle yet (Phase 4
+follow-up — flip it via Supabase Studio's `restaurants` table for now).
+Add at least one menu item at `/vendor/menu`, then place a customer order
+against that restaurant (once opened) to see it appear in `/vendor/orders`
+and advance it through accepted → preparing → ready.
+
 ## Local service URLs
 - App: http://localhost:3000
 - Supabase Studio: http://localhost:54323
