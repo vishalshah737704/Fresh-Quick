@@ -17,10 +17,12 @@ export function MenuItemRow({
   item,
   restaurantId,
   restaurantName,
+  disabled = false,
 }: {
   item: MenuItem;
   restaurantId: string;
   restaurantName: string;
+  disabled?: boolean;
 }) {
   const { addItem } = useCart();
 
@@ -47,7 +49,7 @@ export function MenuItemRow({
         </div>
       </div>
       <button
-        disabled={!item.is_available}
+        disabled={disabled || !item.is_available}
         onClick={() =>
           addItem(restaurantId, restaurantName, {
             menuItemId: item.id,
@@ -58,7 +60,7 @@ export function MenuItemRow({
         }
         className="rounded bg-brand-primary px-3 py-1 text-sm text-white disabled:cursor-not-allowed disabled:bg-gray-300"
       >
-        {item.is_available ? "Add" : "Unavailable"}
+        {disabled ? "Unavailable" : item.is_available ? "Add" : "Unavailable"}
       </button>
     </div>
   );

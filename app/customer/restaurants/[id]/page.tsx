@@ -15,7 +15,17 @@ type MenuItem = {
   image_url: string | null;
 };
 
-type Restaurant = { id: string; name: string };
+type Restaurant = {
+  id: string;
+  name: string;
+  cuisine_tags: string[];
+  rating: number;
+  avg_prep_minutes: number;
+  is_open: boolean;
+  lat: number;
+  lng: number;
+  is_suspended: boolean;
+};
 
 export default function RestaurantMenuPage() {
   const params = useParams<{ id: string }>();
@@ -28,7 +38,11 @@ export default function RestaurantMenuPage() {
     async function load() {
       const [{ data: r, error: rErr }, { data: items, error: iErr }] =
         await Promise.all([
-          supabase.from("restaurants").select("id, name").eq("id", params.id).single(),
+          supabase
+            .from("restaurants")
+            .select("id, name, cuisine_tags, rating, avg_prep_minutes, is_open, lat, lng, is_suspended")
+            .eq("id", params.id)
+            .single(),
           supabase
             .from("menu_items")
             .select("id, name, description, price, is_veg, is_available, image_url")
@@ -60,9 +74,18 @@ export default function RestaurantMenuPage() {
     return <p className="text-gray-500">{restaurant.name} has no menu items yet.</p>;
   }
 
+  const isUnavailable = !restaurant.is_open || restaurant.is_suspended;
+
   return (
     <div>
       <h1 className="mb-4 text-xl font-bold">{restaurant.name}</h1>
+      {isUnavailable && (
+        <div className="mb-4 rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+          {restaurant.is_suspended
+            ? "This restaurant is currently unavailable."
+            : "This restaurant is currently closed."}
+        </div>
+      )}
       <div className="flex flex-col">
         {menuItems.map((item) => (
           <MenuItemRow
@@ -70,6 +93,7 @@ export default function RestaurantMenuPage() {
             item={item}
             restaurantId={restaurant.id}
             restaurantName={restaurant.name}
+            disabled={isUnavailable}
           />
         ))}
       </div>
