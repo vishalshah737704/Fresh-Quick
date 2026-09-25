@@ -38,10 +38,16 @@ horizontal carousel rows (falls back to a flat grid if a cuisine chip is
 selected, or if any restaurant doesn't fit a known cuisine row). Search
 restaurants or cuisines by name or label in the header search box. Adding
 an item to cart and clicking Checkout will prompt you to sign up / log in
-first (`/customer/login`) — use any email/password, the account is
-created locally. Complete checkout with any mock payment method ("Cash on
-Delivery" always succeeds; card/UPI resolve randomly ~80% success) to see
-the order confirmation page.
+first (`/customer/login`, a re-skinned card — same email/password flow,
+account created locally). Checkout is a single-page, two-column layout
+(address + payment method as selectable cards on the left, a sticky
+order-summary card with the place-order button on the right). Complete
+checkout with any mock payment method ("Cash on Delivery" always
+succeeds; card/UPI resolve randomly ~80% success) to land on the order
+confirmation page, which now shows a 4-step status timeline
+(Placed/Preparing/On the way/Delivered) instead of a plain text line,
+plus a bordered coordinate box in place of a live map once a delivery
+partner is assigned (no Google Maps key yet).
 
 ## Trying the vendor flow
 

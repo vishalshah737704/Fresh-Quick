@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { OrderStatusTimeline } from "@/components/OrderStatusTimeline";
 
 type OrderStatus =
   | "placed"
@@ -114,8 +115,8 @@ export default function OrderConfirmationPage() {
   }
 
   return (
-    <div>
-      <h1 className="mb-4 text-xl font-bold">Order #{order.id.slice(0, 8)}</h1>
+    <div className="flex flex-col gap-6">
+      <h1 className="text-2xl font-bold text-brand-ink">Order #{order.id.slice(0, 8)}</h1>
       {payment.status === "failed" ? (
         <p className="text-red-600">
           Payment failed. Your order was not placed — please try checking out
@@ -123,19 +124,32 @@ export default function OrderConfirmationPage() {
         </p>
       ) : (
         <>
-          <p className="mb-2">{STATUS_LABEL[order.status]}</p>
-          <p className="text-sm text-gray-600">Total: ₹{order.total.toFixed(2)}</p>
-          <p className="text-sm text-gray-600">
-            Payment: {payment.status} ({payment.method})
-          </p>
+          <section className="rounded-xl border border-brand-ink-muted/10 bg-brand-surface p-4 shadow-sm">
+            <OrderStatusTimeline status={order.status} />
+            <p className="mt-3 text-sm text-brand-ink-muted">{STATUS_LABEL[order.status]}</p>
+          </section>
+
           {partnerLocation?.current_lat != null && partnerLocation?.current_lng != null && (
-            <p className="mt-2 text-sm text-gray-600">
-              Delivery partner location: {partnerLocation.current_lat.toFixed(4)},{" "}
-              {partnerLocation.current_lng.toFixed(4)}
-              {partnerLocation.last_ping_at &&
-                ` (updated ${new Date(partnerLocation.last_ping_at).toLocaleTimeString()})`}
-            </p>
+            <div className="flex flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-brand-ink-muted/25 bg-brand-ink-muted/5 px-4 py-8 text-center">
+              <span className="text-2xl">📍</span>
+              <p className="text-sm font-medium text-brand-ink">
+                {partnerLocation.current_lat.toFixed(4)}, {partnerLocation.current_lng.toFixed(4)}
+              </p>
+              {partnerLocation.last_ping_at && (
+                <p className="text-xs text-brand-ink-muted">
+                  Updated {new Date(partnerLocation.last_ping_at).toLocaleTimeString()}
+                </p>
+              )}
+              <p className="mt-1 text-xs text-brand-ink-muted/70">
+                Live map coming soon — showing raw coordinates for now.
+              </p>
+            </div>
           )}
+
+          <section className="rounded-xl border border-brand-ink-muted/10 bg-brand-surface p-4 shadow-sm text-sm text-brand-ink-muted">
+            <p>Total: ₹{order.total.toFixed(2)}</p>
+            <p>Payment: {payment.status} ({payment.method})</p>
+          </section>
         </>
       )}
     </div>
