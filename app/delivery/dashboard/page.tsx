@@ -52,6 +52,20 @@ export default function DeliveryDashboardPage() {
   }, [loading]);
 
   useEffect(() => {
+    if (!online || typeof navigator === "undefined" || !navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setLat(String(position.coords.latitude));
+        setLng(String(position.coords.longitude));
+      },
+      () => {
+        // permission denied or unavailable — keep existing manual values
+      },
+      { timeout: 5000 }
+    );
+  }, [online]);
+
+  useEffect(() => {
     if (!online) return;
     const interval = setInterval(async () => {
       await fetch("/api/delivery/ping", {
