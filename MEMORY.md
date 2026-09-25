@@ -287,11 +287,9 @@ Claude at the start of work in this repo per project CLAUDE.md.
   orders/order_items/payments) — a partial failure could orphan rows.
   Needs a Postgres RPC function for real atomicity; judged acceptable for
   now given local-only demo traffic (Phase 3 review).
-- `order_items` table still has the fully-permissive Phase 1 stub RLS
-  policy (any authenticated user can read any order's line items/
-  quantities, though not who placed them) — users/addresses/orders/
-  payments were tightened to owner-only in Phase 3, `order_items` wasn't
-  in scope for that fix.
+- `order_items` RLS was already fixed in Phase 4 (migration 7: dropped the
+  Phase 1 permissive stub and created owner + vendor-specific read policies)
+  — this entry was stale, discovered during Phase 8 deferred-items triage.
 - Order confirmation page polls forever even after the order reaches a
   terminal state (delivered/cancelled) — only unmount stops it. Low
   severity, Phase 8 polish candidate.
