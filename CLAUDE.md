@@ -172,6 +172,20 @@ See [MEMORY.md](MEMORY.md) for phase-by-phase progress and decisions.
   results. Build a slug-to-label lookup whenever a filter's visible
   chrome and its underlying data use different strings for the same
   concept.
+- **A status-driven UI component (e.g. a step tracker) that maps a wider
+  status enum onto a smaller set of display states should use a
+  `Record<T, V>` TypeScript type over the *narrowed* union, not the full
+  one, when one value needs special-case handling instead of a mapped
+  step.** `OrderStatusTimeline` (customer-flow DoorDash-style polish)
+  maps the 8-value `OrderStatus` union onto 4 display steps, with
+  `cancelled` handled as an early-return special case rather than a
+  mapped index. Typing the lookup table as
+  `Record<Exclude<OrderStatus, "cancelled">, number>` makes the
+  TypeScript compiler itself reject any future new status value that
+  isn't explicitly added to the mapping (verified live during that
+  plan's Task 1 by temporarily deleting one key and confirming the build
+  fails) — cheaper and more durable than a runtime fallback or a
+  code-review checklist item.
 
 ## Standing phrase: "Commit Work" — NON-NEGOTIABLE
 

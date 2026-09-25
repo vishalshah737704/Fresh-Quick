@@ -346,8 +346,38 @@ Claude at the start of work in this repo per project CLAUDE.md.
   on placeholder only, sidebar icon emoji aren't `aria-hidden`, the
   disabled Pickup button can't receive keyboard focus so its `title`
   tooltip is unreachable via keyboard).
+- **Customer-flow DoorDash-style polish**: ✅ Complete, executed inline via
+  `superpowers:executing-plans` in an isolated worktree (6 tasks). Third
+  redesign pass, extending the DoorDash-layout rebuild's visual system to
+  the remaining customer-flow pages Vishal explicitly called out —
+  checkout, order tracking, login/signup — plus a home-page density fix.
+  Checkout stays single-page (DoorDash's *web* pattern, not a step
+  wizard — Vishal's explicit ruling that step-by-step flow is deferred to
+  the future mobile app) but gets a two-column layout: address + payment
+  on the left (payment methods now selectable bordered cards instead of
+  bare radio inputs), a sticky order-summary card on the right. Order
+  tracking gets a new `OrderStatusTimeline` component (4-step
+  Placed/Preparing/On the way/Delivered tracker, `cancelled` handled as
+  its own early-return state) in place of a plain text status line, and
+  the existing lat/lng coordinate readout is now styled as a bordered
+  map-placeholder box (still no Google Maps key, no new dependency — see
+  new CLAUDE.md rule on the `Record<Exclude<T, "special">, V>` typing
+  pattern that made the status mapping compiler-enforced total, verified
+  live by temporarily deleting a mapping key and watching `npm run build`
+  fail). Login/signup got a re-skin only (bordered/shadowed card wrapper)
+  — `getSafeRedirect` verified byte-identical against `main` at the end
+  of the branch, not just after its own task, per CLAUDE.md's standing
+  rule on that function. Home page's cuisine-carousel cards went from
+  `w-64`/`gap-4` to `w-56`/`gap-3` and both flat-grid fallbacks gained an
+  `xl:grid-cols-4` breakpoint, directly answering Vishal's "remove
+  whitespace, add more items, make the page fully packed" instruction —
+  live-verified via a real order lifecycle (placed → advanced via direct
+  Supabase REST PATCH to `picked_up` → `delivered`, all through the
+  existing 3s poll, no page reload) rather than just static screenshots.
+  Plan: docs/superpowers/plans/2026-09-25-customer-flow-doordash-polish.md
+  Spec: docs/superpowers/specs/2026-09-25-customer-flow-doordash-polish-design.md
 - **Mobile app (React Native + Expo, sub-project)**: not started — begins
-  after the DoorDash-layout rebuild.
+  after the customer-flow DoorDash-style polish.
 
 ## Key decisions carried forward (see spec §2 for full list)
 
