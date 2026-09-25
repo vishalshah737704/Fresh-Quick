@@ -276,23 +276,33 @@ Claude at the start of work in this repo per project CLAUDE.md.
 
 - No spatial/PostGIS indexing for restaurant lat/lng (Phase 1 review;
   revisit if Phase 2+'s query patterns show it's needed at scale).
-- Closed restaurants are still directly orderable by menu-page URL (browse
-  list correctly filters them, but the menu page itself doesn't re-check
-  `is_open`) — checkout API does independently re-validate at order time
-  (Phase 3), so no order can complete against a closed restaurant, but the
-  menu page UI itself doesn't warn the customer before they try.
+- ~~Closed restaurants are still directly orderable by menu-page URL~~ —
+  **closed in deferred-items-triage**. The menu page now re-checks
+  `is_open`/`is_suspended` and warns the customer before checkout, matching
+  the checkout API's existing independent re-validation.
 - Every customer-app navigation is a full page reload (`<a href>` instead
   of `next/link`) — plan-specified in Phase 2, worth revisiting.
-- No DB transaction across checkout's 4 sequential inserts (addresses/
-  orders/order_items/payments) — a partial failure could orphan rows.
-  Needs a Postgres RPC function for real atomicity; judged acceptable for
-  now given local-only demo traffic (Phase 3 review).
+- ~~No DB transaction across checkout's 4 sequential inserts~~ — **closed
+  in deferred-items-triage**. Checkout now runs through a single
+  `checkout_place_order` `security definer` Postgres RPC
+  (`supabase/migrations/00000000000013_checkout_rpc.sql`) so all inserts
+  are atomic. Final review of that migration caught a critical grant bug:
+  the function was granted `execute` to `authenticated`, which would have
+  let any logged-in customer call it directly via PostgREST with their own
+  token, bypassing the checkout route's identity check, price
+  re-validation, and restaurant-open/suspended check entirely. Fixed by
+  revoking from public/anon/authenticated and granting only to
+  `service_role` (the checkout route's own client). Verified live: a
+  customer's own bearer token against `POST /rest/v1/rpc/
+  checkout_place_order` is now rejected with permission denied, while the
+  real `/customer/checkout` UI flow still places orders successfully.
 - `order_items` RLS was already fixed in Phase 4 (migration 7: dropped the
   Phase 1 permissive stub and created owner + vendor-specific read policies)
-  — this entry was stale, discovered during Phase 8 deferred-items triage.
-- Order confirmation page polls forever even after the order reaches a
-  terminal state (delivered/cancelled) — only unmount stops it. Low
-  severity, Phase 8 polish candidate.
+  — this entry was stale, discovered during post-Phase-8 deferred-items
+  triage.
+- ~~Order confirmation page polls forever even after the order reaches a
+  terminal state~~ — **closed in deferred-items-triage**. Polling now stops
+  once the order status is `delivered` or `cancelled`.
 - No automated test suite exists yet — all verification so far has been
   `tsc`/`build`/manual + Playwright walkthroughs documented per task.
 - **Always run `npm run build` (not just `tsc --noEmit`) before marking a

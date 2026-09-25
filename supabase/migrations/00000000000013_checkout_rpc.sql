@@ -69,12 +69,15 @@ end;
 $$ language plpgsql security definer set search_path = '';
 
 -- Supabase's default privileges auto-grant execute on new functions to
--- anon/authenticated/service_role; explicitly revoke from public and
--- anon (an anon-key session must never be able to call this and bypass
--- RLS via the anon role) and grant only to authenticated. service_role
--- keeps its default execute grant since this route's own server-side
--- client (lib/supabase-server.ts) authenticates as service_role and
--- must still be able to call this function.
-revoke execute on function public.checkout_place_order from public;
-revoke execute on function public.checkout_place_order from anon;
-grant execute on function public.checkout_place_order to authenticated;
+-- anon/authenticated/service_role. This function is `security definer`
+-- and bypasses RLS, so it must only ever be callable by this route's own
+-- server-side client (lib/supabase-server.ts), which authenticates as
+-- service_role. Granting execute to `authenticated` would let ANY logged-in
+-- customer call it directly via PostgREST (POST /rest/v1/rpc/
+-- checkout_place_order) with their own session token, supplying arbitrary
+-- p_customer_id/prices/payment status and completely skipping the checkout
+-- route's identity check, price re-validation, restaurant-open/suspended
+-- check, and quantity limits. Revoke from public/anon/authenticated and
+-- grant only to service_role.
+revoke execute on function public.checkout_place_order from public, anon, authenticated;
+grant execute on function public.checkout_place_order to service_role;

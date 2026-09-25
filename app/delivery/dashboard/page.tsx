@@ -44,7 +44,22 @@ export default function DeliveryDashboardPage() {
     const availBody = await availRes.json();
     const mineBody = await mineRes.json();
     if (availRes.ok) setAvailable(availBody.orders);
-    if (mineRes.ok) setMine(mineBody.orders);
+    if (mineRes.ok) {
+      const mineOrders: OrderRow[] = mineBody.orders;
+      setMine(mineOrders);
+      const activeIds = new Set(
+        mineOrders
+          .filter((o) => o.status === "assigned" || o.status === "picked_up")
+          .map((o) => o.id)
+      );
+      setAddresses((prev) => {
+        const next: Record<string, string> = {};
+        for (const [id, addr] of Object.entries(prev)) {
+          if (activeIds.has(id)) next[id] = addr;
+        }
+        return next;
+      });
+    }
   }
 
   useEffect(() => {

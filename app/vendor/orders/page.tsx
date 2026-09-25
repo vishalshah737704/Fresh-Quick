@@ -61,9 +61,11 @@ export default function VendorOrdersPage() {
   const filteredOrders = selectedStatus === "all"
     ? orders
     : orders.filter((order) => order.status === selectedStatus);
-  const sortedOrders = sortOrder === "newest"
-    ? [...filteredOrders].reverse()
-    : filteredOrders;
+  const sortedOrders = [...filteredOrders].sort((a, b) => {
+    const aTime = new Date(a.placed_at).getTime();
+    const bTime = new Date(b.placed_at).getTime();
+    return sortOrder === "newest" ? bTime - aTime : aTime - bTime;
+  });
 
   return (
     <div className="mx-auto max-w-2xl">
@@ -114,7 +116,11 @@ export default function VendorOrdersPage() {
             <p className="mt-1 text-sm font-medium">₹{order.total.toFixed(2)}</p>
           </li>
         ))}
-        {sortedOrders.length === 0 && <p className="text-sm text-gray-500">No orders yet.</p>}
+        {sortedOrders.length === 0 && (
+          <p className="text-sm text-gray-500">
+            {orders.length === 0 ? "No orders yet." : "No orders with this status."}
+          </p>
+        )}
       </ul>
     </div>
   );
