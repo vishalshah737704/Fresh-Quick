@@ -20,6 +20,15 @@ for the full design.
 4. `npx supabase db reset` — applies migrations and seed data
 5. `npm run dev` — starts the Next.js app at http://localhost:3000, redirects to `/customer`
 
+## Trying the customer flow
+
+Browse restaurants at `/customer` (no login needed). Adding an item to
+cart and clicking Checkout will prompt you to sign up / log in first
+(`/customer/login`) — use any email/password, the account is created
+locally. Complete checkout with any mock payment method ("Cash on
+Delivery" always succeeds; card/UPI resolve randomly ~80% success) to see
+the order confirmation page.
+
 ## Local service URLs
 - App: http://localhost:3000
 - Supabase Studio: http://localhost:54323

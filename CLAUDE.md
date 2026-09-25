@@ -51,3 +51,27 @@ See [MEMORY.md](MEMORY.md) for phase-by-phase progress and decisions.
   the resulting URLs are hardcoded into `supabase/seed.sql` / migrations —
   not called live at runtime, to keep API keys server-side only and avoid a
   network dependency on every `db reset`.
+- **Any code that touches money (prices, subtotal, delivery fee, total)
+  must use integer-cents/paise arithmetic**, never plain JS float
+  multiplication — Postgres's exact-numeric CHECK constraints reject float
+  rounding errors that whole-number seed data won't reveal until real
+  decimal prices are used (found the hard way in Phase 3).
+- **Run `npm run build` before marking any new page/route task done**, not
+  just `tsc --noEmit` — a missing Suspense boundary around
+  `useSearchParams()` broke the production build in Phase 3 and `tsc`
+  alone didn't catch it.
+- **Service-role Supabase key** (`SUPABASE_SERVICE_ROLE_KEY`) is only ever
+  imported in server-side files guarded by the `server-only` package
+  (see `lib/supabase-server.ts`) — never importable from a client
+  component's bundle.
+- **API routes that create data on a customer's behalf must derive the
+  customer's identity from a verified session token** (`Authorization:
+  Bearer <token>` checked via `supabaseServer.auth.getUser(token)`),
+  never from a client-supplied id in the request body — a Phase 3 review
+  caught a route that trusted a body-supplied `customerId`.
+- **Any redirect target taken from a URL query param must be validated by
+  parsing it with `new URL(raw, window.location.origin)` and comparing
+  `.origin`, returning `.href` (never reassembling `pathname + search +
+  hash`) if it matches** — reassembling parts reintroduces an open-redirect
+  bypass via dot-segment/protocol-relative tricks (took 3 review rounds to
+  close in Phase 3's login page).
