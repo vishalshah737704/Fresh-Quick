@@ -149,18 +149,19 @@ Claude at the start of work in this repo per project CLAUDE.md.
   instead of the webhook node's actual output shape,
   `$json["body"]["record"]`) plus a payment-route bug that would have
   been live-triggered the moment workflow 02 was activated (see below).
-  **Known remaining issues in the untested JSON** (deferred — fix when
-  actually wiring a real n8n instance, since nothing here can verify the
-  fix without one): the `IF` nodes declare `typeVersion: 2` but use v1's
-  parameter shape; workflow 02's decision node uses a legacy
-  `function`-node API (`$input.item.json`) that may not match its
-  declared type; workflow 04 indexes the restaurant-lookup HTTP response
-  as `$json[0]` when n8n's HTTP Request v4 likely splits a JSON array
-  into separate items (`$json` directly); no empty-candidates guard
-  before workflow 04's assign POST; webhook nodes are missing
-  `webhookId` (may regenerate on import); the setup doc's local n8n
-  Docker image name and Supabase-webhooks-in-config.toml instructions
-  need double-checking against current tooling.
+  ~~**Known remaining issues in the untested JSON**~~ — **closed in the
+  Fresh & Quick redesign**: the `IF` nodes' `typeVersion` mismatch (now
+  `1`, matching their v1 parameter shape), workflow 02's decision node
+  (now a proper `n8n-nodes-base.code` node, not a legacy `function` node
+  wrongly using the Code node's API), workflow 04's `$json[0]`
+  array-indexing bug, the missing empty-candidates guard before workflow
+  04's assign POST, and missing `webhookId` fields are all fixed — see
+  the redesign's own phase entry below for one residual bug found and
+  fixed after this pass (workflow 02's Code node also needed an explicit
+  `runOnceForEachItem` mode). The setup doc's Docker/config.toml
+  instructions still need double-checking against current tooling
+  whenever someone actually wires up a real n8n instance — nothing here
+  can verify that without one.
   **Real bug worth remembering**: the payment-result route originally had
   no state guard (`.eq("id", id)` only) — since checkout never actually
   inserts a `pending` payment row (Phase 3 resolves payment synchronously
@@ -267,7 +268,29 @@ Claude at the start of work in this repo per project CLAUDE.md.
   INSERT-triggered logic has nothing to act on — documented as an
   explicit prerequisite (checkout would need to start inserting `pending`
   payments) rather than silently shipping a guide that implies the
-  workflow just works once imported.
+  workflow just works once imported. **Bug caught only by the final
+  whole-branch review, not any per-task review**: converting workflow
+  02's decision node from a legacy `function` node to a proper
+  `n8n-nodes-base.code` node (fixing the type/API mismatch above) still
+  left it broken — a Code node defaults to "Run Once for All Items"
+  mode, where `$input.item` doesn't exist, so the node would have thrown
+  on first execution. Fixed by adding `"mode": "runOnceForEachItem"` and
+  changing the return from an array (`return [{ json: ... }]`, valid
+  only in all-items mode) to a single object (`return { json: ... }`,
+  required in per-item mode). **Ruling**: the catalog expansion (Task 11)
+  shipped with 42 menu items across the 16 new restaurants rather than
+  the plan's estimated 60-90 (six restaurants got 2 items instead of
+  3-5, a few prices/prep-times fall slightly outside the plan's stated
+  ranges) — the final review flagged this as an undisclosed deviation;
+  judged not user-harmful (every restaurant still has a real, varied
+  menu with photos) and left as-is rather than padding content to hit an
+  estimate, but recorded here since the original ledger entry didn't
+  flag it. Two n8n setup-doc claims were also corrected after the final
+  review: not every workflow needs `APP_BASE_URL`/`N8N_INTERNAL_SECRET`
+  (only 02 and 04 have HTTP Request nodes that use them), and
+  pre-activation testing must use n8n's `/webhook-test/` URL, not the
+  production `/webhook/` path the Supabase webhook config points at
+  (n8n only serves the production path once a workflow is active).
 - **Mobile app (React Native + Expo, sub-project)**: not started — begins
   after the Fresh & Quick redesign.
 

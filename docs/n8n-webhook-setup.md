@@ -88,13 +88,28 @@ each is an independent webhook listener triggered by a different table
 event (or a different status value on the same table). You can activate
 them in any order, including one at a time to test incrementally (see
 below) before turning the rest on. The one real-world dependency is
-environmental, not between workflows: workflow 4's HTTP Request nodes need
-`APP_BASE_URL`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, and
-`N8N_INTERNAL_SECRET` all correctly set before it can do anything useful,
-same as workflows 1, 2, 3, and 5 need `APP_BASE_URL` and
-`N8N_INTERNAL_SECRET`.
+environmental, not between workflows: only workflows 2 and 4 have HTTP
+Request nodes that actually call this app, so only those two need
+`APP_BASE_URL` and `N8N_INTERNAL_SECRET` correctly set (workflow 4 also
+needs `SUPABASE_URL`/`SUPABASE_SERVICE_ROLE_KEY` for its direct restaurant
+lookup). Workflows 1, 3, and 5 only have webhook/filter/no-op nodes and
+don't call out anywhere, so they have no environment-variable
+dependency.
 
 ## 5. How to test each workflow
+
+**Before a workflow is active, n8n only serves its webhook on the
+`/webhook-test/...` path** (click the webhook node's "Listen for test
+event" button in the n8n editor first) — the production `/webhook/...`
+path from section 2's table only responds once the workflow's `active`
+flag is `true`. So to test end-to-end against the real Supabase webhook
+before activating, either temporarily point the Supabase Database Webhook
+at the `/webhook-test/...` URL and switch it to `/webhook/...` once you
+activate the workflow, or activate the workflow first (accepting that it
+will now also fire for real going forward) and test against production
+from the start. Testing against `/webhook-test/...` is the safer choice
+if you don't want a possibly-broken workflow firing on real production
+events while you're still debugging it.
 
 Test each one by triggering the real action that fires its underlying
 Supabase Database Webhook, then checking the expected downstream effect.

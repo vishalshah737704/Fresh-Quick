@@ -31,7 +31,8 @@
       "typeVersion": 2,
       "position": [680, 300],
       "parameters": {
-        "jsCode": "const method = $input.item.json.body.record.method;\nconst success = method === 'mock_cod' ? true : Math.random() < 0.8;\nreturn [{ json: { ...$input.item.json, status: success ? 'success' : 'failed' } }];"
+        "mode": "runOnceForEachItem",
+        "jsCode": "const method = $input.item.json.body.record.method;\nconst success = method === 'mock_cod' ? true : Math.random() < 0.8;\nreturn { json: { ...$input.item.json, status: success ? 'success' : 'failed' } };"
       },
       "notes": "Mirrors lib/order-constants.ts's PAYMENT_SUCCESS_RATE (0.8) and mock_cod-always-succeeds rule -- keep these in sync if either changes."
     },
