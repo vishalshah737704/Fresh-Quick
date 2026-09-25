@@ -18,11 +18,18 @@ type OrderView = {
   id: string;
   status: OrderStatus;
   total: number;
+  delivery_partner_id: string | null;
 };
 
 type PaymentView = {
   status: "pending" | "success" | "failed";
   method: string;
+};
+
+type PartnerLocation = {
+  current_lat: number | null;
+  current_lng: number | null;
+  last_ping_at: string | null;
 };
 
 const STATUS_LABEL: Record<OrderStatus, string> = {
@@ -36,10 +43,13 @@ const STATUS_LABEL: Record<OrderStatus, string> = {
   cancelled: "Order cancelled",
 };
 
+const SHOW_LOCATION_FOR: OrderStatus[] = ["assigned", "picked_up", "delivered"];
+
 export default function OrderConfirmationPage() {
   const params = useParams<{ id: string }>();
   const [order, setOrder] = useState<OrderView | null>(null);
   const [payment, setPayment] = useState<PaymentView | null>(null);
+  const [partnerLocation, setPartnerLocation] = useState<PartnerLocation | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -48,7 +58,11 @@ export default function OrderConfirmationPage() {
     async function load() {
       const [{ data: o, error: oErr }, { data: p, error: pErr }] =
         await Promise.all([
-          supabase.from("orders").select("id, status, total").eq("id", params.id).single(),
+          supabase
+            .from("orders")
+            .select("id, status, total, delivery_partner_id")
+            .eq("id", params.id)
+            .single(),
           supabase
             .from("payments")
             .select("status, method")
@@ -62,6 +76,17 @@ export default function OrderConfirmationPage() {
       }
       setOrder(o);
       setPayment(p);
+
+      if (o.delivery_partner_id && SHOW_LOCATION_FOR.includes(o.status)) {
+        const { data: loc } = await supabase
+          .from("delivery_partners")
+          .select("current_lat, current_lng, last_ping_at")
+          .eq("user_id", o.delivery_partner_id)
+          .single();
+        if (!cancelled) setPartnerLocation(loc ?? null);
+      } else if (!cancelled) {
+        setPartnerLocation(null);
+      }
     }
 
     load();
@@ -95,6 +120,14 @@ export default function OrderConfirmationPage() {
           <p className="text-sm text-gray-600">
             Payment: {payment.status} ({payment.method})
           </p>
+          {partnerLocation?.current_lat != null && partnerLocation?.current_lng != null && (
+            <p className="mt-2 text-sm text-gray-600">
+              Delivery partner location: {partnerLocation.current_lat.toFixed(4)},{" "}
+              {partnerLocation.current_lng.toFixed(4)}
+              {partnerLocation.last_ping_at &&
+                ` (updated ${new Date(partnerLocation.last_ping_at).toLocaleTimeString()})`}
+            </p>
+          )}
         </>
       )}
     </div>
