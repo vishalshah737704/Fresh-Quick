@@ -29,9 +29,15 @@ export function AddressProvider({ children }: { children: ReactNode }) {
       const raw = window.localStorage.getItem(STORAGE_KEY);
       if (raw) {
         const parsed = JSON.parse(raw);
-        setLat(parsed.lat);
-        setLng(parsed.lng);
-        setLabel(parsed.label);
+        if (
+          typeof parsed.lat === "number" &&
+          typeof parsed.lng === "number" &&
+          typeof parsed.label === "string"
+        ) {
+          setLat(parsed.lat);
+          setLng(parsed.lng);
+          setLabel(parsed.label);
+        }
       }
     } catch {
       // ignore, defaults stand
