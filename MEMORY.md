@@ -291,8 +291,63 @@ Claude at the start of work in this repo per project CLAUDE.md.
   pre-activation testing must use n8n's `/webhook-test/` URL, not the
   production `/webhook/` path the Supabase webhook config points at
   (n8n only serves the production path once a workflow is active).
+- **DoorDash-layout rebuild**: ✅ Complete, executed inline via
+  `superpowers:executing-plans` in an isolated worktree (9 tasks). Second
+  redesign pass on top of the Fresh & Quick redesign — restructured the
+  customer surface's *layout*, not just its color tokens, to match
+  doordash.com/home's structure: persistent left `SidebarNav` (4 items:
+  Home, Restaurants, Orders, Account — deliberately not a full DoorDash
+  product-vertical list, per brainstorm ruling), a rebuilt header
+  (`AddressPicker` relocated inline from its own bar, a visual-only
+  `DeliveryPickupToggle` with Pickup permanently disabled since the app
+  has no pickup flow, cart icon, sign-in link), and a `HeaderSearchBox` +
+  cuisine-grouped `CuisineCarouselRow`s replacing the flat restaurant
+  grid on the home page (grid still used when a cuisine chip is
+  selected, or as a fallback — see below). Also fixed a real standing-
+  rule violation found while touching `RestaurantCard.tsx`: a raw
+  `<a href>` that MEMORY.md's post-Phase-8 triage had previously
+  (incorrectly) recorded as not existing anywhere in the app — see new
+  CLAUDE.md rule on re-grepping such claims rather than trusting them.
+  Plan: docs/superpowers/plans/2026-09-25-doordash-layout-rebuild.md
+  Spec: docs/superpowers/specs/2026-09-25-doordash-layout-rebuild-design.md
+  **Final whole-branch review (opus) caught 1 Critical + 2 Important,
+  all fixed before merge**: (1) Critical — the sidebar's "Orders" link
+  pointed at `/customer/orders`, a route that has never existed (only
+  `/customer/orders/[id]` does), 404ing on every click; no orders-list
+  page exists to link to and building one was out of this plan's
+  presentation-only scope, so the link now points at the existing login
+  page, matching the spec's own stated "or prompts login" fallback
+  wording. (2) Important — the new cuisine-grouped carousel view could
+  silently drop restaurants that don't belong to any taxonomy cuisine
+  slug (e.g. a freshly-signed-up vendor's restaurant, which defaults to
+  `cuisine_tags: []`) or show a blank page entirely if the
+  `cuisine_taxonomy` fetch failed/returned empty — the old flat grid had
+  no such failure mode. Fixed with an explicit fallback to the flat grid
+  whenever any searched restaurant isn't represented in a carousel row,
+  or the cuisine list is empty. (3) Important — the search box matched
+  raw cuisine slugs (`fast_food`) but not the human-readable labels
+  users actually see on the chips/headings (`Fast Food`), so typing a
+  visible cuisine name returned zero results; fixed with a slug-to-label
+  lookup. None of the three were caught by any per-task build check or
+  the implementer's own live Playwright walkthroughs during task
+  execution — all three needed either a fresh reviewer's read of the
+  diff against the data shape (findings 2-3) or a link nobody happened
+  to click during task-level verification (finding 1). See new CLAUDE.md
+  rules on both. **Deferred minors** (below fix-pass threshold,
+  ledgered, not fixed this session): `AddressPicker`'s dropdown panel
+  isn't absolutely positioned, so opening it shifts the header layout
+  instead of overlaying (would require editing the panel's own markup,
+  beyond this plan's wrapper-only constraint on that file); the header's
+  "Sign In" link doesn't reflect a logged-in session (pre-existing gap,
+  not a regression — the old layout had no account UI at all);
+  `HeaderSearchBox`'s missing `"use client"` directive (currently safe,
+  would break if ever imported into a server component); a small
+  cluster of accessibility gaps (search input's accessible name relies
+  on placeholder only, sidebar icon emoji aren't `aria-hidden`, the
+  disabled Pickup button can't receive keyboard focus so its `title`
+  tooltip is unreachable via keyboard).
 - **Mobile app (React Native + Expo, sub-project)**: not started — begins
-  after the Fresh & Quick redesign.
+  after the DoorDash-layout rebuild.
 
 ## Key decisions carried forward (see spec §2 for full list)
 
@@ -374,8 +429,21 @@ Claude at the start of work in this repo per project CLAUDE.md.
   **closed in deferred-items-triage**. The menu page now re-checks
   `is_open`/`is_suspended` and warns the customer before checkout, matching
   the checkout API's existing independent re-validation.
-- Every customer-app navigation is a full page reload (`<a href>` instead
-  of `next/link`) — plan-specified in Phase 2, worth revisiting.
+- ~~Every customer-app navigation is a full page reload (`<a href>`
+  instead of `next/link`)~~ — **closed in the DoorDash-layout rebuild**.
+  `RestaurantCard.tsx` was the one remaining raw `<a href>` (the
+  post-Phase-8 triage's "no `<a href>` tags exist" note was wrong —
+  never re-checked after the triage's own file scope missed it); now
+  uses `next/link`'s `Link`. Grepped clean across all customer-app files
+  as of this session.
+- New deferred minors from the DoorDash-layout rebuild's final review
+  (see that phase's entry above for full context): `AddressPicker`'s
+  dropdown isn't absolutely positioned (shifts header layout instead of
+  overlaying); header's "Sign In" link doesn't reflect a logged-in
+  session; `HeaderSearchBox` missing `"use client"` (safe today, latent
+  risk if ever imported server-side); minor accessibility gaps (search
+  input accessible name, sidebar icon `aria-hidden`, disabled Pickup
+  button's unreachable-via-keyboard tooltip).
 - ~~No DB transaction across checkout's 4 sequential inserts~~ — **closed
   in deferred-items-triage**. Checkout now runs through a single
   `checkout_place_order` `security definer` Postgres RPC

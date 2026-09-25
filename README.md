@@ -30,10 +30,16 @@ the `scripts/` folder (`npm run app:build` / `app:start` / `app:stop` /
 
 ## Trying the customer flow
 
-Browse restaurants at `/customer` (no login needed). Adding an item to
-cart and clicking Checkout will prompt you to sign up / log in first
-(`/customer/login`) — use any email/password, the account is created
-locally. Complete checkout with any mock payment method ("Cash on
+Browse restaurants at `/customer` (no login needed). The home page has a
+DoorDash-style layout: a left sidebar (Home/Restaurants/Orders/Account),
+a header with the address picker, a visual-only Delivery/Pickup toggle
+(Pickup is disabled — no pickup flow exists), and cuisine-grouped
+horizontal carousel rows (falls back to a flat grid if a cuisine chip is
+selected, or if any restaurant doesn't fit a known cuisine row). Search
+restaurants or cuisines by name or label in the header search box. Adding
+an item to cart and clicking Checkout will prompt you to sign up / log in
+first (`/customer/login`) — use any email/password, the account is
+created locally. Complete checkout with any mock payment method ("Cash on
 Delivery" always succeeds; card/UPI resolve randomly ~80% success) to see
 the order confirmation page.
 
@@ -99,7 +105,10 @@ checked). A post-Phase-8 deferred-items triage then closed most of the
 remaining "Known deferred items" — vendor restaurant open/close toggle,
 checkout atomicity (Postgres RPC), delivery address visibility,
 geolocation-assisted location ping, closed-restaurant menu-page guard,
-and several smaller polish items. See [MEMORY.md](MEMORY.md) for the
+and several smaller polish items. A second redesign pass (the
+DoorDash-layout rebuild) then restructured the customer surface's layout
+— sidebar nav, fuller header, cuisine-grouped carousel rows — on top of
+the earlier color/brand redesign. See [MEMORY.md](MEMORY.md) for the
 phase-by-phase build log, including every bug found and fixed along the
 way, and its "Known deferred items" section for what's still
 intentionally left for later. The React Native mobile app is a planned
