@@ -1,8 +1,6 @@
--- cuisine_taxonomy table is normally created by seed.sql, but this migration
--- needs it to exist first (to enable RLS on it and to reference it from the
--- trigger below), and migrations always run before seed.sql. Create it here
--- too (idempotent, matches seed.sql's definition); seed.sql's own
--- `create table if not exists` becomes a no-op once this migration has run.
+-- cuisine_taxonomy table is created here (this migration needs it to exist
+-- first, to enable RLS on it and to reference it from the trigger below) and
+-- populated by migration 00000000000004_seed_cuisine_taxonomy.sql.
 create table if not exists public.cuisine_taxonomy (
   slug text primary key,
   label text not null
@@ -27,7 +25,7 @@ language plpgsql
 as $$
 begin
   if new.cuisine_tags is not null and not (
-    new.cuisine_tags <@ (select array_agg(slug) from public.cuisine_taxonomy)
+    new.cuisine_tags <@ coalesce((select array_agg(slug) from public.cuisine_taxonomy), '{}'::text[])
   ) then
     raise exception 'cuisine_tags contains a slug not present in cuisine_taxonomy: %', new.cuisine_tags;
   end if;

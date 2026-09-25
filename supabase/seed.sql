@@ -1,27 +1,42 @@
 -- Ensure pgcrypto is available for crypt()/gen_salt() used below.
 create extension if not exists pgcrypto;
 
--- Fixed cuisine taxonomy, stored as a lookup table so it's queryable/filterable
-create table if not exists public.cuisine_taxonomy (
-  slug text primary key,
-  label text not null
-);
-
-insert into public.cuisine_taxonomy (slug, label) values
-  ('indian', 'Indian'),
-  ('chinese', 'Chinese'),
-  ('italian', 'Italian'),
-  ('fast_food', 'Fast Food'),
-  ('desserts', 'Desserts'),
-  ('beverages', 'Beverages'),
-  ('south_indian', 'South Indian'),
-  ('north_indian', 'North Indian')
-on conflict (slug) do nothing;
-
 -- Demo vendor user + restaurant (fixed UUIDs for idempotency)
-insert into auth.users (id, email, encrypted_password, email_confirmed_at)
-values ('11111111-1111-1111-1111-111111111111', 'vendor.demo@foodhub.local', crypt('demo1234', gen_salt('bf')), now())
+insert into auth.users (
+  instance_id, id, aud, role, email, encrypted_password, email_confirmed_at,
+  confirmation_token, recovery_token, email_change_token_new, email_change,
+  raw_app_meta_data, created_at, updated_at
+)
+values (
+  '00000000-0000-0000-0000-000000000000',
+  '11111111-1111-1111-1111-111111111111',
+  'authenticated',
+  'authenticated',
+  'vendor.demo@foodhub.local',
+  crypt('demo1234', gen_salt('bf')),
+  now(),
+  '',
+  '',
+  '',
+  '',
+  '{"provider":"email","providers":["email"]}'::jsonb,
+  now(),
+  now()
+)
 on conflict (id) do nothing;
+
+-- Matching identity row, required by GoTrue for password sign-in to resolve.
+insert into auth.identities (id, user_id, provider, provider_id, identity_data, created_at, updated_at)
+values (
+  '11111111-1111-1111-1111-111111111112',
+  '11111111-1111-1111-1111-111111111111',
+  'email',
+  '11111111-1111-1111-1111-111111111111',
+  jsonb_build_object('sub', '11111111-1111-1111-1111-111111111111', 'email', 'vendor.demo@foodhub.local'),
+  now(),
+  now()
+)
+on conflict (provider_id, provider) do nothing;
 
 insert into public.users (id, role, full_name, phone) values
   ('11111111-1111-1111-1111-111111111111', 'vendor', 'Demo Vendor', '9990000001')

@@ -10,6 +10,9 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  /* Keep in sync with lib/branding.ts's BRAND.theme values. */
+  --color-brand-primary: #F97316;
+  --color-brand-secondary: #DC2626;
 }
 
 @media (prefers-color-scheme: dark) {
