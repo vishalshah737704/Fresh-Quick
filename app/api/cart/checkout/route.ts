@@ -58,14 +58,14 @@ export async function POST(request: NextRequest) {
 
   const { data: restaurant, error: restaurantError } = await supabaseServer
     .from("restaurants")
-    .select("id, is_open")
+    .select("id, is_open, is_suspended")
     .eq("id", restaurantId)
     .single();
 
   if (restaurantError || !restaurant) {
     return NextResponse.json({ error: "Restaurant not found" }, { status: 404 });
   }
-  if (!restaurant.is_open) {
+  if (!restaurant.is_open || restaurant.is_suspended) {
     return NextResponse.json({ error: "Restaurant is currently closed" }, { status: 409 });
   }
 

@@ -28,7 +28,8 @@ export default function CustomerHomePage() {
       const { data, error: fetchError } = await supabase
         .from("restaurants")
         .select("id, name, cuisine_tags, rating, avg_prep_minutes, is_open, lat, lng")
-        .eq("is_open", true);
+        .eq("is_open", true)
+        .eq("is_suspended", false);
       if (cancelled) return;
       if (fetchError) {
         setError(fetchError.message);

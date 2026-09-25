@@ -58,3 +58,27 @@ insert into public.menu_items (id, restaurant_id, name, description, price, cate
   ('44444444-4444-4444-4444-444444444444', '33333333-3333-3333-3333-333333333333', 'Paneer Butter Masala', 'Rich tomato gravy with paneer', 220, 'Main Course', true, true, 'https://images.pexels.com/photos/9609838/pexels-photo-9609838.jpeg?auto=compress&cs=tinysrgb&h=350'),
   ('55555555-5555-5555-5555-555555555555', '33333333-3333-3333-3333-333333333333', 'Veg Fried Rice', 'Wok-tossed rice with vegetables', 150, 'Main Course', true, true, 'https://images.pexels.com/photos/3926124/pexels-photo-3926124.jpeg?auto=compress&cs=tinysrgb&h=350')
 on conflict (id) do nothing;
+
+-- Demo admin account for local testing (Phase 6).
+do $$
+declare
+  admin_uid uuid;
+begin
+  if not exists (select 1 from public.users where role = 'admin') then
+    admin_uid := gen_random_uuid();
+    insert into auth.users (
+      id, instance_id, aud, role, email, encrypted_password,
+      email_confirmed_at, created_at, updated_at,
+      confirmation_token, recovery_token, email_change_token_new, email_change,
+      raw_app_meta_data, raw_user_meta_data
+    ) values (
+      admin_uid, '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated',
+      'admin@foodhub.local', crypt('admin-demo-password', gen_salt('bf')),
+      now(), now(), now(),
+      '', '', '', '',
+      '{"provider":"email","providers":["email"]}', '{}'
+    );
+    insert into public.users (id, role, full_name)
+    values (admin_uid, 'admin', 'Demo Admin');
+  end if;
+end $$;

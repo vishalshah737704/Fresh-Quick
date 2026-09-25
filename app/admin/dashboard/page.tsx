@@ -11,6 +11,8 @@ type OrderRow = {
   restaurants: { name: string } | null;
 };
 
+const REASSIGNABLE_STATUSES = ["assigned", "picked_up"];
+
 type RestaurantRow = {
   id: string;
   name: string;
@@ -35,6 +37,8 @@ export default function AdminDashboardPage() {
   const [orders, setOrders] = useState<OrderRow[]>([]);
   const [restaurants, setRestaurants] = useState<RestaurantRow[]>([]);
   const [partners, setPartners] = useState<PartnerRow[]>([]);
+  const [reassignSelections, setReassignSelections] = useState<Record<string, string>>({});
+  const [reassignError, setReassignError] = useState<string | null>(null);
 
   async function loadAll() {
     const headers = await authHeader();
@@ -61,17 +65,64 @@ export default function AdminDashboardPage() {
     await loadAll();
   }
 
+  async function reassign(orderId: string) {
+    const deliveryPartnerId = reassignSelections[orderId];
+    if (!deliveryPartnerId) return;
+    setReassignError(null);
+    const res = await fetch(`/api/admin/orders/${orderId}/reassign`, {
+      method: "POST",
+      headers: { ...(await authHeader()), "Content-Type": "application/json" },
+      body: JSON.stringify({ deliveryPartnerId }),
+    });
+    const body = await res.json();
+    if (!res.ok) {
+      setReassignError(body.error ?? "Failed to reassign order");
+      return;
+    }
+    await loadAll();
+  }
+
   if (loading) return <p>Loading…</p>;
+
+  const onlinePartners = partners.filter((p) => p.is_online);
 
   return (
     <div className="mx-auto max-w-4xl">
       <h1 className="mb-4 text-xl font-bold">Admin dashboard</h1>
 
       <h2 className="mb-2 font-semibold">Orders ({orders.length})</h2>
+      {reassignError && <p className="mb-2 text-sm text-red-600">{reassignError}</p>}
       <ul className="mb-6 flex flex-col gap-1 text-sm">
         {orders.map((o) => (
-          <li key={o.id}>
-            #{o.id.slice(0, 8)} · {o.restaurants?.name ?? "Restaurant"} · {o.status} · ₹{o.total}
+          <li key={o.id} className="flex items-center justify-between gap-2">
+            <span>
+              #{o.id.slice(0, 8)} · {o.restaurants?.name ?? "Restaurant"} · {o.status} · ₹{o.total}
+            </span>
+            {REASSIGNABLE_STATUSES.includes(o.status) && (
+              <span className="flex items-center gap-1">
+                <select
+                  className="rounded border px-1 py-0.5 text-xs"
+                  value={reassignSelections[o.id] ?? ""}
+                  onChange={(e) =>
+                    setReassignSelections((prev) => ({ ...prev, [o.id]: e.target.value }))
+                  }
+                >
+                  <option value="">Select partner…</option>
+                  {onlinePartners.map((p) => (
+                    <option key={p.user_id} value={p.user_id}>
+                      {p.users?.full_name ?? p.user_id}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  onClick={() => reassign(o.id)}
+                  disabled={!reassignSelections[o.id]}
+                  className="rounded bg-gray-100 px-2 py-1 text-xs disabled:opacity-50"
+                >
+                  Reassign
+                </button>
+              </span>
+            )}
           </li>
         ))}
       </ul>

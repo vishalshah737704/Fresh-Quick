@@ -13,7 +13,13 @@ export async function POST(
   if ("error" in resolved) {
     return NextResponse.json({ error: resolved.error }, { status: resolved.status });
   }
-  const { deliveryPartnerId } = await request.json();
+  let deliveryPartnerId: unknown;
+  try {
+    const body = await request.json();
+    deliveryPartnerId = body?.deliveryPartnerId;
+  } catch {
+    return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
+  }
   if (!deliveryPartnerId || typeof deliveryPartnerId !== "string") {
     return NextResponse.json({ error: "deliveryPartnerId is required" }, { status: 400 });
   }
