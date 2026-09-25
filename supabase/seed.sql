@@ -50,7 +50,11 @@ insert into public.restaurants (id, owner_id, name, cuisine_tags, address_id, la
   ('33333333-3333-3333-3333-333333333333', '11111111-1111-1111-1111-111111111111', 'Demo Kitchen', array['indian','fast_food'], '22222222-2222-2222-2222-222222222222', 19.0760, 72.8777, true, 25, 4.2)
 on conflict (id) do nothing;
 
-insert into public.menu_items (id, restaurant_id, name, description, price, category, is_veg, is_available) values
-  ('44444444-4444-4444-4444-444444444444', '33333333-3333-3333-3333-333333333333', 'Paneer Butter Masala', 'Rich tomato gravy with paneer', 220, 'Main Course', true, true),
-  ('55555555-5555-5555-5555-555555555555', '33333333-3333-3333-3333-333333333333', 'Veg Fried Rice', 'Wok-tossed rice with vegetables', 150, 'Main Course', true, true)
+-- image_url values are real food photos from Pexels (pexels.com), fetched once via
+-- the Pexels Search API and hardcoded here rather than called live at runtime —
+-- keeps the Pexels API key out of the browser and avoids a network dependency on
+-- every `supabase db reset`.
+insert into public.menu_items (id, restaurant_id, name, description, price, category, is_veg, is_available, image_url) values
+  ('44444444-4444-4444-4444-444444444444', '33333333-3333-3333-3333-333333333333', 'Paneer Butter Masala', 'Rich tomato gravy with paneer', 220, 'Main Course', true, true, 'https://images.pexels.com/photos/9609838/pexels-photo-9609838.jpeg?auto=compress&cs=tinysrgb&h=350'),
+  ('55555555-5555-5555-5555-555555555555', '33333333-3333-3333-3333-333333333333', 'Veg Fried Rice', 'Wok-tossed rice with vegetables', 150, 'Main Course', true, true, 'https://images.pexels.com/photos/3926124/pexels-photo-3926124.jpeg?auto=compress&cs=tinysrgb&h=350')
 on conflict (id) do nothing;

@@ -12,6 +12,7 @@ type MenuItem = {
   price: number;
   is_veg: boolean;
   is_available: boolean;
+  image_url: string | null;
 };
 
 type Restaurant = { id: string; name: string };
@@ -30,7 +31,7 @@ export default function RestaurantMenuPage() {
           supabase.from("restaurants").select("id, name").eq("id", params.id).single(),
           supabase
             .from("menu_items")
-            .select("id, name, description, price, is_veg, is_available")
+            .select("id, name, description, price, is_veg, is_available, image_url")
             .eq("restaurant_id", params.id),
         ]);
       if (cancelled) return;
