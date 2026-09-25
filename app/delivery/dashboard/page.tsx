@@ -77,6 +77,12 @@ export default function DeliveryDashboardPage() {
     return () => clearInterval(interval);
   }, [online, lat, lng]);
 
+  useEffect(() => {
+    if (!online) return;
+    const interval = setInterval(loadOrders, 10000);
+    return () => clearInterval(interval);
+  }, [online]);
+
   async function toggleOnline() {
     const res = await fetch("/api/delivery/toggle-online", {
       method: "POST",
