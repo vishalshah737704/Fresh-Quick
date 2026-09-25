@@ -148,23 +148,23 @@ export default function VendorMenuPage() {
 
   return (
     <div className="mx-auto max-w-2xl">
-      <h1 className="mb-4 text-xl font-bold">Menu</h1>
+      <h1 className="mb-4 text-xl font-bold text-brand-ink">Menu</h1>
       {actionError && <p className="mb-4 text-sm text-red-600">{actionError}</p>}
-      <div className="mb-6 flex flex-col gap-2 rounded border p-3">
+      <div className="mb-6 flex flex-col gap-2 rounded-xl border border-brand-ink-muted/10 bg-brand-surface p-3">
         <input
-          className="rounded border px-2 py-1"
+          className="rounded-lg border border-brand-ink-muted/20 px-2 py-1"
           placeholder="Item name"
           value={name}
           onChange={(e) => setName(e.target.value)}
         />
         <input
-          className="rounded border px-2 py-1"
+          className="rounded-lg border border-brand-ink-muted/20 px-2 py-1"
           placeholder="Price (rupees)"
           value={price}
           onChange={(e) => setPrice(e.target.value)}
         />
         <input
-          className="rounded border px-2 py-1"
+          className="rounded-lg border border-brand-ink-muted/20 px-2 py-1"
           placeholder="Image URL (optional)"
           value={imageUrl}
           onChange={(e) => setImageUrl(e.target.value)}
@@ -172,31 +172,31 @@ export default function VendorMenuPage() {
         {error && <p className="text-sm text-red-600">{error}</p>}
         <button
           onClick={addItem}
-          className="rounded bg-brand-primary px-3 py-2 text-sm text-white"
+          className="rounded-full bg-brand-primary px-3 py-2 text-sm text-white"
         >
           Add item
         </button>
       </div>
       <ul className="flex flex-col gap-2">
         {items.map((item) => (
-          <li key={item.id} className="flex flex-col gap-2 rounded border p-2">
+          <li key={item.id} className="flex flex-col gap-2 rounded-xl border border-brand-ink-muted/10 bg-brand-surface p-2">
             <div className="flex items-center justify-between">
               <div>
                 <p className="font-medium">{item.name}</p>
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-brand-ink-muted">
                   ₹{item.price.toFixed(2)} · {item.is_available ? "Available" : "Unavailable"}
                 </p>
               </div>
               <div className="flex gap-2">
                 <button
                   onClick={() => (editingId === item.id ? cancelEdit() : startEdit(item))}
-                  className="rounded bg-gray-100 px-2 py-1 text-xs"
+                  className="rounded-lg bg-brand-accent/10 px-2 py-1 text-xs text-brand-ink"
                 >
                   {editingId === item.id ? "Cancel" : "Edit"}
                 </button>
                 <button
                   onClick={() => toggleAvailable(item)}
-                  className="rounded bg-gray-100 px-2 py-1 text-xs"
+                  className="rounded-lg bg-brand-accent/10 px-2 py-1 text-xs text-brand-ink"
                 >
                   {item.is_available ? "Mark unavailable" : "Mark available"}
                 </button>
@@ -209,21 +209,21 @@ export default function VendorMenuPage() {
               </div>
             </div>
             {editingId === item.id && (
-              <div className="flex flex-col gap-2 rounded border bg-gray-50 p-2">
+              <div className="flex flex-col gap-2 rounded border bg-brand-accent/5 p-2">
                 <input
-                  className="rounded border px-2 py-1"
+                  className="rounded-lg border border-brand-ink-muted/20 px-2 py-1"
                   placeholder="Name"
                   value={editName}
                   onChange={(e) => setEditName(e.target.value)}
                 />
                 <input
-                  className="rounded border px-2 py-1"
+                  className="rounded-lg border border-brand-ink-muted/20 px-2 py-1"
                   placeholder="Description"
                   value={editDescription}
                   onChange={(e) => setEditDescription(e.target.value)}
                 />
                 <input
-                  className="rounded border px-2 py-1"
+                  className="rounded-lg border border-brand-ink-muted/20 px-2 py-1"
                   placeholder="Category"
                   value={editCategory}
                   onChange={(e) => setEditCategory(e.target.value)}
@@ -237,14 +237,14 @@ export default function VendorMenuPage() {
                   Veg
                 </label>
                 <input
-                  className="rounded border px-2 py-1"
+                  className="rounded-lg border border-brand-ink-muted/20 px-2 py-1"
                   placeholder="Price (rupees)"
                   type="number"
                   value={editPrice}
                   onChange={(e) => setEditPrice(e.target.value)}
                 />
                 <input
-                  className="rounded border px-2 py-1"
+                  className="rounded-lg border border-brand-ink-muted/20 px-2 py-1"
                   placeholder="Image URL"
                   value={editImageUrl}
                   onChange={(e) => setEditImageUrl(e.target.value)}
@@ -252,7 +252,7 @@ export default function VendorMenuPage() {
                 {editError && <p className="text-sm text-red-600">{editError}</p>}
                 <button
                   onClick={() => saveEdit(item)}
-                  className="rounded bg-brand-primary px-3 py-2 text-sm text-white"
+                  className="rounded-full bg-brand-primary px-3 py-2 text-sm text-white"
                 >
                   Save
                 </button>

@@ -1,7 +1,11 @@
 export const BRAND = {
-  name: "FoodHub",
+  name: "Fresh & Quick",
   theme: {
-    primary: "#F97316",
-    secondary: "#DC2626",
+    primary: "#DC2626",
+    accent: "#F97316",
+    background: "#FFF8F0",
+    surface: "#FFFFFF",
+    ink: "#1F1B16",
+    inkMuted: "#6B6153",
   },
 } as const;

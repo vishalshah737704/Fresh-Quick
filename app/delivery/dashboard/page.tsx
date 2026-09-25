@@ -153,13 +153,13 @@ export default function DeliveryDashboardPage() {
 
   return (
     <div className="mx-auto max-w-2xl">
-      <h1 className="mb-4 text-xl font-bold">Delivery dashboard</h1>
+      <h1 className="mb-4 text-xl font-bold text-brand-ink">Delivery dashboard</h1>
       {error && <p className="mb-2 text-sm text-red-600">{error}</p>}
       <div className="mb-4 flex items-center gap-3">
         <button
           onClick={toggleOnline}
           className={`rounded px-3 py-2 text-sm text-white ${
-            online ? "bg-green-600" : "bg-gray-400"
+            online ? "bg-green-600" : "bg-brand-ink-muted/40"
           }`}
         >
           {online ? "Online" : "Offline"} — tap to toggle
@@ -167,12 +167,12 @@ export default function DeliveryDashboardPage() {
         {online && (
           <div className="flex gap-1 text-xs">
             <input
-              className="w-20 rounded border px-1"
+              className="w-20 rounded-lg border border-brand-ink-muted/20 px-1"
               value={lat}
               onChange={(e) => setLat(e.target.value)}
             />
             <input
-              className="w-20 rounded border px-1"
+              className="w-20 rounded-lg border border-brand-ink-muted/20 px-1"
               value={lng}
               onChange={(e) => setLng(e.target.value)}
             />
@@ -180,28 +180,28 @@ export default function DeliveryDashboardPage() {
         )}
       </div>
 
-      <h2 className="mb-2 font-semibold">Available orders</h2>
+      <h2 className="mb-2 font-semibold text-brand-ink">Available orders</h2>
       <ul className="mb-6 flex flex-col gap-2">
         {available.map((o) => (
-          <li key={o.id} className="flex items-center justify-between rounded border p-2">
+          <li key={o.id} className="flex items-center justify-between rounded-xl border border-brand-ink-muted/10 bg-brand-surface p-2">
             <span>
               #{o.id.slice(0, 8)} · {o.restaurants?.name ?? "Restaurant"} · ₹{o.total.toFixed(2)}
             </span>
             <button
               onClick={() => claim(o.id)}
-              className="rounded bg-brand-primary px-2 py-1 text-xs text-white"
+              className="rounded-full bg-brand-primary px-2 py-1 text-xs text-white"
             >
               Claim
             </button>
           </li>
         ))}
-        {available.length === 0 && <p className="text-sm text-gray-500">None right now.</p>}
+        {available.length === 0 && <p className="text-sm text-brand-ink-muted">None right now.</p>}
       </ul>
 
-      <h2 className="mb-2 font-semibold">Your deliveries</h2>
+      <h2 className="mb-2 font-semibold text-brand-ink">Your deliveries</h2>
       <ul className="flex flex-col gap-2">
         {mine.map((o) => (
-          <li key={o.id} className="flex flex-col gap-1 rounded border p-2">
+          <li key={o.id} className="flex flex-col gap-1 rounded-xl border border-brand-ink-muted/10 bg-brand-surface p-2">
             <div className="flex items-center justify-between">
               <span>
                 #{o.id.slice(0, 8)} · {o.status} · ₹{o.total.toFixed(2)}
@@ -210,7 +210,7 @@ export default function DeliveryDashboardPage() {
                 {(o.status === "assigned" || o.status === "picked_up") && (
                   <button
                     onClick={() => viewAddress(o.id)}
-                    className="rounded border px-2 py-1 text-xs"
+                    className="rounded-lg border border-brand-ink-muted/20 px-2 py-1 text-xs"
                   >
                     View address
                   </button>
@@ -218,7 +218,7 @@ export default function DeliveryDashboardPage() {
                 {NEXT_LABEL[o.status] && (
                   <button
                     onClick={() => advance(o.id)}
-                    className="rounded bg-brand-primary px-2 py-1 text-xs text-white"
+                    className="rounded-full bg-brand-primary px-2 py-1 text-xs text-white"
                   >
                     {NEXT_LABEL[o.status]}
                   </button>
@@ -226,11 +226,11 @@ export default function DeliveryDashboardPage() {
               </div>
             </div>
             {addresses[o.id] && (
-              <p className="text-xs text-gray-600">{addresses[o.id]}</p>
+              <p className="text-xs text-brand-ink-muted">{addresses[o.id]}</p>
             )}
           </li>
         ))}
-        {mine.length === 0 && <p className="text-sm text-gray-500">No deliveries yet.</p>}
+        {mine.length === 0 && <p className="text-sm text-brand-ink-muted">No deliveries yet.</p>}
       </ul>
     </div>
   );

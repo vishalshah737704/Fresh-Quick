@@ -11,8 +11,12 @@
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
   /* Keep in sync with lib/branding.ts's BRAND.theme values. */
-  --color-brand-primary: #F97316;
-  --color-brand-secondary: #DC2626;
+  --color-brand-primary: #DC2626;
+  --color-brand-accent: #F97316;
+  --color-brand-bg: #FFF8F0;
+  --color-brand-surface: #FFFFFF;
+  --color-brand-ink: #1F1B16;
+  --color-brand-ink-muted: #6B6153;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -23,7 +27,7 @@
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background: var(--color-brand-bg);
+  color: var(--color-brand-ink);
   font-family: Arial, Helvetica, sans-serif;
 }

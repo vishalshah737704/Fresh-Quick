@@ -69,13 +69,13 @@ export default function VendorOrdersPage() {
 
   return (
     <div className="mx-auto max-w-2xl">
-      <h1 className="mb-4 text-xl font-bold">Orders</h1>
+      <h1 className="mb-4 text-xl font-bold text-brand-ink">Orders</h1>
       {error && <p className="mb-2 text-sm text-red-600">{error}</p>}
       <div className="mb-4 flex gap-3">
         <select
           value={selectedStatus}
           onChange={(e) => setSelectedStatus(e.target.value)}
-          className="rounded border px-2 py-1 text-sm"
+          className="rounded-lg border border-brand-ink-muted/20 px-2 py-1 text-sm"
         >
           {statuses.map((status) => (
             <option key={status} value={status}>
@@ -85,14 +85,14 @@ export default function VendorOrdersPage() {
         </select>
         <button
           onClick={() => setSortOrder(sortOrder === "oldest" ? "newest" : "oldest")}
-          className="rounded border px-2 py-1 text-sm"
+          className="rounded-lg border border-brand-ink-muted/20 px-2 py-1 text-sm"
         >
           {sortOrder === "oldest" ? "Oldest first" : "Newest first"}
         </button>
       </div>
       <ul className="flex flex-col gap-3">
         {sortedOrders.map((order) => (
-          <li key={order.id} className="rounded border p-3">
+          <li key={order.id} className="rounded-xl border border-brand-ink-muted/10 bg-brand-surface p-3">
             <div className="flex items-center justify-between">
               <p className="font-medium">
                 Order #{order.id.slice(0, 8)} · {order.status}
@@ -100,13 +100,13 @@ export default function VendorOrdersPage() {
               {NEXT_LABEL[order.status] && (
                 <button
                   onClick={() => advance(order.id)}
-                  className="rounded bg-brand-primary px-2 py-1 text-xs text-white"
+                  className="rounded-full bg-brand-primary px-2 py-1 text-xs text-white"
                 >
                   {NEXT_LABEL[order.status]}
                 </button>
               )}
             </div>
-            <ul className="mt-2 text-sm text-gray-600">
+            <ul className="mt-2 text-sm text-brand-ink-muted">
               {order.order_items.map((item) => (
                 <li key={item.id}>
                   {item.quantity}× {item.menu_items?.name ?? "Item"}
@@ -117,7 +117,7 @@ export default function VendorOrdersPage() {
           </li>
         ))}
         {sortedOrders.length === 0 && (
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-brand-ink-muted">
             {orders.length === 0 ? "No orders yet." : "No orders with this status."}
           </p>
         )}

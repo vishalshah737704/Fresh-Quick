@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import Image from "next/image";
 import { supabase } from "@/lib/supabase";
 import { MenuItemRow } from "@/components/MenuItemRow";
 
@@ -25,6 +26,7 @@ type Restaurant = {
   lat: number;
   lng: number;
   is_suspended: boolean;
+  banner_url: string | null;
 };
 
 export default function RestaurantMenuPage() {
@@ -40,7 +42,7 @@ export default function RestaurantMenuPage() {
         await Promise.all([
           supabase
             .from("restaurants")
-            .select("id, name, cuisine_tags, rating, avg_prep_minutes, is_open, lat, lng, is_suspended")
+            .select("id, name, cuisine_tags, rating, avg_prep_minutes, is_open, lat, lng, is_suspended, banner_url")
             .eq("id", params.id)
             .single(),
           supabase
@@ -78,7 +80,20 @@ export default function RestaurantMenuPage() {
 
   return (
     <div>
-      <h1 className="mb-4 text-xl font-bold">{restaurant.name}</h1>
+      <div className="relative mb-4 h-56 w-full overflow-hidden rounded-xl bg-brand-accent/10">
+        {restaurant.banner_url ? (
+          <Image
+            src={restaurant.banner_url}
+            alt={restaurant.name}
+            fill
+            sizes="100vw"
+            className="object-cover"
+          />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center text-6xl">🍽️</div>
+        )}
+      </div>
+      <h1 className="mb-4 text-xl font-bold text-brand-ink">{restaurant.name}</h1>
       {isUnavailable && (
         <div className="mb-4 rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
           {restaurant.is_suspended

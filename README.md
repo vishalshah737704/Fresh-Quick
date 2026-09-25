@@ -1,4 +1,4 @@
-# FoodHub — Food Delivery Platform
+# Fresh & Quick — Food Delivery Platform
 
 Local-only development stack. No cloud services required. See
 [MEMORY.md](MEMORY.md) for what's built so far and

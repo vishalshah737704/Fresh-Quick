@@ -55,8 +55,8 @@ export default function VendorDashboardPage() {
 
   return (
     <div className="mx-auto max-w-2xl">
-      <h1 className="mb-4 text-xl font-bold">Vendor dashboard</h1>
-      <div className="mb-4 flex items-center gap-3 rounded border p-3">
+      <h1 className="mb-4 text-xl font-bold text-brand-ink">Vendor dashboard</h1>
+      <div className="mb-4 flex items-center gap-3 rounded-xl border border-brand-ink-muted/10 bg-brand-surface p-3">
         <p className="text-sm">
           Restaurant is currently{" "}
           <span className="font-medium">{isOpen ? "open" : "closed"}</span>
@@ -64,17 +64,17 @@ export default function VendorDashboardPage() {
         <button
           onClick={toggleOpen}
           disabled={isOpen === null}
-          className="rounded bg-brand-primary px-3 py-2 text-sm text-white disabled:opacity-50"
+          className="rounded-full bg-brand-primary px-3 py-2 text-sm text-white disabled:opacity-50"
         >
           {isOpen ? "Close restaurant" : "Open restaurant"}
         </button>
       </div>
       {actionError && <p className="mb-4 text-sm text-red-600">{actionError}</p>}
       <div className="flex gap-4">
-        <Link href="/vendor/menu" className="rounded bg-gray-100 px-3 py-2 text-sm">
+        <Link href="/vendor/menu" className="rounded-lg bg-brand-accent/10 px-3 py-2 text-sm text-brand-ink">
           Manage menu
         </Link>
-        <Link href="/vendor/orders" className="rounded bg-gray-100 px-3 py-2 text-sm">
+        <Link href="/vendor/orders" className="rounded-lg bg-brand-accent/10 px-3 py-2 text-sm text-brand-ink">
           Order queue
         </Link>
       </div>

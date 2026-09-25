@@ -53,17 +53,17 @@ function AdminLoginForm() {
 
   return (
     <div className="mx-auto max-w-sm">
-      <h1 className="mb-4 text-xl font-bold">Admin log in</h1>
+      <h1 className="mb-4 text-xl font-bold text-brand-ink">Admin log in</h1>
       <div className="flex flex-col gap-2">
         <input
-          className="rounded border px-2 py-1"
+          className="rounded-lg border border-brand-ink-muted/20 px-2 py-1 focus:border-brand-primary focus:outline-none"
           placeholder="Email"
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
         />
         <input
-          className="rounded border px-2 py-1"
+          className="rounded-lg border border-brand-ink-muted/20 px-2 py-1 focus:border-brand-primary focus:outline-none"
           placeholder="Password"
           type="password"
           value={password}
@@ -73,7 +73,7 @@ function AdminLoginForm() {
         <button
           disabled={submitting}
           onClick={handleLogin}
-          className="rounded bg-brand-primary px-3 py-2 text-sm text-white disabled:opacity-50"
+          className="rounded-full bg-brand-primary px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
         >
           {submitting ? "Please wait…" : "Log in"}
         </button>
