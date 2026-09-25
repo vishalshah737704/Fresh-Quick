@@ -54,6 +54,9 @@ export default function OrderConfirmationPage() {
 
   useEffect(() => {
     let cancelled = false;
+    let interval: ReturnType<typeof setInterval> | null = null;
+
+    const TERMINAL_STATUSES: OrderStatus[] = ["delivered", "cancelled"];
 
     async function load() {
       const [{ data: o, error: oErr }, { data: p, error: pErr }] =
@@ -77,6 +80,11 @@ export default function OrderConfirmationPage() {
       setOrder(o);
       setPayment(p);
 
+      // Stop polling if order reached a terminal status
+      if (TERMINAL_STATUSES.includes(o.status)) {
+        if (interval) clearInterval(interval);
+      }
+
       if (o.delivery_partner_id && SHOW_LOCATION_FOR.includes(o.status)) {
         const { data: loc } = await supabase
           .from("delivery_partners")
@@ -90,10 +98,10 @@ export default function OrderConfirmationPage() {
     }
 
     load();
-    const interval = setInterval(load, 3000);
+    interval = setInterval(load, 3000);
     return () => {
       cancelled = true;
-      clearInterval(interval);
+      if (interval) clearInterval(interval);
     };
   }, [params.id]);
 
