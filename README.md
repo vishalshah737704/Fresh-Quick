@@ -120,11 +120,15 @@ geolocation-assisted location ping, closed-restaurant menu-page guard,
 and several smaller polish items. A second redesign pass (the
 DoorDash-layout rebuild) then restructured the customer surface's layout
 — sidebar nav, fuller header, cuisine-grouped carousel rows — on top of
-the earlier color/brand redesign. See [MEMORY.md](MEMORY.md) for the
-phase-by-phase build log, including every bug found and fixed along the
-way, and its "Known deferred items" section for what's still
-intentionally left for later. The React Native mobile app is a planned
-follow-on, not started.
+the earlier color/brand redesign. A third redesign — an Uber Eats-style
+overhaul, 6 pieces (design tokens → home/feed → restaurant page → item
+customization → cart → checkout) — is now in progress on top of both
+prior redesigns; piece 1 (design tokens: near-black/lime-green/cream
+palette, Inter + Poppins fonts, 8px card radius) is merged, pieces 2-6
+not started. See [MEMORY.md](MEMORY.md) for the phase-by-phase build
+log, including every bug found and fixed along the way, and its "Known
+deferred items" section for what's still intentionally left for later.
+The React Native mobile app is a planned follow-on, not started.
 
 ## Local service URLs
 - App: http://localhost:3000

@@ -15,16 +15,26 @@ Build proceeds one phase at a time (8 phases total) — see spec §7 for the
 full breakdown. Each phase gets its own brainstorm → spec-check → plan →
 subagent-driven-development cycle, ends with a merge to `main`.
 
+**Uber Eats-style redesign (post-8-phase, in progress):** a separate
+6-piece redesign bringing the customer surface toward Uber Eats' web
+ordering flow — design tokens (piece 1, done) → home/feed rebuild →
+restaurant page rebuild → item customization (new DB schema) → cart
+redesign (slide-out panel) → checkout polish. Each piece gets its own
+spec/plan/build/merge cycle, same as the 8 phases. See MEMORY.md for
+per-piece status and `docs/superpowers/specs/2026-09-25-uber-eats-design-refresh-design.md`
+for piece 1's full design (colors, fonts, shape rules every later piece
+inherits).
+
 ## Stack
 
 - Next.js (App Router, TypeScript) + Tailwind CSS
 - Supabase (Postgres + Auth + Storage + Realtime), **self-hosted locally via
   Docker** — no cloud/hosted Supabase project, ever (see spec §2)
 - n8n for cross-actor automation — `/api/internal/*` routes and
-  `n8n/workflows/*.json` exist (Phase 7), but no n8n instance was
-  available to build against, so the workflow JSON is untested reference
-  material, not live automation. See MEMORY.md's Phase 7 entry and
-  `docs/n8n-webhook-setup.md` before treating it as working.
+  `n8n/workflows/*.json` exist (Phase 7), verified end-to-end against a
+  real local n8n instance as of 2026-09-25 (see MEMORY.md's Phase 7
+  addendum and `docs/n8n-webhook-setup.md` for the confirmed-working
+  docker run command and per-workflow results).
 - Google Maps JS SDK for address picking + live tracking (not wired yet —
   no API key available as of Phase 2; address picker is a manual lat/lng
   stub in the meantime, swappable later)
@@ -201,6 +211,21 @@ See [MEMORY.md](MEMORY.md) for phase-by-phase progress and decisions.
   variable is correctly set — n8n blocks node-level env access by
   default. See `docs/n8n-webhook-setup.md` section 1 for the confirmed-
   working docker run command with both fixes applied.
+
+- **`.font-heading` (in `app/globals.css`, Poppins weight 300 for
+  hero/section headings) is deliberately defined outside any Tailwind
+  `@layer` block** — this was to avoid colliding with a Tailwind-auto-
+  generated utility of the same name (it isn't registered as a `--font-*`
+  theme token, so no such utility exists, but the plain-CSS placement was
+  also chosen so unlayered CSS reliably wins the cascade). The tradeoff:
+  if a later redesign piece pairs `font-heading` with a Tailwind weight
+  utility (e.g. `className="font-heading font-semibold"`), the unlayered
+  `.font-heading` rule's own `font-weight: 300` silently wins regardless
+  of utility order — found during piece 1's final review, not yet hit in
+  practice since the only current usage (`HeroSearch`) pairs no weight
+  class. If a later piece needs to override the weight, wrap the rule in
+  `@layer utilities { ... }` or convert it to Tailwind v4's `@utility
+  font-heading { ... }` syntax so normal utility-ordering rules apply.
 
 ## Standing phrase: "Commit Work" — NON-NEGOTIABLE
 

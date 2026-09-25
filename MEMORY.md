@@ -396,6 +396,29 @@ Claude at the start of work in this repo per project CLAUDE.md.
   existing 3s poll, no page reload) rather than just static screenshots.
   Plan: docs/superpowers/plans/2026-09-25-customer-flow-doordash-polish.md
   Spec: docs/superpowers/specs/2026-09-25-customer-flow-doordash-polish-design.md
+- **Uber Eats-style redesign — Piece 1: Design token refresh**: ✅
+  Complete, merged to `main`. First of a 6-piece redesign (design tokens →
+  home/feed rebuild → restaurant page rebuild → item customization → cart
+  redesign → checkout polish) bringing the customer surface toward Uber
+  Eats' web ordering flow, based on live Playwright research of
+  `ubereats.com` and two refero.design style references (`Uber` +
+  `sweetgreen`, blended per a visual-companion preview Vishal picked from).
+  This piece: all 6 brand tokens swapped (near-black ink/primary
+  `#12140f`, toned green accent `#b6e02e`, cream background `#faf9f4`),
+  fonts swapped from Geist to Inter (body/UI) + Poppins weight 300
+  (hero/section headings only, via a new `.font-heading` class), and
+  every card's border-radius normalized to 8px with shadows removed from
+  static cards (kept only on `RestaurantCard`'s hover state and on the two
+  genuine overlay/chrome elements — `CartPanel`, `CartConflictDialog`).
+  Built in an isolated worktree, verified via `npm run build` +
+  Playwright screenshots across all 4 role surfaces at desktop and 390px
+  width, fresh-reviewer-approved with zero findings. One forward note for
+  piece 2+: `.font-heading` sits outside any Tailwind cascade layer, so
+  pairing it with a weight utility later will silently lose to its own
+  `font-weight: 300` — wrap in `@layer utilities` or use `@utility` if a
+  later piece needs to override the weight.
+  Plan: docs/superpowers/plans/2026-09-25-uber-eats-design-refresh.md
+  Spec: docs/superpowers/specs/2026-09-25-uber-eats-design-refresh-design.md
 - **Mobile app (React Native + Expo, sub-project)**: not started — begins
   after the customer-flow DoorDash-style polish.
 
