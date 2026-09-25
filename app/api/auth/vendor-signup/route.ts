@@ -1,15 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase-server";
+import { validateSignupFields } from "@/lib/signup-validation";
 
 export async function POST(request: NextRequest) {
-  const { email, password, fullName, restaurantName, cuisineTags, lat, lng } =
-    await request.json();
+  const body = await request.json();
+  const { email, password, fullName, restaurantName, cuisineTags, lat, lng } = body;
 
-  if (!email || !password || !fullName || !restaurantName) {
-    return NextResponse.json(
-      { error: "email, password, fullName, and restaurantName are required" },
-      { status: 400 }
-    );
+  const validationError = validateSignupFields(body, [
+    "email",
+    "password",
+    "fullName",
+    "restaurantName",
+  ]);
+  if (validationError) {
+    return NextResponse.json({ error: validationError }, { status: 400 });
   }
   if (
     typeof lat !== "number" || !Number.isFinite(lat) ||

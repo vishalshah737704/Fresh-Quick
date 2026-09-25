@@ -1,12 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase-server";
+import { validateSignupFields, isValidVehicleType } from "@/lib/signup-validation";
 
 export async function POST(request: NextRequest) {
-  const { email, password, fullName, vehicleType } = await request.json();
+  const body = await request.json();
+  const { email, password, fullName, vehicleType } = body;
 
-  if (!email || !password || !fullName) {
+  const validationError = validateSignupFields(body, ["email", "password", "fullName"]);
+  if (validationError) {
+    return NextResponse.json({ error: validationError }, { status: 400 });
+  }
+  if (vehicleType !== undefined && vehicleType !== null && !isValidVehicleType(vehicleType)) {
     return NextResponse.json(
-      { error: "email, password, and fullName are required" },
+      { error: "vehicleType must be one of: bike, scooter, bicycle, car" },
       { status: 400 }
     );
   }
