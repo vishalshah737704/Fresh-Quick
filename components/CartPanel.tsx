@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useCart } from "@/lib/cart-store";
 
 export function CartPanel() {
@@ -60,6 +61,12 @@ export function CartPanel() {
           >
             Clear cart
           </button>
+          <Link
+            href="/customer/checkout"
+            className="mt-2 block rounded bg-brand-primary px-3 py-2 text-center text-sm text-white"
+          >
+            Checkout
+          </Link>
         </div>
       )}
     </div>
