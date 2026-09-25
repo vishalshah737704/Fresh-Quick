@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 
 type Restaurant = {
   id: string;
@@ -18,7 +19,7 @@ export function RestaurantCard({
   distanceKm: number;
 }) {
   return (
-    <a
+    <Link
       href={`/customer/restaurants/${restaurant.id}`}
       className="block overflow-hidden rounded-xl border border-brand-ink-muted/10 bg-brand-surface shadow-sm transition-shadow hover:shadow-md"
     >
@@ -48,6 +49,6 @@ export function RestaurantCard({
           {restaurant.avg_prep_minutes} min
         </span>
       </div>
-    </a>
+    </Link>
   );
 }
