@@ -73,11 +73,15 @@ export default function CustomerHomePage() {
     .map((r) => ({ r, distanceKm: haversineDistanceKm(lat, lng, r.lat, r.lng) }))
     .sort((a, b) => a.distanceKm - b.distanceKm);
 
+  const labelBySlug = new Map(cuisines.map((c) => [c.slug, c.label.toLowerCase()]));
+
   const query = searchQuery.trim().toLowerCase();
   const matchesQuery = (r: Restaurant) =>
     query === "" ||
     r.name.toLowerCase().includes(query) ||
-    r.cuisine_tags.some((tag) => tag.toLowerCase().includes(query));
+    r.cuisine_tags.some(
+      (tag) => tag.toLowerCase().includes(query) || (labelBySlug.get(tag) ?? "").includes(query)
+    );
 
   const searched = withDistance.filter(({ r }) => matchesQuery(r));
 
@@ -93,6 +97,15 @@ export default function CustomerHomePage() {
       .filter(({ r }) => r.cuisine_tags.includes(c.slug))
       .map(({ r, distanceKm }) => ({ restaurant: r, distanceKm })),
   }));
+
+  // Restaurants with no cuisine tag matching any known taxonomy slug (e.g. a
+  // freshly signed-up vendor with cuisine_tags: []) or a failed/empty
+  // cuisine_taxonomy fetch must never silently vanish from the carousel
+  // view — fall back to the flat grid whenever any searched restaurant
+  // isn't represented in a single carousel row.
+  const groupedIds = new Set(byCuisine.flatMap(({ restaurants }) => restaurants.map(({ restaurant }) => restaurant.id)));
+  const hasUngroupedRestaurant = searched.some(({ r }) => !groupedIds.has(r.id));
+  const useCarouselView = cuisines.length > 0 && !hasUngroupedRestaurant;
 
   return (
     <div className="flex flex-col gap-6">
@@ -114,11 +127,19 @@ export default function CustomerHomePage() {
           </div>
         )
       ) : searched.length === 0 ? (
-        <p className="text-brand-ink-muted">No restaurants match &quot;{searchQuery}&quot;.</p>
-      ) : (
+        <p className="text-brand-ink-muted">
+          No restaurants match &quot;{searchQuery}&quot;.
+        </p>
+      ) : useCarouselView ? (
         <div className="flex flex-col gap-8">
           {byCuisine.map(({ cuisine, restaurants: rows }) => (
             <CuisineCarouselRow key={cuisine.slug} label={cuisine.label} restaurants={rows} />
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {searched.map(({ r, distanceKm }) => (
+            <RestaurantCard key={r.id} restaurant={r} distanceKm={distanceKm} />
           ))}
         </div>
       )}

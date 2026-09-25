@@ -12,7 +12,7 @@ const ITEMS = [
     match: (p: string) => p.startsWith("/customer/restaurants"),
   },
   {
-    href: "/customer/orders",
+    href: "/customer/login",
     label: "Orders",
     icon: "🧾",
     match: (p: string) => p.startsWith("/customer/orders"),
