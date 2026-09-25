@@ -144,18 +144,19 @@ Claude at the start of work in this repo per project CLAUDE.md.
 
 ## Known deferred items (carried from phase reviews, not yet addressed)
 
-- **`menu_items` still has three unused vendor RLS write policies from
-  Phase 4** (`vendor_can_insert/update/delete_own_menu_items`, migration
-  7) that let a vendor bypass their own API route's validation via direct
-  PostgREST — e.g. setting an image URL that skips the allowed-host
-  check, or a price of 0.001 that skips the `price > 0`/integer-paise
-  rounding. Confirmed live during Phase 6's full-migration audit (a
-  rolled-back transaction proved the bypass). Damage is scoped to the
-  vendor's own restaurant only, so it wasn't treated as a Phase 6
-  blocker, but it's the same class of bug Phase 4's own final review
-  fixed for `orders`/`restaurants` and missed for `menu_items` — should
-  be closed in its own small migration (drop the three policies; every
-  menu-item write already goes through `/api/vendor/menu-items/*`).
+- ~~`menu_items` unused vendor RLS write policies~~ — **closed**, see
+  `supabase/migrations/00000000000010_close_menu_items_rls_bypass.sql`.
+  Found live during Phase 6's full-migration audit (Phase 4's
+  `vendor_can_insert/update/delete_own_menu_items` policies let a vendor
+  bypass their API route's validation via direct PostgREST — e.g. a
+  price of 0.001, or skipping the allowed-image-host check), fixed
+  immediately after Phase 6 merged rather than left deferred again, since
+  it was the third instance this session of the same "leftover RLS write
+  policy on a service-role-only table" bug class (Phase 4: orders/
+  restaurants; Phase 5: delivery_partners; this: menu_items). Verified
+  live post-fix: the legit `/api/vendor/menu-items` route still works,
+  a direct PostgREST write with the vendor's own token now silently
+  affects 0 rows (RLS-blocked) instead of succeeding.
 - **`reviews` table still has its original Phase 1 permissive
   `stub_allow_authenticated_read` policy** (`using (true)` — anyone,
   including anon, can read every review row with its `customer_id` and
