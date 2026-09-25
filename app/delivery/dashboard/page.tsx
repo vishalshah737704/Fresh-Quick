@@ -164,7 +164,7 @@ export default function DeliveryDashboardPage() {
         {available.map((o) => (
           <li key={o.id} className="flex items-center justify-between rounded border p-2">
             <span>
-              #{o.id.slice(0, 8)} · {o.restaurants?.name ?? "Restaurant"} · ₹{o.total}
+              #{o.id.slice(0, 8)} · {o.restaurants?.name ?? "Restaurant"} · ₹{o.total.toFixed(2)}
             </span>
             <button
               onClick={() => claim(o.id)}
@@ -183,7 +183,7 @@ export default function DeliveryDashboardPage() {
           <li key={o.id} className="flex flex-col gap-1 rounded border p-2">
             <div className="flex items-center justify-between">
               <span>
-                #{o.id.slice(0, 8)} · {o.status} · ₹{o.total}
+                #{o.id.slice(0, 8)} · {o.status} · ₹{o.total.toFixed(2)}
               </span>
               <div className="flex gap-2">
                 {(o.status === "assigned" || o.status === "picked_up") && (

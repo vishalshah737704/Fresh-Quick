@@ -130,7 +130,7 @@ export default function VendorMenuPage() {
             <div>
               <p className="font-medium">{item.name}</p>
               <p className="text-sm text-gray-500">
-                ₹{item.price} · {item.is_available ? "Available" : "Unavailable"}
+                ₹{item.price.toFixed(2)} · {item.is_available ? "Available" : "Unavailable"}
               </p>
             </div>
             <div className="flex gap-2">

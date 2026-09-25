@@ -96,7 +96,7 @@ export default function AdminDashboardPage() {
         {orders.map((o) => (
           <li key={o.id} className="flex items-center justify-between gap-2">
             <span>
-              #{o.id.slice(0, 8)} · {o.restaurants?.name ?? "Restaurant"} · {o.status} · ₹{o.total}
+              #{o.id.slice(0, 8)} · {o.restaurants?.name ?? "Restaurant"} · {o.status} · ₹{o.total.toFixed(2)}
             </span>
             {REASSIGNABLE_STATUSES.includes(o.status) && (
               <span className="flex items-center gap-1">

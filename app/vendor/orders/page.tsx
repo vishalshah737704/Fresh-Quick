@@ -82,7 +82,7 @@ export default function VendorOrdersPage() {
                 </li>
               ))}
             </ul>
-            <p className="mt-1 text-sm font-medium">₹{order.total}</p>
+            <p className="mt-1 text-sm font-medium">₹{order.total.toFixed(2)}</p>
           </li>
         ))}
         {orders.length === 0 && <p className="text-sm text-gray-500">No orders yet.</p>}
