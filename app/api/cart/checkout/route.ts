@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase-server";
-import { DELIVERY_FEE_RUPEES, PAYMENT_SUCCESS_RATE } from "@/lib/order-constants";
+import { PAYMENT_SUCCESS_RATE } from "@/lib/order-constants";
 
 type CheckoutRequestItem = { menuItemId: string; quantity: number };
 
@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
 
   const { data: restaurant, error: restaurantError } = await supabaseServer
     .from("restaurants")
-    .select("id, is_open, is_suspended")
+    .select("id, is_open, is_suspended, delivery_fee_paise")
     .eq("id", restaurantId)
     .single();
 
@@ -99,7 +99,7 @@ export async function POST(request: NextRequest) {
     (sum, item) => sum + Math.round((priceById.get(item.menuItemId) ?? 0) * 100) * item.quantity,
     0
   );
-  const deliveryFeePaise = Math.round(DELIVERY_FEE_RUPEES * 100);
+  const deliveryFeePaise = restaurant.delivery_fee_paise;
   const totalPaise = subtotalPaise + deliveryFeePaise;
   const subtotal = subtotalPaise / 100;
   const total = totalPaise / 100;
@@ -134,7 +134,7 @@ export async function POST(request: NextRequest) {
     p_address_lng: deliveryAddress.lng,
     p_restaurant_id: restaurantId,
     p_subtotal: subtotal,
-    p_delivery_fee: DELIVERY_FEE_RUPEES,
+    p_delivery_fee: deliveryFeePaise / 100,
     p_total: total,
     p_items: orderItemsPayload,
     p_payment_method: paymentMethod,

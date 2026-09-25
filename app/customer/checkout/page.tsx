@@ -1,12 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/lib/cart-store";
 import { useAddress } from "@/lib/address-store";
 import { useSession } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
-import { DELIVERY_FEE_RUPEES } from "@/lib/order-constants";
 
 const PAYMENT_METHODS = [
   { value: "mock_card", label: "Mock Card" },
@@ -24,6 +23,24 @@ export default function CheckoutPage() {
     useState<(typeof PAYMENT_METHODS)[number]["value"]>("mock_card");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [deliveryFeeRupees, setDeliveryFeeRupees] = useState<number | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadFee() {
+      if (!restaurantId) return;
+      const { data } = await supabase
+        .from("restaurants")
+        .select("delivery_fee_paise")
+        .eq("id", restaurantId)
+        .single();
+      if (!cancelled) setDeliveryFeeRupees(data ? data.delivery_fee_paise / 100 : null);
+    }
+    loadFee();
+    return () => {
+      cancelled = true;
+    };
+  }, [restaurantId]);
 
   if (sessionLoading) {
     return <p className="text-gray-500">Loading…</p>;
@@ -38,7 +55,11 @@ export default function CheckoutPage() {
     return <p className="text-gray-500">Your cart is empty.</p>;
   }
 
-  const total = subtotal + DELIVERY_FEE_RUPEES;
+  if (deliveryFeeRupees === null) {
+    return <p className="text-gray-500">Loading…</p>;
+  }
+
+  const total = subtotal + deliveryFeeRupees;
 
   async function handleSubmit() {
     setSubmitting(true);
@@ -123,7 +144,7 @@ export default function CheckoutPage() {
             </h2>
             <div className="flex flex-col gap-1 border-t border-brand-ink-muted/10 pt-3 text-sm text-brand-ink-muted">
               <p>Subtotal: ₹{subtotal.toFixed(2)}</p>
-              <p>Delivery fee: ₹{DELIVERY_FEE_RUPEES.toFixed(2)}</p>
+              <p>Delivery fee: ₹{deliveryFeeRupees.toFixed(2)}</p>
               <p className="font-semibold text-brand-ink">Total: ₹{total.toFixed(2)}</p>
             </div>
 
