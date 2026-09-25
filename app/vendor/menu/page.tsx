@@ -28,6 +28,14 @@ export default function VendorMenuPage() {
   const [imageUrl, setImageUrl] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editDescription, setEditDescription] = useState("");
+  const [editCategory, setEditCategory] = useState("");
+  const [editIsVeg, setEditIsVeg] = useState(false);
+  const [editPrice, setEditPrice] = useState("");
+  const [editImageUrl, setEditImageUrl] = useState("");
+  const [editError, setEditError] = useState<string | null>(null);
 
   async function loadItems() {
     const res = await fetch("/api/vendor/menu-items", { headers: await authHeader() });
@@ -74,6 +82,51 @@ export default function VendorMenuPage() {
       setActionError(body?.error ?? "Failed to update item");
       return;
     }
+    await loadItems();
+  }
+
+  function startEdit(item: MenuItem) {
+    setEditError(null);
+    setEditingId(item.id);
+    setEditName(item.name);
+    setEditDescription(item.description ?? "");
+    setEditCategory(item.category ?? "");
+    setEditIsVeg(item.is_veg);
+    setEditPrice(String(item.price));
+    setEditImageUrl(item.image_url ?? "");
+  }
+
+  function cancelEdit() {
+    setEditingId(null);
+    setEditError(null);
+  }
+
+  async function saveEdit(item: MenuItem) {
+    setEditError(null);
+    const priceNumber = Number(editPrice);
+    if (!Number.isFinite(priceNumber) || priceNumber <= 0) {
+      setEditError("Price must be a positive number");
+      return;
+    }
+    const update: Record<string, unknown> = {};
+    if (editName !== item.name) update.name = editName;
+    if (editDescription !== (item.description ?? "")) update.description = editDescription;
+    if (editCategory !== (item.category ?? "")) update.category = editCategory;
+    if (editIsVeg !== item.is_veg) update.isVeg = editIsVeg;
+    if (editImageUrl !== (item.image_url ?? "")) update.imageUrl = editImageUrl;
+    if (priceNumber !== item.price) update.price = priceNumber;
+
+    const res = await fetch(`/api/vendor/menu-items/${item.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...(await authHeader()) },
+      body: JSON.stringify(update),
+    });
+    if (!res.ok) {
+      const body = await res.json().catch(() => null);
+      setEditError(body?.error ?? "Failed to update item");
+      return;
+    }
+    setEditingId(null);
     await loadItems();
   }
 
@@ -126,27 +179,85 @@ export default function VendorMenuPage() {
       </div>
       <ul className="flex flex-col gap-2">
         {items.map((item) => (
-          <li key={item.id} className="flex items-center justify-between rounded border p-2">
-            <div>
-              <p className="font-medium">{item.name}</p>
-              <p className="text-sm text-gray-500">
-                ₹{item.price.toFixed(2)} · {item.is_available ? "Available" : "Unavailable"}
-              </p>
+          <li key={item.id} className="flex flex-col gap-2 rounded border p-2">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-medium">{item.name}</p>
+                <p className="text-sm text-gray-500">
+                  ₹{item.price.toFixed(2)} · {item.is_available ? "Available" : "Unavailable"}
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => (editingId === item.id ? cancelEdit() : startEdit(item))}
+                  className="rounded bg-gray-100 px-2 py-1 text-xs"
+                >
+                  {editingId === item.id ? "Cancel" : "Edit"}
+                </button>
+                <button
+                  onClick={() => toggleAvailable(item)}
+                  className="rounded bg-gray-100 px-2 py-1 text-xs"
+                >
+                  {item.is_available ? "Mark unavailable" : "Mark available"}
+                </button>
+                <button
+                  onClick={() => deleteItem(item.id)}
+                  className="rounded bg-red-100 px-2 py-1 text-xs text-red-700"
+                >
+                  Delete
+                </button>
+              </div>
             </div>
-            <div className="flex gap-2">
-              <button
-                onClick={() => toggleAvailable(item)}
-                className="rounded bg-gray-100 px-2 py-1 text-xs"
-              >
-                {item.is_available ? "Mark unavailable" : "Mark available"}
-              </button>
-              <button
-                onClick={() => deleteItem(item.id)}
-                className="rounded bg-red-100 px-2 py-1 text-xs text-red-700"
-              >
-                Delete
-              </button>
-            </div>
+            {editingId === item.id && (
+              <div className="flex flex-col gap-2 rounded border bg-gray-50 p-2">
+                <input
+                  className="rounded border px-2 py-1"
+                  placeholder="Name"
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                />
+                <input
+                  className="rounded border px-2 py-1"
+                  placeholder="Description"
+                  value={editDescription}
+                  onChange={(e) => setEditDescription(e.target.value)}
+                />
+                <input
+                  className="rounded border px-2 py-1"
+                  placeholder="Category"
+                  value={editCategory}
+                  onChange={(e) => setEditCategory(e.target.value)}
+                />
+                <label className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={editIsVeg}
+                    onChange={(e) => setEditIsVeg(e.target.checked)}
+                  />
+                  Veg
+                </label>
+                <input
+                  className="rounded border px-2 py-1"
+                  placeholder="Price (rupees)"
+                  type="number"
+                  value={editPrice}
+                  onChange={(e) => setEditPrice(e.target.value)}
+                />
+                <input
+                  className="rounded border px-2 py-1"
+                  placeholder="Image URL"
+                  value={editImageUrl}
+                  onChange={(e) => setEditImageUrl(e.target.value)}
+                />
+                {editError && <p className="text-sm text-red-600">{editError}</p>}
+                <button
+                  onClick={() => saveEdit(item)}
+                  className="rounded bg-brand-primary px-3 py-2 text-sm text-white"
+                >
+                  Save
+                </button>
+              </div>
+            )}
           </li>
         ))}
       </ul>
