@@ -66,6 +66,21 @@ about.
   "access to env vars denied" the moment it runs, even though the
   variable is correctly set in the container. Same class of bug as
   `SUPABASE_URL` above — invisible until a node actually executes.
+- **A Postgres-side `app.n8n_internal_secret` setting**, read by the
+  Database Webhook triggers in section 2 — separate from n8n's own
+  `N8N_INTERNAL_SECRET` env var, but must be set to the same value. Set
+  it once per local Postgres instance (not committed to git — this is
+  deliberately outside the migration, see section 2):
+  ```
+  docker exec -i supabase_db_<your project_id> psql -U supabase_admin -d postgres \
+    -c "alter database postgres set app.n8n_internal_secret = '<same value as N8N_INTERNAL_SECRET>';"
+  ```
+  (`<your project_id>` is the `project_id` in `supabase/config.toml`, and
+  the container name follows `supabase_db_<project_id>`.) `supabase_admin`
+  is used because the default `postgres` role in the local stack isn't a
+  real Postgres superuser and can't `ALTER DATABASE ... SET` a custom
+  GUC. Needs a fresh Postgres connection to take effect for that session
+  — already-open connections keep the old value.
 
 A confirmed-working local Docker Desktop run command (Windows, n8n and the
 Next.js app on the host, Supabase self-hosted via `npx supabase start`) —
@@ -95,17 +110,23 @@ declaratively** (that framing in earlier drafts of this doc was
 aspirational, not accurate) — the real mechanism, and what this project
 uses, is a SQL migration
 (`supabase/migrations/00000000000015_n8n_webhooks.sql`) that enables the
-`pg_net` extension and creates one `AFTER INSERT`/`AFTER UPDATE OF status`
-trigger per row below, each calling
-`supabase_functions.http_request(...)` with the target n8n webhook URL and
-the `X-Internal-Secret` header baked in. This is the same mechanism
-Studio's Database → Webhooks UI generates under the hood, just tracked in
-a migration so it survives `supabase db reset` instead of living only in
-the Studio-managed `supabase_functions.hooks` table. If you'd rather use
-Studio's UI directly (Dashboard → Database → Webhooks) that also works and
-produces the same effect — the migration is just this project's preferred
-persisted form. Point either at your n8n instance's webhook URLs (the
-`path` field in each workflow JSON, e.g.
+`pg_net` extension, defines a `public.n8n_notify()` trigger function, and
+creates one `AFTER INSERT`/`AFTER UPDATE OF status` trigger per row below
+that calls it with the target n8n webhook URL. **No secret value is
+hardcoded in the migration file** — `n8n_notify()` reads the shared
+secret at request time from `current_setting('app.n8n_internal_secret',
+true)`, a Postgres setting you set locally per section 1 (deliberately
+outside the migration, so nothing secret-shaped ever lands in git — an
+earlier version of this migration hardcoded the secret string directly
+and it got flagged as a leaked credential the moment it was pushed).
+This is functionally the same outcome Studio's Database → Webhooks UI
+produces (it stores webhook config, including headers, in the
+Studio-managed `supabase_functions.hooks` table instead) — using a
+migration here just makes the wiring survive `supabase db reset` and
+keeps it in git as documented infrastructure. If you use Studio's UI
+instead, you lose that persistence but gain a form instead of SQL. Point
+either at your n8n instance's webhook URLs (the `path` field in each
+workflow JSON, e.g.
 `https://<n8n-host>/webhook/foodhub/order-placed`):
 
 | Table     | Events        | n8n webhook path                          | Workflow |
