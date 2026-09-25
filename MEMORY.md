@@ -175,6 +175,26 @@ Claude at the start of work in this repo per project CLAUDE.md.
   Plan: (none — built directly given explicitly-untested nature, see
   spec's own "Ruling" section on scope)
   Spec: docs/superpowers/specs/2026-09-25-phase7-n8n-automation-design.md
+  **Update (2026-09-25, later session) — now live-verified end-to-end**:
+  the "no n8n available" gap above is closed. A real local n8n instance
+  was started in Docker, all 5 workflows imported and published, and
+  Supabase Database Webhooks wired via a new migration
+  (`supabase/migrations/00000000000015_n8n_webhooks.sql` — enables
+  `pg_net`, creates one trigger per row in the setup doc's table calling
+  `supabase_functions.http_request`; chosen over `supabase/config.toml`
+  because the local CLI doesn't actually support declaring webhooks there
+  despite this doc's earlier wording). All 5 workflows driven end-to-end
+  through the real UI (Playwright) and direct status updates: 01, 03, 04,
+  05 all succeeded; 02 fires correctly but stays expected-inert (see
+  above, confirmed live via the "Payment is not pending" guard message).
+  **Two real environment-variable bugs found and fixed, neither visible
+  from the original hand-review**: n8n blocks `{{$env.X}}` node access by
+  default (needs `N8N_BLOCK_ENV_ACCESS_IN_NODE=false`), and `SUPABASE_URL`
+  pointed at `127.0.0.1` is unreachable from inside the n8n container —
+  same class of bug already known for `APP_BASE_URL`, needs
+  `host.docker.internal` too. Both fixed in `docs/n8n-webhook-setup.md`'s
+  confirmed-working docker run command. See that doc's section 6 for full
+  per-workflow verified results.
 - **Phase 8 — Polish/testing**: ✅ Complete, merged to `main`. Smoke-tested
   all four surfaces (customer, vendor, delivery, admin) at a 390×844
   mobile viewport via Playwright — no console errors found on any of the

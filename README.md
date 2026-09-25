@@ -87,24 +87,30 @@ an order in `assigned` or `picked_up` status, use the reassign dropdown
 (lists currently-online delivery partners) to move it to a different
 partner.
 
-## n8n automation (reference only, not wired up)
+## n8n automation (verified end-to-end 2026-09-25)
 
 `/api/internal/*` routes exist for n8n to call (shared-secret
 `X-Internal-Secret` header, `N8N_INTERNAL_SECRET` in `.env.local`) and
 `n8n/workflows/*.json` has one exported workflow per spec's automation
-list — but no n8n instance was available while building this, so the
-workflow JSON has never been imported into or run against a real n8n.
-See `docs/n8n-webhook-setup.md` before attempting to wire it up for real.
-Everything else in this README (checkout, vendor, delivery, admin flows)
-works today without n8n — those synchronous paths stay as the tested
-demo behavior regardless of whether n8n is ever connected.
+list. As of 2026-09-25 all 5 have been imported into a real local n8n
+instance, wired to the local Supabase stack via
+`supabase/migrations/00000000000015_n8n_webhooks.sql`, and driven
+end-to-end through the real app UI — see `docs/n8n-webhook-setup.md`
+section 6 for per-workflow results and section 1 for the confirmed-
+working docker run command (two env-var gotchas fixed there:
+`SUPABASE_URL` needs `host.docker.internal`, and
+`N8N_BLOCK_ENV_ACCESS_IN_NODE=false` is required). Everything else in
+this README (checkout, vendor, delivery, admin flows) still works today
+without n8n running — those synchronous paths stay as the tested demo
+behavior regardless of whether n8n is connected.
 
 ## Status
 
 All 8 phases of the web platform (spec §7) are built: customer browse/
 cart/checkout, vendor panel, delivery partner app, admin dashboard, an
-n8n-facing internal API (workflows themselves unverified — no n8n
-instance was available while building them), and a Phase 8 polish pass
+n8n-facing internal API and 5 n8n workflows (all verified end-to-end
+against a real local n8n instance as of 2026-09-25 — see the n8n section
+above), and a Phase 8 polish pass
 (loading/error/empty states audited across all four surfaces at a 390px
 mobile viewport, no console errors found on any of the eight pages
 checked). A post-Phase-8 deferred-items triage then closed most of the

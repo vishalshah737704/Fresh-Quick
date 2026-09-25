@@ -19,6 +19,8 @@ md_version/
 # next.js
 /.next/
 /out/
+# auto-written by `next dev` on every run — not project content
+/AGENTS.md
 
 # production
 /build

@@ -186,6 +186,21 @@ See [MEMORY.md](MEMORY.md) for phase-by-phase progress and decisions.
   plan's Task 1 by temporarily deleting one key and confirming the build
   fails) — cheaper and more durable than a runtime fallback or a
   code-review checklist item.
+- **Every URL an n8n container node calls back into this machine (the
+  app, Supabase, or anything else self-hosted) needs `host.docker.internal`,
+  not `127.0.0.1`/`localhost` — this isn't unique to `APP_BASE_URL`.**
+  Wiring n8n live for the first time (2026-09-25) found `SUPABASE_URL`
+  set to `http://127.0.0.1:54321` in the n8n container's environment,
+  which is unreachable from inside that container (it resolves to the
+  container itself) and broke workflow 04's restaurant lat/lng lookup
+  with "The service refused the connection" — silent on JSON/config
+  review, only surfaces once the node actually executes. Also needs
+  `N8N_BLOCK_ENV_ACCESS_IN_NODE=false` in n8n's environment, or every
+  node reading `{{$env.X}}` (the internal-secret header, the base URLs)
+  fails with "access to env vars denied" regardless of whether the
+  variable is correctly set — n8n blocks node-level env access by
+  default. See `docs/n8n-webhook-setup.md` section 1 for the confirmed-
+  working docker run command with both fixes applied.
 
 ## Standing phrase: "Commit Work" — NON-NEGOTIABLE
 

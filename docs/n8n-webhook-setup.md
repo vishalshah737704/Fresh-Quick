@@ -1,4 +1,4 @@
-# n8n Webhook Setup — Reviewed, Not Run Against a Live Instance
+# n8n Webhook Setup — Verified End-to-End (2026-09-25)
 
 This document and the workflow JSON in `n8n/workflows/*.json` were written
 by hand to n8n's documented export/config shape, and were reviewed against
@@ -6,11 +6,12 @@ n8n's node-parameter documentation as part of the Fresh & Quick redesign
 (the previously-known bugs listed in MEMORY.md's Phase 7 entry — IF-node
 version mismatches, a legacy-function-node API/parameter mismatch, an
 array-indexing bug, a missing empty-candidates guard, missing `webhookId`
-fields — are fixed as of that pass). **Neither the JSON nor this guide has
-been imported into or executed against a real n8n instance** — there is no
-n8n available in the environment that built this. Treat everything here as
-a carefully-reviewed starting point for wiring real automation, not
-verified behavior. See
+fields — are fixed as of that pass). **All 5 workflows have since been
+imported into a real local n8n instance, wired to a live local Supabase
+stack via the migration in section 2, and driven end-to-end through the
+actual customer/vendor/delivery UI** (2026-09-25 session) — see section 5's
+per-workflow notes for what was actually observed, and section 1 for two
+real environment-variable bugs found and fixed during that pass. See
 `docs/superpowers/specs/2026-09-25-phase7-n8n-automation-design.md` for the
 full design and what stays on the tested synchronous path in the meantime
 (checkout payment, vendor status updates, delivery self-claim, and the
@@ -48,14 +49,64 @@ about.
   reachable from n8n (see above).
 - `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` set in n8n's environment
   for workflow 4's direct Supabase REST read of a restaurant's lat/lng.
+  **`SUPABASE_URL` needs the same `host.docker.internal` treatment as
+  `APP_BASE_URL` above** — if n8n runs in Docker and the local Supabase
+  stack runs on the host (the normal case per this project's Docker
+  setup), `http://127.0.0.1:54321` or `http://localhost:54321` refers to
+  the n8n container itself and the "GET restaurant lat/lng" node in
+  workflow 4 fails with "The service refused the connection" the first
+  time it actually runs. Use `http://host.docker.internal:54321` instead.
+  This bug survived the original hand-review because it only shows up
+  once a node actually executes against a live instance, not on JSON
+  inspection.
+- **`N8N_BLOCK_ENV_ACCESS_IN_NODE=false`** in n8n's environment. n8n
+  blocks node-level `{{$env.X}}` access by default; without this flag,
+  every node that reads `N8N_INTERNAL_SECRET` or `APP_BASE_URL` via
+  `{{$env...}}` (workflows 2 and 4's HTTP Request nodes) fails with
+  "access to env vars denied" the moment it runs, even though the
+  variable is correctly set in the container. Same class of bug as
+  `SUPABASE_URL` above — invisible until a node actually executes.
+
+A confirmed-working local Docker Desktop run command (Windows, n8n and the
+Next.js app on the host, Supabase self-hosted via `npx supabase start`) —
+verified end-to-end in the 2026-09-25 session:
+
+```
+docker run -d --rm --name n8n -p 5678:5678 \
+  -v n8n_data:/home/node/.n8n \
+  -e N8N_INTERNAL_SECRET=<same value as .env.local's N8N_INTERNAL_SECRET> \
+  -e APP_BASE_URL=http://host.docker.internal:3000 \
+  -e SUPABASE_URL=http://host.docker.internal:54321 \
+  -e SUPABASE_SERVICE_ROLE_KEY=<local stack's printed service_role key> \
+  -e N8N_BLOCK_ENV_ACCESS_IN_NODE=false \
+  n8nio/n8n
+```
+
+(`-d --rm` runs it detached so it survives the calling shell exiting, still
+auto-removed on `docker stop`; swap for `-it --rm` if you want it
+foreground/interactive instead.)
 
 ## 2. Supabase Database Webhook configuration
 
-Supabase's Database Webhooks (Dashboard → Database → Webhooks, or via the
-local stack's `supabase/config.toml`) fire an HTTP POST to n8n's webhook
-URL whenever a row is inserted/updated on a chosen table. Configure these,
-pointing at your n8n instance's webhook URLs (the `path` field in each
-workflow JSON, e.g. `https://<n8n-host>/webhook/foodhub/order-placed`):
+Supabase Database Webhooks fire an HTTP POST to n8n's webhook URL whenever
+a row is inserted/updated on a chosen table. **The local CLI's
+`supabase/config.toml` does not actually support declaring these
+declaratively** (that framing in earlier drafts of this doc was
+aspirational, not accurate) — the real mechanism, and what this project
+uses, is a SQL migration
+(`supabase/migrations/00000000000015_n8n_webhooks.sql`) that enables the
+`pg_net` extension and creates one `AFTER INSERT`/`AFTER UPDATE OF status`
+trigger per row below, each calling
+`supabase_functions.http_request(...)` with the target n8n webhook URL and
+the `X-Internal-Secret` header baked in. This is the same mechanism
+Studio's Database → Webhooks UI generates under the hood, just tracked in
+a migration so it survives `supabase db reset` instead of living only in
+the Studio-managed `supabase_functions.hooks` table. If you'd rather use
+Studio's UI directly (Dashboard → Database → Webhooks) that also works and
+produces the same effect — the migration is just this project's preferred
+persisted form. Point either at your n8n instance's webhook URLs (the
+`path` field in each workflow JSON, e.g.
+`https://<n8n-host>/webhook/foodhub/order-placed`):
 
 | Table     | Events        | n8n webhook path                          | Workflow |
 |-----------|---------------|--------------------------------------------|----------|
@@ -171,7 +222,41 @@ Payment + Prompt Review" placeholder (still a no-op — see that node's own
 should actually do, since Phase 3's payment already resolves at checkout
 time, not delivery time).
 
-## 6. Once verified, activate
+## 6. Verified 2026-09-25 (actual results, not just expected)
+
+All 5 workflows were imported, published (n8n's current UI calls
+activation "Publish"), and driven end-to-end against a live local n8n +
+Supabase + Next.js stack, using Playwright to drive the real customer,
+vendor, and delivery UI (plus direct `psql` status updates for the
+delivery-partner-assignment/status-propagation legs, to avoid needing a
+second authenticated browser session mid-test). Actual results:
+
+- **01** — Succeeded. Real checkout order insert → webhook → filter →
+  "Notify Restaurant" placeholder, as expected.
+- **02** — Fires correctly on every `payments` insert, but every run
+  errors at "POST /api/internal/payments/:id/result" with `Payment is not
+  pending` — exactly the documented expected-inert behavior above, not a
+  new bug. Confirms the guard works as designed; this workflow stays
+  effectively off until checkout is changed to insert `pending` payments.
+- **03** — Succeeded on every `accepted`/`preparing`/`ready`/`cancelled`
+  transition tested.
+- **04** — Initially failed with "The service refused the connection" at
+  the restaurant lat/lng lookup — the `SUPABASE_URL` bug documented in
+  section 1. After fixing `SUPABASE_URL` to use `host.docker.internal`,
+  re-ran and succeeded, with a real assignment confirmed in the database
+  (`orders.status = 'assigned'`, `orders.delivery_partner_id` set to the
+  online test partner).
+- **05** — Succeeded on both `picked_up` and `delivered`, reaching the
+  "Finalize Payment + Prompt Review" placeholder on `delivered` as
+  expected.
+
+Both environment-variable bugs in section 1 (`N8N_BLOCK_ENV_ACCESS_IN_NODE`
+and `SUPABASE_URL`'s `host.docker.internal` requirement) were found during
+this pass and are now fixed in the confirmed-working run command above —
+neither was visible from the original hand-review of the JSON, since both
+only manifest once a node actually executes against a live n8n instance.
+
+## 7. Once verified, activate
 
 Only flip a workflow's `active` flag to `true` in n8n after its test in
 section 5 passes. Activating a workflow before its environment variables
