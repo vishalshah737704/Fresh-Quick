@@ -27,25 +27,25 @@ export function MenuItemRow({
   const { addItem } = useCart();
 
   return (
-    <div className="flex items-center justify-between border-b border-gray-100 py-3">
-      <div className="flex items-center gap-3">
+    <div className="flex items-center justify-between border-b border-brand-ink-muted/10 py-4">
+      <div className="flex items-center gap-4">
         {item.image_url && (
           <Image
             src={item.image_url}
             alt={item.name}
-            width={64}
-            height={64}
-            className="h-16 w-16 rounded object-cover"
+            width={80}
+            height={80}
+            className="h-20 w-20 rounded-lg object-cover"
           />
         )}
         <div>
-          <p className="font-medium">
+          <p className="font-medium text-brand-ink">
             {item.is_veg ? "🟢" : "🔴"} {item.name}
           </p>
           {item.description && (
-            <p className="text-sm text-gray-500">{item.description}</p>
+            <p className="text-sm text-brand-ink-muted">{item.description}</p>
           )}
-          <p className="text-sm">₹{item.price.toFixed(2)}</p>
+          <p className="text-sm font-medium text-brand-ink">₹{item.price.toFixed(2)}</p>
         </div>
       </div>
       <button
@@ -58,7 +58,7 @@ export function MenuItemRow({
             quantity: 1,
           })
         }
-        className="rounded bg-brand-primary px-3 py-1 text-sm text-white disabled:cursor-not-allowed disabled:bg-gray-300"
+        className="rounded-full bg-brand-primary px-4 py-1.5 text-sm font-medium text-white disabled:cursor-not-allowed disabled:bg-brand-ink-muted/30"
       >
         {disabled ? "Unavailable" : item.is_available ? "Add" : "Unavailable"}
       </button>
