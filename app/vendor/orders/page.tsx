@@ -28,6 +28,8 @@ export default function VendorOrdersPage() {
   const { loading } = useVendorSession();
   const [orders, setOrders] = useState<Order[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [selectedStatus, setSelectedStatus] = useState<string>("all");
+  const [sortOrder, setSortOrder] = useState<"oldest" | "newest">("oldest");
 
   async function loadOrders() {
     const res = await fetch("/api/vendor/orders", { headers: await authHeader() });
@@ -55,12 +57,39 @@ export default function VendorOrdersPage() {
 
   if (loading) return <p>Loading…</p>;
 
+  const statuses = ["all", ...Object.keys(NEXT_LABEL)];
+  const filteredOrders = selectedStatus === "all"
+    ? orders
+    : orders.filter((order) => order.status === selectedStatus);
+  const sortedOrders = sortOrder === "newest"
+    ? [...filteredOrders].reverse()
+    : filteredOrders;
+
   return (
     <div className="mx-auto max-w-2xl">
       <h1 className="mb-4 text-xl font-bold">Orders</h1>
       {error && <p className="mb-2 text-sm text-red-600">{error}</p>}
+      <div className="mb-4 flex gap-3">
+        <select
+          value={selectedStatus}
+          onChange={(e) => setSelectedStatus(e.target.value)}
+          className="rounded border px-2 py-1 text-sm"
+        >
+          {statuses.map((status) => (
+            <option key={status} value={status}>
+              {status === "all" ? "All statuses" : status}
+            </option>
+          ))}
+        </select>
+        <button
+          onClick={() => setSortOrder(sortOrder === "oldest" ? "newest" : "oldest")}
+          className="rounded border px-2 py-1 text-sm"
+        >
+          {sortOrder === "oldest" ? "Oldest first" : "Newest first"}
+        </button>
+      </div>
       <ul className="flex flex-col gap-3">
-        {orders.map((order) => (
+        {sortedOrders.map((order) => (
           <li key={order.id} className="rounded border p-3">
             <div className="flex items-center justify-between">
               <p className="font-medium">
@@ -85,7 +114,7 @@ export default function VendorOrdersPage() {
             <p className="mt-1 text-sm font-medium">₹{order.total.toFixed(2)}</p>
           </li>
         ))}
-        {orders.length === 0 && <p className="text-sm text-gray-500">No orders yet.</p>}
+        {sortedOrders.length === 0 && <p className="text-sm text-gray-500">No orders yet.</p>}
       </ul>
     </div>
   );
