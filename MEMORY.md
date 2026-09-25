@@ -1,4 +1,4 @@
-# MEMORY.md — FoodHub Build Status
+# MEMORY.md — Fresh & Quick Build Status
 
 Index of what's been built and decided. Not a memory file for Claude's
 cross-session memory system — this is the project's own build log, read by
@@ -227,8 +227,49 @@ Claude at the start of work in this repo per project CLAUDE.md.
   the real checkout flow still works). Also created `scripts/`
   (build/start/stop/seed, Node `.mjs` canonical + PowerShell `.ps1`
   wrappers) and `docs/DEPLOYMENT.md`.
+- **Fresh & Quick DoorDash-inspired redesign**: ✅ Complete, merged to
+  `main` (14 tasks, executed inline in an isolated worktree per
+  `superpowers:executing-plans`). Rebranded from placeholder "FoodHub" to
+  "Fresh & Quick" (`lib/branding.ts`, richer 6-token red/orange/cream
+  color system in `app/globals.css`'s `@theme` block). Added 4 new
+  presentational components (`CuisineChip`, `CuisineChipRow`,
+  `HeroSearch`, `PromoBanner`) and restyled `RestaurantCard`/
+  `MenuItemRow` with a photo-forward, DoorDash-structured layout (hero →
+  promo banner → cuisine-filter chip row → photo card grid). Redesigned
+  the customer homepage and restaurant-detail page (banner image using
+  the previously-unused `restaurants.banner_url` column, placeholder
+  graphic when null) and re-skinned all vendor/delivery/admin
+  dashboards and all 4 login/signup pages to the new brand tokens
+  (class-only changes, zero logic touched — verified every
+  `getSafeRedirect` redirect-validation function byte-identical
+  before/after across all 4 login pages). Expanded the seed catalog from
+  1 to 17 restaurants across 12 cuisines (4 new taxonomy slugs: mexican,
+  thai, bakery, healthy — `supabase/migrations/00000000000014`), ~44
+  menu items, real photos sourced via a new one-off
+  `scripts/fetch-catalog-images.mjs` (Pexels Search API, fetch-once
+  pattern, never called at runtime) and hardcoded into `seed.sql`. Fixed
+  all previously-known n8n workflow JSON bugs (IF-node `typeVersion`
+  mismatches, workflow 02's function/code-node type+parameter mismatch,
+  workflow 04's `$json[0]` array-indexing bug, missing empty-candidates
+  guard, missing `webhookId` fields) and rewrote
+  `docs/n8n-webhook-setup.md` into a full walkthrough — still explicitly
+  **reviewed, not run against a live n8n instance**. **Real bug found
+  during Task 5's live-verify, not any earlier review**: `HeroSearch`
+  originally embedded a second `AddressPicker` instance, duplicating the
+  one `app/customer/layout.tsx` already renders globally above every
+  customer page — visually broken (two address bars) but not caught
+  until actually loading the page in a browser; fixed by dropping the
+  embedded picker from `HeroSearch`, keeping it a pure headline/subtext
+  hero. **Session-level bug**: while writing `docs/n8n-webhook-setup.md`,
+  found that workflow 02 (async payment mock) would be inert if activated
+  as-is, since Phase 3's checkout inserts payments with a final
+  `success`/`failed` status, never `pending`, so workflow 02's
+  INSERT-triggered logic has nothing to act on — documented as an
+  explicit prerequisite (checkout would need to start inserting `pending`
+  payments) rather than silently shipping a guide that implies the
+  workflow just works once imported.
 - **Mobile app (React Native + Expo, sub-project)**: not started — begins
-  after the deferred-items triage.
+  after the Fresh & Quick redesign.
 
 ## Key decisions carried forward (see spec §2 for full list)
 
@@ -237,8 +278,9 @@ Claude at the start of work in this repo per project CLAUDE.md.
 - Cuisine taxonomy is a fixed predefined list (`cuisine_taxonomy` table +
   DB trigger enforcement, not just UI-level).
 - Auth: one `role` column drives redirect (customer/vendor/delivery/admin).
-- Branding: placeholder "FoodHub" name + orange/red theme, isolated to
-  `lib/branding.ts` + Tailwind tokens.
+- Branding: "Fresh & Quick" name + richer DoorDash-inspired red/orange/
+  cream theme (6 tokens as of the redesign), isolated to
+  `lib/branding.ts` + Tailwind `@theme` tokens.
 - No Google Maps API key yet — address picker is a manual lat/lng stub.
 - Mobile app is in scope but sequenced after the web platform ships.
 

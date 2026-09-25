@@ -1,4 +1,4 @@
-# CLAUDE.md — FoodHub Project
+# CLAUDE.md — Fresh & Quick Project
 
 Project-level instructions for Claude Code working in this repo. Inherits
 from `~/.claude/CLAUDE.md` and `c:\Vishal\Projects\CLAUDE.md`; this file adds
@@ -6,8 +6,11 @@ project-specific context those don't have.
 
 ## What this is
 
-Swiggy-style food delivery web platform (functional clone, no brand assets).
-Placeholder name "FoodHub". Full design: [docs/superpowers/specs/2026-09-24-food-delivery-platform-design.md](docs/superpowers/specs/2026-09-24-food-delivery-platform-design.md).
+DoorDash-inspired food delivery web platform (functional clone, no brand
+assets — own name, colors, and Pexels-licensed photography, not DoorDash's).
+Branded "Fresh & Quick" (`lib/branding.ts`). Full design: [docs/superpowers/specs/2026-09-24-food-delivery-platform-design.md](docs/superpowers/specs/2026-09-24-food-delivery-platform-design.md)
+and [docs/superpowers/specs/2026-09-25-fresh-and-quick-redesign-design.md](docs/superpowers/specs/2026-09-25-fresh-and-quick-redesign-design.md)
+for the visual redesign.
 Build proceeds one phase at a time (8 phases total) — see spec §7 for the
 full breakdown. Each phase gets its own brainstorm → spec-check → plan →
 subagent-driven-development cycle, ends with a merge to `main`.
@@ -48,7 +51,10 @@ See [MEMORY.md](MEMORY.md) for phase-by-phase progress and decisions.
 - **Cart is single-restaurant only.** Adding an item from a different
   restaurant must prompt to clear the cart, never silently mix.
 - **Branding stays isolated** to `lib/branding.ts` + Tailwind `@theme`
-  tokens — never hardcode the brand name/color in a component.
+  tokens (`app/globals.css`) — never hardcode the brand name/color in a
+  component. Six color tokens as of the redesign: `brand-primary`,
+  `brand-accent`, `brand-bg`, `brand-surface`, `brand-ink`,
+  `brand-ink-muted`.
 - **Build one phase at a time.** Don't start Phase N+1 work until Phase N is
   merged to `main`. Each phase gets its own git worktree + branch during
   execution, per `superpowers:subagent-driven-development`.
