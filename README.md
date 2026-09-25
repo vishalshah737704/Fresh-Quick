@@ -64,6 +64,18 @@ an order in `assigned` or `picked_up` status, use the reassign dropdown
 (lists currently-online delivery partners) to move it to a different
 partner.
 
+## n8n automation (reference only, not wired up)
+
+`/api/internal/*` routes exist for n8n to call (shared-secret
+`X-Internal-Secret` header, `N8N_INTERNAL_SECRET` in `.env.local`) and
+`n8n/workflows/*.json` has one exported workflow per spec's automation
+list — but no n8n instance was available while building this, so the
+workflow JSON has never been imported into or run against a real n8n.
+See `docs/n8n-webhook-setup.md` before attempting to wire it up for real.
+Everything else in this README (checkout, vendor, delivery, admin flows)
+works today without n8n — those synchronous paths stay as the tested
+demo behavior regardless of whether n8n is ever connected.
+
 ## Local service URLs
 - App: http://localhost:3000
 - Supabase Studio: http://localhost:54323

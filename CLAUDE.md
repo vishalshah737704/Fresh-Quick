@@ -17,7 +17,11 @@ subagent-driven-development cycle, ends with a merge to `main`.
 - Next.js (App Router, TypeScript) + Tailwind CSS
 - Supabase (Postgres + Auth + Storage + Realtime), **self-hosted locally via
   Docker** — no cloud/hosted Supabase project, ever (see spec §2)
-- n8n for cross-actor automation (Phase 7, not wired yet)
+- n8n for cross-actor automation — `/api/internal/*` routes and
+  `n8n/workflows/*.json` exist (Phase 7), but no n8n instance was
+  available to build against, so the workflow JSON is untested reference
+  material, not live automation. See MEMORY.md's Phase 7 entry and
+  `docs/n8n-webhook-setup.md` before treating it as working.
 - Google Maps JS SDK for address picking + live tracking (not wired yet —
   no API key available as of Phase 2; address picker is a manual lat/lng
   stub in the meantime, swappable later)

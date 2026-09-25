@@ -125,7 +125,55 @@ Claude at the start of work in this repo per project CLAUDE.md.
   actual browser UI, not just service-role curl calls.
   Plan: docs/superpowers/plans/2026-09-25-phase6-admin-dashboard.md
   Spec: docs/superpowers/specs/2026-09-25-phase6-admin-dashboard-design.md
-- **Phase 7 — n8n automation wiring**: not started.
+- **Phase 7 — n8n automation wiring**: ⚠️ Partially complete, merged to
+  `main` — **no n8n instance was available in this environment**, so
+  this phase built the parts that could be built and verified without
+  one, and left the rest as explicitly-untested reference material (see
+  spec's own wording: "n8n workflow exports checked into repo for
+  reference"). **Built and live-verified**: two real `/api/internal/*`
+  Next.js API routes (`payments/[id]/result`, `orders/[id]/assign` with
+  a GET candidates-by-distance endpoint using the existing
+  `haversineDistanceKm` helper), guarded by a constant-time shared-secret
+  comparison (`lib/internal-auth.ts`) rather than a user session since
+  n8n has no end-user identity. **Ruling**: Phases 3-6's tested
+  synchronous paths (checkout payment resolution, vendor status updates,
+  delivery self-claim) stay as the working demo path; these routes are
+  additive for whenever real n8n wiring happens, not a replacement.
+  **Built but unverified**: five `n8n/workflows/*.json` files
+  (hand-authored to n8n's export JSON shape, covering spec's workflows
+  1-5; workflow 6 — location fanout — skipped per the spec's own stated
+  default of using direct Realtime instead, and Phase 5 already reused
+  its existing poll rather than adding Realtime) and
+  `docs/n8n-webhook-setup.md`. A review pass caught and fixed a
+  systemic error in all five (every expression read `$json["record"]`
+  instead of the webhook node's actual output shape,
+  `$json["body"]["record"]`) plus a payment-route bug that would have
+  been live-triggered the moment workflow 02 was activated (see below).
+  **Known remaining issues in the untested JSON** (deferred — fix when
+  actually wiring a real n8n instance, since nothing here can verify the
+  fix without one): the `IF` nodes declare `typeVersion: 2` but use v1's
+  parameter shape; workflow 02's decision node uses a legacy
+  `function`-node API (`$input.item.json`) that may not match its
+  declared type; workflow 04 indexes the restaurant-lookup HTTP response
+  as `$json[0]` when n8n's HTTP Request v4 likely splits a JSON array
+  into separate items (`$json` directly); no empty-candidates guard
+  before workflow 04's assign POST; webhook nodes are missing
+  `webhookId` (may regenerate on import); the setup doc's local n8n
+  Docker image name and Supabase-webhooks-in-config.toml instructions
+  need double-checking against current tooling.
+  **Real bug worth remembering**: the payment-result route originally had
+  no state guard (`.eq("id", id)` only) — since checkout never actually
+  inserts a `pending` payment row (Phase 3 resolves payment synchronously
+  before insert), the route as first written could have flipped an
+  already-resolved payment's status on any call, which workflow 02's
+  "insert triggers a fresh random success/failure roll" design would
+  have done to ~20% of real payments the moment it was activated. Fixed
+  by adding `.eq("status", "pending")` to the update and returning 409
+  when nothing matches — the same "state must match at the mutating
+  query itself" pattern proven in Phases 4-6.
+  Plan: (none — built directly given explicitly-untested nature, see
+  spec's own "Ruling" section on scope)
+  Spec: docs/superpowers/specs/2026-09-25-phase7-n8n-automation-design.md
 - **Phase 8 — Polish/testing**: not started.
 - **Mobile app (React Native + Expo, sub-project)**: not started — begins
   after Phase 8.
