@@ -11,12 +11,12 @@
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
   /* Keep in sync with lib/branding.ts's BRAND.theme values. */
-  --color-brand-primary: #DC2626;
-  --color-brand-accent: #F97316;
-  --color-brand-bg: #FFF8F0;
-  --color-brand-surface: #FFFFFF;
-  --color-brand-ink: #1F1B16;
-  --color-brand-ink-muted: #6B6153;
+  --color-brand-primary: #12140f;
+  --color-brand-accent: #b6e02e;
+  --color-brand-bg: #faf9f4;
+  --color-brand-surface: #ffffff;
+  --color-brand-ink: #12140f;
+  --color-brand-ink-muted: #6b6b62;
 }
 
 @media (prefers-color-scheme: dark) {

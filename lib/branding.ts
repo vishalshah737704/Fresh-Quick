@@ -1,11 +1,11 @@
 export const BRAND = {
   name: "Fresh & Quick",
   theme: {
-    primary: "#DC2626",
-    accent: "#F97316",
-    background: "#FFF8F0",
-    surface: "#FFFFFF",
-    ink: "#1F1B16",
-    inkMuted: "#6B6153",
+    primary: "#12140f",
+    accent: "#b6e02e",
+    background: "#faf9f4",
+    surface: "#ffffff",
+    ink: "#12140f",
+    inkMuted: "#6b6b62",
   },
 } as const;
