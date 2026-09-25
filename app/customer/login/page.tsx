@@ -7,9 +7,7 @@ import { supabase } from "@/lib/supabase";
 function getSafeRedirect(raw: string): string {
   try {
     const url = new URL(raw, window.location.origin);
-    return url.origin === window.location.origin
-      ? url.pathname + url.search + url.hash
-      : "/customer";
+    return url.origin === window.location.origin ? url.href : "/customer";
   } catch {
     return "/customer";
   }
