@@ -124,13 +124,13 @@ export default function OrderConfirmationPage() {
         </p>
       ) : (
         <>
-          <section className="rounded-xl border border-brand-ink-muted/10 bg-brand-surface p-4 shadow-sm">
+          <section className="rounded-lg border border-brand-ink-muted/10 bg-brand-surface p-4">
             <OrderStatusTimeline status={order.status} />
             <p className="mt-3 text-sm text-brand-ink-muted">{STATUS_LABEL[order.status]}</p>
           </section>
 
           {partnerLocation?.current_lat != null && partnerLocation?.current_lng != null && (
-            <div className="flex flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-brand-ink-muted/25 bg-brand-ink-muted/5 px-4 py-8 text-center">
+            <div className="flex flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-brand-ink-muted/25 bg-brand-ink-muted/5 px-4 py-8 text-center">
               <span className="text-2xl">📍</span>
               <p className="text-sm font-medium text-brand-ink">
                 {partnerLocation.current_lat.toFixed(4)}, {partnerLocation.current_lng.toFixed(4)}
@@ -146,7 +146,7 @@ export default function OrderConfirmationPage() {
             </div>
           )}
 
-          <section className="rounded-xl border border-brand-ink-muted/10 bg-brand-surface p-4 shadow-sm text-sm text-brand-ink-muted">
+          <section className="rounded-lg border border-brand-ink-muted/10 bg-brand-surface p-4 text-sm text-brand-ink-muted">
             <p>Total: ₹{order.total.toFixed(2)}</p>
             <p>Payment: {payment.status} ({payment.method})</p>
           </section>

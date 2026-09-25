@@ -92,7 +92,7 @@ export default function VendorOrdersPage() {
       </div>
       <ul className="flex flex-col gap-3">
         {sortedOrders.map((order) => (
-          <li key={order.id} className="rounded-xl border border-brand-ink-muted/10 bg-brand-surface p-3">
+          <li key={order.id} className="rounded-lg border border-brand-ink-muted/10 bg-brand-surface p-3">
             <div className="flex items-center justify-between">
               <p className="font-medium">
                 Order #{order.id.slice(0, 8)} · {order.status}

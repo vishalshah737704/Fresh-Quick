@@ -150,7 +150,7 @@ export default function VendorMenuPage() {
     <div className="mx-auto max-w-2xl">
       <h1 className="mb-4 text-xl font-bold text-brand-ink">Menu</h1>
       {actionError && <p className="mb-4 text-sm text-red-600">{actionError}</p>}
-      <div className="mb-6 flex flex-col gap-2 rounded-xl border border-brand-ink-muted/10 bg-brand-surface p-3">
+      <div className="mb-6 flex flex-col gap-2 rounded-lg border border-brand-ink-muted/10 bg-brand-surface p-3">
         <input
           className="rounded-lg border border-brand-ink-muted/20 px-2 py-1"
           placeholder="Item name"
@@ -179,7 +179,7 @@ export default function VendorMenuPage() {
       </div>
       <ul className="flex flex-col gap-2">
         {items.map((item) => (
-          <li key={item.id} className="flex flex-col gap-2 rounded-xl border border-brand-ink-muted/10 bg-brand-surface p-2">
+          <li key={item.id} className="flex flex-col gap-2 rounded-lg border border-brand-ink-muted/10 bg-brand-surface p-2">
             <div className="flex items-center justify-between">
               <div>
                 <p className="font-medium">{item.name}</p>

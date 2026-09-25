@@ -183,7 +183,7 @@ export default function DeliveryDashboardPage() {
       <h2 className="mb-2 font-semibold text-brand-ink">Available orders</h2>
       <ul className="mb-6 flex flex-col gap-2">
         {available.map((o) => (
-          <li key={o.id} className="flex items-center justify-between rounded-xl border border-brand-ink-muted/10 bg-brand-surface p-2">
+          <li key={o.id} className="flex items-center justify-between rounded-lg border border-brand-ink-muted/10 bg-brand-surface p-2">
             <span>
               #{o.id.slice(0, 8)} · {o.restaurants?.name ?? "Restaurant"} · ₹{o.total.toFixed(2)}
             </span>
@@ -201,7 +201,7 @@ export default function DeliveryDashboardPage() {
       <h2 className="mb-2 font-semibold text-brand-ink">Your deliveries</h2>
       <ul className="flex flex-col gap-2">
         {mine.map((o) => (
-          <li key={o.id} className="flex flex-col gap-1 rounded-xl border border-brand-ink-muted/10 bg-brand-surface p-2">
+          <li key={o.id} className="flex flex-col gap-1 rounded-lg border border-brand-ink-muted/10 bg-brand-surface p-2">
             <div className="flex items-center justify-between">
               <span>
                 #{o.id.slice(0, 8)} · {o.status} · ₹{o.total.toFixed(2)}

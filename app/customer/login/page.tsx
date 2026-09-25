@@ -58,7 +58,7 @@ function LoginForm() {
   }
 
   return (
-    <div className="mx-auto max-w-sm rounded-xl border border-brand-ink-muted/10 bg-brand-surface p-6 shadow-sm">
+    <div className="mx-auto max-w-sm rounded-lg border border-brand-ink-muted/10 bg-brand-surface p-6">
       <h1 className="mb-4 text-xl font-bold text-brand-ink">
         {mode === "login" ? "Log in" : "Sign up"}
       </h1>

@@ -85,12 +85,12 @@ export default function CheckoutPage() {
       <h1 className="mb-6 text-2xl font-bold text-brand-ink">Checkout</h1>
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="flex flex-col gap-6 lg:col-span-2">
-          <section className="rounded-xl border border-brand-ink-muted/10 bg-brand-surface p-4 shadow-sm">
+          <section className="rounded-lg border border-brand-ink-muted/10 bg-brand-surface p-4">
             <h2 className="mb-1 font-semibold text-brand-ink">Delivery address</h2>
             <p className="text-sm text-brand-ink-muted">{label}</p>
           </section>
 
-          <section className="rounded-xl border border-brand-ink-muted/10 bg-brand-surface p-4 shadow-sm">
+          <section className="rounded-lg border border-brand-ink-muted/10 bg-brand-surface p-4">
             <h2 className="mb-3 font-semibold text-brand-ink">Payment method</h2>
             <div className="flex flex-col gap-2">
               {PAYMENT_METHODS.map((m) => (
@@ -117,7 +117,7 @@ export default function CheckoutPage() {
         </div>
 
         <aside className="lg:sticky lg:top-4 lg:self-start">
-          <section className="rounded-xl border border-brand-ink-muted/10 bg-brand-surface p-4 shadow-sm">
+          <section className="rounded-lg border border-brand-ink-muted/10 bg-brand-surface p-4">
             <h2 className="mb-3 font-semibold text-brand-ink">
               {items.length} item{items.length !== 1 ? "s" : ""} from {restaurantName}
             </h2>

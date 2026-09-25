@@ -21,7 +21,7 @@ export function RestaurantCard({
   return (
     <Link
       href={`/customer/restaurants/${restaurant.id}`}
-      className="block overflow-hidden rounded-xl border border-brand-ink-muted/10 bg-brand-surface shadow-sm transition-shadow hover:shadow-md"
+      className="block overflow-hidden rounded-lg border border-brand-ink-muted/10 bg-brand-surface shadow-none transition-shadow hover:shadow-[0_3px_14px_-6px_rgba(0,0,0,0.18)]"
     >
       <div className="relative h-40 w-full bg-brand-accent/10">
         {restaurant.banner_url ? (

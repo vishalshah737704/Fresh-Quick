@@ -56,7 +56,7 @@ export default function VendorDashboardPage() {
   return (
     <div className="mx-auto max-w-2xl">
       <h1 className="mb-4 text-xl font-bold text-brand-ink">Vendor dashboard</h1>
-      <div className="mb-4 flex items-center gap-3 rounded-xl border border-brand-ink-muted/10 bg-brand-surface p-3">
+      <div className="mb-4 flex items-center gap-3 rounded-lg border border-brand-ink-muted/10 bg-brand-surface p-3">
         <p className="text-sm">
           Restaurant is currently{" "}
           <span className="font-medium">{isOpen ? "open" : "closed"}</span>
