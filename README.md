@@ -101,3 +101,4 @@ planned follow-on, not started.
 
 ## Stopping
 `npx supabase stop` to shut down the local Supabase Docker containers.
+# Fresh-Quick
