@@ -7,6 +7,7 @@
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
       "position": [240, 300],
+      "webhookId": "f47ac10b-58cc-4372-a567-0e02b2c3d003",
       "parameters": {
         "httpMethod": "POST",
         "path": "foodhub/order-status-changed",
@@ -18,7 +19,7 @@
       "id": "filter-vendor-statuses",
       "name": "Filter: status in (accepted, preparing, ready)",
       "type": "n8n-nodes-base.if",
-      "typeVersion": 2,
+      "typeVersion": 1,
       "position": [460, 300],
       "parameters": {
         "conditions": {

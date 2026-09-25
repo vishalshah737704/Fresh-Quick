@@ -7,6 +7,7 @@
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
       "position": [240, 300],
+      "webhookId": "f47ac10b-58cc-4372-a567-0e02b2c3d002",
       "parameters": {
         "httpMethod": "POST",
         "path": "foodhub/payment-created",
@@ -26,11 +27,11 @@
     {
       "id": "decide-outcome",
       "name": "Decide Success/Failure (weighted random)",
-      "type": "n8n-nodes-base.function",
-      "typeVersion": 1,
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
       "position": [680, 300],
       "parameters": {
-        "functionCode": "const method = $input.item.json.body.record.method;\nconst success = method === 'mock_cod' ? true : Math.random() < 0.8;\nreturn [{ json: { ...$input.item.json, status: success ? 'success' : 'failed' } }];"
+        "jsCode": "const method = $input.item.json.body.record.method;\nconst success = method === 'mock_cod' ? true : Math.random() < 0.8;\nreturn [{ json: { ...$input.item.json, status: success ? 'success' : 'failed' } }];"
       },
       "notes": "Mirrors lib/order-constants.ts's PAYMENT_SUCCESS_RATE (0.8) and mock_cod-always-succeeds rule -- keep these in sync if either changes."
     },

@@ -7,6 +7,7 @@
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
       "position": [240, 300],
+      "webhookId": "f47ac10b-58cc-4372-a567-0e02b2c3d005",
       "parameters": {
         "httpMethod": "POST",
         "path": "foodhub/order-delivery-status-changed",
@@ -18,7 +19,7 @@
       "id": "filter-delivery-statuses",
       "name": "Filter: status in (picked_up, delivered)",
       "type": "n8n-nodes-base.if",
-      "typeVersion": 2,
+      "typeVersion": 1,
       "position": [460, 300],
       "parameters": {
         "conditions": {
@@ -43,7 +44,7 @@
       "id": "check-delivered",
       "name": "Filter: status = delivered",
       "type": "n8n-nodes-base.if",
-      "typeVersion": 2,
+      "typeVersion": 1,
       "position": [680, 380],
       "parameters": {
         "conditions": {
