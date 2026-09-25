@@ -46,7 +46,27 @@ function loadStoredCart(): StoredCart {
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
     if (!raw) return { restaurantId: null, restaurantName: null, items: [] };
-    return JSON.parse(raw) as StoredCart;
+    const parsed = JSON.parse(raw);
+    if (
+      parsed &&
+      typeof parsed === "object" &&
+      (parsed.restaurantId === null || typeof parsed.restaurantId === "string") &&
+      (parsed.restaurantName === null || typeof parsed.restaurantName === "string") &&
+      Array.isArray(parsed.items) &&
+      parsed.items.every(
+        (i: unknown) =>
+          i !== null &&
+          typeof i === "object" &&
+          typeof (i as Record<string, unknown>).menuItemId === "string" &&
+          typeof (i as Record<string, unknown>).name === "string" &&
+          typeof (i as Record<string, unknown>).price === "number" &&
+          typeof (i as Record<string, unknown>).quantity === "number" &&
+          ((i as Record<string, unknown>).quantity as number) > 0
+      )
+    ) {
+      return parsed as StoredCart;
+    }
+    return { restaurantId: null, restaurantName: null, items: [] };
   } catch {
     return { restaurantId: null, restaurantName: null, items: [] };
   }

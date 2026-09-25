@@ -21,7 +21,14 @@ export function AddressPicker() {
   return (
     <div className="border-b border-gray-200 p-3">
       <button
-        onClick={() => setOpen((o) => !o)}
+        onClick={() => {
+          if (!open) {
+            setDraftLat(String(lat));
+            setDraftLng(String(lng));
+            setDraftLabel(label);
+          }
+          setOpen((o) => !o);
+        }}
         className="text-sm font-medium text-gray-700"
       >
         📍 {label} ({lat.toFixed(4)}, {lng.toFixed(4)})
