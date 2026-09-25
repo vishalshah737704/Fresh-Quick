@@ -22,11 +22,13 @@ export async function POST(request: NextRequest) {
     items,
     deliveryAddress,
     paymentMethod,
+    expectedTotal,
   }: {
     restaurantId: string;
     items: CheckoutRequestItem[];
     deliveryAddress: { label: string; lat: number; lng: number };
     paymentMethod: "mock_card" | "mock_upi" | "mock_cod";
+    expectedTotal?: number;
   } = body;
 
   if (!restaurantId || !items?.length || !deliveryAddress) {
@@ -37,6 +39,21 @@ export async function POST(request: NextRequest) {
     if (!Number.isInteger(item.quantity) || item.quantity <= 0 || item.quantity > 50) {
       return NextResponse.json({ error: "Invalid item quantity" }, { status: 400 });
     }
+  }
+
+  const VALID_PAYMENT_METHODS = ["mock_card", "mock_upi", "mock_cod"];
+  if (!VALID_PAYMENT_METHODS.includes(paymentMethod)) {
+    return NextResponse.json({ error: "Invalid payment method" }, { status: 400 });
+  }
+  if (
+    typeof deliveryAddress.lat !== "number" ||
+    !Number.isFinite(deliveryAddress.lat) ||
+    typeof deliveryAddress.lng !== "number" ||
+    !Number.isFinite(deliveryAddress.lng) ||
+    typeof deliveryAddress.label !== "string" ||
+    deliveryAddress.label.trim().length === 0
+  ) {
+    return NextResponse.json({ error: "Invalid delivery address" }, { status: 400 });
   }
 
   const { data: restaurant, error: restaurantError } = await supabaseServer
@@ -78,11 +95,21 @@ export async function POST(request: NextRequest) {
   }
 
   const priceById = new Map(menuItems.map((m) => [m.id, Number(m.price)]));
-  const subtotal = items.reduce(
-    (sum, item) => sum + (priceById.get(item.menuItemId) ?? 0) * item.quantity,
+  const subtotalPaise = items.reduce(
+    (sum, item) => sum + Math.round((priceById.get(item.menuItemId) ?? 0) * 100) * item.quantity,
     0
   );
-  const total = subtotal + DELIVERY_FEE_RUPEES;
+  const deliveryFeePaise = Math.round(DELIVERY_FEE_RUPEES * 100);
+  const totalPaise = subtotalPaise + deliveryFeePaise;
+  const subtotal = subtotalPaise / 100;
+  const total = totalPaise / 100;
+
+  if (typeof expectedTotal === "number" && Math.abs(expectedTotal - total) > 0.01) {
+    return NextResponse.json(
+      { error: "Prices have changed since you added items to your cart. Please review your order." },
+      { status: 409 }
+    );
+  }
 
   const { data: address, error: addressError } = await supabaseServer
     .from("addresses")

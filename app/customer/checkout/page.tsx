@@ -38,6 +38,8 @@ export default function CheckoutPage() {
     return <p className="text-gray-500">Your cart is empty.</p>;
   }
 
+  const total = subtotal + DELIVERY_FEE_RUPEES;
+
   async function handleSubmit() {
     setSubmitting(true);
     setError(null);
@@ -59,6 +61,7 @@ export default function CheckoutPage() {
           items: items.map((i) => ({ menuItemId: i.menuItemId, quantity: i.quantity })),
           deliveryAddress: { label, lat, lng },
           paymentMethod,
+          expectedTotal: total,
         }),
       });
       const result = await res.json();
@@ -67,15 +70,15 @@ export default function CheckoutPage() {
         setSubmitting(false);
         return;
       }
-      clearCart();
+      if (result.paymentStatus === "success") {
+        clearCart();
+      }
       router.push(`/customer/orders/${result.orderId}`);
     } catch {
       setError("Network error — please try again");
       setSubmitting(false);
     }
   }
-
-  const total = subtotal + DELIVERY_FEE_RUPEES;
 
   return (
     <div>
