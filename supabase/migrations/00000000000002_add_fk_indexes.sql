@@ -1,0 +1,15 @@
+-- Standard btree indexes on FK / hot-lookup columns
+create index if not exists idx_orders_customer_id on public.orders (customer_id);
+create index if not exists idx_orders_restaurant_id on public.orders (restaurant_id);
+create index if not exists idx_orders_delivery_partner_id on public.orders (delivery_partner_id);
+create index if not exists idx_orders_delivery_address_id on public.orders (delivery_address_id);
+create index if not exists idx_menu_items_restaurant_id on public.menu_items (restaurant_id);
+create index if not exists idx_order_items_order_id on public.order_items (order_id);
+create index if not exists idx_order_items_menu_item_id on public.order_items (menu_item_id);
+create index if not exists idx_reviews_restaurant_id on public.reviews (restaurant_id);
+create index if not exists idx_reviews_order_id on public.reviews (order_id);
+create index if not exists idx_reviews_customer_id on public.reviews (customer_id);
+create index if not exists idx_addresses_user_id on public.addresses (user_id);
+create index if not exists idx_restaurants_owner_id on public.restaurants (owner_id);
+create index if not exists idx_restaurants_address_id on public.restaurants (address_id);
+create index if not exists idx_payments_order_id on public.payments (order_id);
