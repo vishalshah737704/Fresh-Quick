@@ -43,6 +43,7 @@ export async function PATCH(
     .from("menu_items")
     .update(update)
     .eq("id", id)
+    .eq("restaurant_id", resolved.restaurantId)
     .select("*")
     .single();
   if (error || !data) {
@@ -63,7 +64,11 @@ export async function DELETE(
   if (!(await assertOwnsItem(resolved.restaurantId, id))) {
     return NextResponse.json({ error: "Menu item not found" }, { status: 404 });
   }
-  const { error } = await supabaseServer.from("menu_items").delete().eq("id", id);
+  const { error } = await supabaseServer
+    .from("menu_items")
+    .delete()
+    .eq("id", id)
+    .eq("restaurant_id", resolved.restaurantId);
   if (error) {
     return NextResponse.json({ error: "Failed to delete menu item" }, { status: 500 });
   }
