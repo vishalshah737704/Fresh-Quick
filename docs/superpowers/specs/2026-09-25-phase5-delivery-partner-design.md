@@ -53,14 +53,16 @@ one API route.
   used everywhere else in this app (no Google Maps key yet, per
   CLAUDE.md).
 - **Customer-side live map**: per spec §8's already-confirmed default,
-  fanout is direct Supabase Realtime (skip n8n), not built via n8n.
-  Given no Google Maps key, "live map" here means the same lat/lng stub
-  approach — the customer's order-confirmation page (Phase 3, already
-  polls order status) subscribes via Supabase Realtime to the assigned
-  partner's `delivery_partners` row and displays raw lat/lng (a numeric
-  readout, not an actual map pin) once status reaches `assigned` or
-  later. A real map pin swaps in later when a Maps key exists — same
-  swappable-stub pattern as the address picker.
+  fanout is direct Supabase Realtime (skip n8n) for the eventual real-map
+  version. For this phase's stub (no Google Maps key, no map to render),
+  the simpler and consistent choice is to extend the customer
+  order-confirmation page's *existing* 3-second poll (Phase 3, already
+  polling `orders`) to also select the assigned partner's lat/lng and
+  show it as a numeric readout once status reaches `assigned` or later —
+  not a new Realtime subscription. This avoids adding a second live-data
+  mechanism to a page that already re-fetches on an interval; swapping to
+  Realtime + an actual map pin is a contained follow-up once a Maps key
+  exists.
 - **RLS**: delivery partner may read/update only their own
   `delivery_partners` row; may read orders where
   `delivery_partner_id = auth.uid()` and update those orders' status
