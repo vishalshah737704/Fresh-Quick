@@ -21,6 +21,7 @@ create policy "customer_can_read_assigned_partner_location" on public.delivery_p
       select 1 from public.orders
       where orders.delivery_partner_id = delivery_partners.user_id
       and orders.customer_id = auth.uid()
+      and orders.status in ('assigned', 'picked_up')
     )
   );
 

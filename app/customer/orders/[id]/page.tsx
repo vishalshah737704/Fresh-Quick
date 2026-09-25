@@ -43,7 +43,7 @@ const STATUS_LABEL: Record<OrderStatus, string> = {
   cancelled: "Order cancelled",
 };
 
-const SHOW_LOCATION_FOR: OrderStatus[] = ["assigned", "picked_up", "delivered"];
+const SHOW_LOCATION_FOR: OrderStatus[] = ["assigned", "picked_up"];
 
 export default function OrderConfirmationPage() {
   const params = useParams<{ id: string }>();
