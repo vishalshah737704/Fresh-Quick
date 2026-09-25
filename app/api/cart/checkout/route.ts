@@ -5,23 +5,38 @@ import { DELIVERY_FEE_RUPEES, PAYMENT_SUCCESS_RATE } from "@/lib/order-constants
 type CheckoutRequestItem = { menuItemId: string; quantity: number };
 
 export async function POST(request: NextRequest) {
+  const authHeader = request.headers.get("authorization");
+  const token = authHeader?.replace(/^Bearer\s+/i, "");
+  if (!token) {
+    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+  }
+  const { data: userData, error: userError } = await supabaseServer.auth.getUser(token);
+  if (userError || !userData.user) {
+    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+  }
+  const customerId = userData.user.id;
+
   const body = await request.json();
   const {
-    customerId,
     restaurantId,
     items,
     deliveryAddress,
     paymentMethod,
   }: {
-    customerId: string;
     restaurantId: string;
     items: CheckoutRequestItem[];
     deliveryAddress: { label: string; lat: number; lng: number };
     paymentMethod: "mock_card" | "mock_upi" | "mock_cod";
   } = body;
 
-  if (!customerId || !restaurantId || !items?.length || !deliveryAddress) {
+  if (!restaurantId || !items?.length || !deliveryAddress) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+  }
+
+  for (const item of items) {
+    if (!Number.isInteger(item.quantity) || item.quantity <= 0 || item.quantity > 50) {
+      return NextResponse.json({ error: "Invalid item quantity" }, { status: 400 });
+    }
   }
 
   const { data: restaurant, error: restaurantError } = await supabaseServer
@@ -139,10 +154,13 @@ export async function POST(request: NextRequest) {
   }
 
   if (!paymentSucceeds) {
-    await supabaseServer
+    const { error: cancelError } = await supabaseServer
       .from("orders")
       .update({ status: "cancelled" })
       .eq("id", order.id);
+    if (cancelError) {
+      console.error("Failed to mark order cancelled after payment failure:", order.id, cancelError);
+    }
   }
 
   return NextResponse.json({ orderId: order.id, paymentStatus });
