@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase-server";
 import { resolveVendorRestaurant, tokenFromRequest } from "@/lib/vendor-auth";
+import { isAllowedImageUrl } from "@/lib/image-url";
 
 export async function GET(request: NextRequest) {
   const resolved = await resolveVendorRestaurant(tokenFromRequest(request));
@@ -27,6 +28,12 @@ export async function POST(request: NextRequest) {
   if (!name || typeof price !== "number" || !Number.isFinite(price) || price <= 0) {
     return NextResponse.json({ error: "name and a positive price are required" }, { status: 400 });
   }
+  if (typeof imageUrl === "string" && imageUrl.length > 0 && !isAllowedImageUrl(imageUrl)) {
+    return NextResponse.json(
+      { error: "Image URL must be from an approved host" },
+      { status: 400 }
+    );
+  }
   const pricePaise = Math.round(price * 100);
   const { data, error } = await supabaseServer
     .from("menu_items")
@@ -37,7 +44,7 @@ export async function POST(request: NextRequest) {
       price: pricePaise / 100,
       category: category ?? null,
       is_veg: Boolean(isVeg),
-      image_url: imageUrl ?? null,
+      image_url: imageUrl || null,
     })
     .select("*")
     .single();

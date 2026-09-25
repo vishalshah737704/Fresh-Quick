@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase-server";
 import { resolveVendorRestaurant, tokenFromRequest } from "@/lib/vendor-auth";
+import { isAllowedImageUrl } from "@/lib/image-url";
 
 async function assertOwnsItem(restaurantId: string, itemId: string) {
   const { data, error } = await supabaseServer
@@ -31,7 +32,17 @@ export async function PATCH(
   if (typeof body.category === "string") update.category = body.category;
   if (typeof body.isVeg === "boolean") update.is_veg = body.isVeg;
   if (typeof body.isAvailable === "boolean") update.is_available = body.isAvailable;
-  if (typeof body.imageUrl === "string") update.image_url = body.imageUrl;
+  if (typeof body.imageUrl === "string" && body.imageUrl.length > 0) {
+    if (!isAllowedImageUrl(body.imageUrl)) {
+      return NextResponse.json(
+        { error: "Image URL must be from an approved host" },
+        { status: 400 }
+      );
+    }
+    update.image_url = body.imageUrl;
+  } else if (typeof body.imageUrl === "string") {
+    update.image_url = null;
+  }
   if (typeof body.price === "number") {
     if (!Number.isFinite(body.price) || body.price <= 0) {
       return NextResponse.json({ error: "price must be positive" }, { status: 400 });
@@ -70,6 +81,15 @@ export async function DELETE(
     .eq("id", id)
     .eq("restaurant_id", resolved.restaurantId);
   if (error) {
+    if (error.code === "23503") {
+      return NextResponse.json(
+        {
+          error:
+            "This item has past orders — mark it unavailable instead of deleting it.",
+        },
+        { status: 409 }
+      );
+    }
     return NextResponse.json({ error: "Failed to delete menu item" }, { status: 500 });
   }
   return NextResponse.json({ ok: true });

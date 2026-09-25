@@ -27,6 +27,7 @@ export default function VendorMenuPage() {
   const [price, setPrice] = useState("");
   const [imageUrl, setImageUrl] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   async function loadItems() {
     const res = await fetch("/api/vendor/menu-items", { headers: await authHeader() });
@@ -71,10 +72,16 @@ export default function VendorMenuPage() {
   }
 
   async function deleteItem(id: string) {
-    await fetch(`/api/vendor/menu-items/${id}`, {
+    setDeleteError(null);
+    const res = await fetch(`/api/vendor/menu-items/${id}`, {
       method: "DELETE",
       headers: await authHeader(),
     });
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      setDeleteError(body.error ?? "Failed to delete item");
+      return;
+    }
     await loadItems();
   }
 
@@ -83,6 +90,7 @@ export default function VendorMenuPage() {
   return (
     <div className="mx-auto max-w-2xl">
       <h1 className="mb-4 text-xl font-bold">Menu</h1>
+      {deleteError && <p className="mb-4 text-sm text-red-600">{deleteError}</p>}
       <div className="mb-6 flex flex-col gap-2 rounded border p-3">
         <input
           className="rounded border px-2 py-1"

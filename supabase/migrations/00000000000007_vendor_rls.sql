@@ -5,10 +5,10 @@
 drop policy if exists "stub_allow_authenticated_read" on public.restaurants;
 create policy "public_can_read_restaurants" on public.restaurants
   for select using (true);
-create policy "vendor_can_insert_own_restaurant" on public.restaurants
-  for insert with check (auth.uid() = owner_id);
-create policy "vendor_can_update_own_restaurant" on public.restaurants
-  for update using (auth.uid() = owner_id);
+-- Note: no vendor insert/update policy on restaurants. All vendor writes to
+-- restaurants go through service-role API routes that apply application-
+-- level checks; a direct PostgREST policy here would let any authenticated
+-- user (not just vendors) create or mutate restaurant rows.
 
 -- menu_items: public read (unchanged), vendor can write only their own
 -- restaurant's items.
@@ -50,14 +50,11 @@ create policy "vendor_can_read_own_restaurant_orders" on public.orders
       and restaurants.owner_id = auth.uid()
     )
   );
-create policy "vendor_can_update_own_restaurant_orders" on public.orders
-  for update using (
-    exists (
-      select 1 from public.restaurants
-      where restaurants.id = orders.restaurant_id
-      and restaurants.owner_id = auth.uid()
-    )
-  );
+-- Note: no vendor update policy on orders. Status transitions go through the
+-- service-role API route (app/api/vendor/orders/[id]/status), which enforces
+-- the allowed status chain; a direct PostgREST update policy would let a
+-- vendor bypass that chain (skip states, reassign delivery_partner_id /
+-- customer_id, etc.) via their own anon-key session token.
 
 -- order_items: close the Phase 1 permissive stub. Customers may read line
 -- items of their own orders; vendors may read line items of orders placed

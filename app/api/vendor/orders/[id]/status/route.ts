@@ -35,9 +35,17 @@ export async function POST(
     .from("orders")
     .update({ status: nextStatus })
     .eq("id", id)
+    .eq("restaurant_id", resolved.restaurantId)
+    .eq("status", order.status)
     .select("id, status")
     .single();
   if (updateError || !updated) {
+    if (updateError?.code === "PGRST116") {
+      return NextResponse.json(
+        { error: "Order status changed, please refresh" },
+        { status: 409 }
+      );
+    }
     return NextResponse.json({ error: "Failed to update order status" }, { status: 500 });
   }
   return NextResponse.json({ order: updated });
