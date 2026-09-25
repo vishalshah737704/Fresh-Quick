@@ -111,74 +111,43 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const { data: address, error: addressError } = await supabaseServer
-    .from("addresses")
-    .insert({
-      user_id: customerId,
-      label: deliveryAddress.label,
-      line1: deliveryAddress.label,
-      lat: deliveryAddress.lat,
-      lng: deliveryAddress.lng,
-      is_default: false,
-    })
-    .select("id")
-    .single();
-
-  if (addressError || !address) {
-    return NextResponse.json({ error: "Failed to save delivery address" }, { status: 500 });
-  }
-
-  const { data: order, error: orderError } = await supabaseServer
-    .from("orders")
-    .insert({
-      customer_id: customerId,
-      restaurant_id: restaurantId,
-      delivery_address_id: address.id,
-      status: "placed",
-      subtotal,
-      delivery_fee: DELIVERY_FEE_RUPEES,
-      total,
-    })
-    .select("id")
-    .single();
-
-  if (orderError || !order) {
-    return NextResponse.json({ error: "Failed to create order" }, { status: 500 });
-  }
-
-  const orderItemRows = items.map((item) => ({
-    order_id: order.id,
+  const orderItemsPayload = items.map((item) => ({
     menu_item_id: item.menuItemId,
     quantity: item.quantity,
     unit_price: priceById.get(item.menuItemId) ?? 0,
   }));
 
-  const { error: orderItemsError } = await supabaseServer
-    .from("order_items")
-    .insert(orderItemRows);
-
-  if (orderItemsError) {
-    return NextResponse.json({ error: "Failed to save order items" }, { status: 500 });
-  }
-
   // Mock payment resolution — synchronous, in-process (no n8n yet).
   // mock_cod always succeeds; mock_card/mock_upi resolve randomly.
+  // This determination is not itself a write, so it stays here in TS
+  // and its result is passed into the RPC to be inserted atomically
+  // with the order/address/order_items.
   const paymentSucceeds =
     paymentMethod === "mock_cod" || Math.random() < PAYMENT_SUCCESS_RATE;
   const paymentStatus = paymentSucceeds ? "success" : "failed";
 
-  const { error: paymentError } = await supabaseServer.from("payments").insert({
-    order_id: order.id,
-    method: paymentMethod,
-    status: paymentStatus,
-    amount: total,
-    mock_reference: `MOCK-${order.id.slice(0, 8)}`,
-    paid_at: paymentSucceeds ? new Date().toISOString() : null,
+  const { data: rpcRows, error: rpcError } = await supabaseServer.rpc("checkout_place_order", {
+    p_customer_id: customerId,
+    p_address_label: deliveryAddress.label,
+    p_address_line1: deliveryAddress.label,
+    p_address_lat: deliveryAddress.lat,
+    p_address_lng: deliveryAddress.lng,
+    p_restaurant_id: restaurantId,
+    p_subtotal: subtotal,
+    p_delivery_fee: DELIVERY_FEE_RUPEES,
+    p_total: total,
+    p_items: orderItemsPayload,
+    p_payment_method: paymentMethod,
+    p_payment_status: paymentStatus,
+    p_payment_amount: total,
+    p_payment_paid_at: paymentSucceeds ? new Date().toISOString() : null,
   });
 
-  if (paymentError) {
-    return NextResponse.json({ error: "Failed to record payment" }, { status: 500 });
+  if (rpcError || !rpcRows || !rpcRows[0]) {
+    return NextResponse.json({ error: "Failed to place order" }, { status: 500 });
   }
+
+  const order = { id: rpcRows[0].order_id as string };
 
   if (!paymentSucceeds) {
     const { error: cancelError } = await supabaseServer
