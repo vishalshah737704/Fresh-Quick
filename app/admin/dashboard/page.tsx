@@ -88,9 +88,9 @@ export default function AdminDashboardPage() {
 
   return (
     <div className="mx-auto max-w-4xl">
-      <h1 className="mb-4 text-xl font-bold">Admin dashboard</h1>
+      <h1 className="mb-4 text-xl font-bold text-brand-ink">Admin dashboard</h1>
 
-      <h2 className="mb-2 font-semibold">Orders ({orders.length})</h2>
+      <h2 className="mb-2 font-semibold text-brand-ink">Orders ({orders.length})</h2>
       {reassignError && <p className="mb-2 text-sm text-red-600">{reassignError}</p>}
       <ul className="mb-6 flex flex-col gap-1 text-sm">
         {orders.map((o) => (
@@ -101,7 +101,7 @@ export default function AdminDashboardPage() {
             {REASSIGNABLE_STATUSES.includes(o.status) && (
               <span className="flex items-center gap-1">
                 <select
-                  className="rounded border px-1 py-0.5 text-xs"
+                  className="rounded-lg border border-brand-ink-muted/20 px-1 py-0.5 text-xs"
                   value={reassignSelections[o.id] ?? ""}
                   onChange={(e) =>
                     setReassignSelections((prev) => ({ ...prev, [o.id]: e.target.value }))
@@ -117,7 +117,7 @@ export default function AdminDashboardPage() {
                 <button
                   onClick={() => reassign(o.id)}
                   disabled={!reassignSelections[o.id]}
-                  className="rounded bg-gray-100 px-2 py-1 text-xs disabled:opacity-50"
+                  className="rounded-lg bg-brand-accent/10 text-brand-ink px-2 py-1 text-xs disabled:opacity-50"
                 >
                   Reassign
                 </button>
@@ -125,10 +125,10 @@ export default function AdminDashboardPage() {
             )}
           </li>
         ))}
-        {orders.length === 0 && <p className="text-gray-500">No orders yet.</p>}
+        {orders.length === 0 && <p className="text-brand-ink-muted">No orders yet.</p>}
       </ul>
 
-      <h2 className="mb-2 font-semibold">Restaurants ({restaurants.length})</h2>
+      <h2 className="mb-2 font-semibold text-brand-ink">Restaurants ({restaurants.length})</h2>
       <ul className="mb-6 flex flex-col gap-1 text-sm">
         {restaurants.map((r) => (
           <li key={r.id} className="flex items-center justify-between">
@@ -137,16 +137,16 @@ export default function AdminDashboardPage() {
             </span>
             <button
               onClick={() => toggleSuspend(r)}
-              className="rounded bg-gray-100 px-2 py-1 text-xs"
+              className="rounded-lg bg-brand-accent/10 text-brand-ink px-2 py-1 text-xs"
             >
               {r.is_suspended ? "Unsuspend" : "Suspend"}
             </button>
           </li>
         ))}
-        {restaurants.length === 0 && <p className="text-gray-500">No restaurants yet.</p>}
+        {restaurants.length === 0 && <p className="text-brand-ink-muted">No restaurants yet.</p>}
       </ul>
 
-      <h2 className="mb-2 font-semibold">Delivery partners ({partners.length})</h2>
+      <h2 className="mb-2 font-semibold text-brand-ink">Delivery partners ({partners.length})</h2>
       <ul className="flex flex-col gap-1 text-sm">
         {partners.map((p) => (
           <li key={p.user_id}>
@@ -154,7 +154,7 @@ export default function AdminDashboardPage() {
             {p.vehicle_type ?? "—"}
           </li>
         ))}
-        {partners.length === 0 && <p className="text-gray-500">No delivery partners yet.</p>}
+        {partners.length === 0 && <p className="text-brand-ink-muted">No delivery partners yet.</p>}
       </ul>
     </div>
   );

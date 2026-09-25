@@ -59,27 +59,27 @@ function LoginForm() {
 
   return (
     <div className="mx-auto max-w-sm">
-      <h1 className="mb-4 text-xl font-bold">
+      <h1 className="mb-4 text-xl font-bold text-brand-ink">
         {mode === "login" ? "Log in" : "Sign up"}
       </h1>
       <div className="flex flex-col gap-2">
         {mode === "signup" && (
           <input
-            className="rounded border px-2 py-1"
+            className="rounded-lg border border-brand-ink-muted/20 px-2 py-1 focus:border-brand-primary focus:outline-none"
             placeholder="Full name"
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
           />
         )}
         <input
-          className="rounded border px-2 py-1"
+          className="rounded-lg border border-brand-ink-muted/20 px-2 py-1 focus:border-brand-primary focus:outline-none"
           placeholder="Email"
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
         />
         <input
-          className="rounded border px-2 py-1"
+          className="rounded-lg border border-brand-ink-muted/20 px-2 py-1 focus:border-brand-primary focus:outline-none"
           placeholder="Password"
           type="password"
           value={password}
@@ -89,13 +89,13 @@ function LoginForm() {
         <button
           disabled={submitting}
           onClick={mode === "login" ? handleLogin : handleSignup}
-          className="rounded bg-brand-primary px-3 py-2 text-sm text-white disabled:opacity-50"
+          className="rounded-full bg-brand-primary px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
         >
           {submitting ? "Please wait…" : mode === "login" ? "Log in" : "Sign up"}
         </button>
         <button
           onClick={() => setMode(mode === "login" ? "signup" : "login")}
-          className="text-sm text-gray-500 underline"
+          className="text-sm text-brand-ink-muted underline"
         >
           {mode === "login" ? "Need an account? Sign up" : "Have an account? Log in"}
         </button>
