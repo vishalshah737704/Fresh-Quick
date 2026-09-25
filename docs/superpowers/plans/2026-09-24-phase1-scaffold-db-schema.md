@@ -1,0 +1,552 @@
+# Phase 1 — Scaffold + DB Schema Implementation Plan
+
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+
+**Goal:** Stand up the Next.js project and a locally self-hosted Supabase
+stack (Docker), with all 9 core tables migrated, RLS stubbed, cuisine
+taxonomy + demo data seeded, and placeholder branding tokens in place —
+enough for `npm run dev` to load and Supabase Studio to show the full
+schema.
+
+**Architecture:** Next.js (App Router) project with a `lib/supabase.ts`
+client wrapper, Supabase CLI-managed local stack (`supabase start`, Docker
+under the hood) providing Postgres + Auth + Storage + Realtime, SQL
+migrations under `supabase/migrations/`, and a Node seed script.
+
+**Tech Stack:** Next.js 14+ (App Router, TypeScript), Tailwind CSS,
+Supabase CLI + `@supabase/supabase-js`, Docker Desktop (required by
+Supabase CLI on Windows).
+
+**Spec:** [docs/superpowers/specs/2026-09-24-food-delivery-platform-design.md](../specs/2026-09-24-food-delivery-platform-design.md)
+
+## Global Constraints
+
+- Self-hosted Supabase only — no hosted/cloud Supabase project (spec §2).
+- Cart is single-restaurant (informs `orders`/`order_items` FKs — no
+  multi-restaurant split table).
+- `role` column on `users` drives auth redirect: customer | vendor |
+  delivery | admin (spec §2, §4).
+- Cuisine/category taxonomy is a fixed predefined list, not free text
+  (spec §2).
+- Branding must be isolated to `lib/branding.ts` + Tailwind theme tokens,
+  never hardcoded in components (spec §2).
+- Payments schema must allow adding `gateway_reference`/`gateway_name`
+  columns later without structural change (spec §4).
+- `.env` must never be committed — add to `.gitignore` before first commit
+  (global CLAUDE.md security rule).
+
+## Review Focus
+
+- Empty/missing `lat`/`lng` on a restaurant or address — Phase 2's
+  distance queries and Phase 7's assignment workflow both assume these
+  are non-null; migration should make them `NOT NULL` on `restaurants`
+  and required on `addresses` used for delivery.
+- Seed script re-run — running the seed script twice should not create
+  duplicate cuisine tags or duplicate demo restaurants (idempotency).
+- Order total consistency — `orders.total` must never be trusted as
+  independently editable; a check constraint or documented invariant
+  (`total = subtotal + delivery_fee`) should exist so later phases don't
+  silently drift the two apart.
+- `role` value outside the four allowed — `users.role` should be
+  constrained (`CHECK` or enum), not free text, since Phase 4-6 route
+  guards depend on it being exactly one of the four values.
+- RLS left fully open — tables must have RLS *enabled* even if policies
+  are permissive stubs in Phase 1, otherwise Phase 2+ features get built
+  against a false sense of security and a later RLS-enable breaks them
+  silently.
+
+---
+
+### Task 1: Next.js project scaffold
+
+**Files:**
+- Create: `package.json`, `tsconfig.json`, `next.config.js`,
+  `tailwind.config.ts`, `postcss.config.js`, `app/layout.tsx`,
+  `app/page.tsx`, `app/globals.css`, `.gitignore`
+
+**Interfaces:**
+- Consumes: nothing (first task)
+- Produces: a running Next.js dev server at `http://localhost:3000`
+  rendering `app/page.tsx`; Tailwind available to all later components.
+
+- [ ] **Step 1: Scaffold the project**
+
+```bash
+npx create-next-app@latest . --typescript --tailwind --app --eslint --src-dir=false --import-alias "@/*" --use-npm
+```
+
+Answer prompts: project name `food-delivery-app-website` (or accept
+current directory), yes to all defaults shown above.
+
+- [ ] **Step 2: Add `.env` and `.env.example` to `.gitignore`**
+
+Open `.gitignore` (created by `create-next-app`) and confirm it contains:
+
+```
+.env
+.env.local
+.env*.local
+```
+
+If missing, append them.
+
+- [ ] **Step 3: Replace default home page with a placeholder**
+
+`app/page.tsx`:
+
+```tsx
+export default function Home() {
+  return (
+    <main className="flex min-h-screen items-center justify-center">
+      <h1 className="text-2xl font-semibold">Food Delivery App — Phase 1 scaffold</h1>
+    </main>
+  );
+}
+```
+
+- [ ] **Step 4: Run the dev server and verify it loads**
+
+Run: `npm run dev`
+Expected: server starts on port 3000, no build errors in terminal.
+Open `http://localhost:3000` in a browser (or `curl -s http://localhost:3000 | grep "Phase 1 scaffold"`) and confirm the heading text appears.
+Stop the dev server (Ctrl+C) before continuing.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git init
+git add package.json package-lock.json tsconfig.json next.config.js tailwind.config.ts postcss.config.js app .gitignore
+git commit -m "feat: scaffold Next.js project with Tailwind"
+```
+
+---
+
+### Task 2: Supabase CLI local stack
+
+**Files:**
+- Create: `supabase/config.toml` (generated by CLI), `.env.local`,
+  `.env.example`
+
+**Interfaces:**
+- Consumes: Docker Desktop running on the host machine.
+- Produces: local Supabase stack reachable at `http://localhost:54321`
+  (API), `http://localhost:54323` (Studio), Postgres at
+  `localhost:54322`; env vars `NEXT_PUBLIC_SUPABASE_URL` and
+  `NEXT_PUBLIC_SUPABASE_ANON_KEY` for later tasks to consume.
+
+- [ ] **Step 1: Install Supabase CLI and initialize**
+
+```bash
+npm install --save-dev supabase
+npx supabase init
+```
+
+Expected: creates `supabase/config.toml` and `supabase/` directory.
+
+- [ ] **Step 2: Start the local stack**
+
+Run: `npx supabase start`
+Expected: Docker pulls/starts containers; terminal prints API URL, anon
+key, and service_role key. This can take a few minutes on first run.
+
+- [ ] **Step 3: Write `.env.local` and `.env.example`**
+
+`.env.local` (use the actual values printed by `supabase start`):
+
+```
+NEXT_PUBLIC_SUPABASE_URL=http://localhost:54321
+NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon key from supabase start output>
+SUPABASE_SERVICE_ROLE_KEY=<service_role key from supabase start output>
+```
+
+`.env.example` (no real secrets, just the shape):
+
+```
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+SUPABASE_SERVICE_ROLE_KEY=
+```
+
+- [ ] **Step 4: Verify Studio is reachable**
+
+Open `http://localhost:54323` in a browser (or
+`curl -s -o /dev/null -w "%{http_code}" http://localhost:54323` and expect
+`200`). Confirm the Supabase Studio UI loads with an empty `public` schema.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add supabase/config.toml .env.example
+git commit -m "chore: initialize local Supabase stack"
+```
+
+(`.env.local` is gitignored — do not add it.)
+
+---
+
+### Task 3: Supabase client wrapper + branding constants
+
+**Files:**
+- Create: `lib/supabase.ts`, `lib/branding.ts`
+
+**Interfaces:**
+- Consumes: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+  from `.env.local`.
+- Produces: `supabase` client (browser-safe, anon key) importable as
+  `import { supabase } from "@/lib/supabase"`; `BRAND` constant object
+  importable as `import { BRAND } from "@/lib/branding"` with shape
+  `{ name: string; theme: { primary: string; secondary: string } }`.
+
+- [ ] **Step 1: Install the Supabase JS client**
+
+```bash
+npm install @supabase/supabase-js
+```
+
+- [ ] **Step 2: Write `lib/supabase.ts`**
+
+```ts
+import { createClient } from "@supabase/supabase-js";
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+```
+
+- [ ] **Step 3: Write `lib/branding.ts`**
+
+```ts
+export const BRAND = {
+  name: "FoodHub",
+  theme: {
+    primary: "#F97316",
+    secondary: "#DC2626",
+  },
+} as const;
+```
+
+- [ ] **Step 4: Verify the client initializes without throwing**
+
+Create a throwaway check: run `node -e "require('dotenv').config({path:'.env.local'}); require('ts-node/register'); require('./lib/supabase.ts')"` OR simpler — add a temporary console line to `app/page.tsx` (`console.log(supabase)`), run `npm run dev`, load the page, confirm no runtime error in terminal/browser console, then remove the temporary line.
+Expected: no "supabaseUrl is required" error.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add lib/supabase.ts lib/branding.ts package.json package-lock.json
+git commit -m "feat: add Supabase client wrapper and branding constants"
+```
+
+---
+
+### Task 4: Core schema migration
+
+**Files:**
+- Create: `supabase/migrations/00000000000001_core_schema.sql`
+
+**Interfaces:**
+- Consumes: nothing (raw SQL against local Postgres).
+- Produces: tables `users`, `addresses`, `restaurants`, `menu_items`,
+  `orders`, `order_items`, `delivery_partners`, `payments`, `reviews` in
+  the `public` schema, all with RLS enabled.
+
+- [ ] **Step 1: Write the migration file**
+
+`supabase/migrations/00000000000001_core_schema.sql`:
+
+```sql
+-- users: extends auth.users with app-specific profile + role
+create table public.users (
+  id uuid primary key references auth.users(id) on delete cascade,
+  role text not null check (role in ('customer', 'vendor', 'delivery', 'admin')),
+  full_name text,
+  phone text,
+  avatar_url text,
+  created_at timestamptz not null default now()
+);
+
+create table public.addresses (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.users(id) on delete cascade,
+  label text,
+  line1 text not null,
+  lat numeric not null,
+  lng numeric not null,
+  is_default boolean not null default false,
+  created_at timestamptz not null default now()
+);
+
+create table public.restaurants (
+  id uuid primary key default gen_random_uuid(),
+  owner_id uuid not null references public.users(id) on delete cascade,
+  name text not null,
+  cuisine_tags text[] not null default '{}',
+  address_id uuid references public.addresses(id),
+  lat numeric not null,
+  lng numeric not null,
+  is_open boolean not null default true,
+  avg_prep_minutes integer not null default 30,
+  rating numeric not null default 0,
+  banner_url text,
+  created_at timestamptz not null default now()
+);
+
+create table public.menu_items (
+  id uuid primary key default gen_random_uuid(),
+  restaurant_id uuid not null references public.restaurants(id) on delete cascade,
+  name text not null,
+  description text,
+  price numeric not null check (price >= 0),
+  category text,
+  is_veg boolean not null default false,
+  is_available boolean not null default true,
+  image_url text,
+  created_at timestamptz not null default now()
+);
+
+create table public.orders (
+  id uuid primary key default gen_random_uuid(),
+  customer_id uuid not null references public.users(id),
+  restaurant_id uuid not null references public.restaurants(id),
+  delivery_partner_id uuid references public.users(id),
+  delivery_address_id uuid not null references public.addresses(id),
+  status text not null default 'placed' check (status in
+    ('placed', 'accepted', 'preparing', 'ready', 'assigned', 'picked_up', 'delivered', 'cancelled')),
+  subtotal numeric not null check (subtotal >= 0),
+  delivery_fee numeric not null default 0 check (delivery_fee >= 0),
+  total numeric not null check (total >= 0),
+  placed_at timestamptz not null default now(),
+  constraint total_matches_parts check (total = subtotal + delivery_fee)
+);
+
+create table public.order_items (
+  id uuid primary key default gen_random_uuid(),
+  order_id uuid not null references public.orders(id) on delete cascade,
+  menu_item_id uuid not null references public.menu_items(id),
+  quantity integer not null check (quantity > 0),
+  unit_price numeric not null check (unit_price >= 0)
+);
+
+create table public.delivery_partners (
+  user_id uuid primary key references public.users(id) on delete cascade,
+  is_online boolean not null default false,
+  current_lat numeric,
+  current_lng numeric,
+  last_ping_at timestamptz,
+  vehicle_type text
+);
+
+create table public.payments (
+  id uuid primary key default gen_random_uuid(),
+  order_id uuid not null references public.orders(id) on delete cascade,
+  method text not null check (method in ('mock_card', 'mock_upi', 'mock_cod')),
+  status text not null default 'pending' check (status in ('pending', 'success', 'failed')),
+  amount numeric not null check (amount >= 0),
+  mock_reference text,
+  paid_at timestamptz
+);
+
+create table public.reviews (
+  id uuid primary key default gen_random_uuid(),
+  order_id uuid not null references public.orders(id) on delete cascade,
+  customer_id uuid not null references public.users(id),
+  restaurant_id uuid not null references public.restaurants(id),
+  rating integer not null check (rating between 1 and 5),
+  comment text,
+  created_at timestamptz not null default now()
+);
+
+-- Enable RLS on every table (permissive stub policies; tightened per-role in later phases)
+alter table public.users enable row level security;
+alter table public.addresses enable row level security;
+alter table public.restaurants enable row level security;
+alter table public.menu_items enable row level security;
+alter table public.orders enable row level security;
+alter table public.order_items enable row level security;
+alter table public.delivery_partners enable row level security;
+alter table public.payments enable row level security;
+alter table public.reviews enable row level security;
+
+create policy "stub_allow_authenticated_read" on public.users for select using (auth.role() = 'authenticated');
+create policy "stub_allow_authenticated_read" on public.addresses for select using (auth.role() = 'authenticated');
+create policy "stub_allow_authenticated_read" on public.restaurants for select using (true);
+create policy "stub_allow_authenticated_read" on public.menu_items for select using (true);
+create policy "stub_allow_authenticated_read" on public.orders for select using (auth.role() = 'authenticated');
+create policy "stub_allow_authenticated_read" on public.order_items for select using (auth.role() = 'authenticated');
+create policy "stub_allow_authenticated_read" on public.delivery_partners for select using (auth.role() = 'authenticated');
+create policy "stub_allow_authenticated_read" on public.payments for select using (auth.role() = 'authenticated');
+create policy "stub_allow_authenticated_read" on public.reviews for select using (true);
+```
+
+- [ ] **Step 2: Apply the migration**
+
+Run: `npx supabase db reset`
+Expected: terminal shows migration applied with no SQL errors.
+
+- [ ] **Step 3: Verify tables exist**
+
+Run:
+```bash
+npx supabase db execute --sql "select table_name from information_schema.tables where table_schema='public' order by table_name;"
+```
+Expected: lists all 9 table names (`addresses`, `delivery_partners`,
+`menu_items`, `order_items`, `orders`, `payments`, `restaurants`,
+`reviews`, `users`).
+
+- [ ] **Step 4: Verify RLS is enabled on every table**
+
+Run:
+```bash
+npx supabase db execute --sql "select relname, relrowsecurity from pg_class where relnamespace = 'public'::regnamespace and relkind='r';"
+```
+Expected: every row shows `relrowsecurity = t`.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add supabase/migrations/00000000000001_core_schema.sql
+git commit -m "feat: add core schema migration for 9 tables with RLS enabled"
+```
+
+---
+
+### Task 5: Cuisine taxonomy + demo data seed script
+
+**Files:**
+- Create: `supabase/seed.sql`
+
+**Interfaces:**
+- Consumes: schema from Task 4 (`restaurants.cuisine_tags`, `menu_items`,
+  `users`, `addresses`).
+- Produces: idempotent seed data — no rows duplicated on repeat runs.
+
+- [ ] **Step 1: Write `supabase/seed.sql`**
+
+This file is auto-run by `supabase db reset`. Use `on conflict do nothing`
+with fixed UUIDs so re-running never duplicates rows.
+
+```sql
+-- Fixed cuisine taxonomy, stored as a lookup table so it's queryable/filterable
+create table if not exists public.cuisine_taxonomy (
+  slug text primary key,
+  label text not null
+);
+
+insert into public.cuisine_taxonomy (slug, label) values
+  ('indian', 'Indian'),
+  ('chinese', 'Chinese'),
+  ('italian', 'Italian'),
+  ('fast_food', 'Fast Food'),
+  ('desserts', 'Desserts'),
+  ('beverages', 'Beverages'),
+  ('south_indian', 'South Indian'),
+  ('north_indian', 'North Indian')
+on conflict (slug) do nothing;
+
+-- Demo vendor user + restaurant (fixed UUIDs for idempotency)
+insert into auth.users (id, email, encrypted_password, email_confirmed_at)
+values ('11111111-1111-1111-1111-111111111111', 'vendor.demo@foodhub.local', crypt('demo1234', gen_salt('bf')), now())
+on conflict (id) do nothing;
+
+insert into public.users (id, role, full_name, phone) values
+  ('11111111-1111-1111-1111-111111111111', 'vendor', 'Demo Vendor', '9990000001')
+on conflict (id) do nothing;
+
+insert into public.addresses (id, user_id, label, line1, lat, lng, is_default) values
+  ('22222222-2222-2222-2222-222222222222', '11111111-1111-1111-1111-111111111111', 'restaurant', '123 Demo Street', 19.0760, 72.8777, true)
+on conflict (id) do nothing;
+
+insert into public.restaurants (id, owner_id, name, cuisine_tags, address_id, lat, lng, is_open, avg_prep_minutes, rating) values
+  ('33333333-3333-3333-3333-333333333333', '11111111-1111-1111-1111-111111111111', 'Demo Kitchen', array['indian','fast_food'], '22222222-2222-2222-2222-222222222222', 19.0760, 72.8777, true, 25, 4.2)
+on conflict (id) do nothing;
+
+insert into public.menu_items (id, restaurant_id, name, description, price, category, is_veg, is_available) values
+  ('44444444-4444-4444-4444-444444444444', '33333333-3333-3333-3333-333333333333', 'Paneer Butter Masala', 'Rich tomato gravy with paneer', 220, 'Main Course', true, true),
+  ('55555555-5555-5555-5555-555555555555', '33333333-3333-3333-3333-333333333333', 'Veg Fried Rice', 'Wok-tossed rice with vegetables', 150, 'Main Course', true, true)
+on conflict (id) do nothing;
+```
+
+- [ ] **Step 2: Run the seed via full reset**
+
+Run: `npx supabase db reset`
+Expected: no SQL errors; output confirms seed file executed.
+
+- [ ] **Step 3: Verify idempotency by running the seed twice**
+
+Run:
+```bash
+npx supabase db execute --file supabase/seed.sql
+npx supabase db execute --file supabase/seed.sql
+npx supabase db execute --sql "select count(*) from public.restaurants;"
+```
+Expected: count is `1`, not `2` — confirms `on conflict do nothing` worked.
+
+- [ ] **Step 4: Verify taxonomy and menu data via Studio**
+
+Open `http://localhost:54323`, navigate to Table Editor, confirm
+`cuisine_taxonomy` has 8 rows, `restaurants` has 1 row ("Demo Kitchen"),
+`menu_items` has 2 rows.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add supabase/seed.sql
+git commit -m "feat: seed cuisine taxonomy and demo restaurant data"
+```
+
+---
+
+### Task 6: README run instructions
+
+**Files:**
+- Create: `README.md`
+
+**Interfaces:**
+- Consumes: nothing.
+- Produces: documented local setup steps for anyone (including future-you)
+  reproducing this environment from scratch.
+
+- [ ] **Step 1: Write `README.md`**
+
+```markdown
+# FoodHub — Food Delivery Platform (Phase 1)
+
+Local-only development stack. No cloud services required.
+
+## Prerequisites
+- Node.js 20+
+- Docker Desktop (running)
+
+## Setup
+
+1. `npm install`
+2. `npx supabase start` — starts local Postgres/Auth/Storage/Realtime in Docker
+3. Copy the API URL and anon key printed by step 2 into `.env.local`
+   (see `.env.example` for the required variable names)
+4. `npx supabase db reset` — applies migrations and seed data
+5. `npm run dev` — starts the Next.js app at http://localhost:3000
+
+## Local service URLs
+- App: http://localhost:3000
+- Supabase Studio: http://localhost:54323
+- Supabase API: http://localhost:54321
+
+## Stopping
+`npx supabase stop` to shut down the local Supabase Docker containers.
+```
+
+- [ ] **Step 2: Verify by following the README from a clean state**
+
+Run: `npx supabase stop` then follow steps 1-5 from the README exactly as
+written.
+Expected: app loads at localhost:3000, Studio shows all 9 tables plus
+`cuisine_taxonomy`, with seed data present — no undocumented manual steps
+were needed.
+
+- [ ] **Step 3: Commit**
+
+```bash
+git add README.md
+git commit -m "docs: add Phase 1 local setup instructions"
+```
