@@ -8,6 +8,8 @@ import { RestaurantCard } from "@/components/RestaurantCard";
 import { HeroSearch } from "@/components/HeroSearch";
 import { PromoBanner } from "@/components/PromoBanner";
 import { CuisineChipRow } from "@/components/CuisineChipRow";
+import { CuisineCarouselRow } from "@/components/CuisineCarouselRow";
+import { HeaderSearchBox } from "@/components/HeaderSearchBox";
 
 type Restaurant = {
   id: string;
@@ -31,6 +33,7 @@ export default function CustomerHomePage() {
   const [restaurants, setRestaurants] = useState<Restaurant[] | null>(null);
   const [cuisines, setCuisines] = useState<Cuisine[]>([]);
   const [selectedCuisine, setSelectedCuisine] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -66,24 +69,56 @@ export default function CustomerHomePage() {
     return <p className="text-brand-ink-muted">Loading restaurants…</p>;
   }
 
-  const sorted = [...restaurants]
+  const withDistance = restaurants
     .map((r) => ({ r, distanceKm: haversineDistanceKm(lat, lng, r.lat, r.lng) }))
-    .sort((a, b) => a.distanceKm - b.distanceKm)
-    .filter(({ r }) => selectedCuisine === null || r.cuisine_tags.includes(selectedCuisine));
+    .sort((a, b) => a.distanceKm - b.distanceKm);
+
+  const query = searchQuery.trim().toLowerCase();
+  const matchesQuery = (r: Restaurant) =>
+    query === "" ||
+    r.name.toLowerCase().includes(query) ||
+    r.cuisine_tags.some((tag) => tag.toLowerCase().includes(query));
+
+  const searched = withDistance.filter(({ r }) => matchesQuery(r));
+
+  const filtered = searched.filter(
+    ({ r }) => selectedCuisine === null || r.cuisine_tags.includes(selectedCuisine)
+  );
+
+  // Group by cuisine for the carousel view. A restaurant with multiple
+  // cuisine_tags appears once per matching tag it has, not just its first.
+  const byCuisine = cuisines.map((c) => ({
+    cuisine: c,
+    restaurants: searched
+      .filter(({ r }) => r.cuisine_tags.includes(c.slug))
+      .map(({ r, distanceKm }) => ({ restaurant: r, distanceKm })),
+  }));
 
   return (
     <div className="flex flex-col gap-6">
       <HeroSearch />
       <PromoBanner message="Free delivery on your first order 🎉" />
+      <HeaderSearchBox value={searchQuery} onChange={setSearchQuery} />
       <CuisineChipRow cuisines={cuisines} selected={selectedCuisine} onSelect={setSelectedCuisine} />
+      <div id="restaurants" />
       {restaurants.length === 0 ? (
         <p className="text-brand-ink-muted">No open restaurants near you right now.</p>
-      ) : sorted.length === 0 ? (
-        <p className="text-brand-ink-muted">No restaurants match that cuisine right now.</p>
+      ) : selectedCuisine !== null ? (
+        filtered.length === 0 ? (
+          <p className="text-brand-ink-muted">No restaurants match that cuisine right now.</p>
+        ) : (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {filtered.map(({ r, distanceKm }) => (
+              <RestaurantCard key={r.id} restaurant={r} distanceKm={distanceKm} />
+            ))}
+          </div>
+        )
+      ) : searched.length === 0 ? (
+        <p className="text-brand-ink-muted">No restaurants match &quot;{searchQuery}&quot;.</p>
       ) : (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {sorted.map(({ r, distanceKm }) => (
-            <RestaurantCard key={r.id} restaurant={r} distanceKm={distanceKm} />
+        <div className="flex flex-col gap-8">
+          {byCuisine.map(({ cuisine, restaurants: rows }) => (
+            <CuisineCarouselRow key={cuisine.slug} label={cuisine.label} restaurants={rows} />
           ))}
         </div>
       )}
