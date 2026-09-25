@@ -29,6 +29,7 @@ export default function DeliveryDashboardPage() {
   const [lat, setLat] = useState("12.9716");
   const [lng, setLng] = useState("77.5946");
   const [error, setError] = useState<string | null>(null);
+  const [addresses, setAddresses] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (!loading) setOnline(initialOnline);
@@ -100,6 +101,19 @@ export default function DeliveryDashboardPage() {
     await loadOrders();
   }
 
+  async function viewAddress(orderId: string) {
+    setError(null);
+    const res = await fetch(`/api/delivery/orders/${orderId}/address`, {
+      headers: await authHeader(),
+    });
+    const body = await res.json().catch(() => null);
+    if (!res.ok) {
+      setError(body?.error ?? "Failed to load address");
+      return;
+    }
+    setAddresses((prev) => ({ ...prev, [orderId]: body.address.line1 }));
+  }
+
   if (loading) return <p>Loading…</p>;
 
   return (
@@ -152,17 +166,32 @@ export default function DeliveryDashboardPage() {
       <h2 className="mb-2 font-semibold">Your deliveries</h2>
       <ul className="flex flex-col gap-2">
         {mine.map((o) => (
-          <li key={o.id} className="flex items-center justify-between rounded border p-2">
-            <span>
-              #{o.id.slice(0, 8)} · {o.status} · ₹{o.total}
-            </span>
-            {NEXT_LABEL[o.status] && (
-              <button
-                onClick={() => advance(o.id)}
-                className="rounded bg-brand-primary px-2 py-1 text-xs text-white"
-              >
-                {NEXT_LABEL[o.status]}
-              </button>
+          <li key={o.id} className="flex flex-col gap-1 rounded border p-2">
+            <div className="flex items-center justify-between">
+              <span>
+                #{o.id.slice(0, 8)} · {o.status} · ₹{o.total}
+              </span>
+              <div className="flex gap-2">
+                {(o.status === "assigned" || o.status === "picked_up") && (
+                  <button
+                    onClick={() => viewAddress(o.id)}
+                    className="rounded border px-2 py-1 text-xs"
+                  >
+                    View address
+                  </button>
+                )}
+                {NEXT_LABEL[o.status] && (
+                  <button
+                    onClick={() => advance(o.id)}
+                    className="rounded bg-brand-primary px-2 py-1 text-xs text-white"
+                  >
+                    {NEXT_LABEL[o.status]}
+                  </button>
+                )}
+              </div>
+            </div>
+            {addresses[o.id] && (
+              <p className="text-xs text-gray-600">{addresses[o.id]}</p>
             )}
           </li>
         ))}
