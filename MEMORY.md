@@ -195,8 +195,40 @@ Claude at the start of work in this repo per project CLAUDE.md.
   Plan: (none — direct polish pass given the phase's own "various" scope
   per spec §7, matching how review/fix work was done throughout this
   build rather than the full brainstorm→plan cycle)
+- **Post-Phase-8 deferred-items triage**: ✅ Complete, merged to `main`
+  (13 tasks via subagent-driven-development in an isolated worktree).
+  Closed: `reviews` RLS tightened to authenticated-only; vendor open/close
+  restaurant toggle (`PATCH /api/vendor/restaurant`); delivery partner can
+  view an assigned order's delivery address (new RLS policy + route,
+  scoped to `assigned`/`picked_up` like the existing location-share
+  policy); delivery location ping now prefills from
+  `navigator.geolocation` with manual fallback; order-confirmation page
+  stops polling on terminal status; shared vendor/delivery signup
+  validation helper (length checks + vehicle-type whitelist); customer
+  menu page re-checks `is_open`/`is_suspended` with a banner; currency
+  display standardized to `.toFixed(2)` across vendor/admin/delivery
+  pages; checkout's 4 sequential inserts wrapped in a Postgres RPC
+  transaction; vendor order queue filter/sort by status; vendor menu
+  inline edit form; delivery dashboard auto-refreshes available orders.
+  Also corrected a stale doc entry (`order_items` RLS was already fixed
+  in Phase 4, not still open). **Real bug caught only by final
+  whole-branch review, not any per-task review**: the checkout RPC
+  (`security definer`, bypasses RLS) was granted `execute` to
+  `authenticated` instead of `service_role`-only, which would have let
+  any logged-in customer call `checkout_place_order` directly via
+  PostgREST with their own session token — skipping the route's identity
+  check, price re-validation, and restaurant-open/suspended check
+  entirely, and letting them set arbitrary prices or order as another
+  customer. Every per-task review of that migration checked the
+  RLS-recursion and same-table-policy rules correctly but missed this
+  privilege-escalation angle; only the final cross-cutting review, done
+  after all tasks landed together, caught it. Fixed and live-verified
+  (a customer's own token against the RPC now gets permission denied;
+  the real checkout flow still works). Also created `scripts/`
+  (build/start/stop/seed, Node `.mjs` canonical + PowerShell `.ps1`
+  wrappers) and `docs/DEPLOYMENT.md`.
 - **Mobile app (React Native + Expo, sub-project)**: not started — begins
-  after Phase 8.
+  after the deferred-items triage.
 
 ## Key decisions carried forward (see spec §2 for full list)
 
@@ -225,54 +257,51 @@ Claude at the start of work in this repo per project CLAUDE.md.
   live post-fix: the legit `/api/vendor/menu-items` route still works,
   a direct PostgREST write with the vendor's own token now silently
   affects 0 rows (RLS-blocked) instead of succeeding.
-- **`reviews` table still has its original Phase 1 permissive
-  `stub_allow_authenticated_read` policy** (`using (true)` — anyone,
-  including anon, can read every review row with its `customer_id` and
-  `order_id`). No phase has written to `reviews` yet, so this isn't
-  currently exploitable for writes, but it's the one remaining un-audited
-  stub from Phase 1's original 9-table sweep (Phase 5's final review
-  confirmed it while auditing all tables for the delivery_partners-class
-  leak). Whichever future phase first builds real review functionality
-  must replace this with an owner/public-appropriate policy before that
-  table holds real user-submitted content.
-- Delivery partner location ping uses manual lat/lng inputs only — the
-  spec's fallback-to-manual design was kept, but the "use
-  `navigator.geolocation` when available" half was dropped from the
-  Phase 5 plan for simplicity. Low priority; add if real device testing
-  becomes relevant before Google Maps integration.
-- Delivery dashboard doesn't auto-refresh the available-orders list —
-  only reloads after the partner's own actions (toggle/claim/advance).
-  A newly-ready order won't appear until the partner does something.
-  Acceptable for now; Phase 7's n8n auto-assignment likely replaces this
-  self-claim UI's need for polling entirely.
-- Delivery partner has no way to see the customer's delivery address —
-  no route returns it and RLS doesn't grant partner read access to
-  `addresses`. Needed for a real delivery flow; deferred since Phase 5's
-  spec only asked for status/location tracking, not address handoff.
-- Vendor and delivery signup routes both have loose input validation
-  (no length/type checks on names, no vehicle-type whitelist) — low risk,
-  same looseness in both, worth a shared validation helper in a polish
-  pass.
+- ~~`reviews` table still has its original Phase 1 permissive
+  `stub_allow_authenticated_read` policy~~ — **closed in
+  deferred-items-triage**. Tightened to `authenticated`-only read (full
+  owner/public-scoped policy still deferred until a real review feature
+  is built and gives this table real write traffic).
+- ~~Delivery partner location ping uses manual lat/lng inputs only~~ —
+  **closed in deferred-items-triage**. Now prefills from
+  `navigator.geolocation` when permission is granted, falling back to the
+  existing manual inputs on denial/unavailability.
+- ~~Delivery dashboard doesn't auto-refresh the available-orders list~~ —
+  **closed in deferred-items-triage**. Polls every 10s while the partner
+  is online, alongside the existing 15s location ping.
+- ~~Delivery partner has no way to see the customer's delivery address~~ —
+  **closed in deferred-items-triage**. New RLS policy on `addresses`
+  scoped to the partner's own `assigned`/`picked_up` orders (mirrors the
+  existing location-share policy's expiry) + a route with its own
+  independent ownership+status check (service-role bypasses RLS, so the
+  route can't rely on the policy alone).
+- ~~Vendor and delivery signup routes both have loose input
+  validation~~ — **closed in deferred-items-triage**. Shared
+  `lib/signup-validation.ts` helper (length/type checks, vehicle-type
+  whitelist) wired into both routes.
 
-- **No in-product way for a vendor to open their restaurant** — signup
-  sets `is_open=false` and nothing in Phase 4 ever sets it back to `true`.
-  Currently requires a manual Supabase Studio edit. Needs a small
-  `/api/vendor/restaurant` PATCH route (service role) + an "Open/Close"
-  toggle in the vendor dashboard, ideally refusing to open with zero
-  available menu items. Good Phase 5/6 or polish-phase candidate.
-- Vendor order queue is not filterable/sortable by status (sorted by
-  `placed_at` only) — fine for the current low-volume demo scale.
-- Vendor menu UI only supports an availability toggle and delete; there's
-  no edit form for name/price/category/veg despite the PATCH route
-  supporting all of them. Low priority — add if vendors need it.
+- ~~No in-product way for a vendor to open their restaurant~~ — **closed
+  in deferred-items-triage**. `PATCH /api/vendor/restaurant` + a toggle on
+  `/vendor/dashboard`, refuses to open with zero available menu items.
+- ~~Vendor order queue is not filterable/sortable by status~~ — **closed
+  in deferred-items-triage**. Client-side status filter + sort-order
+  toggle. Final whole-branch review caught the sort as backwards (default
+  labeled "Oldest first" but the API already returns newest-first, so the
+  toggle wasn't actually reordering anything) — fixed by sorting a copy
+  of the list explicitly by `placed_at` instead of relying on the API's
+  implicit order.
+- ~~Vendor menu UI only supports an availability toggle and delete~~ —
+  **closed in deferred-items-triage**. Inline edit form for
+  name/description/category/veg/price/image URL, using the existing
+  PATCH route (no route change needed).
 - ~~Vendor pages don't surface every write failure~~ — **closed in
   Phase 8**. Vendor menu's availability toggle, vendor orders' and
   delivery dashboard's status-advance/claim buttons now all show an
   error message on a non-2xx response, matching the pattern the delete
   button and admin dashboard's reassign control already used.
-- Currency display is inconsistent between customer pages (`.toFixed(2)`)
-  and the new vendor pages (raw `₹{value}`, no fixed decimals) — cosmetic,
-  fine for now.
+- ~~Currency display is inconsistent between customer pages and vendor
+  pages~~ — **closed in deferred-items-triage**. All pages now use
+  `.toFixed(2)`.
 
 - No spatial/PostGIS indexing for restaurant lat/lng (Phase 1 review;
   revisit if Phase 2+'s query patterns show it's needed at scale).

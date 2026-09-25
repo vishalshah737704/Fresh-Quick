@@ -6,7 +6,12 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "app:build": "node scripts/build.mjs",
+    "app:start": "node scripts/start.mjs",
+    "app:start:dev": "node scripts/start.mjs --dev",
+    "app:stop": "node scripts/stop.mjs",
+    "app:seed": "node scripts/seed.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.117.1",

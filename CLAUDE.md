@@ -30,8 +30,12 @@ subagent-driven-development cycle, ends with a merge to `main`.
 
 ## Local setup
 
-See [README.md](README.md) for run instructions. Requires Docker Desktop
-running before `npx supabase start`.
+See [README.md](README.md) for run instructions and
+[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for a full deployment walkthrough
+(local/self-hosted only — no cloud target). Requires Docker Desktop
+running before `npx supabase start`. `scripts/` has build/start/stop/seed
+entry points (`npm run app:build` / `app:start` / `app:stop` / `app:seed`,
+Node `.mjs` canonical + PowerShell `.ps1` wrappers).
 
 ## Status
 
@@ -131,3 +135,24 @@ See [MEMORY.md](MEMORY.md) for phase-by-phase progress and decisions.
   own Task 6 verification ran entirely via curl and missed a
   login-breaking RLS recursion bug that the final whole-branch review
   only caught by loading `/admin/login` in an actual browser.
+
+## Standing phrase: "Commit Work" — NON-NEGOTIABLE
+
+When Vishal says **"Commit Work"** in this project, perform these three
+steps in sequence, every time, without asking for confirmation on each
+individual step (this phrase is the standing pre-authorization for all
+three, including the push to `origin`):
+
+1. **Update project memory docs** — `CLAUDE.md`, `MEMORY.md`, `README.md`,
+   and `AGENTS.md` if it needs a change given what's being committed (per
+   the global "Update CLAUDE files" rule — check each one even if a given
+   file turns out to need no change).
+2. **Commit** the staged/relevant changes with a clear message describing
+   what changed and why (per the global commit-message rules — never
+   `--no-verify`, never amend, review `git status`/diff for secrets first).
+3. **Push to `origin`** on the current branch.
+
+If step 2's commit would include anything that looks like a secret, or if
+`origin` isn't reachable/authorized (as has happened before in this repo —
+see `md_version/HANDOFF_2.md` for the collaborator-access issue), stop and
+report the problem rather than silently skipping the step.
