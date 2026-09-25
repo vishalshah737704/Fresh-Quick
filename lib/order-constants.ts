@@ -12,3 +12,12 @@ export const VENDOR_STATUS_TRANSITIONS: Record<string, string> = {
   accepted: "preparing",
   preparing: "ready",
 };
+
+// Phase 5: delivery-partner-drivable status chain. "assigned" is entered
+// via the claim endpoint, not this map (claim is a special first
+// transition guarded by its own ready+unassigned check, not a simple
+// status->status lookup).
+export const DELIVERY_STATUS_TRANSITIONS: Record<string, string> = {
+  assigned: "picked_up",
+  picked_up: "delivered",
+};
