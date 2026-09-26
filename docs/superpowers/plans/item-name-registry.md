@@ -630,3 +630,50 @@ Spice Route Chicken Reshmi Kebab
 Spice Route Tandoori Mushroom
 Spice Route Rasam
 Spice Route Veg Seekh Roll
+Corner Rava Dosa
+Corner Onion Dosa
+Corner Paneer Dosa
+Corner Cheese Dosa
+Corner Mysore Masala Dosa
+Corner Set Dosa
+Corner Uttapam Onion
+Corner Uttapam Tomato
+Corner Uttapam Mixed Veg
+Corner Ghee Roast Dosa
+Corner Podi Dosa
+Corner Pesarattu
+Corner Upma
+Corner Pongal
+Corner Vada Sambar
+Corner Rasam Rice
+Corner Sambar Rice Special
+Corner Curd Rice Corner Style
+Corner Lemon Rice
+Corner Tamarind Rice
+Corner Coconut Rice
+Corner Bisi Bele Bath
+Corner Idiyappam
+Corner Appam with Stew
+Corner Filter Coffee Corner Style
+Corner Coconut Chutney
+Corner Tomato Chutney
+Corner Mint Chutney
+Corner Sambar Vada
+Corner Curd Vada
+Corner Mini Idli
+Corner Podi Idli
+Corner Ghee Idli
+Corner Kancheepuram Idli
+Corner Vermicelli Upma
+Corner Rava Upma
+Corner Chettinad Dosa
+Corner Spinach Dosa
+Corner Karnataka Set Dosa
+Corner Neer Dosa
+Corner Adai
+Corner Paniyaram
+Corner Banana Chips
+Corner Payasam
+Corner Mysore Pak
+Corner Filter Coffee Special
+Corner South Indian Thali
