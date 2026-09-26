@@ -594,8 +594,65 @@ Claude at the start of work in this repo per project CLAUDE.md.
   (server already enforces it).
   Plan: docs/superpowers/plans/2026-09-25-uber-eats-item-customization.md
   Spec: docs/superpowers/specs/2026-09-25-uber-eats-item-customization-design.md
+- **Uber Eats-style redesign — Piece 5: Cart redesign**: ✅ Complete, built
+  via `superpowers:subagent-driven-development` in worktree
+  `worktree-uber-eats-cart-redesign` (8 tasks). `components/CartPanel.tsx`
+  rebuilt from an inline-expanding bottom bar into a true slide-out drawer
+  (fixed right-side panel over a dimmed backdrop; closes via ✕, backdrop
+  click, or Escape — all three independently wired, with a click inside
+  the panel itself correctly not bubbling to the backdrop's close
+  handler). `CartItem` gained `imageUrl: string | null` (populated at both
+  add-to-cart call sites from the menu item's existing `image_url`;
+  `normalizeStoredItem` defaults it to `null` for any cart already in a
+  customer's localStorage from before this piece, so old carts don't get
+  wiped). New `orders.delivery_note text` column (distinct from piece 4's
+  per-line `order_items.special_instructions`) plumbed through
+  `checkout_place_order`'s new `p_delivery_note` param, the checkout
+  route/page, and displayed on `/vendor/orders` as "Order note: ...".
+  New shared `lib/use-delivery-fee.ts` hook (extracted from the checkout
+  page's prior inline fetch, `cancelled`-guard preserved) feeds the
+  drawer's subtotal/fee/total preview so it can't drift from the
+  checkout page's real numbers — verified live to match exactly.
+  **1 Critical + 2 Important bugs caught only by the final whole-branch
+  review (opus), not the inline per-task reviews or the Task 8 live-verify
+  pass**: (1) Critical — `CartPanel` is mounted persistently in
+  `app/customer/layout.tsx`, so its `open` state survived the client-side
+  navigation triggered by the drawer's own "Checkout" link, leaving the
+  backdrop and drawer covering `/customer/checkout` until manually
+  dismissed (and re-opening on its own after the next add-to-cart, since
+  `clearCart()` never reset `open`). Fixed with `onClick={() =>
+  setOpen(false)}` on that link. (2) Important — the order-note textarea
+  only committed its draft to the store on blur, so pressing Escape
+  (which unmounts the drawer without a React-visible blur) silently
+  discarded any unsaved note text — reproduced live (typed a note, hit
+  Escape, confirmed via `localStorage` inspection that the store still
+  held the pre-edit value) before the fix, then re-verified it now
+  commits the draft correctly. (3) Important — the drawer's total used
+  `subtotal + deliveryFeePaise / 100` (float) instead of this project's
+  required integer-paise arithmetic, inconsistent with the checkout
+  page's `Math.round(subtotal * 100) + deliveryFeePaise` pattern it was
+  supposed to match exactly; display-only (no DB write reads it), fixed
+  to the same paise-based calculation. All three fixed in one dispatch,
+  re-reviewed clean, findings 1-2 re-verified live by the controller
+  (finding 3 verified by code read, being display-only).
+  **Ruling**: a per-task review during Task 1 flagged the migration's
+  `drop function if exists` (before `create or replace function`, to add
+  the new `p_delivery_note` param) as an unnecessary addition. The final
+  review corrected this: the drop *is* required — Postgres identifies a
+  function by name **and** argument types, so adding a parameter changes
+  the function's identity, and `create or replace` alone would have
+  created a second, ambiguous 15-argument overload alongside the old
+  14-argument one (the migration's own unqualified `revoke`/`grant
+  execute on function public.checkout_place_order` would then fail with
+  "function name is not unique"). No code was wrong; only the ledger note
+  was — worth remembering for any future migration that adds an RPC
+  parameter: the drop-before-replace step is normally correct, not
+  cargo-culted, when Postgres identifies the function by more than just
+  its name.
+  Plan: docs/superpowers/plans/2026-09-26-uber-eats-cart-redesign.md
+  Spec: docs/superpowers/specs/2026-09-26-uber-eats-cart-redesign-design.md
 - **Mobile app (React Native + Expo, sub-project)**: not started — begins
-  after the Uber Eats redesign's remaining pieces (5-6).
+  after the Uber Eats redesign's remaining piece (6).
 
 ## Key decisions carried forward (see spec §2 for full list)
 

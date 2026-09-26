@@ -298,6 +298,49 @@ See [MEMORY.md](MEMORY.md) for phase-by-phase progress and decisions.
   column repeatable, grep for every `.length !==`/`.length ===` check
   against arrays derived from that column, not just the obvious CRUD
   paths — the bug hides in code nobody touched this session.
+- **A component mounted persistently in a layout (outside any page's own
+  tree) that opens an overlay must close that overlay itself on any
+  client-side navigation the overlay's own links trigger — Next.js does
+  not remount or reset the component's state across a client-side route
+  change.** Piece 5's `CartPanel` lives in `app/customer/layout.tsx` so it
+  survives every customer-app navigation; its slide-out drawer's own
+  "Checkout" link did a client-side nav to `/customer/checkout` without
+  closing the drawer first, leaving the backdrop and panel covering the
+  destination page until manually dismissed — and since `clearCart()`
+  never reset the drawer's `open` state either, it silently reopened on
+  the next add-to-cart after a successful order. Missed by every per-task
+  review and the piece's own live-verify pass (which tested the drawer in
+  isolation, never followed the Checkout link through), caught only by
+  the final whole-branch review. Any future persistent-layout overlay
+  needs an explicit `onClick`/route-change handler to close itself, not
+  an assumption that navigating away implicitly resets it.
+- **A controlled input that only commits its draft to a store on `blur`
+  loses that draft if the surrounding UI can be dismissed by a path that
+  unmounts the input without a browser-visible blur event** (an Escape
+  keydown handler that calls `setOpen(false)`, closing a modal/drawer,
+  is exactly such a path — the ✕ button and a backdrop click both
+  happen to blur the input first via the mousedown, but Escape does
+  not). Piece 5's order-note textarea used this blur-only commit
+  pattern (matching piece 4's existing per-line note inputs) and silently
+  discarded an unsaved note on Escape. Any keyboard-driven close handler
+  for a panel containing blur-committed text inputs must explicitly flush
+  their pending draft state before closing, not rely on blur firing as a
+  side effect of how the panel happens to get dismissed.
+- **When a Postgres RPC function gains a new parameter via a migration,
+  `drop function if exists <old-signature>` before `create or replace
+  function <new-signature>` is normally correct, not a cargo-culted
+  extra step** — Postgres identifies a function by its name **and**
+  argument types, so appending a parameter (even one with a `default`)
+  changes the function's identity, and `create or replace` alone creates
+  a second, ambiguous overload beside the old one. A migration's own
+  unqualified `revoke`/`grant execute on function <name>` (no argument
+  list) then fails with "function name is not unique." Piece 5's Task 1
+  per-task review flagged its migration's drop-then-replace as
+  unnecessary; the final whole-branch review corrected this — the
+  drop was required, and the per-task reviewer's stated rationale for
+  calling it unnecessary was itself wrong. Don't assume `create or
+  replace function` is a drop-in replacement for `drop` + `create` just
+  because it usually is for same-signature changes.
 
 ## Standing phrase: "Commit Work" — NON-NEGOTIABLE
 
