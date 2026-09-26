@@ -3,7 +3,7 @@ import { supabaseServer } from "@/lib/supabase-server";
 import { PAYMENT_SUCCESS_RATE } from "@/lib/order-constants";
 
 type CheckoutRequestItem = {
-  menuItemId: string;
+  productId: string;
   quantity: number;
   selectedOptionIds: string[];
   specialInstructions: string | null;
@@ -23,14 +23,14 @@ export async function POST(request: NextRequest) {
 
   const body = await request.json();
   const {
-    restaurantId,
+    storeId,
     items,
     deliveryAddress,
     paymentMethod,
     expectedTotal,
     deliveryNote,
   }: {
-    restaurantId: string;
+    storeId: string;
     items: CheckoutRequestItem[];
     deliveryAddress: { label: string; lat: number; lng: number };
     paymentMethod: "mock_card" | "mock_upi" | "mock_cod";
@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
     deliveryNote?: string | null;
   } = body;
 
-  if (!restaurantId || !items?.length || !deliveryAddress) {
+  if (!storeId || !items?.length || !deliveryAddress) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
   }
 
@@ -102,33 +102,33 @@ export async function POST(request: NextRequest) {
   const normalizedDeliveryNote =
     typeof deliveryNote === "string" && deliveryNote.trim() !== "" ? deliveryNote : null;
 
-  const { data: restaurant, error: restaurantError } = await supabaseServer
-    .from("restaurants")
+  const { data: store, error: storeError } = await supabaseServer
+    .from("stores")
     .select("id, is_open, is_suspended, delivery_fee_paise")
-    .eq("id", restaurantId)
+    .eq("id", storeId)
     .single();
 
-  if (restaurantError || !restaurant) {
+  if (storeError || !store) {
     return NextResponse.json({ error: "Restaurant not found" }, { status: 404 });
   }
-  if (!restaurant.is_open || restaurant.is_suspended) {
+  if (!store.is_open || store.is_suspended) {
     return NextResponse.json({ error: "Restaurant is currently closed" }, { status: 409 });
   }
 
-  const menuItemIds = [...new Set(items.map((i) => i.menuItemId))];
-  const { data: menuItems, error: menuError } = await supabaseServer
-    .from("menu_items")
+  const productIds = [...new Set(items.map((i) => i.productId))];
+  const { data: products, error: productError } = await supabaseServer
+    .from("products")
     .select(
-      "id, restaurant_id, price, is_available, menu_item_option_groups(id, name, min_select, max_select, menu_item_options(id, name, price_delta_paise))"
+      "id, store_id, price, is_available, menu_item_option_groups(id, name, min_select, max_select, menu_item_options(id, name, price_delta_paise))"
     )
-    .in("id", menuItemIds);
+    .in("id", productIds);
 
-  if (menuError || !menuItems || menuItems.length !== menuItemIds.length) {
+  if (productError || !products || products.length !== productIds.length) {
     return NextResponse.json({ error: "One or more menu items not found" }, { status: 404 });
   }
 
-  for (const item of menuItems) {
-    if (item.restaurant_id !== restaurantId) {
+  for (const item of products) {
+    if (item.store_id !== storeId) {
       return NextResponse.json(
         { error: "Cart contains items from more than one restaurant" },
         { status: 409 }
@@ -142,7 +142,7 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  const priceById = new Map(menuItems.map((m) => [m.id, Number(m.price)]));
+  const priceById = new Map(products.map((m) => [m.id, Number(m.price)]));
 
   type OptionInfo = {
     groupId: string;
@@ -155,7 +155,7 @@ export async function POST(request: NextRequest) {
     string,
     { id: string; min_select: number; max_select: number }[]
   >();
-  for (const mi of menuItems) {
+  for (const mi of products) {
     const groups = mi.menu_item_option_groups ?? [];
     groupsByMenuItem.set(
       mi.id,
@@ -177,7 +177,7 @@ export async function POST(request: NextRequest) {
   // item, and every group's own min/max must be satisfied — never trust
   // the client's selections, prices, or which item they claim to attach to.
   for (const item of items) {
-    const groups = groupsByMenuItem.get(item.menuItemId) ?? [];
+    const groups = groupsByMenuItem.get(item.productId) ?? [];
     const groupIds = new Set(groups.map((g) => g.id));
     const countByGroup = new Map<string, number>();
     for (const optionId of item.selectedOptionIds ?? []) {
@@ -202,14 +202,14 @@ export async function POST(request: NextRequest) {
   }
 
   const subtotalPaise = items.reduce((sum, item) => {
-    const basePaise = Math.round((priceById.get(item.menuItemId) ?? 0) * 100);
+    const basePaise = Math.round((priceById.get(item.productId) ?? 0) * 100);
     const deltaPaise = (item.selectedOptionIds ?? []).reduce(
       (s, optionId) => s + (optionInfoById.get(optionId)?.priceDeltaPaise ?? 0),
       0
     );
     return sum + (basePaise + deltaPaise) * item.quantity;
   }, 0);
-  const deliveryFeePaise = restaurant.delivery_fee_paise;
+  const deliveryFeePaise = store.delivery_fee_paise;
   const totalPaise = subtotalPaise + deliveryFeePaise;
   const subtotal = subtotalPaise / 100;
   const total = totalPaise / 100;
@@ -222,7 +222,7 @@ export async function POST(request: NextRequest) {
   }
 
   const orderItemsPayload = items.map((item) => {
-    const basePaise = Math.round((priceById.get(item.menuItemId) ?? 0) * 100);
+    const basePaise = Math.round((priceById.get(item.productId) ?? 0) * 100);
     const options = (item.selectedOptionIds ?? []).map((optionId) => {
       const info = optionInfoById.get(optionId)!;
       return {
@@ -234,7 +234,7 @@ export async function POST(request: NextRequest) {
     });
     const deltaPaise = options.reduce((s, o) => s + o.price_delta_paise, 0);
     return {
-      menu_item_id: item.menuItemId,
+      product_id: item.productId,
       quantity: item.quantity,
       unit_price: (basePaise + deltaPaise) / 100,
       special_instructions: item.specialInstructions ?? null,
@@ -257,7 +257,7 @@ export async function POST(request: NextRequest) {
     p_address_line1: deliveryAddress.label,
     p_address_lat: deliveryAddress.lat,
     p_address_lng: deliveryAddress.lng,
-    p_restaurant_id: restaurantId,
+    p_store_id: storeId,
     p_subtotal: subtotal,
     p_delivery_fee: deliveryFeePaise / 100,
     p_total: total,
