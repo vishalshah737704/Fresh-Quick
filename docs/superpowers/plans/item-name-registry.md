@@ -820,3 +820,50 @@ Junction Dragon Fruit Juice
 Junction Passion Fruit Juice
 Junction Herbal Immunity Shot
 Junction Iced Latte
+Sweet Tooth Red Velvet Cake
+Sweet Tooth Black Forest Cake
+Sweet Tooth Cheesecake
+Sweet Tooth Carrot Cake
+Sweet Tooth Vanilla Cupcake
+Sweet Tooth Chocolate Cupcake
+Sweet Tooth Macarons
+Sweet Tooth Doughnut Glazed
+Sweet Tooth Doughnut Chocolate
+Sweet Tooth Rasgulla
+Sweet Tooth Rasmalai
+Sweet Tooth Kaju Katli
+Sweet Tooth Motichoor Ladoo
+Sweet Tooth Besan Ladoo
+Sweet Tooth Jalebi
+Sweet Tooth Rabri
+Sweet Tooth Gajar Halwa
+Sweet Tooth Kheer
+Sweet Tooth Ice Cream Sundae
+Sweet Tooth Chocolate Fudge
+Sweet Tooth Fruit Tart
+Sweet Tooth Lemon Tart
+Sweet Tooth Apple Pie
+Sweet Tooth Pecan Pie
+Sweet Tooth Waffle with Ice Cream
+Sweet Tooth Pancake Stack
+Sweet Tooth Churros
+Sweet Tooth Chocolate Mousse
+Sweet Tooth Tiramisu
+Sweet Tooth Banana Split
+Sweet Tooth Caramel Custard
+Sweet Tooth Cookies and Cream Shake
+Sweet Tooth Chocolate Brownie Sundae
+Sweet Tooth Milkshake Trio
+Sweet Tooth Peanut Butter Cookie
+Sweet Tooth Oatmeal Cookie
+Sweet Tooth Chocolate Chip Cookie
+Sweet Tooth Nutella Waffle
+Sweet Tooth Choco Lava Cake
+Sweet Tooth Coconut Ladoo
+Sweet Tooth Coconut Barfi
+Sweet Tooth Kalakand
+Sweet Tooth Petha
+Sweet Tooth Soan Papdi
+Sweet Tooth Mango Mousse
+Sweet Tooth Strawberry Cheesecake
+Sweet Tooth Blueberry Muffin
