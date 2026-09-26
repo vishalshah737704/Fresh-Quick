@@ -42,26 +42,47 @@ function slugify(label: string): string {
   return slug || "group";
 }
 
-// Groups by category in first-seen order; every category-null item is
-// bucketed into a trailing "Other" group regardless of where it appeared
-// in the fetched list. Called with the already search-filtered items, so
-// a category with zero remaining matches is simply never added here.
+// Groups by category in first-seen order; a null OR blank/whitespace-only
+// category (the vendor edit form writes "" when a vendor clears the field,
+// not null) is bucketed into a trailing "Other" group regardless of where
+// it appeared in the fetched list. Called with the already search-filtered
+// items, so a category with zero remaining matches is simply never added
+// here. Slugs are de-duplicated across labels that collide once slugified
+// (trailing-space variants, case variants, non-Latin labels, or a real
+// "Other" category alongside blank items) so two distinct groups never
+// share a key/section id.
 function buildGroups(items: MenuItem[]): MenuGroup[] {
   const byCategory = new Map<string, MenuItem[]>();
+  const uncategorized: MenuItem[] = [];
   for (const item of items) {
-    if (item.category === null) continue;
-    const bucket = byCategory.get(item.category);
+    const label = item.category?.trim();
+    if (!label) {
+      uncategorized.push(item);
+      continue;
+    }
+    const bucket = byCategory.get(label);
     if (bucket) bucket.push(item);
-    else byCategory.set(item.category, [item]);
+    else byCategory.set(label, [item]);
+  }
+  const usedKeys = new Set<string>();
+  function uniqueKey(label: string): string {
+    const base = slugify(label);
+    let key = base;
+    let suffix = 2;
+    while (usedKeys.has(key)) {
+      key = `${base}-${suffix}`;
+      suffix += 1;
+    }
+    usedKeys.add(key);
+    return key;
   }
   const groups: MenuGroup[] = Array.from(byCategory.entries()).map(([label, groupItems]) => ({
-    key: slugify(label),
+    key: uniqueKey(label),
     label,
     items: groupItems,
   }));
-  const uncategorized = items.filter((item) => item.category === null);
   if (uncategorized.length > 0) {
-    groups.push({ key: "other", label: "Other", items: uncategorized });
+    groups.push({ key: uniqueKey("Other"), label: "Other", items: uncategorized });
   }
   return groups;
 }
@@ -160,6 +181,7 @@ export default function RestaurantMenuPage() {
 
   function scrollToGroup(key: string) {
     sectionRefs.current.get(key)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    setActiveKey(key);
   }
 
   return (
@@ -206,7 +228,12 @@ export default function RestaurantMenuPage() {
           />
           <div className="flex flex-col gap-6 pt-4">
             {groups.map((group) => (
-              <section key={group.key} id={`category-${group.key}`} ref={(el) => registerSection(group.key, el)}>
+              <section
+                key={group.key}
+                id={`category-${group.key}`}
+                ref={(el) => registerSection(group.key, el)}
+                className="scroll-mt-16"
+              >
                 <h2 className="mb-2 text-lg font-bold text-brand-ink">{group.label}</h2>
                 <div className="flex flex-col divide-y divide-brand-ink-muted/10 rounded-lg border border-brand-ink-muted/10 bg-brand-surface px-4">
                   {group.items.map((item) => (
