@@ -1,7 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import Image from "next/image";
 import { useCart } from "@/lib/cart-store";
+import { ItemCustomizationModal } from "@/components/ItemCustomizationModal";
 
 type MenuItem = {
   id: string;
@@ -13,19 +15,47 @@ type MenuItem = {
   image_url: string | null;
 };
 
+type Option = { id: string; name: string; price_delta_paise: number };
+type OptionGroup = {
+  id: string;
+  name: string;
+  min_select: number;
+  max_select: number;
+  menu_item_options: Option[];
+};
+
 export function MenuItemRow({
   item,
   restaurantId,
   restaurantName,
   disabled = false,
+  optionGroups = [],
 }: {
   item: MenuItem;
   restaurantId: string;
   restaurantName: string;
   disabled?: boolean;
+  optionGroups?: OptionGroup[];
 }) {
   const { addItem } = useCart();
+  const [modalOpen, setModalOpen] = useState(false);
   const canAdd = !disabled && item.is_available;
+  const hasOptions = optionGroups.length > 0;
+
+  function handleAddClick() {
+    if (hasOptions) {
+      setModalOpen(true);
+      return;
+    }
+    addItem(restaurantId, restaurantName, {
+      menuItemId: item.id,
+      name: item.name,
+      price: item.price,
+      quantity: 1,
+      selectedOptions: [],
+      specialInstructions: null,
+    });
+  }
 
   return (
     <div className="flex items-start justify-between gap-4 py-4">
@@ -57,20 +87,22 @@ export function MenuItemRow({
         )}
         <button
           disabled={!canAdd}
-          onClick={() =>
-            addItem(restaurantId, restaurantName, {
-              menuItemId: item.id,
-              name: item.name,
-              price: item.price,
-              quantity: 1,
-            })
-          }
+          onClick={handleAddClick}
           aria-label={`Add ${item.name}`}
           className="absolute -bottom-1.5 -right-1.5 flex h-7 w-7 items-center justify-center rounded-full bg-brand-accent text-base font-bold leading-none text-brand-ink shadow-md disabled:cursor-not-allowed disabled:bg-brand-ink-muted/30 disabled:text-brand-ink-muted disabled:opacity-60"
         >
           +
         </button>
       </div>
+      {modalOpen && (
+        <ItemCustomizationModal
+          item={item}
+          optionGroups={optionGroups}
+          restaurantId={restaurantId}
+          restaurantName={restaurantName}
+          onClose={() => setModalOpen(false)}
+        />
+      )}
     </div>
   );
 }
