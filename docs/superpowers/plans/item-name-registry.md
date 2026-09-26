@@ -1064,3 +1064,33 @@ Stapler Small
 Greeting Card
 Playing Cards Deck
 Malt Drink Powder 500g
+Fruit Punch Can
+Buttermilk Chilled Cup
+Cold Brew Coffee Bottle
+Lemon Soda Can
+Salted Crackers Pack
+Cheese Nachos Pack
+Roasted Chana Pack
+Dry Fruit Mix Pouch
+Muffin Single Pack
+Frozen Spring Rolls 6pc
+Frozen Kebab Pack
+Daily Tabloid
+Kids Storybook
+Sudoku Puzzle Book
+Wet Wipes Pack
+Deodorant Spray Small
+Nail Clipper
+Safety Pins Pack
+Rain Poncho
+Mobile Screen Protector
+Phone Stand
+AAA Batteries 4pk
+Extension Cord Small
+Highlighter Single
+Glue Stick
+Ruler 12 inch
+Sketch Pen Set 12pc
+Envelope Pack 10pc
+Birthday Candle Pack
+Matchbox Pack
