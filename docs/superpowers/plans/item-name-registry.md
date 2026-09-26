@@ -536,3 +536,50 @@ Demo Samosa
 Demo Pav Bhaji
 Demo Vada Pav
 Fiesta Grilled Corn Salad
+Dhaba Butter Chicken Special
+Dhaba Dal Makhani Creamy
+Dhaba Sarson da Saag
+Dhaba Makki di Roti
+Dhaba Amritsari Fish
+Dhaba Kulcha
+Dhaba Paneer Bhurji
+Dhaba Rajma
+Dhaba Kadai Chicken
+Dhaba Kadai Paneer
+Dhaba Tandoori Chicken Full
+Dhaba Chicken Seekh Kebab
+Dhaba Mutton Rogan Josh
+Dhaba Aloo Paratha
+Dhaba Paneer Paratha
+Dhaba Lachha Paratha
+Dhaba Dal Fry
+Dhaba Punjabi Kadhi
+Dhaba Amritsari Chole
+Dhaba Butter Naan Special
+Dhaba Garlic Naan Punjabi Style
+Dhaba Lassi Salted
+Dhaba Shahi Paneer
+Dhaba Egg Bhurji
+Dhaba Chicken Curry Dhaba Style
+Dhaba Mixed Veg Sabzi
+Dhaba Bhindi Do Pyaza
+Dhaba Onion Salad
+Dhaba Papad Roasted
+Dhaba Achaar Platter
+Dhaba Gajar Halwa
+Dhaba Kheer Punjabi Style
+Dhaba Jeera Rice
+Dhaba Veg Biryani Dhaba Style
+Dhaba Chicken Malai Tikka
+Dhaba Tandoori Prawns
+Dhaba Punjabi Samosa
+Dhaba Pakora Platter
+Dhaba Stuffed Kulcha
+Dhaba Amritsari Kulfi
+Dhaba Rabri
+Dhaba Special Thali
+Dhaba Chicken Malai Boti
+Dhaba Paneer Lababdar
+Dhaba Egg Curry Punjabi
+Dhaba Punjabi Chaas
+Dhaba Matar Paneer
