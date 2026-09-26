@@ -914,3 +914,33 @@ Basket Naan
 Basket Sourdough Toast
 Basket Multiseed Crackers
 Basket Special Pastry Box
+Paneer 200g
+Cheese Slices 10pc
+Fresh Cream 200ml
+Ghee 500ml
+Buttermilk 500ml
+Multigrain Bread
+Pav Buns 6pc
+Rusk Pack
+Muffin Pack 4pc
+Moong Dal 1kg
+Chana Dal 1kg
+Besan 1kg
+Semolina (Rava) 1kg
+Poha 1kg
+Red Chilli Powder 200g
+Turmeric Powder 200g
+Garam Masala 100g
+Cumin Seeds 200g
+Mustard Oil 1L
+Capsicum 500g
+Cauliflower 1pc
+Cucumber 1kg
+Spinach Bunch
+Lemons 500g
+Apples 1kg
+Mango Pulp Tin
+Frozen Corn 500g
+Frozen Paratha 5pc
+Masala Papad Pack
+Digestive Biscuits
