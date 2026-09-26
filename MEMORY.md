@@ -737,6 +737,26 @@ Claude at the start of work in this repo per project CLAUDE.md.
   `category_type` column. Restaurants show real data; the other 10
   categories show the empty state until Phases 3-5 seed real content.
   Plan: docs/superpowers/plans/2026-09-26-marketplace-phase2-sidebar-browsing.md
+- **Marketplace Phase 3 (Content A: Grocery, Convenience, Alcohol)**: ✅
+  Complete. 12 new stores seeded (4 each for Grocery/Convenience/Alcohol),
+  each store in a category carrying the SAME 20-item master catalog
+  (real grocery-chain-style overlap, not padding) — confirmed via a live
+  `select category_type, count(*) ... group by 1` query: exactly 80
+  products in each of the 3 categories. Sizing was revised mid-project
+  from the original spec's "2-3 stores, 3-5 products" estimate to this
+  4-stores/20-shared-items pattern per explicit user request for 75-100
+  items/category, referencing Uber Eats' own catalog depth. One Pexels
+  photo fetched per item type (60 total across the 3 categories) and
+  reused across every store selling that item, keeping the image-fetch
+  volume sane while still producing real per-category depth. All 12 new
+  vendor accounts use `demo1234`. Executed as 3 separate per-category
+  subagent dispatches (not one giant one) for reliability at this volume
+  — each implementer independently used a small uncommitted Node
+  generator script to guarantee byte-identical product text across a
+  category's 4 stores rather than hand-transcribing 80 rows, avoiding
+  transcription drift. `docs/UserList.docx` regeneration deferred to
+  Phase 5 (covers all 40 Phase 3-5 vendor accounts at once).
+  Plan: docs/superpowers/plans/2026-09-26-marketplace-phase3-content-a.md
 
 ## Key decisions carried forward (see spec §2 for full list)
 
