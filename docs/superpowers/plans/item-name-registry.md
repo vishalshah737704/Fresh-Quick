@@ -441,3 +441,50 @@ Sombrero Spicy Chicken Wings Mexican Style
 Sombrero Elote Cup
 Sombrero Black Bean Soup
 Sombrero Cactus Salad
+Fiesta Chicken Tacos
+Fiesta Fish Tacos
+Fiesta Shrimp Tacos
+Fiesta Veggie Tacos
+Fiesta Al Pastor Tacos
+Fiesta Carnitas Tacos
+Fiesta Burrito Bowl
+Fiesta Chicken Burrito
+Fiesta Beef Burrito
+Fiesta Bean and Cheese Burrito
+Fiesta Nachos Grande
+Fiesta Chicken Enchiladas
+Fiesta Cheese Enchiladas
+Fiesta Fajita Platter
+Fiesta Rice and Beans
+Fiesta Elote
+Fiesta Churro Bites
+Fiesta Flan Especial
+Fiesta Tres Leches
+Fiesta Salsa Roja
+Fiesta Salsa Verde
+Fiesta Queso Fundido
+Fiesta Chile Relleno
+Fiesta Pozole
+Fiesta Tortilla Chips and Salsa
+Fiesta Spicy Chicken Bowl
+Fiesta Steak Tacos
+Fiesta Carne Asada Fries
+Fiesta Mexican Street Corn Salad
+Fiesta Horchata Drink
+Fiesta Jamaica Agua Fresca
+Fiesta Chicken Taquitos
+Fiesta Beef Taquitos
+Fiesta Mango Salsa Bowl
+Fiesta Cilantro Lime Rice
+Fiesta Black Bean Dip
+Fiesta Cheese Dip
+Fiesta Loaded Nacho Fries
+Fiesta Shrimp Ceviche
+Fiesta Chicken Torta
+Fiesta Vegetarian Bowl
+Fiesta Tostada Especial
+Fiesta Spicy Guac Bowl
+Fiesta Mexican Chocolate Cake
+Fiesta Lime Sorbet
+Fiesta Chili Cheese Fries
+Fiesta Grilled Corn Salad
