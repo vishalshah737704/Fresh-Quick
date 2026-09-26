@@ -145,7 +145,11 @@ export default function CustomerHomePage() {
   // isn't represented in a single carousel row.
   const groupedIds = new Set(byCuisine.flatMap(({ restaurants }) => restaurants.map(({ restaurant }) => restaurant.id)));
   const hasUngroupedRestaurant = searched.some(({ r }) => !groupedIds.has(r.id));
-  const useCarouselView = cuisines.length > 0 && !hasUngroupedRestaurant;
+  // Picking a non-default sort (anything but "distance") switches the page
+  // to the flat sorted grid instead of the curated/cuisine carousels, which
+  // keep their own fixed ordering and would otherwise make the sort control
+  // a no-op — Vishal's ruling on the piece 2 sort-scope deferred item.
+  const useCarouselView = cuisines.length > 0 && !hasUngroupedRestaurant && sortBy === "distance";
 
   return (
     <div className="flex flex-col gap-6">

@@ -444,6 +444,16 @@ Claude at the start of work in this repo per project CLAUDE.md.
   against the design twice (task review + final review), left as-is
   pending Vishal's call on whether a future piece should make picking a
   non-default sort switch to the flat grid.
+  **Update (piece 3 session)**: Vishal decided — picking a non-default
+  sort (`sortBy !== "distance"`) now switches the no-cuisine-selected view
+  from the curated/cuisine carousels to the flat sorted grid
+  (`app/customer/page.tsx`'s `useCarouselView` condition gained a
+  `sortBy === "distance"` clause). The 3 curated carousels (Popular/
+  Offers/Quick delivery) still render above it unconditionally and keep
+  their own fixed ordering, unaffected — only the cuisine-grouped rows
+  below them are swapped for the flat grid. Reverting to "Sort: Distance"
+  restores the carousel view. Live-verified via Playwright (rating sort
+  produced a grid correctly ordered 4.7→4.0).
   **Two real bugs caught late, both worth remembering**: (1) a fix-pass
   subagent verified 3 of 6 final-review findings via throwaway-script
   logic replication instead of live infra that was actually available and
