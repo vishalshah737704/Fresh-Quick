@@ -345,3 +345,51 @@ Wok Vegetable Stir-Fry
 Wonton Soup
 Yogurt Cup 400g
 Zuppa Toscana
+Barn Double Cheeseburger
+Barn Bacon Burger
+Barn Veggie Burger
+Barn Spicy Chicken Burger
+Barn Grilled Chicken Burger
+Barn Mushroom Swiss Burger
+Barn BBQ Burger
+Barn Onion Rings
+Barn Loaded Fries
+Barn Curly Fries
+Barn Sweet Potato Fries
+Barn Chicken Nuggets
+Barn Fish Burger
+Barn Paneer Burger
+Barn Classic Hot Dog
+Barn Chili Cheese Dog
+Barn Chicken Wrap
+Barn Grilled Veg Wrap
+Barn Cheese Sticks
+Barn Loaded Nachos
+Barn Milkshake Chocolate
+Barn Milkshake Vanilla
+Barn Milkshake Strawberry
+Barn Cola Float
+Barn Onion Burger Special
+Barn Jalapeno Poppers
+Barn Coleslaw
+Barn Garden Salad
+Barn Chicken Popcorn
+Barn Fried Egg Burger
+Barn Triple Patty Burger
+Barn Turkey Burger
+Barn BBQ Chicken Sandwich
+Barn Grilled Cheese Sandwich
+Barn Buffalo Wings
+Barn Honey Mustard Wings
+Barn Crispy Chicken Sandwich
+Barn Loaded Potato Wedges
+Barn Mac and Cheese Bites
+Barn Veggie Nuggets
+Barn Corn Dog
+Barn Apple Pie Slice
+Barn Brownie Sundae
+Barn Iced Tea
+Barn Root Beer Float
+Barn Classic Combo Meal
+Barn Spicy Fries
+Barn Cheese Burger Deluxe
