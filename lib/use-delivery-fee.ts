@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 
-export function useDeliveryFee(restaurantId: string | null) {
+export function useDeliveryFee(storeId: string | null) {
   const [deliveryFeePaise, setDeliveryFeePaise] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -11,7 +11,7 @@ export function useDeliveryFee(restaurantId: string | null) {
   useEffect(() => {
     let cancelled = false;
 
-    if (!restaurantId) {
+    if (!storeId) {
       setDeliveryFeePaise(null);
       setError(null);
       setLoading(false);
@@ -23,9 +23,9 @@ export function useDeliveryFee(restaurantId: string | null) {
 
     async function loadFee() {
       const { data, error: fetchError } = await supabase
-        .from("restaurants")
+        .from("stores")
         .select("delivery_fee_paise")
-        .eq("id", restaurantId)
+        .eq("id", storeId)
         .single();
       if (cancelled) return;
       if (fetchError) {
@@ -41,7 +41,7 @@ export function useDeliveryFee(restaurantId: string | null) {
     return () => {
       cancelled = true;
     };
-  }, [restaurantId]);
+  }, [storeId]);
 
   return { deliveryFeePaise, loading, error };
 }

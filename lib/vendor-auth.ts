@@ -2,10 +2,10 @@ import "server-only";
 import { supabaseServer } from "@/lib/supabase-server";
 
 type VendorResolution =
-  | { vendorId: string; restaurantId: string }
+  | { vendorId: string; storeId: string }
   | { error: string; status: number };
 
-export async function resolveVendorRestaurant(
+export async function resolveVendorStore(
   token: string | undefined
 ): Promise<VendorResolution> {
   if (!token) {
@@ -26,16 +26,16 @@ export async function resolveVendorRestaurant(
     return { error: "Not a vendor account", status: 403 };
   }
 
-  const { data: restaurant, error: restaurantError } = await supabaseServer
-    .from("restaurants")
+  const { data: store, error: storeError } = await supabaseServer
+    .from("stores")
     .select("id")
     .eq("owner_id", vendorId)
     .single();
-  if (restaurantError || !restaurant) {
-    return { error: "No restaurant found for this vendor", status: 404 };
+  if (storeError || !store) {
+    return { error: "No store found for this vendor", status: 404 };
   }
 
-  return { vendorId, restaurantId: restaurant.id };
+  return { vendorId, storeId: store.id };
 }
 
 export function tokenFromRequest(request: Request): string | undefined {

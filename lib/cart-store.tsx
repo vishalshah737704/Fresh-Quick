@@ -24,19 +24,19 @@ export type CartItem = {
 type NewCartItem = Omit<CartItem, "lineId">;
 
 type PendingConflict = {
-  restaurantId: string;
-  restaurantName: string;
+  storeId: string;
+  storeName: string;
   item: NewCartItem;
 } | null;
 
 type CartContextValue = {
-  restaurantId: string | null;
-  restaurantName: string | null;
+  storeId: string | null;
+  storeName: string | null;
   items: CartItem[];
   subtotal: number;
   orderNote: string;
   pendingConflict: PendingConflict;
-  addItem: (restaurantId: string, restaurantName: string, item: NewCartItem) => void;
+  addItem: (storeId: string, storeName: string, item: NewCartItem) => void;
   updateQuantity: (lineId: string, quantity: number) => void;
   removeItem: (lineId: string) => void;
   setSpecialInstructions: (lineId: string, text: string) => void;
@@ -51,8 +51,8 @@ const CartContext = createContext<CartContextValue | null>(null);
 const STORAGE_KEY = "foodhub_cart";
 
 type StoredCart = {
-  restaurantId: string | null;
-  restaurantName: string | null;
+  storeId: string | null;
+  storeName: string | null;
   items: CartItem[];
   orderNote: string;
 };
@@ -106,20 +106,20 @@ function normalizeStoredItem(raw: Record<string, unknown>): CartItem | null {
 
 function loadStoredCart(): StoredCart {
   if (typeof window === "undefined") {
-    return { restaurantId: null, restaurantName: null, items: [], orderNote: "" };
+    return { storeId: null, storeName: null, items: [], orderNote: "" };
   }
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return { restaurantId: null, restaurantName: null, items: [], orderNote: "" };
+    if (!raw) return { storeId: null, storeName: null, items: [], orderNote: "" };
     const parsed = JSON.parse(raw);
     if (
       !parsed ||
       typeof parsed !== "object" ||
-      !(parsed.restaurantId === null || typeof parsed.restaurantId === "string") ||
-      !(parsed.restaurantName === null || typeof parsed.restaurantName === "string") ||
+      !(parsed.storeId === null || typeof parsed.storeId === "string") ||
+      !(parsed.storeName === null || typeof parsed.storeName === "string") ||
       !Array.isArray(parsed.items)
     ) {
-      return { restaurantId: null, restaurantName: null, items: [], orderNote: "" };
+      return { storeId: null, storeName: null, items: [], orderNote: "" };
     }
     const items = (parsed.items as unknown[])
       .map((i) =>
@@ -129,15 +129,15 @@ function loadStoredCart(): StoredCart {
       )
       .filter((i): i is CartItem => i !== null);
     const orderNote = typeof parsed.orderNote === "string" ? parsed.orderNote : "";
-    return { restaurantId: parsed.restaurantId, restaurantName: parsed.restaurantName, items, orderNote };
+    return { storeId: parsed.storeId, storeName: parsed.storeName, items, orderNote };
   } catch {
-    return { restaurantId: null, restaurantName: null, items: [], orderNote: "" };
+    return { storeId: null, storeName: null, items: [], orderNote: "" };
   }
 }
 
 export function CartProvider({ children }: { children: ReactNode }) {
-  const [restaurantId, setRestaurantId] = useState<string | null>(null);
-  const [restaurantName, setRestaurantName] = useState<string | null>(null);
+  const [storeId, setStoreId] = useState<string | null>(null);
+  const [storeName, setStoreName] = useState<string | null>(null);
   const [items, setItems] = useState<CartItem[]>([]);
   const [orderNote, setOrderNoteState] = useState("");
   const [pendingConflict, setPendingConflict] = useState<PendingConflict>(null);
@@ -145,8 +145,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const stored = loadStoredCart();
-    setRestaurantId(stored.restaurantId);
-    setRestaurantName(stored.restaurantName);
+    setStoreId(stored.storeId);
+    setStoreName(stored.storeName);
     setItems(stored.items);
     setOrderNoteState(stored.orderNote);
     setHydrated(true);
@@ -157,17 +157,17 @@ export function CartProvider({ children }: { children: ReactNode }) {
     try {
       window.localStorage.setItem(
         STORAGE_KEY,
-        JSON.stringify({ restaurantId, restaurantName, items, orderNote })
+        JSON.stringify({ storeId, storeName, items, orderNote })
       );
     } catch {
       // localStorage unavailable (private mode, quota) — cart just won't persist
     }
-  }, [restaurantId, restaurantName, items, orderNote, hydrated]);
+  }, [storeId, storeName, items, orderNote, hydrated]);
 
-  function addItemDirect(rId: string, rName: string, item: NewCartItem) {
+  function addItemDirect(sId: string, sName: string, item: NewCartItem) {
     const lineId = buildLineId(item.menuItemId, item.selectedOptions);
-    setRestaurantId(rId);
-    setRestaurantName(rName);
+    setStoreId(sId);
+    setStoreName(sName);
     setItems((prev) => {
       const existing = prev.find((i) => i.lineId === lineId);
       if (existing) {
@@ -179,19 +179,19 @@ export function CartProvider({ children }: { children: ReactNode }) {
     });
   }
 
-  function addItem(rId: string, rName: string, item: NewCartItem) {
-    if (restaurantId !== null && restaurantId !== rId) {
-      setPendingConflict({ restaurantId: rId, restaurantName: rName, item });
+  function addItem(sId: string, sName: string, item: NewCartItem) {
+    if (storeId !== null && storeId !== sId) {
+      setPendingConflict({ storeId: sId, storeName: sName, item });
       return;
     }
-    addItemDirect(rId, rName, item);
+    addItemDirect(sId, sName, item);
   }
 
   function confirmClearAndAdd() {
     if (!pendingConflict) return;
     setItems([]);
     setOrderNoteState("");
-    addItemDirect(pendingConflict.restaurantId, pendingConflict.restaurantName, pendingConflict.item);
+    addItemDirect(pendingConflict.storeId, pendingConflict.storeName, pendingConflict.item);
     setPendingConflict(null);
   }
 
@@ -211,8 +211,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setItems((prev) => {
       const next = prev.filter((i) => i.lineId !== lineId);
       if (next.length === 0) {
-        setRestaurantId(null);
-        setRestaurantName(null);
+        setStoreId(null);
+        setStoreName(null);
       }
       return next;
     });
@@ -234,8 +234,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   function clearCart() {
     setItems([]);
-    setRestaurantId(null);
-    setRestaurantName(null);
+    setStoreId(null);
+    setStoreName(null);
     setOrderNoteState("");
     setPendingConflict(null);
   }
@@ -245,8 +245,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
   return (
     <CartContext.Provider
       value={{
-        restaurantId,
-        restaurantName,
+        storeId,
+        storeName,
         items,
         subtotal,
         orderNote,
