@@ -159,7 +159,7 @@ export default function CheckoutPage() {
                         {item.quantity}× {item.name}
                       </span>
                       <span className="shrink-0 text-sm font-medium text-brand-ink">
-                        ₹{(item.price * item.quantity).toFixed(2)}
+                        ₹{((Math.round(item.price * 100) * item.quantity) / 100).toFixed(2)}
                       </span>
                     </div>
                     {item.selectedOptions.length > 0 && (
