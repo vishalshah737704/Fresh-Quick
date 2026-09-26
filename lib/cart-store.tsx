@@ -2,17 +2,30 @@
 
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 
+export type SelectedOption = {
+  groupId: string;
+  groupName: string;
+  optionId: string;
+  optionName: string;
+  priceDeltaPaise: number;
+};
+
 export type CartItem = {
+  lineId: string;
   menuItemId: string;
   name: string;
   price: number;
   quantity: number;
+  selectedOptions: SelectedOption[];
+  specialInstructions: string | null;
 };
+
+type NewCartItem = Omit<CartItem, "lineId">;
 
 type PendingConflict = {
   restaurantId: string;
   restaurantName: string;
-  item: CartItem;
+  item: NewCartItem;
 } | null;
 
 type CartContextValue = {
@@ -21,9 +34,10 @@ type CartContextValue = {
   items: CartItem[];
   subtotal: number;
   pendingConflict: PendingConflict;
-  addItem: (restaurantId: string, restaurantName: string, item: CartItem) => void;
-  updateQuantity: (menuItemId: string, quantity: number) => void;
-  removeItem: (menuItemId: string) => void;
+  addItem: (restaurantId: string, restaurantName: string, item: NewCartItem) => void;
+  updateQuantity: (lineId: string, quantity: number) => void;
+  removeItem: (lineId: string) => void;
+  setSpecialInstructions: (lineId: string, text: string) => void;
   clearCart: () => void;
   confirmClearAndAdd: () => void;
   cancelPendingAdd: () => void;
@@ -39,6 +53,51 @@ type StoredCart = {
   items: CartItem[];
 };
 
+export function buildLineId(menuItemId: string, selectedOptions: SelectedOption[]): string {
+  const optionIds = selectedOptions.map((o) => o.optionId).sort();
+  return `${menuItemId}::${optionIds.join(",")}`;
+}
+
+// Accepts both the current shape and the pre-piece-4 shape (menuItemId/
+// name/price/quantity only) so an in-progress customer cart already in
+// localStorage survives this deploy instead of being wiped.
+function normalizeStoredItem(raw: Record<string, unknown>): CartItem | null {
+  if (
+    typeof raw.menuItemId !== "string" ||
+    typeof raw.name !== "string" ||
+    typeof raw.price !== "number" ||
+    typeof raw.quantity !== "number" ||
+    raw.quantity <= 0
+  ) {
+    return null;
+  }
+  const selectedOptions: SelectedOption[] = Array.isArray(raw.selectedOptions)
+    ? (raw.selectedOptions as unknown[]).filter(
+        (o): o is SelectedOption =>
+          o !== null &&
+          typeof o === "object" &&
+          typeof (o as Record<string, unknown>).groupId === "string" &&
+          typeof (o as Record<string, unknown>).groupName === "string" &&
+          typeof (o as Record<string, unknown>).optionId === "string" &&
+          typeof (o as Record<string, unknown>).optionName === "string" &&
+          typeof (o as Record<string, unknown>).priceDeltaPaise === "number"
+      )
+    : [];
+  const specialInstructions =
+    typeof raw.specialInstructions === "string" ? raw.specialInstructions : null;
+  const lineId =
+    typeof raw.lineId === "string" ? raw.lineId : buildLineId(raw.menuItemId, selectedOptions);
+  return {
+    lineId,
+    menuItemId: raw.menuItemId,
+    name: raw.name,
+    price: raw.price,
+    quantity: raw.quantity,
+    selectedOptions,
+    specialInstructions,
+  };
+}
+
 function loadStoredCart(): StoredCart {
   if (typeof window === "undefined") {
     return { restaurantId: null, restaurantName: null, items: [] };
@@ -48,25 +107,22 @@ function loadStoredCart(): StoredCart {
     if (!raw) return { restaurantId: null, restaurantName: null, items: [] };
     const parsed = JSON.parse(raw);
     if (
-      parsed &&
-      typeof parsed === "object" &&
-      (parsed.restaurantId === null || typeof parsed.restaurantId === "string") &&
-      (parsed.restaurantName === null || typeof parsed.restaurantName === "string") &&
-      Array.isArray(parsed.items) &&
-      parsed.items.every(
-        (i: unknown) =>
-          i !== null &&
-          typeof i === "object" &&
-          typeof (i as Record<string, unknown>).menuItemId === "string" &&
-          typeof (i as Record<string, unknown>).name === "string" &&
-          typeof (i as Record<string, unknown>).price === "number" &&
-          typeof (i as Record<string, unknown>).quantity === "number" &&
-          ((i as Record<string, unknown>).quantity as number) > 0
-      )
+      !parsed ||
+      typeof parsed !== "object" ||
+      !(parsed.restaurantId === null || typeof parsed.restaurantId === "string") ||
+      !(parsed.restaurantName === null || typeof parsed.restaurantName === "string") ||
+      !Array.isArray(parsed.items)
     ) {
-      return parsed as StoredCart;
+      return { restaurantId: null, restaurantName: null, items: [] };
     }
-    return { restaurantId: null, restaurantName: null, items: [] };
+    const items = (parsed.items as unknown[])
+      .map((i) =>
+        i !== null && typeof i === "object"
+          ? normalizeStoredItem(i as Record<string, unknown>)
+          : null
+      )
+      .filter((i): i is CartItem => i !== null);
+    return { restaurantId: parsed.restaurantId, restaurantName: parsed.restaurantName, items };
   } catch {
     return { restaurantId: null, restaurantName: null, items: [] };
   }
@@ -99,23 +155,22 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   }, [restaurantId, restaurantName, items, hydrated]);
 
-  function addItemDirect(rId: string, rName: string, item: CartItem) {
+  function addItemDirect(rId: string, rName: string, item: NewCartItem) {
+    const lineId = buildLineId(item.menuItemId, item.selectedOptions);
     setRestaurantId(rId);
     setRestaurantName(rName);
     setItems((prev) => {
-      const existing = prev.find((i) => i.menuItemId === item.menuItemId);
+      const existing = prev.find((i) => i.lineId === lineId);
       if (existing) {
         return prev.map((i) =>
-          i.menuItemId === item.menuItemId
-            ? { ...i, quantity: i.quantity + item.quantity }
-            : i
+          i.lineId === lineId ? { ...i, quantity: i.quantity + item.quantity } : i
         );
       }
-      return [...prev, item];
+      return [...prev, { ...item, lineId }];
     });
   }
 
-  function addItem(rId: string, rName: string, item: CartItem) {
+  function addItem(rId: string, rName: string, item: NewCartItem) {
     if (restaurantId !== null && restaurantId !== rId) {
       setPendingConflict({ restaurantId: rId, restaurantName: rName, item });
       return;
@@ -134,25 +189,33 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setPendingConflict(null);
   }
 
-  function updateQuantity(menuItemId: string, quantity: number) {
+  function updateQuantity(lineId: string, quantity: number) {
     if (quantity <= 0) {
-      removeItem(menuItemId);
+      removeItem(lineId);
       return;
     }
-    setItems((prev) =>
-      prev.map((i) => (i.menuItemId === menuItemId ? { ...i, quantity } : i))
-    );
+    setItems((prev) => prev.map((i) => (i.lineId === lineId ? { ...i, quantity } : i)));
   }
 
-  function removeItem(menuItemId: string) {
+  function removeItem(lineId: string) {
     setItems((prev) => {
-      const next = prev.filter((i) => i.menuItemId !== menuItemId);
+      const next = prev.filter((i) => i.lineId !== lineId);
       if (next.length === 0) {
         setRestaurantId(null);
         setRestaurantName(null);
       }
       return next;
     });
+  }
+
+  function setSpecialInstructions(lineId: string, text: string) {
+    setItems((prev) =>
+      prev.map((i) =>
+        i.lineId === lineId
+          ? { ...i, specialInstructions: text.trim() === "" ? null : text }
+          : i
+      )
+    );
   }
 
   function clearCart() {
@@ -175,6 +238,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         addItem,
         updateQuantity,
         removeItem,
+        setSpecialInstructions,
         clearCart,
         confirmClearAndAdd,
         cancelPendingAdd,
