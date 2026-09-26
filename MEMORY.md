@@ -718,6 +718,25 @@ Claude at the start of work in this repo per project CLAUDE.md.
   itself.
   Plan: docs/superpowers/plans/2026-09-26-marketplace-foundation.md
   Spec: docs/superpowers/specs/2026-09-26-multi-vertical-marketplace-design.md
+- **Marketplace Phase 2 (Sidebar & Category Browsing)**: ✅ Complete.
+  `lib/category-icons.ts` maps all 11 `category_type` values (restaurant +
+  10 new) to a label and a Pexels-sourced icon photo (fetched once via
+  `scripts/fetch-catalog-images.mjs`, same pattern as existing catalog
+  photography). `components/SidebarNav.tsx` rebuilt to link each category
+  to `/customer?category=<type>`; `app/customer/page.tsx` filters its
+  store grid by that param (validated against the known category list —
+  an unrecognized value falls back to showing everything rather than a
+  blank grid), shows a category-specific empty state for a category with
+  zero stores, and hides the restaurant-only cuisine-chip row for every
+  non-restaurant category. Two live Suspense-boundary bugs caught and
+  fixed mid-phase (both `useSearchParams()`-without-Suspense, same
+  failure class documented from Phase 3 of the original build): one in
+  `SidebarNav`'s new layout wrapper, one requiring `app/customer/page.tsx`
+  to be split into a thin wrapper + client content component. No schema
+  change — this phase is UI-only, built entirely on Phase 1's
+  `category_type` column. Restaurants show real data; the other 10
+  categories show the empty state until Phases 3-5 seed real content.
+  Plan: docs/superpowers/plans/2026-09-26-marketplace-phase2-sidebar-browsing.md
 
 ## Key decisions carried forward (see spec §2 for full list)
 
