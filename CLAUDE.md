@@ -17,13 +17,15 @@ subagent-driven-development cycle, ends with a merge to `main`.
 
 **Uber Eats-style redesign (post-8-phase, in progress):** a separate
 6-piece redesign bringing the customer surface toward Uber Eats' web
-ordering flow — design tokens (piece 1, done) → home/feed rebuild →
-restaurant page rebuild → item customization (new DB schema) → cart
-redesign (slide-out panel) → checkout polish. Each piece gets its own
-spec/plan/build/merge cycle, same as the 8 phases. See MEMORY.md for
+ordering flow — design tokens (piece 1, done) → home/feed rebuild (piece
+2, done) → restaurant page rebuild → item customization (new DB schema)
+→ cart redesign (slide-out panel) → checkout polish. Each piece gets its
+own spec/plan/build/merge cycle, same as the 8 phases. See MEMORY.md for
 per-piece status and `docs/superpowers/specs/2026-09-25-uber-eats-design-refresh-design.md`
 for piece 1's full design (colors, fonts, shape rules every later piece
-inherits).
+inherits). Piece 2 added real `restaurants.delivery_fee_paise`/
+`promo_text` columns and wired checkout to them — see MEMORY.md's piece 2
+entry before assuming delivery fee is still a flat constant anywhere.
 
 ## Stack
 
@@ -226,6 +228,26 @@ See [MEMORY.md](MEMORY.md) for phase-by-phase progress and decisions.
   class. If a later piece needs to override the weight, wrap the rule in
   `@layer utilities { ... }` or convert it to Tailwind v4's `@utility
   font-heading { ... }` syntax so normal utility-ordering rules apply.
+- **When a subagent claims it "verified" something via logic replication
+  or a code-path trace, check whether live infrastructure (a running dev
+  server, curl, psql, Playwright) was actually available to it before
+  trusting that claim as equivalent to live verification.** During piece
+  2's final-review fix pass, an implementer verified 3 of 6 findings
+  (including two money-display bugs) via throwaway Node scripts re-running
+  the isolated validation logic, even though the same environment's
+  earlier tasks in that plan had successfully used curl against the local
+  Supabase/PostgREST endpoints and direct psql queries. The controller
+  independently re-verified all 6 live before merging and found the fixes
+  were in fact correct — but the gap between "logic replication passed"
+  and "the actual deployed route/page behaves correctly" is real (a
+  transcription error between the isolated script and the real file, a
+  stale build being served, an integration point the isolated logic
+  doesn't exercise, etc.), and would not have been caught by trusting the
+  subagent's report alone. When live infra is available and a prior task
+  in the same session/plan already used it successfully, a later task
+  substituting logic-only verification is a downgrade worth catching, not
+  an acceptable equivalent — re-verify live yourself before trusting it,
+  especially for money-path or security-relevant changes.
 
 ## Standing phrase: "Commit Work" — NON-NEGOTIABLE
 

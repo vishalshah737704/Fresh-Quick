@@ -419,6 +419,45 @@ Claude at the start of work in this repo per project CLAUDE.md.
   later piece needs to override the weight.
   Plan: docs/superpowers/plans/2026-09-25-uber-eats-design-refresh.md
   Spec: docs/superpowers/specs/2026-09-25-uber-eats-design-refresh-design.md
+- **Uber Eats-style redesign — Piece 2: Home/feed rebuild**: ✅ Complete,
+  merged to `main`. Built subagent-driven (fresh implementer + reviewer
+  per task, worktree-isolated), 8 tasks. Real feature, not just visual:
+  added `restaurants.delivery_fee_paise`/`promo_text` columns (migration
+  `00000000000016`), vendor dashboard fields to set them, and wired
+  checkout to each restaurant's real fee instead of the old flat
+  `DELIVERY_FEE_RUPEES` constant (removed entirely). Restaurant card
+  redesigned to Uber Eats' "•"-delimited metadata line (`⭐ 4.4 · 25 min ·
+  ₹30 Delivery Fee`) plus a promo badge. Home page gained a live search
+  dropdown (restaurant + cross-restaurant dish matches, dish query
+  correctly excludes closed/suspended restaurants via `restaurants!inner`
+  + `.eq(is_open/is_suspended)`), a sort/filter bar (Rating/Delivery
+  fee/Under 30 min/Sort-by), and 3 curated carousels (Popular near you /
+  Offers near you / Quick delivery) above the existing cuisine-grouped
+  rows.
+  **Ruling worth knowing**: the sort control only reorders the two
+  flat-grid render paths (selected-cuisine grid, no-carousel fallback) —
+  it never reorders the curated/cuisine carousels, which keep their own
+  fixed ordering. "Under 30 min" is a true filter and narrows everything.
+  With today's seed data (every restaurant has a cuisine tag), the home
+  page always takes the carousel path, so in practice the sort control is
+  currently a no-op until a cuisine chip is picked — confirmed correct
+  against the design twice (task review + final review), left as-is
+  pending Vishal's call on whether a future piece should make picking a
+  non-default sort switch to the flat grid.
+  **Two real bugs caught late, both worth remembering**: (1) a fix-pass
+  subagent verified 3 of 6 final-review findings via throwaway-script
+  logic replication instead of live infra that was actually available and
+  had been used successfully by earlier tasks — the controller
+  independently re-verified all 6 live (curl, Playwright, a real
+  end-to-end order placement with a ₹45.50 fee checked byte-exact against
+  the DB) before trusting the fix; (2) the fix itself found and closed a
+  genuine money-display bug (card/checkout rounding a fee with paise to
+  whole rupees, disagreeing with the actual charge) and a silent-error bug
+  (a failed fee fetch left checkout stuck on "Loading…" forever). See
+  CLAUDE.md's "don't trust a subagent's logic-replication claim over live
+  verification when live infra is available" rule, added from this.
+  Plan: docs/superpowers/plans/2026-09-25-uber-eats-home-feed-rebuild.md
+  Spec: docs/superpowers/specs/2026-09-25-uber-eats-home-feed-rebuild-design.md
 - **Mobile app (React Native + Expo, sub-project)**: not started — begins
   after the customer-flow DoorDash-style polish.
 
