@@ -677,3 +677,51 @@ Corner Payasam
 Corner Mysore Pak
 Corner Filter Coffee Special
 Corner South Indian Thali
+Fresh Fit Quinoa Power Bowl
+Fresh Fit Grilled Chicken Bowl
+Fresh Fit Vegan Buddha Bowl
+Fresh Fit Avocado Salad
+Fresh Fit Kale Caesar Salad
+Fresh Fit Greek Salad
+Fresh Fit Chickpea Salad
+Fresh Fit Sweet Potato Bowl
+Fresh Fit Grilled Salmon Bowl
+Fresh Fit Broccoli Stir-Fry Bowl
+Fresh Fit Egg White Omelette
+Fresh Fit Overnight Oats
+Fresh Fit Protein Smoothie
+Fresh Fit Green Detox Juice
+Fresh Fit Beetroot Salad
+Fresh Fit Spinach and Feta Salad
+Fresh Fit Lentil Soup
+Fresh Fit Grilled Paneer Bowl
+Fresh Fit Tofu Stir-Fry Bowl
+Fresh Fit Millet Khichdi
+Fresh Fit Sprouts Salad
+Fresh Fit Multigrain Wrap
+Fresh Fit Hummus and Veggies
+Fresh Fit Chia Pudding
+Fresh Fit Protein Pancakes
+Fresh Fit Grilled Fish Salad
+Fresh Fit Roasted Vegetable Bowl
+Fresh Fit Brown Rice Bowl
+Fresh Fit Quinoa Tabbouleh
+Fresh Fit Steamed Vegetable Platter
+Fresh Fit Almond Milk Smoothie
+Fresh Fit Berry Protein Shake
+Fresh Fit Edamame Salad
+Fresh Fit Cottage Cheese Bowl
+Fresh Fit Vegetable Clear Soup
+Fresh Fit Grilled Turkey Bowl
+Fresh Fit Zucchini Noodles Salad
+Fresh Fit Roasted Chickpeas Snack
+Fresh Fit Fruit and Nut Bowl
+Fresh Fit Cold Pressed Juice
+Fresh Fit Wheatgrass Shot
+Fresh Fit Protein Energy Balls
+Fresh Fit Millet Salad
+Fresh Fit Grilled Vegetable Wrap
+Fresh Fit Low Cal Fruit Bowl
+Fresh Fit Detox Water
+Fresh Fit Peanut Butter Smoothie
+Fresh Fit Herbal Tea
