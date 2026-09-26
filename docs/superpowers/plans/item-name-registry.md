@@ -1094,3 +1094,33 @@ Sketch Pen Set 12pc
 Envelope Pack 10pc
 Birthday Candle Pack
 Matchbox Pack
+Cold Coffee Bottle 250ml
+Ginger Ale Can
+Electrolyte Drink Bottle
+Milkshake Bottle
+Cup Noodles Spicy
+Popcorn Caramel Pack
+Rice Cakes Pack
+Protein Cookies Pack
+Beef Jerky Pack
+Frozen Waffles 4pc
+Frozen Pizza Snack Pack
+Late Night Tabloid
+Puzzle Magazine
+Travel Guide Booklet
+Instant Cold Pack
+Disposable Gloves Pack
+Pocket Comb
+Lip Balm
+Hair Ties Pack
+Car Phone Charger
+Bluetooth Speaker Mini
+Aux Cable 1m
+LED Torch Small
+Marker Pen Set
+Index Cards Pack
+Paper Clips Box
+Rubber Bands Pack
+Gift Wrap Roll
+Lottery Scratch Card
+Disposable Lighter 2pk
