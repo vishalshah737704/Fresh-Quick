@@ -15,17 +15,19 @@ Build proceeds one phase at a time (8 phases total) — see spec §7 for the
 full breakdown. Each phase gets its own brainstorm → spec-check → plan →
 subagent-driven-development cycle, ends with a merge to `main`.
 
-**Uber Eats-style redesign (post-8-phase, in progress):** a separate
-6-piece redesign bringing the customer surface toward Uber Eats' web
-ordering flow — design tokens (piece 1, done) → home/feed rebuild (piece
-2, done) → restaurant page rebuild → item customization (new DB schema)
-→ cart redesign (slide-out panel) → checkout polish. Each piece gets its
-own spec/plan/build/merge cycle, same as the 8 phases. See MEMORY.md for
-per-piece status and `docs/superpowers/specs/2026-09-25-uber-eats-design-refresh-design.md`
+**Uber Eats-style redesign (post-8-phase, complete):** a separate 6-piece
+redesign bringing the customer surface toward Uber Eats' web ordering
+flow — design tokens → home/feed rebuild → restaurant page rebuild →
+item customization (new DB schema) → cart redesign (slide-out panel) →
+checkout polish — all 6 pieces are now merged to `main`. Each piece went
+through its own spec/plan/build/merge cycle. See MEMORY.md for per-piece
+status and `docs/superpowers/specs/2026-09-25-uber-eats-design-refresh-design.md`
 for piece 1's full design (colors, fonts, shape rules every later piece
 inherits). Piece 2 added real `restaurants.delivery_fee_paise`/
 `promo_text` columns and wired checkout to them — see MEMORY.md's piece 2
 entry before assuming delivery fee is still a flat constant anywhere.
+Next follow-on work (not started): vendor/delivery/admin visual pass and
+the React Native + Expo mobile app — see MEMORY.md and HANDOFF_7.md.
 
 ## Stack
 

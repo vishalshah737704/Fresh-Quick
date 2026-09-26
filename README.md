@@ -122,21 +122,23 @@ DoorDash-layout rebuild) then restructured the customer surface's layout
 — sidebar nav, fuller header, cuisine-grouped carousel rows — on top of
 the earlier color/brand redesign. A third redesign — an Uber Eats-style
 overhaul, 6 pieces (design tokens → home/feed → restaurant page → item
-customization → cart → checkout) — is now in progress on top of both
-prior redesigns; piece 1 (design tokens: near-black/lime-green/cream
-palette, Inter + Poppins fonts, 8px card radius), piece 2 (home/feed
-rebuild: search dropdown, sort/filter bar, curated carousels, a real
-per-restaurant delivery fee replacing the old flat rate), and piece 3
-(restaurant page rebuild: sticky category anchor-nav with scroll-spy,
-in-menu search, a corner "Quick Add" button restyle), and piece 4 (item
-customization: vendor-managed option groups/options, an
+customization → cart → checkout) — is now **complete and fully merged to
+`main`**, on top of both prior redesigns: piece 1 (design tokens:
+near-black/lime-green/cream palette, Inter + Poppins fonts, 8px card
+radius), piece 2 (home/feed rebuild: search dropdown, sort/filter bar,
+curated carousels, a real per-restaurant delivery fee replacing the old
+flat rate), piece 3 (restaurant page rebuild: sticky category anchor-nav
+with scroll-spy, in-menu search, a corner "Quick Add" button restyle),
+piece 4 (item customization: vendor-managed option groups/options, an
 `ItemCustomizationModal` replacing instant add for items with options, a
 `lineId`-keyed cart so different customizations of the same dish coexist
-as separate lines), and piece 5 (cart redesign: `CartPanel` rebuilt as a
+as separate lines), piece 5 (cart redesign: `CartPanel` rebuilt as a
 slide-out drawer with line-item thumbnails, a whole-order note distinct
 from per-line special instructions, and a shared delivery-fee hook so the
-drawer's preview total matches checkout exactly) are merged, piece 6 not
-started. See [MEMORY.md](MEMORY.md) for the phase-by-phase build
+drawer's preview total matches checkout exactly), and piece 6 (checkout
+visual polish: a full read-only line-item breakdown on the order summary,
+a read-only order-note display, and an icon+card payment-method picker).
+See [MEMORY.md](MEMORY.md) for the phase-by-phase build
 log, including every bug found and fixed along the way, and its "Known
 deferred items" section for what's still intentionally left for later.
 The React Native mobile app is a planned follow-on, not started.

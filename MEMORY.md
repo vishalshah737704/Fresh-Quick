@@ -651,8 +651,44 @@ Claude at the start of work in this repo per project CLAUDE.md.
   its name.
   Plan: docs/superpowers/plans/2026-09-26-uber-eats-cart-redesign.md
   Spec: docs/superpowers/specs/2026-09-26-uber-eats-cart-redesign-design.md
-- **Mobile app (React Native + Expo, sub-project)**: not started — begins
-  after the Uber Eats redesign's remaining piece (6).
+- **Uber Eats-style redesign — Piece 6: Checkout visual polish**: ✅
+  Complete, merged to `main` via PR #3. Final piece of the 6-piece
+  redesign. Built inline via `superpowers:executing-plans` in worktree
+  `worktree-uber-eats-checkout-polish` (single-file change,
+  `app/customer/checkout/page.tsx`, no schema/API/cart-store changes).
+  Order summary replaced with a full read-only line-item list (thumbnail
+  or placeholder, name, options summary, per-line note, quantity, line
+  price) mirroring the cart drawer's row style; the whole-order note
+  (piece 5) now shown read-only with an "(edit in cart)" hint; payment-
+  method picker restyled from plain radio rows to icon+card selection
+  (💳/📱/💵), radio input kept wired unchanged so click-to-select still
+  works via native label association. **Final whole-branch review (opus)
+  caught 1 Important issue that the live-verify pass did not**: the new
+  line-item price used plain float multiplication
+  (`item.price * item.quantity`), violating this project's standing
+  integer-paise-arithmetic rule — invisible in practice because every
+  seed price has ≤2 decimal places, so the float error (~1e-13) never
+  crossed a rounding boundary and `.toFixed(2)` always showed the right
+  number anyway. Fixed to `(Math.round(item.price * 100) * item.quantity)
+  / 100`, matching the same file's existing `totalPaise` pattern; live
+  re-verified post-fix with no change to displayed amounts. All 5 of the
+  plan's review-focus items (null-image placeholder, empty-options
+  omitted, null-note omitted, empty-orderNote omitted, payment-card click
+  wiring) passed on both live browser testing and the final review's
+  independent code read. A real order was placed end-to-end and
+  independently verified byte-for-byte against Postgres (`delivery_note`,
+  quantity, `special_instructions`, option name all matched what the
+  checkout page displayed just before submit). PR #3 did not auto-merge
+  on push (unlike PRs #1/#2) — merged manually via `gh pr merge`; don't
+  assume auto-merge is guaranteed for future worktree-branch PRs in this
+  repo, verify with `gh pr view --json state,mergedAt` every time.
+  Plan: docs/superpowers/plans/2026-09-26-uber-eats-checkout-polish.md
+  Spec: docs/superpowers/specs/2026-09-26-uber-eats-checkout-polish-design.md
+- **All 6 pieces of the Uber Eats-style customer redesign are now merged
+  to `main`.** Remaining follow-on work: vendor/delivery/admin visual
+  pass (zero work done), the React Native + Expo mobile app (not
+  started), and the still-unanswered piece 2 sort-scope product decision
+  (see HANDOFF_5.md).
 
 ## Key decisions carried forward (see spec §2 for full list)
 
@@ -770,6 +806,14 @@ Claude at the start of work in this repo per project CLAUDE.md.
 - ~~Order confirmation page polls forever even after the order reaches a
   terminal state~~ — **closed in deferred-items-triage**. Polling now stops
   once the order status is `delivered` or `cancelled`.
+- Piece 6 minors (deferred, from the final review, both pre-existing
+  patterns not introduced by piece 6): the checkout payment-method emoji
+  icons have no `aria-hidden="true"` (screen readers announce "credit
+  card, Mock Card"); `normalizeStoredItem`/`loadStoredCart` in
+  `lib/cart-store.tsx` don't trim whitespace-only note strings the way
+  `setSpecialInstructions`/`setOrderNote` do, so a hand-edited
+  whitespace-only localStorage note would render as empty quotes —
+  older than piece 6, only reachable via manual localStorage editing.
 - No automated test suite exists yet — all verification so far has been
   `tsc`/`build`/manual + Playwright walkthroughs documented per task.
 - **Always run `npm run build` (not just `tsc --noEmit`) before marking a
