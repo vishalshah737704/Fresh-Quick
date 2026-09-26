@@ -826,6 +826,14 @@ Claude at the start of work in this repo per project CLAUDE.md.
   whole-number seed data. Add this explicitly as a Global Constraint in
   any future plan that touches prices/totals.
 
+## Documentation
+
+- `docs/Usage_Guide.docx` — end-user usage guide covering the full site
+  (customer home/restaurant/cart/checkout flow, vendor/delivery/admin
+  portals), with screenshots captured from a local dev run. Generated with
+  docx-js; not auto-regenerated — re-run manually and re-screenshot if the
+  UI changes significantly enough to make it stale.
+
 ## External API keys in use
 
 - `PEXELS_API_KEY` — Pexels Search API, used once (not at runtime) to fetch

@@ -104,6 +104,12 @@ this README (checkout, vendor, delivery, admin flows) still works today
 without n8n running — those synchronous paths stay as the tested demo
 behavior regardless of whether n8n is connected.
 
+## Usage guide
+
+`docs/Usage_Guide.docx` is a screenshot-illustrated walkthrough of the
+whole site (customer app + vendor/delivery/admin portals) for anyone
+who wants to read how to use it rather than run it.
+
 ## Status
 
 All 8 phases of the web platform (spec §7) are built: customer browse/
