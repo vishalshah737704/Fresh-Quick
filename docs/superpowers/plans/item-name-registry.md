@@ -1033,4 +1033,34 @@ Chocolate Cookies Pack
 Frozen Momos Veg 400g
 Frozen Chicken Nuggets 400g
 Soda Water 1L
+Sparkling Water Can
+Iced Tea Bottle 500ml
+Flavored Milk Bottle
+Packaged Coconut Water
+Protein Bar
+Trail Mix Pouch
+Cheese Puffs Pack
+Roasted Peanuts Pouch
+Granola Bar
+Instant Cup Soup
+Frozen Sandwich Pack
+Frozen Burger Patty
+Magazine Weekly
+Comic Book
+Crossword Puzzle Book
+Hand Sanitizer 100ml
+Face Mask Pack 5pc
+Shaving Razor Disposable
+Toothbrush Single
+Travel Toothpaste 50g
+Earphones Wired
+Power Bank 5000mAh
+USB Flash Drive 16GB
+Screen Cleaning Wipes
+Highlighter Pack 3pc
+Sticky Notes Pad
+Correction Pen
+Stapler Small
+Greeting Card
+Playing Cards Deck
 Malt Drink Powder 500g
