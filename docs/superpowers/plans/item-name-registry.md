@@ -725,3 +725,50 @@ Fresh Fit Low Cal Fruit Bowl
 Fresh Fit Detox Water
 Fresh Fit Peanut Butter Smoothie
 Fresh Fit Herbal Tea
+Green Bowl Kale Smoothie
+Green Bowl Spinach Power Bowl
+Green Bowl Grilled Tofu Salad
+Green Bowl Roasted Beet Bowl
+Green Bowl Chickpea Buddha Bowl
+Green Bowl Sweet Potato Mash
+Green Bowl Edamame Bowl
+Green Bowl Broccoli Almond Salad
+Green Bowl Carrot Ginger Soup
+Green Bowl Lentil Power Bowl
+Green Bowl Cucumber Mint Salad
+Green Bowl Grilled Shrimp Bowl
+Green Bowl Mixed Berry Bowl
+Green Bowl Acai Bowl
+Green Bowl Green Detox Smoothie
+Green Bowl Roasted Cauliflower Bowl
+Green Bowl Tempeh Stir-Fry Bowl
+Green Bowl Vegan Wrap
+Green Bowl Hummus Plate
+Green Bowl Grilled Vegetable Skewers
+Green Bowl Millet Bowl
+Green Bowl Barley Salad
+Green Bowl Roasted Pumpkin Bowl
+Green Bowl Nut and Seed Granola
+Green Bowl Oat Milk Smoothie
+Green Bowl Greek Yogurt Parfait
+Green Bowl Citrus Salad
+Green Bowl Grilled Chicken Wrap
+Green Bowl Steamed Broccoli Plate
+Green Bowl Roasted Brussels Sprouts
+Green Bowl Cold Brew Coffee
+Green Bowl Matcha Latte
+Green Bowl Turmeric Golden Milk
+Green Bowl Protein Salad Bowl
+Green Bowl Vegan Buddha Platter
+Green Bowl Herb Roasted Vegetables
+Green Bowl Grilled Mushroom Bowl
+Green Bowl Mixed Sprout Salad
+Green Bowl Citrus Detox Juice
+Green Bowl Spirulina Smoothie
+Green Bowl Roasted Chickpea Bowl
+Green Bowl Baked Sweet Potato Fries
+Green Bowl Herb Quinoa
+Green Bowl Green Apple Salad
+Green Bowl Pumpkin Seed Granola
+Green Bowl Mixed Nut Trail Bowl
+Green Bowl Watermelon Feta Salad
