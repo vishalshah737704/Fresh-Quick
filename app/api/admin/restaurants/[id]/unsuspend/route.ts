@@ -12,7 +12,7 @@ export async function POST(
     return NextResponse.json({ error: resolved.error }, { status: resolved.status });
   }
   const { data, error } = await supabaseServer
-    .from("restaurants")
+    .from("stores")
     .update({ is_suspended: false })
     .eq("id", id)
     .select("id, is_open, is_suspended")

@@ -8,7 +8,7 @@ type OrderRow = {
   id: string;
   status: string;
   total: number;
-  restaurants: { name: string } | null;
+  stores: { name: string } | null;
 };
 
 const REASSIGNABLE_STATUSES = ["assigned", "picked_up"];
@@ -49,7 +49,7 @@ export default function AdminDashboardPage() {
     ]);
     const [oBody, rBody, pBody] = await Promise.all([oRes.json(), rRes.json(), pRes.json()]);
     if (oRes.ok) setOrders(oBody.orders);
-    if (rRes.ok) setRestaurants(rBody.restaurants);
+    if (rRes.ok) setRestaurants(rBody.stores);
     if (pRes.ok) setPartners(pBody.partners);
   }
 
@@ -96,7 +96,7 @@ export default function AdminDashboardPage() {
         {orders.map((o) => (
           <li key={o.id} className="flex items-center justify-between gap-2">
             <span>
-              #{o.id.slice(0, 8)} · {o.restaurants?.name ?? "Restaurant"} · {o.status} · ₹{o.total.toFixed(2)}
+              #{o.id.slice(0, 8)} · {o.stores?.name ?? "Restaurant"} · {o.status} · ₹{o.total.toFixed(2)}
             </span>
             {REASSIGNABLE_STATUSES.includes(o.status) && (
               <span className="flex items-center gap-1">

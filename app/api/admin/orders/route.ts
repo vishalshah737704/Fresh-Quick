@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
   const statusFilter = request.nextUrl.searchParams.get("status");
   let query = supabaseServer
     .from("orders")
-    .select("id, status, total, placed_at, restaurants(name), customer_id")
+    .select("id, status, total, placed_at, stores(name), customer_id")
     .order("placed_at", { ascending: false });
   if (statusFilter) {
     query = query.eq("status", statusFilter);

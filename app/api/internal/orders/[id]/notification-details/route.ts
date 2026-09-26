@@ -18,7 +18,7 @@ export async function GET(
   const { data: order, error: orderError } = await supabaseServer
     .from("orders")
     .select(
-      "id, customer_id, total, status, addresses:delivery_address_id(label, line1), restaurants:restaurant_id(name)"
+      "id, customer_id, total, status, addresses:delivery_address_id(label, line1), stores:store_id(name)"
     )
     .eq("id", id)
     .single();
@@ -34,7 +34,7 @@ export async function GET(
   }
 
   const address = Array.isArray(order.addresses) ? order.addresses[0] : order.addresses;
-  const restaurant = Array.isArray(order.restaurants) ? order.restaurants[0] : order.restaurants;
+  const restaurant = Array.isArray(order.stores) ? order.stores[0] : order.stores;
 
   return NextResponse.json({
     orderId: order.id,

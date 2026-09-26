@@ -8,11 +8,11 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: resolved.error }, { status: resolved.status });
   }
   const { data, error } = await supabaseServer
-    .from("restaurants")
+    .from("stores")
     .select("id, name, is_open, is_suspended, created_at")
     .order("created_at", { ascending: false });
   if (error) {
     return NextResponse.json({ error: "Failed to load restaurants" }, { status: 500 });
   }
-  return NextResponse.json({ restaurants: data });
+  return NextResponse.json({ stores: data });
 }
