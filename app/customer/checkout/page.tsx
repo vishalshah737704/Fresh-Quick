@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/lib/cart-store";
 import { useAddress } from "@/lib/address-store";
 import { useSession } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
+import { useDeliveryFee } from "@/lib/use-delivery-fee";
 
 const PAYMENT_METHODS = [
   { value: "mock_card", label: "Mock Card" },
@@ -15,7 +16,7 @@ const PAYMENT_METHODS = [
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { restaurantId, restaurantName, items, subtotal, clearCart } = useCart();
+  const { restaurantId, restaurantName, items, subtotal, orderNote, clearCart } = useCart();
   const { lat, lng, label } = useAddress();
   const { userId, loading: sessionLoading } = useSession();
 
@@ -23,30 +24,7 @@ export default function CheckoutPage() {
     useState<(typeof PAYMENT_METHODS)[number]["value"]>("mock_card");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [deliveryFeePaise, setDeliveryFeePaise] = useState<number | null>(null);
-  const [feeLoadError, setFeeLoadError] = useState<string | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    async function loadFee() {
-      if (!restaurantId) return;
-      const { data, error: fetchError } = await supabase
-        .from("restaurants")
-        .select("delivery_fee_paise")
-        .eq("id", restaurantId)
-        .single();
-      if (cancelled) return;
-      if (fetchError) {
-        setFeeLoadError(fetchError.message);
-        return;
-      }
-      setDeliveryFeePaise(data ? data.delivery_fee_paise : null);
-    }
-    loadFee();
-    return () => {
-      cancelled = true;
-    };
-  }, [restaurantId]);
+  const { deliveryFeePaise, error: feeLoadError } = useDeliveryFee(restaurantId);
 
   if (sessionLoading) {
     return <p className="text-gray-500">Loading…</p>;
@@ -99,6 +77,7 @@ export default function CheckoutPage() {
           deliveryAddress: { label, lat, lng },
           paymentMethod,
           expectedTotal: total,
+          deliveryNote: orderNote.trim() === "" ? null : orderNote,
         }),
       });
       const result = await res.json();

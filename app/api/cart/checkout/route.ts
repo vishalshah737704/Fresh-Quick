@@ -28,12 +28,14 @@ export async function POST(request: NextRequest) {
     deliveryAddress,
     paymentMethod,
     expectedTotal,
+    deliveryNote,
   }: {
     restaurantId: string;
     items: CheckoutRequestItem[];
     deliveryAddress: { label: string; lat: number; lng: number };
     paymentMethod: "mock_card" | "mock_upi" | "mock_cod";
     expectedTotal?: number;
+    deliveryNote?: string | null;
   } = body;
 
   if (!restaurantId || !items?.length || !deliveryAddress) {
@@ -88,6 +90,17 @@ export async function POST(request: NextRequest) {
   ) {
     return NextResponse.json({ error: "Invalid delivery address" }, { status: 400 });
   }
+  if (deliveryNote !== undefined && deliveryNote !== null && typeof deliveryNote !== "string") {
+    return NextResponse.json({ error: "Invalid delivery note" }, { status: 400 });
+  }
+  if (typeof deliveryNote === "string" && deliveryNote.length > 500) {
+    return NextResponse.json(
+      { error: "Delivery note must be 500 characters or fewer" },
+      { status: 400 }
+    );
+  }
+  const normalizedDeliveryNote =
+    typeof deliveryNote === "string" && deliveryNote.trim() !== "" ? deliveryNote : null;
 
   const { data: restaurant, error: restaurantError } = await supabaseServer
     .from("restaurants")
@@ -253,6 +266,7 @@ export async function POST(request: NextRequest) {
     p_payment_status: paymentStatus,
     p_payment_amount: total,
     p_payment_paid_at: paymentSucceeds ? new Date().toISOString() : null,
+    p_delivery_note: normalizedDeliveryNote,
   });
 
   if (rpcError || !rpcRows || !rpcRows[0]) {
