@@ -29,11 +29,17 @@ export function CartPanel() {
   useEffect(() => {
     if (!open) return;
     function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape") setOpen(false);
+      if (e.key === "Escape") {
+        if (orderNoteDraft !== null) {
+          setOrderNote(orderNoteDraft);
+          setOrderNoteDraft(null);
+        }
+        setOpen(false);
+      }
     }
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [open]);
+  }, [open, orderNoteDraft, setOrderNote]);
 
   if (items.length === 0) return null;
 
@@ -41,8 +47,9 @@ export function CartPanel() {
     return noteDrafts[lineId] ?? current ?? "";
   }
 
-  const total =
-    deliveryFeePaise !== null ? subtotal + deliveryFeePaise / 100 : null;
+  const totalPaise =
+    deliveryFeePaise !== null ? Math.round(subtotal * 100) + deliveryFeePaise : null;
+  const total = totalPaise !== null ? totalPaise / 100 : null;
 
   return (
     <>
@@ -175,6 +182,7 @@ export function CartPanel() {
               </button>
               <Link
                 href="/customer/checkout"
+                onClick={() => setOpen(false)}
                 className="mt-2 block rounded-full bg-brand-primary px-3 py-2 text-center text-sm font-semibold text-white"
               >
                 Checkout
