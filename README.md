@@ -124,10 +124,12 @@ the earlier color/brand redesign. A third redesign — an Uber Eats-style
 overhaul, 6 pieces (design tokens → home/feed → restaurant page → item
 customization → cart → checkout) — is now in progress on top of both
 prior redesigns; piece 1 (design tokens: near-black/lime-green/cream
-palette, Inter + Poppins fonts, 8px card radius) and piece 2 (home/feed
+palette, Inter + Poppins fonts, 8px card radius), piece 2 (home/feed
 rebuild: search dropdown, sort/filter bar, curated carousels, a real
-per-restaurant delivery fee replacing the old flat rate) are merged,
-pieces 3-6 not started. See [MEMORY.md](MEMORY.md) for the phase-by-phase build
+per-restaurant delivery fee replacing the old flat rate), and piece 3
+(restaurant page rebuild: sticky category anchor-nav with scroll-spy,
+in-menu search, a corner "Quick Add" button restyle) are merged, pieces
+4-6 not started. See [MEMORY.md](MEMORY.md) for the phase-by-phase build
 log, including every bug found and fixed along the way, and its "Known
 deferred items" section for what's still intentionally left for later.
 The React Native mobile app is a planned follow-on, not started.

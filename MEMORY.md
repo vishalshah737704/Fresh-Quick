@@ -468,8 +468,67 @@ Claude at the start of work in this repo per project CLAUDE.md.
   verification when live infra is available" rule, added from this.
   Plan: docs/superpowers/plans/2026-09-25-uber-eats-home-feed-rebuild.md
   Spec: docs/superpowers/specs/2026-09-25-uber-eats-home-feed-rebuild-design.md
+- **Uber Eats-style redesign — Piece 3: Restaurant page rebuild**: ✅
+  Complete, merged to `main`. Built inline via `superpowers:executing-plans`
+  in an isolated worktree (4 tasks), no new schema. Rebuilt
+  `app/customer/restaurants/[id]/page.tsx`: menu items now group by the
+  existing `menu_items.category` column into a sticky pill anchor-nav
+  with `IntersectionObserver`-driven scroll-spy, falling back to the
+  original flat vertical list whenever fewer than 2 real groups exist
+  (a null/blank category is bucketed into a trailing "Other" group, not
+  its own group). Added a client-side in-menu search box (name/
+  description match) that hides empty groups and their pills, showing a
+  "No items match" message if every group empties. `MenuItemRow`
+  restyled — image-right layout with a circular accent "+" Quick Add
+  button overlaid on the image's corner (same instant `addItem` call as
+  before, restyle only; true customization with option groups stays
+  piece 4's scope). New `components/RestaurantMenuAnchorNav.tsx`
+  (presentational pill row).
+  **3 Important bugs caught only by the final whole-branch review
+  (opus), not the inline execution's own live-verify pass**: (1) the
+  vendor menu-item edit form writes `category: ""` when a vendor clears
+  the field, not `null` — `buildGroups` originally checked `=== null`
+  only, so a blank category became its own blank-labeled group with an
+  empty pill; separately, different category labels could collide on
+  the same slug (trailing-space/case variants, non-Latin labels, or a
+  real "Other" category colliding with the synthetic null-bucket
+  "Other"), giving duplicate React keys and duplicate section ids where
+  the second section silently overwrote the first in the scroll-spy's
+  ref map. Fixed by trimming/treating blank as uncategorized and
+  de-duplicating slugs with a numeric suffix on collision. (2) clicking
+  an anchor-nav pill scrolled to the section but didn't set the active
+  highlight itself — only the `IntersectionObserver` did, which never
+  fires for a short menu's trailing sections or mid-smooth-scroll, so
+  the wrong pill stayed highlighted after clicking the last one on a
+  short menu. Fixed by having the click handler set `activeKey`
+  directly. (3) `scrollIntoView({ block: "start" })` landed the target
+  section's heading directly behind the sticky anchor-nav (which has an
+  opaque background), making it invisible right after the scroll it was
+  supposed to reveal. Fixed with `scroll-mt-16` on each section. All
+  three were live-reproduced and re-verified via Playwright before
+  merge (an empty-string category plus a literal "Other" category on
+  the same restaurant correctly produced two distinct "Other"
+  pills/sections with no blank group; the click-highlight fix was
+  confirmed on that same collision case).
+  **Deferred minors** (ledgered, not fixed): `activeKey` can point at a
+  group a search query just removed, leaving no pill highlighted until
+  the next click; the scroll-spy's "most visible" comparison only
+  considers entries whose intersection changed in the current observer
+  callback rather than every section currently in the sticky zone; the
+  in-menu search matches item name/description only, not the visible
+  category/pill labels (a product-decision-worthy gap, not a bug per
+  the spec); accessibility gaps (search input has no `aria-label`, pills
+  have no `aria-current`/`aria-pressed`, the corner `+` button is below
+  the 44px touch-target guideline at mobile width); a search that empties
+  a category switches the page from grouped view to the flat list
+  mid-search (matches the spec's stated threshold, a UX choice to
+  confirm later, not a bug); the `IntersectionObserver`'s `-88px`
+  `rootMargin` is an unexplained magic number not tied to a measured nav
+  height.
+  Plan: docs/superpowers/plans/2026-09-25-uber-eats-restaurant-page-rebuild.md
+  Spec: docs/superpowers/specs/2026-09-25-uber-eats-restaurant-page-rebuild-design.md
 - **Mobile app (React Native + Expo, sub-project)**: not started — begins
-  after the customer-flow DoorDash-style polish.
+  after the Uber Eats redesign's remaining pieces (4-6).
 
 ## Key decisions carried forward (see spec §2 for full list)
 

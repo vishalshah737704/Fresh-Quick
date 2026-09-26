@@ -249,6 +249,42 @@ See [MEMORY.md](MEMORY.md) for phase-by-phase progress and decisions.
   an acceptable equivalent — re-verify live yourself before trusting it,
   especially for money-path or security-relevant changes.
 
+- **Any UI grouping/keying logic derived from a nullable text column
+  (e.g. `menu_items.category`) must treat a blank/whitespace string the
+  same as `null`, not just check `=== null`.** A vendor-facing edit form
+  clearing a text field typically writes `""`, not `null` — piece 3's
+  restaurant-page category grouping (`app/customer/restaurants/[id]/
+  page.tsx`) originally only bucketed `null` categories into "Other",
+  so a vendor-cleared `""` category became its own blank-labeled group
+  with an empty pill. Slugifying such a column for use as a React key or
+  DOM id also needs explicit de-duplication (trailing-space/case
+  variants, non-Latin labels, or a legitimate category value colliding
+  with a synthetic fallback bucket's label can all slugify to the same
+  string) — a naive `slugify(label)` key will silently let the second
+  colliding group overwrite the first in any ref/lookup map keyed by
+  that slug. Caught only by piece 3's final whole-branch review reading
+  the vendor-form code path, not by the inline execution's own live
+  Playwright verification (which only tested seed data, where every
+  category is a clean non-empty string).
+- **A click handler that scrolls to a target must set any "active"/
+  highlighted UI state itself, not rely on a separate scroll-triggered
+  observer (`IntersectionObserver`) to catch up.** Piece 3's anchor-nav
+  scroll-spy only updated the active pill via the observer, so clicking
+  a pill scrolled correctly but left the wrong pill highlighted on any
+  menu short enough that the target section never crosses the
+  observer's visibility threshold (or during the smooth-scroll itself).
+  The fix was one line — set the state directly in the click handler —
+  but the bug shipped past the piece's own live-verify pass because that
+  pass tested "does clicking scroll to the right place", not "is the
+  right pill highlighted immediately after clicking".
+- **`scrollIntoView({ block: "start" })` under a `position: sticky`
+  element needs `scroll-margin-top` (Tailwind `scroll-mt-*`) on the
+  scroll target**, or the sticky element's own background will cover
+  the very content the scroll was supposed to reveal. Piece 3's category
+  headings landed directly behind the sticky anchor-nav bar until a
+  `scroll-mt-16` was added — worth checking any future sticky-nav +
+  scroll-to-section pattern in this app for the same gap.
+
 ## Standing phrase: "Commit Work" — NON-NEGOTIABLE
 
 When Vishal says **"Commit Work"** in this project, perform these three
