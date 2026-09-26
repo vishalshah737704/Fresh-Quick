@@ -132,8 +132,11 @@ in-menu search, a corner "Quick Add" button restyle), and piece 4 (item
 customization: vendor-managed option groups/options, an
 `ItemCustomizationModal` replacing instant add for items with options, a
 `lineId`-keyed cart so different customizations of the same dish coexist
-as separate lines) are merged, pieces 5-6 not started. See
-[MEMORY.md](MEMORY.md) for the phase-by-phase build
+as separate lines), and piece 5 (cart redesign: `CartPanel` rebuilt as a
+slide-out drawer with line-item thumbnails, a whole-order note distinct
+from per-line special instructions, and a shared delivery-fee hook so the
+drawer's preview total matches checkout exactly) are merged, piece 6 not
+started. See [MEMORY.md](MEMORY.md) for the phase-by-phase build
 log, including every bug found and fixed along the way, and its "Known
 deferred items" section for what's still intentionally left for later.
 The React Native mobile app is a planned follow-on, not started.

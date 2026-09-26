@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
   const { data, error } = await supabaseServer
     .from("orders")
     .select(
-      "id, status, subtotal, delivery_fee, total, placed_at, order_items(id, quantity, unit_price, special_instructions, menu_items(name), order_item_options(id, group_name, option_name))"
+      "id, status, subtotal, delivery_fee, total, placed_at, delivery_note, order_items(id, quantity, unit_price, special_instructions, menu_items(name), order_item_options(id, group_name, option_name))"
     )
     .eq("restaurant_id", resolved.restaurantId)
     .order("placed_at", { ascending: false });

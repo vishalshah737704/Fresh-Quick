@@ -16,6 +16,7 @@ export type CartItem = {
   name: string;
   price: number;
   quantity: number;
+  imageUrl: string | null;
   selectedOptions: SelectedOption[];
   specialInstructions: string | null;
 };
@@ -33,11 +34,13 @@ type CartContextValue = {
   restaurantName: string | null;
   items: CartItem[];
   subtotal: number;
+  orderNote: string;
   pendingConflict: PendingConflict;
   addItem: (restaurantId: string, restaurantName: string, item: NewCartItem) => void;
   updateQuantity: (lineId: string, quantity: number) => void;
   removeItem: (lineId: string) => void;
   setSpecialInstructions: (lineId: string, text: string) => void;
+  setOrderNote: (text: string) => void;
   clearCart: () => void;
   confirmClearAndAdd: () => void;
   cancelPendingAdd: () => void;
@@ -51,6 +54,7 @@ type StoredCart = {
   restaurantId: string | null;
   restaurantName: string | null;
   items: CartItem[];
+  orderNote: string;
 };
 
 export function buildLineId(menuItemId: string, selectedOptions: SelectedOption[]): string {
@@ -85,6 +89,7 @@ function normalizeStoredItem(raw: Record<string, unknown>): CartItem | null {
     : [];
   const specialInstructions =
     typeof raw.specialInstructions === "string" ? raw.specialInstructions : null;
+  const imageUrl = typeof raw.imageUrl === "string" ? raw.imageUrl : null;
   const lineId =
     typeof raw.lineId === "string" ? raw.lineId : buildLineId(raw.menuItemId, selectedOptions);
   return {
@@ -93,6 +98,7 @@ function normalizeStoredItem(raw: Record<string, unknown>): CartItem | null {
     name: raw.name,
     price: raw.price,
     quantity: raw.quantity,
+    imageUrl,
     selectedOptions,
     specialInstructions,
   };
@@ -100,11 +106,11 @@ function normalizeStoredItem(raw: Record<string, unknown>): CartItem | null {
 
 function loadStoredCart(): StoredCart {
   if (typeof window === "undefined") {
-    return { restaurantId: null, restaurantName: null, items: [] };
+    return { restaurantId: null, restaurantName: null, items: [], orderNote: "" };
   }
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return { restaurantId: null, restaurantName: null, items: [] };
+    if (!raw) return { restaurantId: null, restaurantName: null, items: [], orderNote: "" };
     const parsed = JSON.parse(raw);
     if (
       !parsed ||
@@ -113,7 +119,7 @@ function loadStoredCart(): StoredCart {
       !(parsed.restaurantName === null || typeof parsed.restaurantName === "string") ||
       !Array.isArray(parsed.items)
     ) {
-      return { restaurantId: null, restaurantName: null, items: [] };
+      return { restaurantId: null, restaurantName: null, items: [], orderNote: "" };
     }
     const items = (parsed.items as unknown[])
       .map((i) =>
@@ -122,9 +128,10 @@ function loadStoredCart(): StoredCart {
           : null
       )
       .filter((i): i is CartItem => i !== null);
-    return { restaurantId: parsed.restaurantId, restaurantName: parsed.restaurantName, items };
+    const orderNote = typeof parsed.orderNote === "string" ? parsed.orderNote : "";
+    return { restaurantId: parsed.restaurantId, restaurantName: parsed.restaurantName, items, orderNote };
   } catch {
-    return { restaurantId: null, restaurantName: null, items: [] };
+    return { restaurantId: null, restaurantName: null, items: [], orderNote: "" };
   }
 }
 
@@ -132,6 +139,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [restaurantId, setRestaurantId] = useState<string | null>(null);
   const [restaurantName, setRestaurantName] = useState<string | null>(null);
   const [items, setItems] = useState<CartItem[]>([]);
+  const [orderNote, setOrderNoteState] = useState("");
   const [pendingConflict, setPendingConflict] = useState<PendingConflict>(null);
   const [hydrated, setHydrated] = useState(false);
 
@@ -140,6 +148,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setRestaurantId(stored.restaurantId);
     setRestaurantName(stored.restaurantName);
     setItems(stored.items);
+    setOrderNoteState(stored.orderNote);
     setHydrated(true);
   }, []);
 
@@ -148,12 +157,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
     try {
       window.localStorage.setItem(
         STORAGE_KEY,
-        JSON.stringify({ restaurantId, restaurantName, items })
+        JSON.stringify({ restaurantId, restaurantName, items, orderNote })
       );
     } catch {
       // localStorage unavailable (private mode, quota) — cart just won't persist
     }
-  }, [restaurantId, restaurantName, items, hydrated]);
+  }, [restaurantId, restaurantName, items, orderNote, hydrated]);
 
   function addItemDirect(rId: string, rName: string, item: NewCartItem) {
     const lineId = buildLineId(item.menuItemId, item.selectedOptions);
@@ -181,6 +190,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   function confirmClearAndAdd() {
     if (!pendingConflict) return;
     setItems([]);
+    setOrderNoteState("");
     addItemDirect(pendingConflict.restaurantId, pendingConflict.restaurantName, pendingConflict.item);
     setPendingConflict(null);
   }
@@ -218,10 +228,15 @@ export function CartProvider({ children }: { children: ReactNode }) {
     );
   }
 
+  function setOrderNote(text: string) {
+    setOrderNoteState(text.trim() === "" ? "" : text);
+  }
+
   function clearCart() {
     setItems([]);
     setRestaurantId(null);
     setRestaurantName(null);
+    setOrderNoteState("");
     setPendingConflict(null);
   }
 
@@ -234,11 +249,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
         restaurantName,
         items,
         subtotal,
+        orderNote,
         pendingConflict,
         addItem,
         updateQuantity,
         removeItem,
         setSpecialInstructions,
+        setOrderNote,
         clearCart,
         confirmClearAndAdd,
         cancelPendingAdd,

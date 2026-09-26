@@ -17,6 +17,7 @@ type Order = {
   status: string;
   total: number;
   placed_at: string;
+  delivery_note: string | null;
   order_items: OrderItem[];
 };
 
@@ -129,6 +130,11 @@ export default function VendorOrdersPage() {
                 </li>
               ))}
             </ul>
+            {order.delivery_note && (
+              <p className="mt-1 text-sm text-brand-ink-muted">
+                Order note: &quot;{order.delivery_note}&quot;
+              </p>
+            )}
             <p className="mt-1 text-sm font-medium">₹{order.total.toFixed(2)}</p>
           </li>
         ))}
