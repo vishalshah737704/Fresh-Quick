@@ -1124,3 +1124,33 @@ Rubber Bands Pack
 Gift Wrap Roll
 Lottery Scratch Card
 Disposable Lighter 2pk
+Watermelon Juice Bottle
+Masala Soda Can
+Green Tea Bottle Ready
+Hot Chocolate Sachet
+Nachos Cheese Dip Pack
+Multigrain Chips Pack
+Peanut Chikki Bar
+Coconut Cookies Pack
+Roasted Corn Snack Pack
+Frozen Cutlet Pack
+Frozen Idli Pack
+Business Daily Newspaper
+Recipe Booklet
+Kids Coloring Book
+Antiseptic Cream Small
+Cotton Buds Pack
+Shoe Polish Small
+Sewing Kit Travel
+Mosquito Repellent Patch
+Mobile Charging Adapter
+Wired Handsfree Earbuds
+Memory Card 32GB
+Cable Organizer Pack
+Whiteboard Marker Set
+File Folder Pack 5pc
+Push Pins Box
+Scissors Small
+Calculator Pocket
+Key Chain Torch
+Umbrella Pocket Mini
