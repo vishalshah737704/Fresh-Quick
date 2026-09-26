@@ -52,6 +52,10 @@ export default function VendorDashboardPage() {
   async function saveFeeAndPromo() {
     setActionError(null);
     setSavedMessage(null);
+    if (deliveryFeeRupees.trim() === "") {
+      setActionError("Delivery fee must be a non-negative number");
+      return;
+    }
     const fee = Number(deliveryFeeRupees);
     if (!Number.isFinite(fee) || fee < 0) {
       setActionError("Delivery fee must be a non-negative number");
@@ -114,7 +118,8 @@ export default function VendorDashboardPage() {
         />
         <button
           onClick={saveFeeAndPromo}
-          className="self-start rounded-full bg-brand-primary px-3 py-2 text-sm text-white"
+          disabled={isOpen === null}
+          className="self-start rounded-full bg-brand-primary px-3 py-2 text-sm text-white disabled:opacity-50"
         >
           Save
         </button>

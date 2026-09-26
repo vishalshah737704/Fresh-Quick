@@ -155,6 +155,7 @@ export default function CustomerHomePage() {
         value={searchQuery}
         onChange={setSearchQuery}
         restaurants={restaurants.map((r) => ({ id: r.id, name: r.name, cuisine_tags: r.cuisine_tags }))}
+        cuisines={cuisines}
       />
       <SortFilterBar sortBy={sortBy} onSortByChange={setSortBy} under30={under30} onUnder30Toggle={setUnder30} />
       <CuisineChipRow cuisines={cuisines} selected={selectedCuisine} onSelect={setSelectedCuisine} />
@@ -173,7 +174,15 @@ export default function CustomerHomePage() {
         )
       ) : searched.length === 0 ? (
         <p className="text-brand-ink-muted">
-          No restaurants match &quot;{searchQuery}&quot;.
+          {under30 ? (
+            searchQuery.trim() === "" ? (
+              "No restaurants deliver in under 30 min right now."
+            ) : (
+              <>No restaurants under 30 min match &quot;{searchQuery}&quot;.</>
+            )
+          ) : (
+            <>No restaurants match &quot;{searchQuery}&quot;.</>
+          )}
         </p>
       ) : (
         <div className="flex flex-col gap-8">

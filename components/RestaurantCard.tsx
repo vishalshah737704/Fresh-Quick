@@ -20,8 +20,10 @@ export function RestaurantCard({
   restaurant: Restaurant;
   distanceKm: number;
 }) {
-  const feeRupees = restaurant.delivery_fee_paise / 100;
-  const feeLabel = feeRupees === 0 ? "₹0 Delivery Fee" : `₹${feeRupees.toFixed(0)} Delivery Fee`;
+  const paise = restaurant.delivery_fee_paise;
+  const isFreeDelivery = paise === 0;
+  const feeDisplay = paise % 100 === 0 ? (paise / 100).toFixed(0) : (paise / 100).toFixed(2);
+  const feeLabel = `₹${feeDisplay} Delivery Fee`;
 
   return (
     <Link
@@ -54,7 +56,7 @@ export function RestaurantCard({
         <p className="text-sm text-brand-ink-muted">{restaurant.cuisine_tags.join(", ")}</p>
         <p className="mt-1 text-xs text-brand-ink-muted">
           ⭐ {restaurant.rating.toFixed(1)} · {restaurant.avg_prep_minutes} min ·{" "}
-          <span className={feeRupees === 0 ? "font-semibold text-brand-accent" : ""}>
+          <span className={isFreeDelivery ? "font-semibold text-brand-accent" : ""}>
             {feeLabel}
           </span>
         </p>

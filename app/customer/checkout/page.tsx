@@ -23,18 +23,24 @@ export default function CheckoutPage() {
     useState<(typeof PAYMENT_METHODS)[number]["value"]>("mock_card");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [deliveryFeeRupees, setDeliveryFeeRupees] = useState<number | null>(null);
+  const [deliveryFeePaise, setDeliveryFeePaise] = useState<number | null>(null);
+  const [feeLoadError, setFeeLoadError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     async function loadFee() {
       if (!restaurantId) return;
-      const { data } = await supabase
+      const { data, error: fetchError } = await supabase
         .from("restaurants")
         .select("delivery_fee_paise")
         .eq("id", restaurantId)
         .single();
-      if (!cancelled) setDeliveryFeeRupees(data ? data.delivery_fee_paise / 100 : null);
+      if (cancelled) return;
+      if (fetchError) {
+        setFeeLoadError(fetchError.message);
+        return;
+      }
+      setDeliveryFeePaise(data ? data.delivery_fee_paise : null);
     }
     loadFee();
     return () => {
@@ -55,11 +61,16 @@ export default function CheckoutPage() {
     return <p className="text-gray-500">Your cart is empty.</p>;
   }
 
-  if (deliveryFeeRupees === null) {
+  if (feeLoadError) {
+    return <p className="text-red-600">Couldn&apos;t load delivery fee: {feeLoadError}</p>;
+  }
+
+  if (deliveryFeePaise === null) {
     return <p className="text-gray-500">Loading…</p>;
   }
 
-  const total = subtotal + deliveryFeeRupees;
+  const totalPaise = Math.round(subtotal * 100) + deliveryFeePaise;
+  const total = totalPaise / 100;
 
   async function handleSubmit() {
     setSubmitting(true);
@@ -144,7 +155,7 @@ export default function CheckoutPage() {
             </h2>
             <div className="flex flex-col gap-1 border-t border-brand-ink-muted/10 pt-3 text-sm text-brand-ink-muted">
               <p>Subtotal: ₹{subtotal.toFixed(2)}</p>
-              <p>Delivery fee: ₹{deliveryFeeRupees.toFixed(2)}</p>
+              <p>Delivery fee: ₹{(deliveryFeePaise / 100).toFixed(2)}</p>
               <p className="font-semibold text-brand-ink">Total: ₹{total.toFixed(2)}</p>
             </div>
 

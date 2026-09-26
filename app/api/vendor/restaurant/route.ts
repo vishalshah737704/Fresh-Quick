@@ -35,6 +35,12 @@ export async function PATCH(request: NextRequest) {
   }
 
   if ("deliveryFeeRupees" in body) {
+    if (typeof body.deliveryFeeRupees !== "number") {
+      return NextResponse.json(
+        { error: "deliveryFeeRupees must be a non-negative number" },
+        { status: 400 }
+      );
+    }
     const fee = Number(body.deliveryFeeRupees);
     if (!Number.isFinite(fee) || fee < 0) {
       return NextResponse.json(

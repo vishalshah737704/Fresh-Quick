@@ -11,10 +11,12 @@ export function HeaderSearchBox({
   value,
   onChange,
   restaurants,
+  cuisines,
 }: {
   value: string;
   onChange: (value: string) => void;
   restaurants: RestaurantOption[];
+  cuisines: { slug: string; label: string }[];
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -69,6 +71,8 @@ export function HeaderSearchBox({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  const labelBySlug = new Map(cuisines.map((c) => [c.slug, c.label]));
+
   const query = value.trim().toLowerCase();
   const restaurantMatches =
     query === ""
@@ -77,7 +81,11 @@ export function HeaderSearchBox({
           .filter(
             (r) =>
               r.name.toLowerCase().includes(query) ||
-              r.cuisine_tags.some((t) => t.toLowerCase().includes(query))
+              r.cuisine_tags.some(
+                (t) =>
+                  t.toLowerCase().includes(query) ||
+                  (labelBySlug.get(t) ?? "").toLowerCase().includes(query)
+              )
           )
           .slice(0, 8);
 
@@ -106,7 +114,7 @@ export function HeaderSearchBox({
                   }}
                   className="block w-full px-4 py-2 text-left text-sm text-brand-ink hover:bg-brand-accent/10"
                 >
-                  {r.name} — {r.cuisine_tags.join(", ")}
+                  {r.name} — {r.cuisine_tags.map((t) => labelBySlug.get(t) ?? t).join(", ")}
                 </button>
               ))}
             </div>
