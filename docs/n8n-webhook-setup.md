@@ -160,13 +160,16 @@ each is an independent webhook listener triggered by a different table
 event (or a different status value on the same table). You can activate
 them in any order, including one at a time to test incrementally (see
 below) before turning the rest on. The one real-world dependency is
-environmental, not between workflows: only workflows 2 and 4 have HTTP
-Request nodes that actually call this app, so only those two need
-`APP_BASE_URL` and `N8N_INTERNAL_SECRET` correctly set (workflow 4 also
-needs `SUPABASE_URL`/`SUPABASE_SERVICE_ROLE_KEY` for its direct restaurant
-lookup). Workflows 1, 3, and 5 only have webhook/filter/no-op nodes and
-don't call out anywhere, so they have no environment-variable
-dependency.
+environmental, not between workflows: workflows 2, 3, and 4 have HTTP
+Request nodes that actually call this app, so those need `APP_BASE_URL`
+and `N8N_INTERNAL_SECRET` correctly set (workflow 4 also needs
+`SUPABASE_URL`/`SUPABASE_SERVICE_ROLE_KEY` for its direct restaurant
+lookup). Workflow 3 additionally needs a real Gmail OAuth2 credential
+connected to its "Gmail: Send Order Accepted Email" node before
+activating — the JSON ships with a placeholder credential id and will
+fail at that node until you connect one in the n8n UI. Workflows 1 and 5
+only have webhook/filter/no-op nodes and don't call out anywhere, so they
+have no environment-variable dependency.
 
 ## 5. How to test each workflow
 
@@ -217,7 +220,22 @@ the webhook fires on each `orders` UPDATE, the filter passes for
 `accepted`/`preparing`/`ready`, and the placeholder notification node
 executes. The customer's own order page already reflects the status
 change via its independent 3s poll — this workflow doesn't need to work
-for that to be true.
+for that to be true. On the `accepted` transition specifically, a second
+branch also fires: `GET /api/internal/orders/:id/notification-details`
+(customer email, restaurant name, total, delivery address), followed by
+a Gmail node that emails the customer an order-accepted confirmation.
+That branch needs a real Gmail credential connected (see section 4) —
+until then it will show a failed execution at the Gmail node on every
+`accepted` transition, which is expected, not a sign anything else is
+broken.
+
+**Rejecting an order** (vendor rejects a still-`placed` order via
+`/vendor/orders`'s Reject button) does **not** go through n8n — the
+order's status update to `rejected` and the mock payment refund
+(`payments.status` → `refunded`) both happen synchronously in
+`app/api/vendor/orders/[id]/reject/route.ts`, the same way Phase 3's
+checkout resolves payment synchronously rather than via workflow 02.
+There is nothing to test in n8n for this path.
 
 **04 — Delivery Partner Assignment.** Advance an order to `ready` as the
 vendor, with at least one delivery partner online (`/delivery/dashboard`,
@@ -276,6 +294,14 @@ and `SUPABASE_URL`'s `host.docker.internal` requirement) were found during
 this pass and are now fixed in the confirmed-working run command above —
 neither was visible from the original hand-review of the JSON, since both
 only manifest once a node actually executes against a live n8n instance.
+
+**Not yet verified against a live instance**: workflow 03's new
+`accepted`-branch (notification-details fetch + Gmail send) and the
+vendor reject/refund route. Both were added after this 2026-09-25
+verification pass — re-import workflow 03's updated JSON into n8n,
+connect a real Gmail credential, and re-run the `03` test above before
+trusting this branch the way the rest of this section's results are
+trusted.
 
 ## 7. Once verified, activate
 

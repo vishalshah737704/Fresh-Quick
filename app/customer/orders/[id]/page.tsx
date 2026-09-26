@@ -13,7 +13,8 @@ type OrderStatus =
   | "assigned"
   | "picked_up"
   | "delivered"
-  | "cancelled";
+  | "cancelled"
+  | "rejected";
 
 type OrderView = {
   id: string;
@@ -23,7 +24,7 @@ type OrderView = {
 };
 
 type PaymentView = {
-  status: "pending" | "success" | "failed";
+  status: "pending" | "success" | "failed" | "refunded";
   method: string;
 };
 
@@ -42,6 +43,7 @@ const STATUS_LABEL: Record<OrderStatus, string> = {
   picked_up: "Order picked up — on the way",
   delivered: "Delivered",
   cancelled: "Order cancelled",
+  rejected: "Restaurant rejected your order — payment refunded",
 };
 
 const SHOW_LOCATION_FOR: OrderStatus[] = ["assigned", "picked_up"];
@@ -57,7 +59,7 @@ export default function OrderConfirmationPage() {
     let cancelled = false;
     let interval: ReturnType<typeof setInterval> | null = null;
 
-    const TERMINAL_STATUSES: OrderStatus[] = ["delivered", "cancelled"];
+    const TERMINAL_STATUSES: OrderStatus[] = ["delivered", "cancelled", "rejected"];
 
     async function load() {
       const [{ data: o, error: oErr }, { data: p, error: pErr }] =

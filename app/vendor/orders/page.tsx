@@ -63,6 +63,20 @@ export default function VendorOrdersPage() {
     await loadOrders();
   }
 
+  async function reject(orderId: string) {
+    setError(null);
+    const res = await fetch(`/api/vendor/orders/${orderId}/reject`, {
+      method: "POST",
+      headers: await authHeader(),
+    });
+    if (!res.ok) {
+      const body = await res.json().catch(() => null);
+      setError(body?.error ?? "Failed to reject order");
+      return;
+    }
+    await loadOrders();
+  }
+
   if (loading) return <p>Loading…</p>;
 
   const statuses = ["all", ...Object.keys(NEXT_LABEL)];
@@ -105,14 +119,24 @@ export default function VendorOrdersPage() {
               <p className="font-medium">
                 Order #{order.id.slice(0, 8)} · {order.status}
               </p>
-              {NEXT_LABEL[order.status] && (
-                <button
-                  onClick={() => advance(order.id)}
-                  className="rounded-full bg-brand-primary px-2 py-1 text-xs text-white"
-                >
-                  {NEXT_LABEL[order.status]}
-                </button>
-              )}
+              <div className="flex gap-2">
+                {order.status === "placed" && (
+                  <button
+                    onClick={() => reject(order.id)}
+                    className="rounded-full border border-red-600 px-2 py-1 text-xs text-red-600"
+                  >
+                    Reject
+                  </button>
+                )}
+                {NEXT_LABEL[order.status] && (
+                  <button
+                    onClick={() => advance(order.id)}
+                    className="rounded-full bg-brand-primary px-2 py-1 text-xs text-white"
+                  >
+                    {NEXT_LABEL[order.status]}
+                  </button>
+                )}
+              </div>
             </div>
             <ul className="mt-2 text-sm text-brand-ink-muted">
               {order.order_items.map((item) => (

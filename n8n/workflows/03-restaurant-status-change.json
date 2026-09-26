@@ -20,7 +20,7 @@
       "name": "Filter: status in (accepted, preparing, ready)",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
-      "position": [460, 300],
+      "position": [460, 220],
       "parameters": {
         "conditions": {
           "string": [
@@ -37,20 +37,91 @@
       "name": "Push Realtime Notification (placeholder)",
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
-      "position": [680, 220],
+      "position": [680, 140],
       "notes": "The customer order page (app/customer/orders/[id]/page.tsx) already polls orders.status directly every 3s, independent of this workflow -- this node is a placeholder for a push notification channel, not required for the customer to see the status change."
+    },
+    {
+      "id": "filter-status-accepted",
+      "name": "Filter: status = accepted",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [460, 420],
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json[\"body\"][\"record\"][\"status\"]}}",
+              "value2": "accepted"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "get-notification-details",
+      "name": "GET /api/internal/orders/:id/notification-details",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [680, 420],
+      "parameters": {
+        "method": "GET",
+        "url": "={{$env.APP_BASE_URL}}/api/internal/orders/{{$json[\"body\"][\"record\"][\"id\"]}}/notification-details",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "X-Internal-Secret", "value": "={{$env.N8N_INTERNAL_SECRET}}" }
+          ]
+        }
+      },
+      "notes": "public.users has no email column (it lives on auth.users) and the webhook payload has no amount/address text, so this call fetches the confirmation email's content server-side."
+    },
+    {
+      "id": "send-order-accepted-email",
+      "name": "Gmail: Send Order Accepted Email",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2,
+      "position": [900, 420],
+      "parameters": {
+        "resource": "message",
+        "operation": "send",
+        "sendTo": "={{$json[\"customerEmail\"]}}",
+        "subject": "={{\"Your order from \" + $json[\"restaurantName\"] + \" has been accepted!\"}}",
+        "message": "={{\"Good news -- \" + $json[\"restaurantName\"] + \" has accepted your order #\" + $json[\"orderId\"].slice(0, 8) + \".\\n\\nAmount: \\u20b9\" + $json[\"total\"] + \"\\nDelivery address: \" + $json[\"deliveryAddress\"] + \"\\n\\nWe will let you know as your order moves through preparation and delivery.\"}}",
+        "options": {}
+      },
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "PLACEHOLDER_CONNECT_YOUR_GMAIL_CREDENTIAL",
+          "name": "Gmail account (connect in n8n UI)"
+        }
+      },
+      "notes": "Credential intentionally left as a placeholder -- connect a real Gmail OAuth2 credential in the n8n UI (this node's Credential dropdown) before activating this workflow."
     }
   ],
   "connections": {
     "Supabase Webhook: orders update": {
-      "main": [[{ "node": "Filter: status in (accepted, preparing, ready)", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          { "node": "Filter: status in (accepted, preparing, ready)", "type": "main", "index": 0 },
+          { "node": "Filter: status = accepted", "type": "main", "index": 0 }
+        ]
+      ]
     },
     "Filter: status in (accepted, preparing, ready)": {
       "main": [[{ "node": "Push Realtime Notification (placeholder)", "type": "main", "index": 0 }], []]
+    },
+    "Filter: status = accepted": {
+      "main": [
+        [{ "node": "GET /api/internal/orders/:id/notification-details", "type": "main", "index": 0 }],
+        []
+      ]
+    },
+    "GET /api/internal/orders/:id/notification-details": {
+      "main": [[{ "node": "Gmail: Send Order Accepted Email", "type": "main", "index": 0 }]]
     }
   },
   "active": false,
   "settings": {},
   "_untested_reference_only": true,
-  "_note": "Hand-authored to n8n's export JSON shape; never imported into or run against a real n8n instance. See docs/superpowers/specs/2026-09-25-phase7-n8n-automation-design.md."
+  "_note": "Hand-authored to n8n's export JSON shape; never imported into or run against a real n8n instance. See docs/superpowers/specs/2026-09-25-phase7-n8n-automation-design.md. Gmail credential is a placeholder -- connect it in the n8n UI before activating."
 }

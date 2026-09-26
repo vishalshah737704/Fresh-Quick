@@ -238,3 +238,54 @@ begin
     values (admin_uid, 'admin', 'Demo Admin');
   end if;
 end $$;
+
+-- Demo customer account for local testing (no self-signup needed to explore
+-- the customer app with an already-populated order history/addresses).
+do $$
+declare
+  customer_uid uuid;
+begin
+  if not exists (select 1 from public.users where role = 'customer') then
+    customer_uid := gen_random_uuid();
+    insert into auth.users (
+      id, instance_id, aud, role, email, encrypted_password,
+      email_confirmed_at, created_at, updated_at,
+      confirmation_token, recovery_token, email_change_token_new, email_change,
+      raw_app_meta_data, raw_user_meta_data
+    ) values (
+      customer_uid, '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated',
+      'customer@foodhub.local', crypt('demo1234', gen_salt('bf')),
+      now(), now(), now(),
+      '', '', '', '',
+      '{"provider":"email","providers":["email"]}', '{}'
+    );
+    insert into public.users (id, role, full_name, phone)
+    values (customer_uid, 'customer', 'Demo Customer', '9990001111');
+  end if;
+end $$;
+
+-- Demo delivery partner account for local testing.
+do $$
+declare
+  delivery_uid uuid;
+begin
+  if not exists (select 1 from public.users where role = 'delivery') then
+    delivery_uid := gen_random_uuid();
+    insert into auth.users (
+      id, instance_id, aud, role, email, encrypted_password,
+      email_confirmed_at, created_at, updated_at,
+      confirmation_token, recovery_token, email_change_token_new, email_change,
+      raw_app_meta_data, raw_user_meta_data
+    ) values (
+      delivery_uid, '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated',
+      'delivery@foodhub.local', crypt('demo1234', gen_salt('bf')),
+      now(), now(), now(),
+      '', '', '', '',
+      '{"provider":"email","providers":["email"]}', '{}'
+    );
+    insert into public.users (id, role, full_name, phone)
+    values (delivery_uid, 'delivery', 'Demo Delivery Partner', '9990002222');
+    insert into public.delivery_partners (user_id, is_online, vehicle_type)
+    values (delivery_uid, false, 'bike');
+  end if;
+end $$;

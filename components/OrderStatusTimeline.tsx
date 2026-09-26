@@ -6,14 +6,15 @@ type OrderStatus =
   | "assigned"
   | "picked_up"
   | "delivered"
-  | "cancelled";
+  | "cancelled"
+  | "rejected";
 
 const STEPS = ["Placed", "Preparing", "On the way", "Delivered"] as const;
 
-// Total mapping across all 8 real order statuses onto the 4 display steps.
-// Every OrderStatus value except "cancelled" appears on the right-hand side
-// exactly once via one of these keys.
-const STEP_INDEX: Record<Exclude<OrderStatus, "cancelled">, number> = {
+// Total mapping across all real order statuses onto the 4 display steps.
+// Every OrderStatus value except "cancelled"/"rejected" (both early-return
+// below) appears on the right-hand side exactly once via one of these keys.
+const STEP_INDEX: Record<Exclude<OrderStatus, "cancelled" | "rejected">, number> = {
   placed: 0,
   accepted: 0,
   preparing: 1,
@@ -28,6 +29,13 @@ export function OrderStatusTimeline({ status }: { status: OrderStatus }) {
     return (
       <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
         Order cancelled
+      </div>
+    );
+  }
+  if (status === "rejected") {
+    return (
+      <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+        Restaurant rejected your order — payment refunded
       </div>
     );
   }
