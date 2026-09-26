@@ -772,3 +772,51 @@ Green Bowl Green Apple Salad
 Green Bowl Pumpkin Seed Granola
 Green Bowl Mixed Nut Trail Bowl
 Green Bowl Watermelon Feta Salad
+Junction Watermelon Juice
+Junction Pineapple Juice
+Junction Mango Smoothie
+Junction Banana Shake
+Junction Strawberry Smoothie
+Junction Beetroot Juice
+Junction Carrot Juice
+Junction Apple Juice
+Junction Pomegranate Juice
+Junction Kiwi Juice
+Junction Mixed Fruit Juice
+Junction Coconut Water
+Junction Sugarcane Juice
+Junction Cold Coffee
+Junction Cappuccino
+Junction Latte
+Junction Espresso Shot
+Junction Mocha
+Junction Green Tea
+Junction Lemon Iced Tea
+Junction Peach Iced Tea
+Junction Masala Chai
+Junction Hot Chocolate
+Junction Chocolate Milkshake
+Junction Vanilla Milkshake
+Junction Oreo Milkshake
+Junction Kesar Milk
+Junction Buttermilk
+Junction Rose Milk
+Junction Sweet Lime Juice
+Junction Grape Juice
+Junction Papaya Smoothie
+Junction Guava Juice
+Junction Avocado Smoothie
+Junction Spinach Detox Juice
+Junction Ginger Lemon Shot
+Junction Aloe Vera Juice
+Junction Cucumber Mint Cooler
+Junction Jaljeera
+Junction Lassi Sweet
+Junction Lassi Salted
+Junction Blueberry Smoothie
+Junction Chikoo Shake
+Junction Fig Smoothie
+Junction Dragon Fruit Juice
+Junction Passion Fruit Juice
+Junction Herbal Immunity Shot
+Junction Iced Latte
