@@ -1,213 +1,347 @@
 # Item Name Registry
 
-Registry of all restaurant menu items added during the restaurant-menu-expansion task series.
+Append-only. One name per line. Every new product row added anywhere in
+the app (any sub-project of the 50-unique-items-per-store redesign) must
+use a name not already listed here, and must add its own new names before
+its commit.
 
-## Golden Dragon (50 items, added in Task 2)
-
-1. Dragon Shrimp Fried Rice
-2. Dragon Garlic Noodles
-3. Dragon Chicken Lo Mein
-4. Dragon Beef and Broccoli
-5. Dragon Cashew Chicken
-6. Dragon Sweet and Sour Pork
-7. Dragon Spring Roll Platter
-8. Dragon Mongolian Beef
-9. Dragon Chow Mein Deluxe
-10. Dragon Kung Pao Chicken
-11. Dragon Orange Chicken
-12. Dragon Mapo Tofu
-13. Dragon Vegetable Fried Rice
-14. Dragon Szechuan Noodles
-15. Dragon Black Bean Sauce Chicken
-16. Dragon Teriyaki Chicken
-17. Dragon Honey Garlic Shrimp
-18. Dragon Egg Fried Rice
-19. Dragon Vegetable Chow Mein
-20. Dragon Chicken and Mushroom
-21. Dragon Beef Lo Mein
-22. Dragon Shrimp with Broccoli
-23. Dragon Pineapple Chicken Fried Rice
-24. Dragon Crispy Tofu Stir Fry
-25. Dragon Lemon Chicken
-26. Dragon Garlic Shrimp Noodles
-27. Dragon Mixed Vegetable Fried Rice
-28. Dragon Chicken with Cashews
-29. Dragon Beef Chow Mein
-30. Dragon Vegetable Lo Mein
-31. Dragon Shrimp Chow Mein
-32. Dragon Fish in Brown Sauce
-33. Dragon Chicken Satay
-34. Dragon Vegetable Spring Rolls
-35. Dragon Shrimp in Lobster Sauce
-36. Dragon Beef and Green Beans
-37. Dragon Chicken Fried Rice with Egg
-38. Dragon Vegetable Fried Noodles
-39. Dragon Scallop Fried Rice
-40. Dragon Tofu in Black Bean Sauce
-41. Dragon Chicken with Peppers
-42. Dragon Shrimp Garlic Sauce
-43. Dragon Beef Oyster Sauce
-44. Dragon Vegetable and Tofu Stir Fry
-45. Dragon Pork Fried Rice
-46. Dragon Chicken Ginger Scallions
-47. Dragon Mixed Seafood Fried Rice
-48. Dragon Vegetable Cashew Stir Fry
-49. Dragon Chicken with Bamboo Shoots
-50. Dragon Shrimp and Bean Sprouts
-
-## Wok This Way (50 items, added in Task 3)
-
-1. Wok Chicken Fried Rice
-2. Wok Shrimp Lo Mein
-3. Wok Beef Broccoli
-4. Wok Vegetable Chow Mein
-5. Wok Cashew Chicken
-6. Wok Sweet and Sour Shrimp
-7. Wok Spring Roll Medley
-8. Wok Mongolian Beef
-9. Wok Premium Chow Mein
-10. Wok Kung Pao Chicken
-11. Wok Orange Chicken
-12. Wok Mapo Tofu
-13. Wok Vegetable Lo Mein
-14. Wok Szechuan Noodles
-15. Wok Black Bean Chicken
-16. Wok Teriyaki Beef
-17. Wok Honey Garlic Shrimp
-18. Wok Egg Fried Rice Special
-19. Wok Chicken Chow Mein
-20. Wok Mushroom Stir Fry
-21. Wok Beef Lo Mein
-22. Wok Shrimp with Vegetables
-23. Wok Pineapple Fried Rice
-24. Wok Crispy Tofu
-25. Wok Lemon Chicken
-26. Wok Garlic Shrimp Noodles
-27. Wok Mixed Vegetable Fried Rice
-28. Wok Chicken Cashew Stir Fry
-29. Wok Beef Chow Mein Deluxe
-30. Wok Green Bean Vegetable Lo Mein
-31. Wok Shrimp Chow Mein
-32. Wok Fish in Brown Sauce
-33. Wok Chicken Satay
-34. Wok Vegetable Spring Rolls
-35. Wok Shrimp Lobster Sauce
-36. Wok Beef and Green Beans
-37. Wok Chicken Fried Rice Deluxe
-38. Wok Vegetable Fried Noodles
-39. Wok Scallop Fried Rice
-40. Wok Tofu Black Bean Sauce
-41. Wok Chicken with Peppers
-42. Wok Shrimp Garlic Sauce
-43. Wok Beef Oyster Sauce
-44. Wok Vegetable Tofu Stir Fry
-45. Wok Pork Fried Rice
-46. Wok Chicken Ginger Scallions
-47. Wok Mixed Seafood Fried Rice
-48. Wok Vegetable Cashew Stir Fry
-49. Wok Chicken with Bamboo Shoots
-50. Wok Shrimp and Bean Sprouts
-
-## Bella Italia (50 items, added in Task 4)
-
-1. Bella Spaghetti Marinara
-2. Bella Penne Arrabbiata
-3. Bella Fettuccine Alfredo
-4. Bella Cheese Ravioli
-5. Bella Mushroom Risotto
-6. Bella Margherita Pizza
-7. Bella Pepperoni Pizza
-8. Bella Four Cheese Pizza
-9. Bella Caprese Salad
-10. Bella Minestrone Soup
-11. Bella Bruschetta
-12. Bella Gnocchi Pomodoro
-13. Bella Carbonara Pasta
-14. Bella Chicken Alfredo
-15. Bella Vegetable Lasagna
-16. Bella Spinach Tortellini
-17. Bella Seafood Pasta
-18. Bella Calzone
-19. Bella Eggplant Parmesan
-20. Bella Caesar Salad
-21. Bella Garlic Shrimp Pasta
-22. Bella Pesto Linguine
-23. Bella Tomato Basil Soup
-24. Bella Antipasto Board
-25. Bella Chicken Parmesan
-26. Bella Baked Penne
-27. Bella Vegetable Risotto
-28. Bella Focaccia Bread
-29. Bella Tiramisu
-30. Bella Panna Cotta
-31. Bella Cannoli
-32. Bella Chocolate Gelato
-33. Bella Lemon Sorbet
-34. Bella Affogato
-35. Bella Chicken Marsala
-36. Bella Osso Buco
-37. Bella Truffle Pasta
-38. Bella Vegetable Panini
-39. Bella Prosciutto Panini
-40. Bella Roasted Vegetable Salad
-41. Bella Caprese Panini
-42. Bella Spicy Arrabbiata Penne
-43. Bella Creamy Mushroom Soup
-44. Bella Italian Sausage Pasta
-45. Bella Meatball Sub
-46. Bella Garlic Parmesan Bread Sticks
-47. Bella White Wine Clam Pasta
-48. Bella Zucchini Noodles Pesto
-49. Bella Veal Piccata
-50. Bella Risotto con Funghi
-
-## Pasta Palace (50 items, added in Task 5)
-
-1. Palace Special Spaghetti
-2. Penne Arrabbiata Palace Style
-3. Palace Fettuccine Alfredo
-4. Palace Style Ravioli
-5. Palace Mushroom Risotto
-6. Palace Margherita Pizza
-7. Palace Pepperoni Pizza
-8. Palace Four Cheese Pizza
-9. Palace Caprese Salad
-10. Palace Minestrone Soup
-11. Palace Bruschetta
-12. Palace Gnocchi
-13. Palace Carbonara
-14. Palace Chicken Alfredo
-15. Palace Vegetable Lasagna
-16. Palace Spinach Tortellini
-17. Palace Seafood Pasta
-18. Palace Calzone
-19. Palace Eggplant Parmesan
-20. Palace Caesar Salad
-21. Palace Garlic Butter Shrimp Pasta
-22. Palace Pesto Linguine
-23. Palace Tomato Basil Soup
-24. Palace Antipasto Board
-25. Palace Chicken Parmesan
-26. Palace Baked Penne
-27. Palace Vegetable Risotto
-28. Palace Style Focaccia
-29. Palace Tiramisu Classic
-30. Palace Panna Cotta
-31. Palace Cannoli
-32. Palace Chocolate Gelato
-33. Palace Lemon Sorbet
-34. Palace Affogato
-35. Palace Chicken Marsala
-36. Palace Osso Buco Style
-37. Palace Truffle Pasta
-38. Palace Vegetable Panini
-39. Palace Prosciutto Panini
-40. Palace Roasted Vegetable Salad
-41. Palace Caprese Panini
-42. Palace Spicy Arrabbiata Penne
-43. Palace Creamy Mushroom Soup
-44. Palace Italian Sausage Pasta
-45. Palace Style Meatball Sub
-46. Palace Garlic Parmesan Bread Sticks
-47. Palace White Wine Clam Pasta
-48. Palace Zucchini Noodles Pesto
+Affogato al Caffe
+Antipasto Platter
+Avocado Toast
+Baked Ziti
+Bananas 1dz
+Bangkok Street Noodles
+Bar Snacks Mix
+Basil Chicken Stir-Fry
+Basmati Rice 1kg
+Batteries AA 4pk
+Beef Tacos
+Beer Glass Set
+Bella Garden Salad
+Biscuits Pack
+Black Bean Chicken
+Bottled Water 1L
+Brown Bread
+Brownie
+Bruschetta al Pomodoro
+Butter 200g
+Butter Chicken
+Calzone Classico
+Candy Pack
+Cannoli Siciliani
+Cantonese Fried Rice
+Caprese Salad
+Cashew Chicken Thai Style
+Champagne Bottle
+Cheeseburger
+Chewing Gum
+Chicken Chowmein
+Chicken Lollipop
+Chicken Manchurian
+Chicken Marsala
+Chicken Parmigiana
+Chicken Piccata
+Chicken Quesadilla
+Chicken Satay with Peanut Sauce
+Chicken Tikka
+Chilli Garlic Noodles
+Chilli Paneer
+Chinese Almond Chicken
+Chinese Baby Corn Manchurian
+Chinese Broccoli Stir-Fry
+Chinese Cabbage Stir-Fry
+Chinese Chicken Salad
+Chinese Egg Drop Soup
+Chinese Egg Fried Rice
+Chinese Fried Rice
+Chinese Garlic Chicken
+Chinese Garlic Prawns
+Chinese Lemon Chicken
+Chinese Noodle Soup
+Chinese Style Chicken Skewers
+Chinese Style Fried Fish
+Chinese Style Fried Rice Egg
+Chinese Style Mushroom Soup
+Chinese Style Sweet Corn Soup
+Chinese Vegetable Fried Noodles
+Chinese Vegetable Soup
+Chocolate Bar
+Chocolate Cake
+Chole Bhature
+Cinnamon Roll
+Cocktail Mixer Pack
+Coconut Milk Soup
+Cola Can 300ml
+Cooking Oil 1L
+Crab Fried Rice Thai
+Craft Cider Bottle
+Crispy Chilli Beef
+Crispy Corn Chinese Style
+Crispy Spring Rolls Veg
+Croissant
+Dim Sum Platter
+Dragon Chicken
+Dragon Prawns
+Drunken Noodles
+Eggplant Parmigiana
+Energy Drink
+Farm Eggs (12pc)
+Fettuccine Alfredo Chicken
+Focaccia Bread
+French Fries
+Fresh Fruit Salad
+Fresh Orange Juice
+Frozen Peas 500g
+Garlic Bread
+Gelato Trio
+Gin Bottle 750ml
+Gnocchi al Pesto
+Golden Dragon Special Fried Rice
+Golden Fried Chicken Chinese Style
+Green Tea Bags 25ct
+Grilled Chicken Piccata
+Grilled Chicken Salad
+Grilled Thai Chicken
+Guacamole
+Guacamole & Chips
+Gulab Jamun
+Hakka Noodles
+Honey Chilli Potato
+Hot and Sour Soup
+IPA Six-Pack
+Ice Bucket
+Ice Cream Cup
+Ice Cream Tub 700ml
+Iced Coffee
+Idli Sambar
+Instant Coffee 100g
+Instant Noodles
+Italian Meatballs Marinara
+Italian Wedding Soup
+Kung Pao Chicken
+Kung Pao Prawns
+Lager Six-Pack
+Larb Gai
+Lasagna
+Lasagna Bolognese
+Lighter
+Limoncello Cake
+Manchow Soup
+Manchurian
+Mango Lassi
+Mango Sticky Rice
+Mapo Tofu
+Margherita Pizza
+Margherita Pizza Extra Cheese
+Masala Dosa
+Massaman Curry
+Medu Vada
+Milk 1L
+Mineral Water 500ml
+Minestrone Soup
+Newspaper
+Notebook
+Onions 1kg
+Orange Juice 1L
+Osso Buco
+Pad Thai
+Palace Affogato
+Palace Antipasto Board
+Palace Baked Penne
+Palace Bruschetta
+Palace Caesar Salad
+Palace Calzone
+Palace Cannoli
+Palace Caprese Panini
+Palace Caprese Salad
+Palace Carbonara
+Palace Chicken Alfredo
+Palace Chicken Marsala
+Palace Chicken Parmesan
+Palace Chocolate Gelato
+Palace Creamy Mushroom Soup
+Palace Eggplant Parmesan
+Palace Fettuccine Alfredo
+Palace Four Cheese Pizza
+Palace Garlic Butter Shrimp Pasta
+Palace Garlic Parmesan Bread Sticks
+Palace Gnocchi
+Palace Italian Sausage Pasta
+Palace Lemon Sorbet
+Palace Margherita Pizza
+Palace Minestrone Soup
+Palace Mushroom Risotto
+Palace Osso Buco Style
+Palace Panna Cotta
+Palace Pepperoni Pizza
+Palace Pesto Linguine
+Palace Prosciutto Panini
+Palace Roasted Vegetable Salad
+Palace Seafood Pasta
+Palace Special Spaghetti
+Palace Spicy Arrabbiata Penne
+Palace Spinach Tortellini
+Palace Style Focaccia
+Palace Style Meatball Sub
+Palace Style Ravioli
+Palace Tiramisu Classic
+Palace Tomato Basil Soup
+Palace Truffle Pasta
+Palace Vegetable Lasagna
+Palace Vegetable Panini
+Palace Vegetable Risotto
+Palace White Wine Clam Pasta
+Palace Zucchini Noodles Pesto
+Palak Paneer
+Panang Curry
+Paneer Butter Masala
+Panna Cotta
+Panzanella Salad
+Pasta Alfredo
+Pasta Arrabbiata
+Pasta Primavera
+Peking Style Chicken
+Pen Pack
+Penne Arrabbiata Palace Style
+Penne Pesto
+Penne all'Arrabbiata Veg
+Pepperoni Pizza
+Phone Charging Cable
+Pineapple Fried Rice
+Pizza Diavola
+Popcorn Pack
+Potato Chips
+Potato Wafers
+Potatoes 1kg
+Prosciutto Pizza
+Prosciutto e Melone
+Protein Bowl
+Quattro Formaggi Pizza
+Quesadilla
+Quinoa Salad Bowl
+Ravioli Spinach Ricotta
+Red Wine Bottle
+Risotto Mushroom
+Roman Style Pizza Marinara
+Rose Wine Bottle
+Rum Bottle 750ml
+Satay Chicken Skewers
+Schezwan Noodles
+Seafood Linguine
+Sesame Chicken
+Sichuan Tofu
+Som Tam Papaya Salad
+Sourdough Loaf
+Spaghetti Aglio e Olio
+Spaghetti Carbonara
+Sparkling Wine
+Spicy Thai Eggplant
+Spinach Ravioli Alfredo
+Spring Rolls
+Steamed Chicken Dumplings
+Steamed Jasmine Rice
+Stir-Fried Morning Glory
+Stout Bottle
+Sugar 1kg
+Sweet and Sour Chicken Thai
+Sweet and Sour Pork
+Szechuan Chicken
+Tequila Bottle 750ml
+Thai Basil Pork
+Thai Beef Salad
+Thai Chicken Wings
+Thai Chili Prawns
+Thai Coconut Ice Cream
+Thai Coconut Soup Veg
+Thai Cucumber Salad
+Thai Fish Cakes
+Thai Fried Rice
+Thai Green Curry
+Thai Green Papaya Rolls
+Thai Grilled Pork Skewers
+Thai Iced Coffee
+Thai Iced Tea
+Thai Lemongrass Chicken
+Thai Mango Salad
+Thai Omelette
+Thai Pumpkin Curry
+Thai Red Curry
+Thai Roti Canai
+Thai Shrimp Cakes
+Thai Spicy Basil Fried Rice
+Thai Spring Rolls
+Thai Sticky Rice with Mango
+Thai Vegetable Curry
+Thai Yellow Curry
+Tiramisu
+Tissue Pack
+Tom Kha Gai
+Tom Yum Soup
+Tomatoes 1kg
+Toor Dal 1kg
+Tortellini in Brodo
+Truffle Mushroom Risotto
+Tuscan White Bean Soup
+Umbrella
+Veg Biryani
+Veg Fried Rice
+Vegetable Dumplings
+Vegetable Tempura Thai Style
+Vegetarian Supreme Pizza
+Vodka Bottle 750ml
+Whisky Bottle 750ml
+White Wine Bottle
+Whole Wheat Flour 5kg
+Wine Glass Set
+Wine Opener Kit
+Wok Baby Corn Chilli
+Wok Broccoli Garlic Stir-Fry
+Wok Cabbage Manchurian
+Wok Chicken 65 Chinese Style
+Wok Chicken Manchurian Dry
+Wok Chicken Momos
+Wok Chilli Chicken
+Wok Chilli Fish Dry
+Wok Corn and Capsicum Rice
+Wok Crispy Chilli Mushroom
+Wok Crispy Vegetable Noodles
+Wok Egg Noodles
+Wok Fried Chicken
+Wok Garlic Chicken Wings
+Wok Garlic Fried Rice
+Wok Ginger Beef
+Wok Lotus Stem Chilli
+Wok Mixed Vegetable Fried Rice
+Wok Paneer Chilli Dry
+Wok Paneer Manchurian
+Wok Prawn Stir-Fry
+Wok Schezwan Fried Rice
+Wok Sesame Tofu
+Wok Sichuan Fried Rice
+Wok Soya Chilli
+Wok Special Chowmein
+Wok Special Noodle Soup
+Wok Spicy Garlic Prawns
+Wok Steamed Dumplings
+Wok Steamed Rice
+Wok Style Chicken Fried Rice Special
+Wok Style Chicken Lollipop Spicy
+Wok Style Chilli Paneer
+Wok Style Egg Fried Rice
+Wok Style Fried Chicken Wings
+Wok Style Fried Momos
+Wok Style Fried Rice Special
+Wok Style Hakka Noodles
+Wok Style Mongolian Chicken
+Wok Style Spring Rolls Crispy
+Wok Style Sweet Corn Chicken Soup
+Wok Sweet Chilli Fish
+Wok Tofu Stir-Fry
+Wok Tossed Noodles
+Wok Vegetable Clear Soup
+Wok Vegetable Manchurian
+Wok Vegetable Momos
+Wok Vegetable Stir-Fry
+Wonton Soup
+Yogurt Cup 400g
+Zuppa Toscana
