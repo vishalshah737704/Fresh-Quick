@@ -1004,3 +1004,33 @@ Cold Pressed Juice 300ml
 Kombucha Bottle 330ml
 Frozen Berries Mix 400g
 Frozen Edamame 400g
+Toned Milk 1L Family Pack
+Slim Milk 1L
+Processed Cheese Block 200g
+Condensed Milk Tin 400g
+Refined Wheat Flour (Maida) 1kg
+Vermicelli 500g
+Sooji Halwa Mix 200g
+Black Pepper Powder 100g
+Chaat Masala 100g
+Sambar Powder 200g
+Rasam Powder 200g
+Pickle Mixed 400g
+Papad Pack Urad
+Ketchup Bottle 500g
+Soy Sauce 200ml
+Vinegar 500ml
+Garlic 250g
+Ginger 250g
+Green Chillies 200g
+Curry Leaves Pack
+Coriander Leaves Bunch
+Watermelon 1pc
+Corn Flakes 500g
+Salted Peanuts 200g
+Rice Crackers 150g
+Chocolate Cookies Pack
+Frozen Momos Veg 400g
+Frozen Chicken Nuggets 400g
+Soda Water 1L
+Malt Drink Powder 500g
