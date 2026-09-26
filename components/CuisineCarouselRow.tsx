@@ -8,6 +8,8 @@ type Restaurant = {
   avg_prep_minutes: number;
   is_open: boolean;
   banner_url: string | null;
+  delivery_fee_paise: number;
+  promo_text: string | null;
 };
 
 export function CuisineCarouselRow({

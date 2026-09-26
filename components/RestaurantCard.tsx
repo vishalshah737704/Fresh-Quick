@@ -9,6 +9,8 @@ type Restaurant = {
   avg_prep_minutes: number;
   is_open: boolean;
   banner_url: string | null;
+  delivery_fee_paise: number;
+  promo_text: string | null;
 };
 
 export function RestaurantCard({
@@ -18,6 +20,9 @@ export function RestaurantCard({
   restaurant: Restaurant;
   distanceKm: number;
 }) {
+  const feeRupees = restaurant.delivery_fee_paise / 100;
+  const feeLabel = feeRupees === 0 ? "₹0 Delivery Fee" : `₹${feeRupees.toFixed(0)} Delivery Fee`;
+
   return (
     <Link
       href={`/customer/restaurants/${restaurant.id}`}
@@ -35,19 +40,24 @@ export function RestaurantCard({
         ) : (
           <div className="flex h-full w-full items-center justify-center text-4xl">🍽️</div>
         )}
-        <span className="absolute right-2 top-2 rounded-full bg-white px-2 py-1 text-xs font-semibold shadow">
-          ⭐ {restaurant.rating.toFixed(1)}
-        </span>
       </div>
       <div className="p-4">
+        {restaurant.promo_text && (
+          <span className="mb-1 inline-block rounded-full bg-brand-accent px-2 py-0.5 text-xs font-semibold text-brand-ink">
+            {restaurant.promo_text}
+          </span>
+        )}
         <div className="flex items-center justify-between">
           <h3 className="font-semibold text-brand-ink">{restaurant.name}</h3>
           <span className="text-sm text-brand-ink-muted">{distanceKm.toFixed(1)} km</span>
         </div>
         <p className="text-sm text-brand-ink-muted">{restaurant.cuisine_tags.join(", ")}</p>
-        <span className="mt-1 inline-block rounded-full bg-brand-accent/10 px-2 py-0.5 text-xs font-medium text-brand-ink">
-          {restaurant.avg_prep_minutes} min
-        </span>
+        <p className="mt-1 text-xs text-brand-ink-muted">
+          ⭐ {restaurant.rating.toFixed(1)} · {restaurant.avg_prep_minutes} min ·{" "}
+          <span className={feeRupees === 0 ? "font-semibold text-brand-accent" : ""}>
+            {feeLabel}
+          </span>
+        </p>
       </div>
     </Link>
   );
