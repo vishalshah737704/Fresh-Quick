@@ -235,3 +235,50 @@ Thai Grilled Pork Skewers
 Thai Shrimp Cakes
 Thai Mango Salad
 Thai Sticky Rice with Mango
+Szechuan Chicken
+Sweet and Sour Pork
+Chinese Fried Rice
+Chilli Paneer
+Manchow Soup
+Hot and Sour Soup
+Chinese Egg Fried Rice
+Chicken Manchurian
+Schezwan Noodles
+Dragon Chicken
+Honey Chilli Potato
+Chinese Vegetable Soup
+Crispy Chilli Beef
+Cantonese Fried Rice
+Chicken Lollipop
+Sesame Chicken
+Chinese Garlic Prawns
+Mapo Tofu
+Dim Sum Platter
+Steamed Chicken Dumplings
+Vegetable Dumplings
+Chinese Broccoli Stir-Fry
+Peking Style Chicken
+Chinese Egg Drop Soup
+Black Bean Chicken
+Chinese Style Fried Fish
+Wonton Soup
+Chinese Chicken Salad
+Crispy Corn Chinese Style
+Chinese Baby Corn Manchurian
+Chinese Noodle Soup
+Chicken Chowmein
+Chinese Garlic Chicken
+Dragon Prawns
+Chinese Style Fried Rice Egg
+Chilli Garlic Noodles
+Chinese Cabbage Stir-Fry
+Sichuan Tofu
+Golden Fried Chicken Chinese Style
+Chinese Style Mushroom Soup
+Kung Pao Prawns
+Chinese Style Sweet Corn Soup
+Chinese Vegetable Fried Noodles
+Golden Dragon Special Fried Rice
+Chinese Style Chicken Skewers
+Chinese Almond Chicken
+Chinese Lemon Chicken
