@@ -330,3 +330,50 @@ Wok Style Mongolian Chicken
 Wok Chilli Fish Dry
 Wok Style Chicken Fried Rice Special
 Wok Crispy Vegetable Noodles
+Pepperoni Pizza
+Quattro Formaggi Pizza
+Pasta Arrabbiata
+Spaghetti Carbonara
+Penne Pesto
+Lasagna Bolognese
+Risotto Mushroom
+Bruschetta al Pomodoro
+Caprese Salad
+Minestrone Soup
+Fettuccine Alfredo Chicken
+Ravioli Spinach Ricotta
+Gnocchi al Pesto
+Calzone Classico
+Prosciutto Pizza
+Vegetarian Supreme Pizza
+Chicken Parmigiana
+Eggplant Parmigiana
+Panzanella Salad
+Focaccia Bread
+Spaghetti Aglio e Olio
+Penne all'Arrabbiata Veg
+Tortellini in Brodo
+Osso Buco
+Pizza Diavola
+Margherita Pizza Extra Cheese
+Pasta Primavera
+Zuppa Toscana
+Antipasto Platter
+Chicken Piccata
+Spinach Ravioli Alfredo
+Panna Cotta
+Cannoli Siciliani
+Affogato al Caffe
+Gelato Trio
+Limoncello Cake
+Bella Garden Salad
+Roman Style Pizza Marinara
+Truffle Mushroom Risotto
+Grilled Chicken Piccata
+Italian Meatballs Marinara
+Baked Ziti
+Prosciutto e Melone
+Italian Wedding Soup
+Chicken Marsala
+Seafood Linguine
+Tuscan White Bean Soup
