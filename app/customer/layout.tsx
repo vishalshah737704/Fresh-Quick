@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import { ReactNode, Suspense } from "react";
 import Link from "next/link";
 import { CartProvider } from "@/lib/cart-store";
 import { AddressProvider } from "@/lib/address-store";
@@ -15,7 +15,9 @@ export default function CustomerLayout({ children }: { children: ReactNode }) {
       <CartProvider>
         <CartConflictDialog />
         <div className="flex min-h-screen">
-          <SidebarNav />
+          <Suspense fallback={null}>
+            <SidebarNav />
+          </Suspense>
           <div className="flex min-w-0 flex-1 flex-col">
             <header className="flex flex-wrap items-center gap-3 border-b border-brand-ink-muted/10 bg-brand-surface px-4 py-3">
               <Link href="/customer" className="shrink-0 text-lg font-bold text-brand-primary">
