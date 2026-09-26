@@ -112,11 +112,17 @@ function loadStoredCart(): StoredCart {
     const raw = window.localStorage.getItem(STORAGE_KEY);
     if (!raw) return { storeId: null, storeName: null, items: [], orderNote: "" };
     const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== "object") {
+      return { storeId: null, storeName: null, items: [], orderNote: "" };
+    }
+    // Fall back to the pre-rename field names (restaurantId/restaurantName)
+    // so a cart saved in a browser before the stores/products rename shipped
+    // isn't silently wiped. Reading only — new writes still use storeId/storeName.
+    const storeIdRaw = "storeId" in parsed ? parsed.storeId : parsed.restaurantId;
+    const storeNameRaw = "storeName" in parsed ? parsed.storeName : parsed.restaurantName;
     if (
-      !parsed ||
-      typeof parsed !== "object" ||
-      !(parsed.storeId === null || typeof parsed.storeId === "string") ||
-      !(parsed.storeName === null || typeof parsed.storeName === "string") ||
+      !(storeIdRaw === null || storeIdRaw === undefined || typeof storeIdRaw === "string") ||
+      !(storeNameRaw === null || storeNameRaw === undefined || typeof storeNameRaw === "string") ||
       !Array.isArray(parsed.items)
     ) {
       return { storeId: null, storeName: null, items: [], orderNote: "" };
@@ -129,7 +135,7 @@ function loadStoredCart(): StoredCart {
       )
       .filter((i): i is CartItem => i !== null);
     const orderNote = typeof parsed.orderNote === "string" ? parsed.orderNote : "";
-    return { storeId: parsed.storeId, storeName: parsed.storeName, items, orderNote };
+    return { storeId: storeIdRaw ?? null, storeName: storeNameRaw ?? null, items, orderNote };
   } catch {
     return { storeId: null, storeName: null, items: [], orderNote: "" };
   }

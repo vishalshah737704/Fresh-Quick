@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
   }
   const { data, error } = await supabaseServer
     .from("orders")
-    .select("id, status, total, placed_at, restaurants(name)")
+    .select("id, status, total, placed_at, stores(name)")
     .eq("delivery_partner_id", resolved.partnerId)
     .order("placed_at", { ascending: false });
   if (error) {

@@ -9,7 +9,7 @@ type OrderItem = {
   quantity: number;
   unit_price: number;
   special_instructions: string | null;
-  menu_items: { name: string } | null;
+  products: { name: string } | null;
   order_item_options: { id: string; group_name: string; option_name: string }[];
 };
 type Order = {
@@ -141,7 +141,7 @@ export default function VendorOrdersPage() {
             <ul className="mt-2 text-sm text-brand-ink-muted">
               {order.order_items.map((item) => (
                 <li key={item.id}>
-                  {item.quantity}× {item.menu_items?.name ?? "Item"}
+                  {item.quantity}× {item.products?.name ?? "Item"}
                   {item.order_item_options.length > 0 && (
                     <span className="text-brand-ink-muted">
                       {" "}

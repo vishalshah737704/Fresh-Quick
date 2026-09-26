@@ -8,7 +8,7 @@ type OrderRow = {
   id: string;
   status: string;
   total: number;
-  restaurants: { name: string } | null;
+  stores: { name: string } | null;
 };
 
 const NEXT_LABEL: Record<string, string> = {
@@ -185,7 +185,7 @@ export default function DeliveryDashboardPage() {
         {available.map((o) => (
           <li key={o.id} className="flex items-center justify-between rounded-lg border border-brand-ink-muted/10 bg-brand-surface p-2">
             <span>
-              #{o.id.slice(0, 8)} · {o.restaurants?.name ?? "Restaurant"} · ₹{o.total.toFixed(2)}
+              #{o.id.slice(0, 8)} · {o.stores?.name ?? "Restaurant"} · ₹{o.total.toFixed(2)}
             </span>
             <button
               onClick={() => claim(o.id)}
