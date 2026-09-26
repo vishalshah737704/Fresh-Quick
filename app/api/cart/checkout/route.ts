@@ -54,6 +54,24 @@ export async function POST(request: NextRequest) {
     ) {
       return NextResponse.json({ error: "Invalid special instructions" }, { status: 400 });
     }
+    if (
+      typeof item.specialInstructions === "string" &&
+      item.specialInstructions.length > 500
+    ) {
+      return NextResponse.json(
+        { error: "Special instructions must be 500 characters or fewer" },
+        { status: 400 }
+      );
+    }
+    if (
+      Array.isArray(item.selectedOptionIds) &&
+      new Set(item.selectedOptionIds).size !== item.selectedOptionIds.length
+    ) {
+      return NextResponse.json(
+        { error: "Duplicate option selections are not allowed" },
+        { status: 400 }
+      );
+    }
   }
 
   const VALID_PAYMENT_METHODS = ["mock_card", "mock_upi", "mock_cod"];
@@ -84,7 +102,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Restaurant is currently closed" }, { status: 409 });
   }
 
-  const menuItemIds = items.map((i) => i.menuItemId);
+  const menuItemIds = [...new Set(items.map((i) => i.menuItemId))];
   const { data: menuItems, error: menuError } = await supabaseServer
     .from("menu_items")
     .select(
