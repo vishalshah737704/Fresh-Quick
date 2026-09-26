@@ -647,14 +647,14 @@ Corner Pongal
 Corner Vada Sambar
 Corner Rasam Rice
 Corner Sambar Rice Special
-Corner Curd Rice Corner Style
+Corner Curd Rice
 Corner Lemon Rice
 Corner Tamarind Rice
 Corner Coconut Rice
 Corner Bisi Bele Bath
 Corner Idiyappam
 Corner Appam with Stew
-Corner Filter Coffee Corner Style
+Corner Filter Coffee
 Corner Coconut Chutney
 Corner Tomato Chutney
 Corner Mint Chutney
