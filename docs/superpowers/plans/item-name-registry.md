@@ -583,3 +583,50 @@ Dhaba Paneer Lababdar
 Dhaba Egg Curry Punjabi
 Dhaba Punjabi Chaas
 Dhaba Matar Paneer
+Spice Route Chicken Korma
+Spice Route Dal Tadka Special
+Spice Route Baingan Bharta
+Spice Route Aloo Jeera
+Spice Route Malai Kofta Route Style
+Spice Route Chicken Chettinad
+Spice Route Fish Curry Route Style
+Spice Route Prawn Masala
+Spice Route Egg Masala
+Spice Route Veg Kolhapuri
+Spice Route Paneer Tikka Masala
+Spice Route Tandoori Chicken Route Style
+Spice Route Jeera Aloo
+Spice Route Chicken 65 Route Style
+Spice Route Kadai Vegetable
+Spice Route Mysore Masala Dosa
+Spice Route Vegetable Korma
+Spice Route Chicken Vindaloo
+Spice Route Goan Fish Curry
+Spice Route Mutton Kheema
+Spice Route Paneer Do Pyaza
+Spice Route Chicken Malabar
+Spice Route Mutton Biryani
+Spice Route Hyderabadi Biryani
+Spice Route Kashmiri Pulao
+Spice Route Sambar Rice
+Spice Route Curd Rice
+Spice Route Prawn Biryani
+Spice Route Naan Basket
+Spice Route Roti Basket
+Spice Route Coconut Chutney Platter
+Spice Route Papadum Basket
+Spice Route Mango Chutney
+Spice Route Onion Raita
+Spice Route Boondi Raita
+Spice Route Gulab Jamun Route Style
+Spice Route Kesari Halwa
+Spice Route Masala Chai Route Style
+Spice Route Filter Coffee
+Spice Route Chicken Tikka Skewers
+Spice Route Vegetable Seekh Kebab
+Spice Route Amritsari Fish Route Style
+Spice Route Paneer Malai Tikka
+Spice Route Chicken Reshmi Kebab
+Spice Route Tandoori Mushroom
+Spice Route Rasam
+Spice Route Veg Seekh Roll
