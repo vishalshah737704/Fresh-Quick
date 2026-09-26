@@ -560,7 +560,7 @@ Dhaba Garlic Naan Punjabi Style
 Dhaba Lassi Salted
 Dhaba Shahi Paneer
 Dhaba Egg Bhurji
-Dhaba Chicken Curry Dhaba Style
+Dhaba Chicken Curry
 Dhaba Mixed Veg Sabzi
 Dhaba Bhindi Do Pyaza
 Dhaba Onion Salad
@@ -569,7 +569,7 @@ Dhaba Achaar Platter
 Dhaba Gajar Halwa
 Dhaba Kheer Punjabi Style
 Dhaba Jeera Rice
-Dhaba Veg Biryani Dhaba Style
+Dhaba Veg Biryani
 Dhaba Chicken Malai Tikka
 Dhaba Tandoori Prawns
 Dhaba Punjabi Samosa
