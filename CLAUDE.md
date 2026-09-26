@@ -284,6 +284,20 @@ See [MEMORY.md](MEMORY.md) for phase-by-phase progress and decisions.
   headings landed directly behind the sticky anchor-nav bar until a
   `scroll-mt-16` was added — worth checking any future sticky-nav +
   scroll-to-section pattern in this app for the same gap.
+- **A length-comparison dedup check (`array.length !== otherArray.length`)
+  that assumes an id column is unique breaks silently the moment a
+  feature makes that id legitimately repeatable.** Piece 4's checkout
+  route did `menuItemIds = items.map(i => i.menuItemId)` then compared
+  `menuItems.length !== menuItemIds.length` to catch invalid ids — safe
+  before piece 4, when the cart could only ever hold one line per
+  `menuItemId`. Item customization's `lineId` cart model makes two lines
+  sharing a `menuItemId` (same dish, different options) the normal case
+  it exists to support, and the old check 404'd the whole checkout on
+  exactly that case. Fixed with `[...new Set(menuItemIds)]` before the
+  length comparison. When a schema/model change makes a previously-unique
+  column repeatable, grep for every `.length !==`/`.length ===` check
+  against arrays derived from that column, not just the obvious CRUD
+  paths — the bug hides in code nobody touched this session.
 
 ## Standing phrase: "Commit Work" — NON-NEGOTIABLE
 

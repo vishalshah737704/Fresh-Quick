@@ -128,8 +128,12 @@ palette, Inter + Poppins fonts, 8px card radius), piece 2 (home/feed
 rebuild: search dropdown, sort/filter bar, curated carousels, a real
 per-restaurant delivery fee replacing the old flat rate), and piece 3
 (restaurant page rebuild: sticky category anchor-nav with scroll-spy,
-in-menu search, a corner "Quick Add" button restyle) are merged, pieces
-4-6 not started. See [MEMORY.md](MEMORY.md) for the phase-by-phase build
+in-menu search, a corner "Quick Add" button restyle), and piece 4 (item
+customization: vendor-managed option groups/options, an
+`ItemCustomizationModal` replacing instant add for items with options, a
+`lineId`-keyed cart so different customizations of the same dish coexist
+as separate lines) are merged, pieces 5-6 not started. See
+[MEMORY.md](MEMORY.md) for the phase-by-phase build
 log, including every bug found and fixed along the way, and its "Known
 deferred items" section for what's still intentionally left for later.
 The React Native mobile app is a planned follow-on, not started.
