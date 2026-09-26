@@ -758,6 +758,58 @@ Claude at the start of work in this repo per project CLAUDE.md.
   Phase 5 (covers all 40 Phase 3-5 vendor accounts at once).
   Plan: docs/superpowers/plans/2026-09-26-marketplace-phase3-content-a.md
 
+- **Restaurant Menu Expansion (sub-project A of the 50-unique-items
+  redesign)**: ✅ Complete, merged to `main`. Vishal's scope pivot
+  ("every store/restaurant needs 50+ FULLY UNIQUE items, unique across
+  the entire app") superseded the old shared-catalog model for
+  restaurants specifically. All 17 restaurants now carry 50+ menu items
+  each (existing dishes preserved, ~810 new dishes hand-curated and
+  added — no programmatic name generation), all names unique app-wide
+  via a new append-only ledger file, `docs/superpowers/plans/item-name-
+  registry.md` (916 lines after this sub-project). Executed via
+  `superpowers:subagent-driven-development`, one Haiku implementer +
+  Sonnet reviewer per restaurant, in a dedicated worktree
+  (`.claude/worktrees/restaurant-menu-expansion`). Final whole-project
+  verification: all 17 restaurants confirmed at exactly 50 items live;
+  whole-app name-uniqueness check found only the one pre-existing "Veg
+  Fried Rice" duplicate (Demo Kitchen/Wok This Way, documented in the
+  spec as out-of-scope, pre-dating this sub-project) — no new dupes
+  introduced. `npm run build` clean; live Playwright walkthrough
+  confirmed Bangkok Bites' original Pad Thai is unchanged among its 50
+  items, and a full test order (signup → menu → cart → checkout →
+  payment) completed successfully against the expanded menu.
+  - **Recurring defect classes hit repeatedly across this sub-project's
+    17 tasks** (all caught by task review or controller pre-flight, none
+    blocked the plan): (1) a Critical pricing bug where an implementer
+    entered every price 100x too high (₹90 became 9000) — traced to
+    confusing `products.price` (plain rupees) with a paise convention;
+    fixed in one round, and every later task was explicitly warned this
+    column is plain rupees. (2) Redundant double-branding baked into the
+    plan's OWN suggested-items tables (e.g. "Sweet Tooth Rasmalai Sweet
+    Tooth Style") recurred in at least 4 of the 17 tasks — ruling each
+    time was "fix stands regardless of where the defect originated."
+    (3) `category` hardcoded to one value, and (4) `is_veg` set by
+    keyword-matching instead of real culinary judgment (missed
+    egg-containing items like custard/tiramisu under this app's "any
+    egg = non-veg" convention) — both recurred across several tasks
+    before being spelled out explicitly in every dispatch.
+  - The registry file is fragile in Haiku implementers' hands: one task
+    destructively rewrote it with fabricated content (recovered from live
+    DB ground truth), another double-appended its own names (recovered
+    with `sort -u`). Every dispatch going forward that touches this file
+    must explicitly warn "append only, verify before trusting any
+    reported line count."
+  - **Next up**: sub-project B (Phase 3 Redo — Grocery/Convenience/
+    Alcohol) must dedupe those 3 categories' currently-shared 20-item
+    catalogs (1 store keeps its current items, other 3 get fresh unique
+    sets) before padding every store to 50+, per the spec's ruling. Then
+    sub-project C (Phase 4 Redo, un-merged worktree
+    `.claude/worktrees/marketplace-phase4`, do not merge as-is) and
+    sub-project D (Phase 5 Fresh Build — Pet/Flowers/Baby, simplest,
+    no legacy to reconcile) follow, each needing its own
+    brainstorm → spec → plan cycle.
+  Plan: docs/superpowers/plans/2026-09-26-restaurant-menu-expansion.md
+
 ## Key decisions carried forward (see spec §2 for full list)
 
 - Self-hosted Supabase only, no cloud project.
