@@ -99,6 +99,13 @@ function CustomerHomeContent() {
     .sort((a, b) => a.distanceKm - b.distanceKm)
     .filter(({ r }) => validCategory === null || r.category_type === validCategory);
 
+  // Cuisine filtering only applies within the "restaurant" category (or when
+  // no category is selected) per spec — ignore any stale cuisine selection
+  // left over from a previous category if the sidebar switched category
+  // without resetting component state.
+  const effectiveCuisine =
+    validCategory === null || validCategory === "restaurant" ? selectedCuisine : null;
+
   const labelBySlug = new Map(cuisines.map((c) => [c.slug, c.label.toLowerCase()]));
 
   const query = searchQuery.trim().toLowerCase();
@@ -119,7 +126,7 @@ function CustomerHomeContent() {
   );
 
   const filtered = searched.filter(
-    ({ r }) => selectedCuisine === null || r.cuisine_tags.includes(selectedCuisine)
+    ({ r }) => effectiveCuisine === null || r.cuisine_tags.includes(effectiveCuisine)
   );
 
   function applySort<T extends { r: Restaurant; distanceKm: number }>(rows: T[]): T[] {
@@ -187,11 +194,11 @@ function CustomerHomeContent() {
       <div id="restaurants" />
       {restaurants.length === 0 ? (
         <p className="text-brand-ink-muted">No open restaurants near you right now.</p>
-      ) : validCategory !== null && searched.length === 0 ? (
+      ) : validCategory !== null && withDistance.length === 0 ? (
         <p className="text-brand-ink-muted">
-          No {CATEGORY_ICONS[validCategory].label.toLowerCase()} stores yet — check back soon!
+          No stores in {CATEGORY_ICONS[validCategory].label} yet — check back soon!
         </p>
-      ) : selectedCuisine !== null ? (
+      ) : effectiveCuisine !== null ? (
         sortedFiltered.length === 0 ? (
           <p className="text-brand-ink-muted">No restaurants match that cuisine right now.</p>
         ) : (
