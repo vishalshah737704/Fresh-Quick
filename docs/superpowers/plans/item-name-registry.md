@@ -487,4 +487,52 @@ Fiesta Spicy Guac Bowl
 Fiesta Mexican Chocolate Cake
 Fiesta Lime Sorbet
 Fiesta Chili Cheese Fries
+Demo Chicken Tikka Masala
+Demo Dal Makhani
+Demo Aloo Gobi
+Demo Chana Masala
+Demo Veg Kofta
+Demo Butter Naan
+Demo Garlic Naan
+Demo Tandoori Roti
+Demo Veg Pulao
+Demo Chicken Biryani
+Demo Mutton Curry
+Demo Egg Curry
+Demo Malai Kofta
+Demo Rajma Chawal
+Demo Kadhi Pakora
+Demo Bhindi Masala
+Demo Mixed Veg Curry
+Demo Dal Tadka
+Demo Palak Paneer Demo Style
+Demo Chicken 65
+Demo Veg Manchurian Demo Style
+Demo Hakka Noodles Demo Style
+Demo Spring Rolls Demo Style
+Demo Chicken Momos
+Demo Veg Momos
+Demo Paneer Tikka
+Demo Tandoori Chicken
+Demo Seekh Kebab
+Demo Fish Curry
+Demo Prawn Curry
+Demo Cheese Naan
+Demo Papad
+Demo Raita
+Demo Gulab Jamun Demo Style
+Demo Rasmalai
+Demo Kheer
+Demo Masala Chai
+Demo Lassi Sweet
+Demo Chicken Roll
+Demo Egg Roll
+Demo Veg Roll
+Demo Chilli Chicken Demo Style
+Demo Crispy Corn
+Demo Veg Cutlet
+Demo Aloo Tikki
+Demo Samosa
+Demo Pav Bhaji
+Demo Vada Pav
 Fiesta Grilled Corn Salad
