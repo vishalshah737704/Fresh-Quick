@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/lib/cart-store";
 import { useAddress } from "@/lib/address-store";
@@ -9,9 +10,9 @@ import { supabase } from "@/lib/supabase";
 import { useDeliveryFee } from "@/lib/use-delivery-fee";
 
 const PAYMENT_METHODS = [
-  { value: "mock_card", label: "Mock Card" },
-  { value: "mock_upi", label: "Mock UPI" },
-  { value: "mock_cod", label: "Cash on Delivery" },
+  { value: "mock_card", label: "Mock Card", icon: "💳" },
+  { value: "mock_upi", label: "Mock UPI", icon: "📱" },
+  { value: "mock_cod", label: "Cash on Delivery", icon: "💵" },
 ] as const;
 
 export default function CheckoutPage() {
@@ -112,7 +113,7 @@ export default function CheckoutPage() {
               {PAYMENT_METHODS.map((m) => (
                 <label
                   key={m.value}
-                  className={`flex cursor-pointer items-center gap-3 rounded-lg border px-3 py-2 text-sm ${
+                  className={`flex cursor-pointer items-center gap-3 rounded-lg border px-4 py-3 text-sm ${
                     paymentMethod === m.value
                       ? "border-brand-primary bg-brand-primary/5"
                       : "border-brand-ink-muted/15"
@@ -125,7 +126,8 @@ export default function CheckoutPage() {
                     onChange={() => setPaymentMethod(m.value)}
                     className="accent-brand-primary"
                   />
-                  {m.label}
+                  <span className="text-lg">{m.icon}</span>
+                  <span className="font-medium text-brand-ink">{m.label}</span>
                 </label>
               ))}
             </div>
@@ -137,7 +139,52 @@ export default function CheckoutPage() {
             <h2 className="mb-3 font-semibold text-brand-ink">
               {items.length} item{items.length !== 1 ? "s" : ""} from {restaurantName}
             </h2>
-            <div className="flex flex-col gap-1 border-t border-brand-ink-muted/10 pt-3 text-sm text-brand-ink-muted">
+            <div className="flex flex-col gap-3">
+              {items.map((item) => (
+                <div key={item.lineId} className="flex items-start gap-3">
+                  {item.imageUrl ? (
+                    <Image
+                      src={item.imageUrl}
+                      alt={item.name}
+                      width={48}
+                      height={48}
+                      className="h-12 w-12 shrink-0 rounded-lg object-cover"
+                    />
+                  ) : (
+                    <div className="h-12 w-12 shrink-0 rounded-lg bg-brand-accent/10" />
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-start justify-between gap-2">
+                      <span className="text-sm font-medium text-brand-ink">
+                        {item.quantity}× {item.name}
+                      </span>
+                      <span className="shrink-0 text-sm font-medium text-brand-ink">
+                        ₹{(item.price * item.quantity).toFixed(2)}
+                      </span>
+                    </div>
+                    {item.selectedOptions.length > 0 && (
+                      <p className="mt-0.5 text-xs text-brand-ink-muted">
+                        {item.selectedOptions.map((o) => o.optionName).join(", ")}
+                      </p>
+                    )}
+                    {item.specialInstructions && (
+                      <p className="mt-0.5 text-xs text-brand-ink-muted">
+                        &quot;{item.specialInstructions}&quot;
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {orderNote && (
+              <p className="mt-3 border-t border-brand-ink-muted/10 pt-3 text-xs text-brand-ink-muted">
+                Note: &quot;{orderNote}&quot;{" "}
+                <span className="text-brand-ink-muted/70">(edit in cart)</span>
+              </p>
+            )}
+
+            <div className="mt-3 flex flex-col gap-1 border-t border-brand-ink-muted/10 pt-3 text-sm text-brand-ink-muted">
               <p>Subtotal: ₹{subtotal.toFixed(2)}</p>
               <p>Delivery fee: ₹{(deliveryFeePaise / 100).toFixed(2)}</p>
               <p className="font-semibold text-brand-ink">Total: ₹{total.toFixed(2)}</p>
