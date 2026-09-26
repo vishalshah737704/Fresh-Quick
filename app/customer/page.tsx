@@ -163,7 +163,7 @@ export default function CustomerHomePage() {
       />
       <SortFilterBar sortBy={sortBy} onSortByChange={setSortBy} under30={under30} onUnder30Toggle={setUnder30} />
       <CuisineChipRow cuisines={cuisines} selected={selectedCuisine} onSelect={setSelectedCuisine} />
-      <div id="restaurants" />
+      <div id="stores" />
       {restaurants.length === 0 ? (
         <p className="text-brand-ink-muted">No open restaurants near you right now.</p>
       ) : selectedCuisine !== null ? (

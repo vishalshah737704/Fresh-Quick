@@ -29,7 +29,7 @@ export async function GET(
     .select(
       "id, name, min_select, max_select, sort_order, menu_item_options(id, name, price_delta_paise, sort_order)"
     )
-    .eq("menu_item_id", id)
+    .eq("product_id", id)
     .order("sort_order", { ascending: true });
   if (error) {
     return NextResponse.json({ error: "Failed to load option groups" }, { status: 500 });
@@ -68,11 +68,11 @@ export async function POST(
   const { count } = await supabaseServer
     .from("menu_item_option_groups")
     .select("id", { count: "exact", head: true })
-    .eq("menu_item_id", id);
+    .eq("product_id", id);
   const { data, error } = await supabaseServer
     .from("menu_item_option_groups")
     .insert({
-      menu_item_id: id,
+      product_id: id,
       name: name.trim(),
       min_select: minSelect,
       max_select: maxSelect,

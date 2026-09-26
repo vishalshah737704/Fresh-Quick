@@ -689,6 +689,35 @@ Claude at the start of work in this repo per project CLAUDE.md.
   pass (zero work done), the React Native + Expo mobile app (not
   started), and the still-unanswered piece 2 sort-scope product decision
   (see HANDOFF_5.md).
+- **Marketplace Foundation phase**: ✅ Complete, merged to `main`. Phase 1
+  of the multi-vertical marketplace spec (`docs/superpowers/specs/
+  2026-09-26-multi-vertical-marketplace-design.md`) — renames the
+  food-only `restaurants`/`menu_items` schema to category-agnostic
+  `stores`/`products` (table renames carry RLS/indexes/FKs automatically
+  via Postgres OID binding), adds `stores.category_type` (all existing
+  rows backfilled to `'restaurant'`), and moves `restaurant_id`/
+  `menu_item_id` foreign keys on `orders`/`reviews`/`order_items` to
+  `store_id`/`product_id`. `/customer/stores/[id]` is now the canonical
+  store-detail route, with `/customer/restaurants/[id]` kept as a
+  redirect for existing links. Task 7's final safety-net grep across
+  `app`/`lib`/`components` for leftover `restaurant`/`menu_item`
+  identifiers caught one miss from the rename migration:
+  `menu_item_option_groups.menu_item_id` (added by the item-customization
+  migration, piece 4) had kept its old column name even though its FK
+  target was renamed to `products` — fixed with a new migration
+  (`00000000000021_option_groups_product_id_rename.sql`, 21 migrations
+  total) renaming it to `product_id`, plus the one vendor option-groups
+  route file that referenced the old column name. Zero behavior change
+  confirmed via a live end-to-end smoke test after `npx supabase db
+  reset` + `npm run build`: checkout, vendor accept, vendor reject +
+  refund, and the order-accepted notification-details payload all
+  re-verified working post-rename. Phases 2-5 of the multi-vertical spec
+  (sidebar/category browsing, then per-category seed content for
+  Grocery, Pet, Electronics, etc.) are separate, not-yet-planned
+  follow-ons — this phase adds no new customer-visible feature by
+  itself.
+  Plan: docs/superpowers/plans/2026-09-26-marketplace-foundation.md
+  Spec: docs/superpowers/specs/2026-09-26-multi-vertical-marketplace-design.md
 
 ## Key decisions carried forward (see spec §2 for full list)
 
