@@ -17,7 +17,7 @@ const PAYMENT_METHODS = [
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { restaurantId, restaurantName, items, subtotal, orderNote, clearCart } = useCart();
+  const { storeId, storeName, items, subtotal, orderNote, clearCart } = useCart();
   const { lat, lng, label } = useAddress();
   const { userId, loading: sessionLoading } = useSession();
 
@@ -25,7 +25,7 @@ export default function CheckoutPage() {
     useState<(typeof PAYMENT_METHODS)[number]["value"]>("mock_card");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { deliveryFeePaise, error: feeLoadError } = useDeliveryFee(restaurantId);
+  const { deliveryFeePaise, error: feeLoadError } = useDeliveryFee(storeId);
 
   if (sessionLoading) {
     return <p className="text-gray-500">Loading…</p>;
@@ -36,7 +36,7 @@ export default function CheckoutPage() {
     return null;
   }
 
-  if (items.length === 0 || !restaurantId) {
+  if (items.length === 0 || !storeId) {
     return <p className="text-gray-500">Your cart is empty.</p>;
   }
 
@@ -68,9 +68,9 @@ export default function CheckoutPage() {
           Authorization: `Bearer ${sessionData.session?.access_token}`,
         },
         body: JSON.stringify({
-          restaurantId,
+          storeId,
           items: items.map((i) => ({
-            menuItemId: i.menuItemId,
+            productId: i.menuItemId,
             quantity: i.quantity,
             selectedOptionIds: i.selectedOptions.map((o) => o.optionId),
             specialInstructions: i.specialInstructions,
@@ -137,7 +137,7 @@ export default function CheckoutPage() {
         <aside className="lg:sticky lg:top-4 lg:self-start">
           <section className="rounded-lg border border-brand-ink-muted/10 bg-brand-surface p-4">
             <h2 className="mb-3 font-semibold text-brand-ink">
-              {items.length} item{items.length !== 1 ? "s" : ""} from {restaurantName}
+              {items.length} item{items.length !== 1 ? "s" : ""} from {storeName}
             </h2>
             <div className="flex flex-col gap-3">
               {items.map((item) => (

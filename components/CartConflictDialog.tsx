@@ -12,7 +12,7 @@ export function CartConflictDialog() {
       <div className="rounded-lg bg-white p-6 shadow-lg">
         <p className="mb-4">
           Your cart has items from another restaurant. Start a new cart for{" "}
-          <strong>{pendingConflict.restaurantName}</strong>?
+          <strong>{pendingConflict.storeName}</strong>?
         </p>
         <div className="flex justify-end gap-2">
           <button

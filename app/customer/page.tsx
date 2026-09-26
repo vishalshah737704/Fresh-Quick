@@ -46,7 +46,7 @@ export default function CustomerHomePage() {
     async function load() {
       const [{ data, error: fetchError }, { data: cuisineData }] = await Promise.all([
         supabase
-          .from("restaurants")
+          .from("stores")
           .select(
             "id, name, cuisine_tags, rating, avg_prep_minutes, is_open, lat, lng, banner_url, delivery_fee_paise, promo_text"
           )

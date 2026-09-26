@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 
 type RestaurantOption = { id: string; name: string; cuisine_tags: string[] };
-type DishMatch = { id: string; name: string; restaurant_id: string; restaurant_name: string };
+type DishMatch = { id: string; name: string; store_id: string; store_name: string };
 
 export function HeaderSearchBox({
   value,
@@ -32,26 +32,26 @@ export function HeaderSearchBox({
     let cancelled = false;
     const timer = setTimeout(async () => {
       const { data } = await supabase
-        .from("menu_items")
-        .select("id, name, restaurant_id, restaurants!inner(name, is_open, is_suspended)")
+        .from("products")
+        .select("id, name, store_id, stores!inner(name, is_open, is_suspended)")
         .ilike("name", `%${query}%`)
         .eq("is_available", true)
-        .eq("restaurants.is_open", true)
-        .eq("restaurants.is_suspended", false)
+        .eq("stores.is_open", true)
+        .eq("stores.is_suspended", false)
         .limit(8);
       if (cancelled) return;
       const rows = (data ?? []) as unknown as {
         id: string;
         name: string;
-        restaurant_id: string;
-        restaurants: { name: string } | { name: string }[];
+        store_id: string;
+        stores: { name: string } | { name: string }[];
       }[];
       setDishMatches(
         rows.map((row) => ({
           id: row.id,
           name: row.name,
-          restaurant_id: row.restaurant_id,
-          restaurant_name: Array.isArray(row.restaurants) ? row.restaurants[0]?.name ?? "" : row.restaurants.name,
+          store_id: row.store_id,
+          store_name: Array.isArray(row.stores) ? row.stores[0]?.name ?? "" : row.stores.name,
         }))
       );
     }, 200);
@@ -110,7 +110,7 @@ export function HeaderSearchBox({
                   key={r.id}
                   onClick={() => {
                     setOpen(false);
-                    router.push(`/customer/restaurants/${r.id}`);
+                    router.push(`/customer/stores/${r.id}`);
                   }}
                   className="block w-full px-4 py-2 text-left text-sm text-brand-ink hover:bg-brand-accent/10"
                 >
@@ -126,11 +126,11 @@ export function HeaderSearchBox({
                   key={d.id}
                   onClick={() => {
                     setOpen(false);
-                    router.push(`/customer/restaurants/${d.restaurant_id}`);
+                    router.push(`/customer/stores/${d.store_id}`);
                   }}
                   className="block w-full px-4 py-2 text-left text-sm text-brand-ink hover:bg-brand-accent/10"
                 >
-                  {d.name} <span className="text-brand-ink-muted">· {d.restaurant_name}</span>
+                  {d.name} <span className="text-brand-ink-muted">· {d.store_name}</span>
                 </button>
               ))}
             </div>

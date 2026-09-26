@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
       description: description ?? null,
       price: pricePaise / 100,
       category: category ?? null,
-      is_veg: Boolean(isVeg),
+      product_attributes: { is_veg: Boolean(isVeg) },
       image_url: imageUrl || null,
     })
     .select("*")

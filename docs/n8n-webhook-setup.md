@@ -48,7 +48,7 @@ about.
 - `APP_BASE_URL` set in n8n's environment to wherever this Next.js app is
   reachable from n8n (see above).
 - `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` set in n8n's environment
-  for workflow 4's direct Supabase REST read of a restaurant's lat/lng.
+  for workflow 4's direct Supabase REST read of a store's lat/lng.
   **`SUPABASE_URL` needs the same `host.docker.internal` treatment as
   `APP_BASE_URL` above** — if n8n runs in Docker and the local Supabase
   stack runs on the host (the normal case per this project's Docker
@@ -163,7 +163,7 @@ below) before turning the rest on. The one real-world dependency is
 environmental, not between workflows: workflows 2, 3, and 4 have HTTP
 Request nodes that actually call this app, so those need `APP_BASE_URL`
 and `N8N_INTERNAL_SECRET` correctly set (workflow 4 also needs
-`SUPABASE_URL`/`SUPABASE_SERVICE_ROLE_KEY` for its direct restaurant
+`SUPABASE_URL`/`SUPABASE_SERVICE_ROLE_KEY` for its direct store
 lookup). Workflow 3 additionally needs a real Gmail OAuth2 credential
 connected to its "Gmail: Send Order Accepted Email" node before
 activating — the JSON ships with a placeholder credential id and will
@@ -240,7 +240,7 @@ There is nothing to test in n8n for this path.
 **04 — Delivery Partner Assignment.** Advance an order to `ready` as the
 vendor, with at least one delivery partner online (`/delivery/dashboard`,
 toggle online). Expect: the webhook fires, the filter passes, the
-restaurant's lat/lng is fetched, `GET /api/internal/orders/:id/assign`
+store's lat/lng is fetched, `GET /api/internal/orders/:id/assign`
 returns nearest-first candidates, the empty-candidates guard passes (since
 a partner is online), and `POST /api/internal/orders/:id/assign` assigns
 the order — check `orders.delivery_partner_id` and `orders.status`
@@ -280,7 +280,7 @@ second authenticated browser session mid-test). Actual results:
 - **03** — Succeeded on every `accepted`/`preparing`/`ready`/`cancelled`
   transition tested.
 - **04** — Initially failed with "The service refused the connection" at
-  the restaurant lat/lng lookup — the `SUPABASE_URL` bug documented in
+  the store lat/lng lookup — the `SUPABASE_URL` bug documented in
   section 1. After fixing `SUPABASE_URL` to use `host.docker.internal`,
   re-ran and succeeded, with a real assignment confirmed in the database
   (`orders.status = 'assigned'`, `orders.delivery_partner_id` set to the

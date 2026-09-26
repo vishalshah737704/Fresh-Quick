@@ -11,7 +11,7 @@ async function authHeader() {
 }
 
 export default function VendorDashboardPage() {
-  const { loading, restaurantId } = useVendorSession();
+  const { loading, storeId } = useVendorSession();
   const [isOpen, setIsOpen] = useState<boolean | null>(null);
   const [deliveryFeeRupees, setDeliveryFeeRupees] = useState("");
   const [promoText, setPromoText] = useState("");
@@ -19,19 +19,19 @@ export default function VendorDashboardPage() {
   const [savedMessage, setSavedMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    async function loadRestaurant() {
-      if (!restaurantId) return;
+    async function loadStore() {
+      if (!storeId) return;
       const { data } = await supabase
-        .from("restaurants")
+        .from("stores")
         .select("is_open, delivery_fee_paise, promo_text")
-        .eq("id", restaurantId)
+        .eq("id", storeId)
         .single();
       setIsOpen(data?.is_open ?? null);
       setDeliveryFeeRupees(data ? (data.delivery_fee_paise / 100).toString() : "");
       setPromoText(data?.promo_text ?? "");
     }
-    if (!loading) loadRestaurant();
-  }, [loading, restaurantId]);
+    if (!loading) loadStore();
+  }, [loading, storeId]);
 
   async function toggleOpen() {
     if (isOpen === null) return;
@@ -46,7 +46,7 @@ export default function VendorDashboardPage() {
       setActionError(body?.error ?? "Failed to update restaurant");
       return;
     }
-    setIsOpen(body.restaurant.is_open);
+    setIsOpen(body.store.is_open);
   }
 
   async function saveFeeAndPromo() {
@@ -71,13 +71,13 @@ export default function VendorDashboardPage() {
       setActionError(body?.error ?? "Failed to update restaurant");
       return;
     }
-    setDeliveryFeeRupees((body.restaurant.delivery_fee_paise / 100).toString());
-    setPromoText(body.restaurant.promo_text ?? "");
+    setDeliveryFeeRupees((body.store.delivery_fee_paise / 100).toString());
+    setPromoText(body.store.promo_text ?? "");
     setSavedMessage("Saved.");
   }
 
   if (loading) return <p>Loading…</p>;
-  if (!restaurantId) {
+  if (!storeId) {
     return (
       <p className="text-sm text-red-600">
         No restaurant is linked to this account. Contact support.

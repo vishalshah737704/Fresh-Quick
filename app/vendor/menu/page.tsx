@@ -10,7 +10,7 @@ type MenuItem = {
   description: string | null;
   price: number;
   category: string | null;
-  is_veg: boolean;
+  product_attributes: { is_veg?: boolean } | null;
   is_available: boolean;
   image_url: string | null;
 };
@@ -207,7 +207,7 @@ export default function VendorMenuPage() {
     setEditName(item.name);
     setEditDescription(item.description ?? "");
     setEditCategory(item.category ?? "");
-    setEditIsVeg(item.is_veg);
+    setEditIsVeg(item.product_attributes?.is_veg ?? false);
     setEditPrice(String(item.price));
     setEditImageUrl(item.image_url ?? "");
   }
@@ -228,7 +228,7 @@ export default function VendorMenuPage() {
     if (editName !== item.name) update.name = editName;
     if (editDescription !== (item.description ?? "")) update.description = editDescription;
     if (editCategory !== (item.category ?? "")) update.category = editCategory;
-    if (editIsVeg !== item.is_veg) update.isVeg = editIsVeg;
+    if (editIsVeg !== (item.product_attributes?.is_veg ?? false)) update.isVeg = editIsVeg;
     if (editImageUrl !== (item.image_url ?? "")) update.imageUrl = editImageUrl;
     if (priceNumber !== item.price) update.price = priceNumber;
 

@@ -7,7 +7,7 @@ import { supabase } from "@/lib/supabase";
 export function useVendorSession() {
   const router = useRouter();
   const [vendorId, setVendorId] = useState<string | null>(null);
-  const [restaurantId, setRestaurantId] = useState<string | null>(null);
+  const [storeId, setStoreId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -29,14 +29,14 @@ export function useVendorSession() {
         if (!cancelled) router.push("/vendor/login");
         return;
       }
-      const { data: restaurant } = await supabase
-        .from("restaurants")
+      const { data: store } = await supabase
+        .from("stores")
         .select("id")
         .eq("owner_id", userId)
         .single();
       if (cancelled) return;
       setVendorId(userId);
-      setRestaurantId(restaurant?.id ?? null);
+      setStoreId(store?.id ?? null);
       setLoading(false);
     }
 
@@ -46,5 +46,5 @@ export function useVendorSession() {
     };
   }, [router]);
 
-  return { vendorId, restaurantId, loading };
+  return { vendorId, storeId, loading };
 }

@@ -37,7 +37,7 @@
       "position": [680, 220],
       "parameters": {
         "method": "GET",
-        "url": "={{$env.SUPABASE_URL}}/rest/v1/restaurants?id=eq.{{$json[\"body\"][\"record\"][\"restaurant_id\"]}}&select=lat,lng",
+        "url": "={{$env.SUPABASE_URL}}/rest/v1/stores?id=eq.{{$json[\"body\"][\"record\"][\"store_id\"]}}&select=lat,lng",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [

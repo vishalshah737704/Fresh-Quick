@@ -30,7 +30,7 @@ export async function PATCH(
   if (typeof body.name === "string") update.name = body.name;
   if (typeof body.description === "string") update.description = body.description;
   if (typeof body.category === "string") update.category = body.category;
-  if (typeof body.isVeg === "boolean") update.is_veg = body.isVeg;
+  if (typeof body.isVeg === "boolean") update.product_attributes = { is_veg: body.isVeg };
   if (typeof body.isAvailable === "boolean") update.is_available = body.isAvailable;
   if (typeof body.imageUrl === "string" && body.imageUrl.length > 0) {
     if (!isAllowedImageUrl(body.imageUrl)) {

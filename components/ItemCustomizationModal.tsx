@@ -22,14 +22,14 @@ type Item = {
 export function ItemCustomizationModal({
   item,
   optionGroups,
-  restaurantId,
-  restaurantName,
+  storeId,
+  storeName,
   onClose,
 }: {
   item: Item;
   optionGroups: OptionGroup[];
-  restaurantId: string;
-  restaurantName: string;
+  storeId: string;
+  storeName: string;
   onClose: () => void;
 }) {
   const { addItem } = useCart();
@@ -80,7 +80,7 @@ export function ItemCustomizationModal({
 
   function handleAdd() {
     if (!allGroupsValid) return;
-    addItem(restaurantId, restaurantName, {
+    addItem(storeId, storeName, {
       menuItemId: item.id,
       name: item.name,
       price: unitPricePaise / 100,

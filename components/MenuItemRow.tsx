@@ -10,7 +10,7 @@ type MenuItem = {
   name: string;
   description: string | null;
   price: number;
-  is_veg: boolean;
+  product_attributes: { is_veg?: boolean } | null;
   is_available: boolean;
   image_url: string | null;
 };
@@ -26,14 +26,14 @@ type OptionGroup = {
 
 export function MenuItemRow({
   item,
-  restaurantId,
-  restaurantName,
+  storeId,
+  storeName,
   disabled = false,
   optionGroups = [],
 }: {
   item: MenuItem;
-  restaurantId: string;
-  restaurantName: string;
+  storeId: string;
+  storeName: string;
   disabled?: boolean;
   optionGroups?: OptionGroup[];
 }) {
@@ -47,7 +47,7 @@ export function MenuItemRow({
       setModalOpen(true);
       return;
     }
-    addItem(restaurantId, restaurantName, {
+    addItem(storeId, storeName, {
       menuItemId: item.id,
       name: item.name,
       price: item.price,
@@ -62,7 +62,7 @@ export function MenuItemRow({
     <div className="flex items-start justify-between gap-4 py-4">
       <div className="min-w-0 flex-1">
         <p className="font-semibold text-brand-ink">
-          {item.is_veg ? "🟢" : "🔴"} {item.name}
+          {item.product_attributes?.is_veg ? "🟢" : "🔴"} {item.name}
         </p>
         {item.description && (
           <p className="mt-0.5 line-clamp-2 text-sm text-brand-ink-muted">{item.description}</p>
@@ -99,8 +99,8 @@ export function MenuItemRow({
         <ItemCustomizationModal
           item={item}
           optionGroups={optionGroups}
-          restaurantId={restaurantId}
-          restaurantName={restaurantName}
+          storeId={storeId}
+          storeName={storeName}
           onClose={() => setModalOpen(false)}
         />
       )}

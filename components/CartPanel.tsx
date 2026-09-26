@@ -8,8 +8,8 @@ import { useDeliveryFee } from "@/lib/use-delivery-fee";
 
 export function CartPanel() {
   const {
-    restaurantId,
-    restaurantName,
+    storeId,
+    storeName,
     items,
     subtotal,
     orderNote,
@@ -22,7 +22,7 @@ export function CartPanel() {
   const [open, setOpen] = useState(false);
   const [noteDrafts, setNoteDrafts] = useState<Record<string, string>>({});
   const [orderNoteDraft, setOrderNoteDraft] = useState<string | null>(null);
-  const { deliveryFeePaise, loading: feeLoading } = useDeliveryFee(open ? restaurantId : null);
+  const { deliveryFeePaise, loading: feeLoading } = useDeliveryFee(open ? storeId : null);
 
   const itemCount = items.reduce((sum, i) => sum + i.quantity, 0);
 
@@ -59,7 +59,7 @@ export function CartPanel() {
           className="flex w-full items-center justify-between px-4 py-3"
         >
           <span className="text-sm text-brand-ink">
-            {itemCount} item{itemCount !== 1 ? "s" : ""} from {restaurantName}
+            {itemCount} item{itemCount !== 1 ? "s" : ""} from {storeName}
           </span>
           <span className="font-semibold text-brand-ink">₹{subtotal.toFixed(2)}</span>
         </button>
@@ -75,7 +75,7 @@ export function CartPanel() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between border-b border-brand-ink-muted/10 px-4 py-3">
-              <h2 className="text-lg font-bold text-brand-ink">{restaurantName}</h2>
+              <h2 className="text-lg font-bold text-brand-ink">{storeName}</h2>
               <button
                 onClick={() => setOpen(false)}
                 aria-label="Close cart"
