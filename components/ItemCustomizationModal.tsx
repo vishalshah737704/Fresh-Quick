@@ -16,6 +16,7 @@ type Item = {
   id: string;
   name: string;
   price: number;
+  image_url: string | null;
 };
 
 export function ItemCustomizationModal({
@@ -84,6 +85,7 @@ export function ItemCustomizationModal({
       name: item.name,
       price: unitPricePaise / 100,
       quantity,
+      imageUrl: item.image_url,
       selectedOptions,
       specialInstructions: null,
     });

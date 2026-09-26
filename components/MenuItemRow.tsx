@@ -52,6 +52,7 @@ export function MenuItemRow({
       name: item.name,
       price: item.price,
       quantity: 1,
+      imageUrl: item.image_url,
       selectedOptions: [],
       specialInstructions: null,
     });
