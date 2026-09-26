@@ -7,6 +7,16 @@ import { supabase } from "@/lib/supabase";
 import { MenuItemRow } from "@/components/MenuItemRow";
 import { RestaurantMenuAnchorNav } from "@/components/RestaurantMenuAnchorNav";
 
+type Option = { id: string; name: string; price_delta_paise: number; sort_order: number };
+type OptionGroup = {
+  id: string;
+  name: string;
+  min_select: number;
+  max_select: number;
+  sort_order: number;
+  menu_item_options: Option[];
+};
+
 type MenuItem = {
   id: string;
   name: string;
@@ -16,6 +26,7 @@ type MenuItem = {
   is_available: boolean;
   image_url: string | null;
   category: string | null;
+  menu_item_option_groups: OptionGroup[];
 };
 
 type Restaurant = {
@@ -87,6 +98,15 @@ function buildGroups(items: MenuItem[]): MenuGroup[] {
   return groups;
 }
 
+function sortedGroups(item: MenuItem): OptionGroup[] {
+  return [...item.menu_item_option_groups]
+    .sort((a, b) => a.sort_order - b.sort_order)
+    .map((g) => ({
+      ...g,
+      menu_item_options: [...g.menu_item_options].sort((a, b) => a.sort_order - b.sort_order),
+    }));
+}
+
 export default function RestaurantMenuPage() {
   const params = useParams<{ id: string }>();
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
@@ -108,7 +128,9 @@ export default function RestaurantMenuPage() {
             .single(),
           supabase
             .from("menu_items")
-            .select("id, name, description, price, is_veg, is_available, image_url, category")
+            .select(
+              "id, name, description, price, is_veg, is_available, image_url, category, menu_item_option_groups(id, name, min_select, max_select, sort_order, menu_item_options(id, name, price_delta_paise, sort_order))"
+            )
             .eq("restaurant_id", params.id),
         ]);
       if (cancelled) return;
@@ -243,6 +265,7 @@ export default function RestaurantMenuPage() {
                       restaurantId={restaurant.id}
                       restaurantName={restaurant.name}
                       disabled={isUnavailable}
+                      optionGroups={sortedGroups(item)}
                     />
                   ))}
                 </div>
@@ -259,6 +282,7 @@ export default function RestaurantMenuPage() {
               restaurantId={restaurant.id}
               restaurantName={restaurant.name}
               disabled={isUnavailable}
+              optionGroups={sortedGroups(item)}
             />
           ))}
         </div>

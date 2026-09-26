@@ -4,7 +4,14 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useVendorSession } from "@/components/vendor/useVendorSession";
 
-type OrderItem = { id: string; quantity: number; unit_price: number; menu_items: { name: string } | null };
+type OrderItem = {
+  id: string;
+  quantity: number;
+  unit_price: number;
+  special_instructions: string | null;
+  menu_items: { name: string } | null;
+  order_item_options: { id: string; group_name: string; option_name: string }[];
+};
 type Order = {
   id: string;
   status: string;
@@ -110,6 +117,15 @@ export default function VendorOrdersPage() {
               {order.order_items.map((item) => (
                 <li key={item.id}>
                   {item.quantity}× {item.menu_items?.name ?? "Item"}
+                  {item.order_item_options.length > 0 && (
+                    <span className="text-brand-ink-muted">
+                      {" "}
+                      — {item.order_item_options.map((o) => o.option_name).join(", ")}
+                    </span>
+                  )}
+                  {item.special_instructions && (
+                    <span className="text-brand-ink-muted"> — &quot;{item.special_instructions}&quot;</span>
+                  )}
                 </li>
               ))}
             </ul>

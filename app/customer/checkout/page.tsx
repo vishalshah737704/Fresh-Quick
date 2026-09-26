@@ -90,7 +90,12 @@ export default function CheckoutPage() {
         },
         body: JSON.stringify({
           restaurantId,
-          items: items.map((i) => ({ menuItemId: i.menuItemId, quantity: i.quantity })),
+          items: items.map((i) => ({
+            menuItemId: i.menuItemId,
+            quantity: i.quantity,
+            selectedOptionIds: i.selectedOptions.map((o) => o.optionId),
+            specialInstructions: i.specialInstructions,
+          })),
           deliveryAddress: { label, lat, lng },
           paymentMethod,
           expectedTotal: total,

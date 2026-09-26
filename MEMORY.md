@@ -527,8 +527,75 @@ Claude at the start of work in this repo per project CLAUDE.md.
   height.
   Plan: docs/superpowers/plans/2026-09-25-uber-eats-restaurant-page-rebuild.md
   Spec: docs/superpowers/specs/2026-09-25-uber-eats-restaurant-page-rebuild-design.md
+- **Uber Eats-style redesign — Piece 4: Item customization**: ✅ Complete,
+  built via `superpowers:subagent-driven-development` in worktree
+  `worktree-uber-eats-item-customization` (10 tasks). New schema:
+  `menu_item_option_groups`/`menu_item_options` (vendor-owned option
+  groups with `min_select`/`max_select`, options with
+  `price_delta_paise`) and `order_item_options` (a per-order snapshot of
+  `group_name`/`option_name`/`price_delta_paise`, `menu_item_option_id`
+  nullable via `on delete set null` so order history survives a deleted
+  option). `checkout_place_order` RPC rewritten to accept and persist
+  option selections. 5 new vendor CRUD routes for option groups/options,
+  gated by `resolveVendorRestaurant` + `assertOwnsGroup`/
+  `assertOwnsOption` ownership checks (no restaurant-scoping predicate on
+  the write query itself — ruled acceptable, see final-review note
+  below). Cart store (`lib/cart-store.tsx`) rewritten around a `lineId`
+  (menuItemId + sorted selected option ids) instead of bare
+  `menuItemId`, so two customizations of the same dish coexist as
+  separate lines while identical selections merge by quantity; carries
+  `normalizeStoredItem` for backward-compatible localStorage migration
+  from the old flat shape. New `components/ItemCustomizationModal.tsx`
+  replaces instant Quick Add for any item with option groups; a required
+  group with zero options shows "No options available yet." and keeps
+  Add-to-cart permanently disabled rather than crashing. Checkout route
+  validates every selected option belongs to the item's own groups and
+  every required group's min is met, rejecting cross-item option ids and
+  missing-required-group submissions with 400s; server recomputes price
+  from paise, never trusts a client-sent total. Vendor order queue shows
+  selected option names and special-instructions notes from the
+  snapshot, unaffected by later option deletion.
+  **1 load-bearing bug found and fixed mid-plan (Task 8, plan-mandated
+  pattern predating this piece)**: checkout's
+  `items.map(i => i.menuItemId)` had no dedup, so two cart lines sharing
+  a `menuItemId` (the exact case item customization exists to create —
+  same dish, different options) tripped a `menuItems.length !==
+  menuItemIds.length` check and 404'd the whole checkout. Harmless before
+  piece 4 (the old cart could never hold two lines with the same
+  `menuItemId`); load-bearing now. Fixed with `[...new
+  Set(menuItemIds)]`. Same fix round also rejected duplicate option ids
+  in one item's selection and capped `special_instructions` at 500
+  characters server-side (`CartPanel`'s note textarea still has no
+  client-side `maxLength`, deferred minor).
+  **Live verification (Task 10) run end-to-end after a session
+  interruption resumed mid-plan**: vendor option-group/option CRUD,
+  cross-vendor write rejection (404), modal-blocks-instant-add +
+  disabled-until-valid + lineId merge/split behavior, zero-option
+  required group, per-line special instructions surviving reload,
+  old-shape localStorage migration, a real order placed and checked
+  byte-exact against `order_items`/`order_item_options`, cross-item
+  option id and skipped-required-group checkout rejections (400s),
+  order-history survival of a deleted option (verified live via psql
+  after deleting an option vendor-side), vendor order-queue display, and
+  a clean `npm run build`.
+  **Final whole-branch review (opus)**: no Critical/Important findings.
+  Verified the Task 1 migration adds no write policies on the 3 new
+  tables (relying on service-role-only writes, per this project's RLS
+  rule) and no self-referential or stub-overridden read policies — the
+  RLS-recursion and stub-policy classes of bug that hit Phases 5-6 did
+  not recur here. 3 new deferred minors: a vendor can create a required
+  option group with fewer options than its `min_select` (or delete down
+  to fewer), making the item unorderable — fails closed (Add-to-cart
+  stays disabled, checkout would reject it) but silent, no admin/vendor
+  warning; a group PATCH sending only one of `minSelect`/`maxSelect` can
+  hit the DB's `max_select >= min_select` CHECK constraint and return a
+  raw 500 instead of a 400 (data stays safe, only the status/message is
+  wrong); `CartPanel`'s note textarea has no `maxLength=500` client-side
+  (server already enforces it).
+  Plan: docs/superpowers/plans/2026-09-25-uber-eats-item-customization.md
+  Spec: docs/superpowers/specs/2026-09-25-uber-eats-item-customization-design.md
 - **Mobile app (React Native + Expo, sub-project)**: not started — begins
-  after the Uber Eats redesign's remaining pieces (4-6).
+  after the Uber Eats redesign's remaining pieces (5-6).
 
 ## Key decisions carried forward (see spec §2 for full list)
 
