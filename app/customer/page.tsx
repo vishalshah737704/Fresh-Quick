@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useAddress } from "@/lib/address-store";
 import { haversineDistanceKm } from "@/lib/geo";
@@ -11,6 +12,7 @@ import { CuisineChipRow } from "@/components/CuisineChipRow";
 import { CuisineCarouselRow } from "@/components/CuisineCarouselRow";
 import { HeaderSearchBox } from "@/components/HeaderSearchBox";
 import { SortFilterBar, type SortOption } from "@/components/SortFilterBar";
+import { CATEGORY_ICONS, CATEGORY_ORDER, type CategoryType } from "@/lib/category-icons";
 
 type Restaurant = {
   id: string;
@@ -24,6 +26,7 @@ type Restaurant = {
   banner_url: string | null;
   delivery_fee_paise: number;
   promo_text: string | null;
+  category_type: string;
 };
 
 type Cuisine = {
@@ -32,6 +35,21 @@ type Cuisine = {
 };
 
 export default function CustomerHomePage() {
+  return (
+    <Suspense fallback={<p className="text-brand-ink-muted">Loading restaurants…</p>}>
+      <CustomerHomeContent />
+    </Suspense>
+  );
+}
+
+function CustomerHomeContent() {
+  const searchParams = useSearchParams();
+  const categoryParam = searchParams.get("category");
+  const validCategory =
+    categoryParam !== null && (CATEGORY_ORDER as string[]).includes(categoryParam)
+      ? (categoryParam as CategoryType)
+      : null;
+
   const { lat, lng } = useAddress();
   const [restaurants, setRestaurants] = useState<Restaurant[] | null>(null);
   const [cuisines, setCuisines] = useState<Cuisine[]>([]);
@@ -48,7 +66,7 @@ export default function CustomerHomePage() {
         supabase
           .from("stores")
           .select(
-            "id, name, cuisine_tags, rating, avg_prep_minutes, is_open, lat, lng, banner_url, delivery_fee_paise, promo_text"
+            "id, name, cuisine_tags, rating, avg_prep_minutes, is_open, lat, lng, banner_url, delivery_fee_paise, promo_text, category_type"
           )
           .eq("is_open", true)
           .eq("is_suspended", false),
@@ -78,7 +96,8 @@ export default function CustomerHomePage() {
 
   const withDistance = restaurants
     .map((r) => ({ r, distanceKm: haversineDistanceKm(lat, lng, r.lat, r.lng) }))
-    .sort((a, b) => a.distanceKm - b.distanceKm);
+    .sort((a, b) => a.distanceKm - b.distanceKm)
+    .filter(({ r }) => validCategory === null || r.category_type === validCategory);
 
   const labelBySlug = new Map(cuisines.map((c) => [c.slug, c.label.toLowerCase()]));
 
@@ -162,10 +181,16 @@ export default function CustomerHomePage() {
         cuisines={cuisines}
       />
       <SortFilterBar sortBy={sortBy} onSortByChange={setSortBy} under30={under30} onUnder30Toggle={setUnder30} />
-      <CuisineChipRow cuisines={cuisines} selected={selectedCuisine} onSelect={setSelectedCuisine} />
+      {(validCategory === null || validCategory === "restaurant") && (
+        <CuisineChipRow cuisines={cuisines} selected={selectedCuisine} onSelect={setSelectedCuisine} />
+      )}
       <div id="restaurants" />
       {restaurants.length === 0 ? (
         <p className="text-brand-ink-muted">No open restaurants near you right now.</p>
+      ) : validCategory !== null && searched.length === 0 ? (
+        <p className="text-brand-ink-muted">
+          No {CATEGORY_ICONS[validCategory].label.toLowerCase()} stores yet — check back soon!
+        </p>
       ) : selectedCuisine !== null ? (
         sortedFiltered.length === 0 ? (
           <p className="text-brand-ink-muted">No restaurants match that cuisine right now.</p>
