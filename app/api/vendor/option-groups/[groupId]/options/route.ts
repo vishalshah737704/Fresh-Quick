@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase-server";
-import { resolveVendorRestaurant, tokenFromRequest } from "@/lib/vendor-auth";
+import { resolveVendorStore, tokenFromRequest } from "@/lib/vendor-auth";
 import { assertOwnsGroup } from "@/lib/vendor-option-auth";
 
 export async function POST(
@@ -8,11 +8,11 @@ export async function POST(
   { params }: { params: Promise<{ groupId: string }> }
 ) {
   const { groupId } = await params;
-  const resolved = await resolveVendorRestaurant(tokenFromRequest(request));
+  const resolved = await resolveVendorStore(tokenFromRequest(request));
   if ("error" in resolved) {
     return NextResponse.json({ error: resolved.error }, { status: resolved.status });
   }
-  if (!(await assertOwnsGroup(resolved.restaurantId, groupId))) {
+  if (!(await assertOwnsGroup(resolved.storeId, groupId))) {
     return NextResponse.json({ error: "Option group not found" }, { status: 404 });
   }
   const { name, priceDeltaRupees } = await request.json();

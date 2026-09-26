@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
   }
 
   const { error: restaurantError } = await supabaseServer
-    .from("restaurants")
+    .from("stores")
     .insert({
       owner_id: created.user.id,
       name: restaurantName,
@@ -55,6 +55,7 @@ export async function POST(request: NextRequest) {
       lat,
       lng,
       is_open: false,
+      category_type: "restaurant",
     });
 
   if (restaurantError) {

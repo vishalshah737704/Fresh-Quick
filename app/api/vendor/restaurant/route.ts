@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase-server";
-import { resolveVendorRestaurant, tokenFromRequest } from "@/lib/vendor-auth";
+import { resolveVendorStore, tokenFromRequest } from "@/lib/vendor-auth";
 
 export async function PATCH(request: NextRequest) {
-  const resolved = await resolveVendorRestaurant(tokenFromRequest(request));
+  const resolved = await resolveVendorStore(tokenFromRequest(request));
   if ("error" in resolved) {
     return NextResponse.json({ error: resolved.error }, { status: resolved.status });
   }
@@ -17,9 +17,9 @@ export async function PATCH(request: NextRequest) {
     }
     if (body.isOpen) {
       const { count, error: countError } = await supabaseServer
-        .from("menu_items")
+        .from("products")
         .select("id", { count: "exact", head: true })
-        .eq("restaurant_id", resolved.restaurantId)
+        .eq("store_id", resolved.storeId)
         .eq("is_available", true);
       if (countError) {
         return NextResponse.json({ error: "Failed to check menu items" }, { status: 500 });
@@ -64,13 +64,13 @@ export async function PATCH(request: NextRequest) {
   }
 
   const { data, error } = await supabaseServer
-    .from("restaurants")
+    .from("stores")
     .update(update)
-    .eq("id", resolved.restaurantId)
+    .eq("id", resolved.storeId)
     .select("*")
     .single();
   if (error || !data) {
     return NextResponse.json({ error: "Failed to update restaurant" }, { status: 500 });
   }
-  return NextResponse.json({ restaurant: data });
+  return NextResponse.json({ store: data });
 }

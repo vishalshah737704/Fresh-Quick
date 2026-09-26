@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase-server";
-import { resolveVendorRestaurant, tokenFromRequest } from "@/lib/vendor-auth";
+import { resolveVendorStore, tokenFromRequest } from "@/lib/vendor-auth";
 import { assertOwnsOption } from "@/lib/vendor-option-auth";
 
 export async function PATCH(
@@ -8,11 +8,11 @@ export async function PATCH(
   { params }: { params: Promise<{ optionId: string }> }
 ) {
   const { optionId } = await params;
-  const resolved = await resolveVendorRestaurant(tokenFromRequest(request));
+  const resolved = await resolveVendorStore(tokenFromRequest(request));
   if ("error" in resolved) {
     return NextResponse.json({ error: resolved.error }, { status: resolved.status });
   }
-  if (!(await assertOwnsOption(resolved.restaurantId, optionId))) {
+  if (!(await assertOwnsOption(resolved.storeId, optionId))) {
     return NextResponse.json({ error: "Option not found" }, { status: 404 });
   }
   const body = await request.json();
@@ -47,11 +47,11 @@ export async function DELETE(
   { params }: { params: Promise<{ optionId: string }> }
 ) {
   const { optionId } = await params;
-  const resolved = await resolveVendorRestaurant(tokenFromRequest(request));
+  const resolved = await resolveVendorStore(tokenFromRequest(request));
   if ("error" in resolved) {
     return NextResponse.json({ error: resolved.error }, { status: resolved.status });
   }
-  if (!(await assertOwnsOption(resolved.restaurantId, optionId))) {
+  if (!(await assertOwnsOption(resolved.storeId, optionId))) {
     return NextResponse.json({ error: "Option not found" }, { status: 404 });
   }
   const { error } = await supabaseServer.from("menu_item_options").delete().eq("id", optionId);

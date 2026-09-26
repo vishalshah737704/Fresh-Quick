@@ -1,17 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase-server";
-import { resolveVendorRestaurant, tokenFromRequest } from "@/lib/vendor-auth";
+import { resolveVendorStore, tokenFromRequest } from "@/lib/vendor-auth";
 import { isAllowedImageUrl } from "@/lib/image-url";
 
 export async function GET(request: NextRequest) {
-  const resolved = await resolveVendorRestaurant(tokenFromRequest(request));
+  const resolved = await resolveVendorStore(tokenFromRequest(request));
   if ("error" in resolved) {
     return NextResponse.json({ error: resolved.error }, { status: resolved.status });
   }
   const { data, error } = await supabaseServer
-    .from("menu_items")
+    .from("products")
     .select("*")
-    .eq("restaurant_id", resolved.restaurantId)
+    .eq("store_id", resolved.storeId)
     .order("created_at", { ascending: false });
   if (error) {
     return NextResponse.json({ error: "Failed to load menu items" }, { status: 500 });
@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const resolved = await resolveVendorRestaurant(tokenFromRequest(request));
+  const resolved = await resolveVendorStore(tokenFromRequest(request));
   if ("error" in resolved) {
     return NextResponse.json({ error: resolved.error }, { status: resolved.status });
   }
@@ -36,9 +36,9 @@ export async function POST(request: NextRequest) {
   }
   const pricePaise = Math.round(price * 100);
   const { data, error } = await supabaseServer
-    .from("menu_items")
+    .from("products")
     .insert({
-      restaurant_id: resolved.restaurantId,
+      store_id: resolved.storeId,
       name,
       description: description ?? null,
       price: pricePaise / 100,

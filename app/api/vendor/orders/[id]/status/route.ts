@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase-server";
-import { resolveVendorRestaurant, tokenFromRequest } from "@/lib/vendor-auth";
+import { resolveVendorStore, tokenFromRequest } from "@/lib/vendor-auth";
 import { VENDOR_STATUS_TRANSITIONS } from "@/lib/order-constants";
 
 export async function POST(
@@ -8,16 +8,16 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const resolved = await resolveVendorRestaurant(tokenFromRequest(request));
+  const resolved = await resolveVendorStore(tokenFromRequest(request));
   if ("error" in resolved) {
     return NextResponse.json({ error: resolved.error }, { status: resolved.status });
   }
 
   const { data: order, error: orderError } = await supabaseServer
     .from("orders")
-    .select("id, status, restaurant_id")
+    .select("id, status, store_id")
     .eq("id", id)
-    .eq("restaurant_id", resolved.restaurantId)
+    .eq("store_id", resolved.storeId)
     .single();
   if (orderError || !order) {
     return NextResponse.json({ error: "Order not found" }, { status: 404 });
@@ -35,7 +35,7 @@ export async function POST(
     .from("orders")
     .update({ status: nextStatus })
     .eq("id", id)
-    .eq("restaurant_id", resolved.restaurantId)
+    .eq("store_id", resolved.storeId)
     .eq("status", order.status)
     .select("id, status")
     .single();

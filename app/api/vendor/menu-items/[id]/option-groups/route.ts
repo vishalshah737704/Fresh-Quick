@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase-server";
-import { resolveVendorRestaurant, tokenFromRequest } from "@/lib/vendor-auth";
+import { resolveVendorStore, tokenFromRequest } from "@/lib/vendor-auth";
 
-async function assertOwnsItem(restaurantId: string, itemId: string) {
+async function assertOwnsItem(storeId: string, itemId: string) {
   const { data, error } = await supabaseServer
-    .from("menu_items")
+    .from("products")
     .select("id")
     .eq("id", itemId)
-    .eq("restaurant_id", restaurantId)
+    .eq("store_id", storeId)
     .single();
   return !error && !!data;
 }
@@ -17,11 +17,11 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const resolved = await resolveVendorRestaurant(tokenFromRequest(request));
+  const resolved = await resolveVendorStore(tokenFromRequest(request));
   if ("error" in resolved) {
     return NextResponse.json({ error: resolved.error }, { status: resolved.status });
   }
-  if (!(await assertOwnsItem(resolved.restaurantId, id))) {
+  if (!(await assertOwnsItem(resolved.storeId, id))) {
     return NextResponse.json({ error: "Menu item not found" }, { status: 404 });
   }
   const { data, error } = await supabaseServer
@@ -42,11 +42,11 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const resolved = await resolveVendorRestaurant(tokenFromRequest(request));
+  const resolved = await resolveVendorStore(tokenFromRequest(request));
   if ("error" in resolved) {
     return NextResponse.json({ error: resolved.error }, { status: resolved.status });
   }
-  if (!(await assertOwnsItem(resolved.restaurantId, id))) {
+  if (!(await assertOwnsItem(resolved.storeId, id))) {
     return NextResponse.json({ error: "Menu item not found" }, { status: 404 });
   }
   const { name, minSelect, maxSelect } = await request.json();
