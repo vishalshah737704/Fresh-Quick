@@ -1774,3 +1774,53 @@ Men's Card Holder Wallet
 Men's Keychain
 Men's Tie Clip
 Men's Cufflinks
+Shampoo 400ml
+Conditioner 400ml
+Hair Mask 200g
+Hair Oil 200ml
+Hair Serum 100ml
+Anti-Dandruff Shampoo 350ml
+Keratin Shampoo 350ml
+Dry Shampoo Spray 150ml
+Hair Shine Spray 150ml
+Scalp Treatment Tonic 100ml
+Hair Growth Oil 100ml
+Leave-In Conditioner Spray 200ml
+Hair Straightening Cream 100g
+Hair Curling Iron
+Hair Straightener Iron
+Hair Dryer 1800W
+Round Hair Brush
+Detangling Comb
+Hair Rollers Set 10pc
+Bobby Pins Pack 50pc
+Silk Pillowcase
+Shower Cap
+Bath Bomb
+Bubble Bath 300ml
+Essential Oil Set 6pc
+Essential Oil Diffuser
+Women's Perfume 50ml
+Body Mist 150ml
+Women's Roll-On Deodorant 50ml
+Women's Antiperspirant Spray 150ml
+Intimate Wash 100ml
+Waxing Strips Box 20pc
+Hair Removal Cream 100g
+Epilator
+Tweezers
+Eyebrow Razor
+Eyebrow Pencil
+Eyebrow Gel
+False Eyelashes Pack 5pairs
+Eyelash Curler
+Makeup Setting Spray 100ml
+Face Primer 30ml
+Highlighter Palette
+Contour Stick
+BB Cream 30ml
+CC Cream 30ml
+Lip Liner Pencil
+Tinted Lip Balm
+Facial Oil 30ml
+Jade Facial Roller
