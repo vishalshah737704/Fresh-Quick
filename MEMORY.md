@@ -862,6 +862,69 @@ Claude at the start of work in this repo per project CLAUDE.md.
   Spec: docs/superpowers/specs/2026-09-26-phase3-redo-design.md
   Plan: docs/superpowers/plans/2026-09-26-phase3-redo.md
 
+- **Phase 4 Redo (sub-project C of the 50-unique-items redesign)**: ✅
+  Complete. All 16 Health/Retail/Personal Care/Electronics stores (4 per
+  category) now carry 50 fresh, fully unique, hand-curated items each
+  (800 new rows total). Unlike sub-project B, the OLD worktree
+  (`.claude/worktrees/marketplace-phase4`) had 4 IDENTICAL 20-item
+  catalogs per category (not 4 distinct ones) and was never merged to
+  `main`, so nothing live depended on it — ruled to discard the old
+  catalog data entirely rather than pad it, going straight to a fresh
+  4×50 build (same pattern as sub-project D will use). Store/vendor
+  roster (names, owner accounts, addresses, `category_type`) was ported
+  verbatim from the old worktree — only the product catalogs are new.
+  Two conventions deliberately diverge from sub-projects A/B for this
+  sub-project only: `is_veg` is set (Health stores only, judged on real
+  ingredients) instead of omitted, and `products.price` uses decimal
+  rupees.paise (e.g. 149.75) instead of always-whole rupees. Registry
+  grew from 1,276 to 2,076 lines (append-only, zero internal dupes).
+  Executed via `superpowers:subagent-driven-development` in worktree
+  `.claude/worktrees/phase4-redo`, one Haiku implementer + Sonnet
+  reviewer per store; final whole-branch review used Opus.
+  - **Dominant defect class this sub-project**: cross-task `image_url`
+    collisions — an implementer's dedup self-check scoped only to its own
+    50 rows (or used a grep pattern blind to non-standard Pexels URL
+    formats) repeatedly missed that a photo it picked was ALREADY used by
+    a different, already-committed task's row. Real collisions were found
+    and fixed in Tasks 3 (1), 11 (1), 12 (6, including a 3-way and a
+    6-way collision), and 16 (3), plus 14 more found only by the Task 17
+    final whole-branch sweep (mostly within-category cross-task sharing,
+    e.g. MedPlus Pharmacy reusing WellnessRx/Vitamin Shop's photos) that
+    every individual task review had missed. **Any future catalog-
+    building plan must require the dedup check to run against the WHOLE
+    `seed.sql` file, explicitly including a copy-pasteable example
+    command in every dispatch — "check your own N rows" is not
+    sufficient and has now failed repeatedly even when explicitly
+    warned against.**
+  - **One severe regression**: Task 10 (Grooming Co.) accidentally
+    deleted an entirely different, already-committed store's 50-row
+    catalog (Glow Beauty, from Task 9) by editing/replacing an existing
+    `insert into public.products` statement instead of appending a new,
+    separate one. Caught only by task review (would have silently
+    shipped a store with zero products); fixed by restoring Glow Beauty's
+    50 rows byte-identical to its prior commit. Every subsequent
+    dispatch was explicitly warned to always add a brand-new insert
+    statement and never touch an existing one, and this was not repeated
+    for the rest of the plan.
+  - Minor, non-blocking: a couple of implementer self-reports had
+    inaccurate verification-number claims (an is_veg tally, a category
+    split, a "137 duplicate photos" figure that turned out to be 0) even
+    though the underlying SQL was correct in every one of those cases —
+    worth remembering that a subagent's stated verification number is not
+    itself verification.
+  - Two brief-mandated category values technically fall outside this
+    sub-project's stated 5-value-per-category vocabulary (`Furniture` on
+    2 Digital Hub rows, `Personal Health Devices` on 1 CircuitPoint row)
+    — ruled acceptable since both are legitimate app-wide category values
+    already used elsewhere and came from the plan's own brief text, not
+    implementer deviation.
+  - **Next up**: sub-project D (Phase 5 Fresh Build — Pet/Flowers/Baby,
+    never built at all, simplest of the four — no legacy to reconcile,
+    straight to 4×50 unique items per category, same pattern this
+    sub-project ended up using).
+  Spec: docs/superpowers/specs/2026-09-26-phase4-redo-design.md
+  Plan: docs/superpowers/plans/2026-09-26-phase4-redo.md
+
 ## Key decisions carried forward (see spec §2 for full list)
 
 - Self-hosted Supabase only, no cloud project.

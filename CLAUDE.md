@@ -354,6 +354,34 @@ See [MEMORY.md](MEMORY.md) for phase-by-phase progress and decisions.
   the failure, and no per-task diff-only review could catch a
   wrong-but-well-formed URL. Caught only by the final whole-branch review
   spot-checking fetched photo ids against product names.
+- **When multiple content-building tasks each add rows referencing a
+  shared `image_url` pool (Pexels or otherwise), every task's "no
+  duplicate photos" self-check must grep candidate photo ids against the
+  ENTIRE target file (e.g. `seed.sql`), not just that task's own new
+  rows.** Sub-project C (Phase 4 Redo) hit this repeatedly — Tasks 3, 11,
+  12 (with a 3-way and a 6-way collision), and 16 each shipped a row
+  reusing a photo already committed by a *different* task, because the
+  implementer's dedup check was scoped only to its own 50 rows (or used a
+  grep pattern blind to non-`pexels-photo-N` URL formats). Even after
+  every later dispatch was explicitly warned and given a literal
+  copy-pasteable whole-file grep command, the final whole-branch review
+  still caught 14 more cross-task duplicates that had slipped past every
+  individual task's own review. Bake an explicit, runnable whole-file
+  dedup command into every dispatch from the start of any future
+  multi-task content-building plan — "check your own N rows" instructions
+  are not sufficient on their own.
+- **When adding new rows to `supabase/seed.sql` (or any file with
+  multiple existing `insert ... values (...)` statements), always append
+  a brand-new insert statement — never open, edit, or extend an existing
+  one, even one for the same table.** Sub-project C's Task 10 accidentally
+  deleted an entirely different, already-committed store's whole 50-row
+  product catalog by editing an existing insert block instead of adding a
+  new one, silently reducing that store to zero products. Caught only by
+  task review; fixed by restoring the deleted rows byte-identical from
+  git history. Every dispatch touching a shared multi-statement seed file
+  should say this explicitly, and a task's own verification step should
+  re-check the counts of stores/rows it did NOT intend to touch, not just
+  the one it added.
 
 ## Standing phrase: "Commit Work" — NON-NEGOTIABLE
 
