@@ -2074,3 +2074,53 @@ Amplifier Circuit Board Module
 Capacitor ESR Tester
 Handheld Digital Oscilloscope
 Function Generator Module
+Dry Dog Food 3kg
+Dry Cat Food 2kg
+Wet Cat Food Cans 6pk
+Wet Dog Food Pouch 12pk
+Dog Treats Biscuits 500g
+Cat Treats Pack
+Dog Chew Bone
+Puppy Training Pads 30pk
+Nylon Dog Leash
+Adjustable Dog Collar
+Cat Collar with Bell
+Pet Carrier Bag
+Orthopedic Dog Bed
+Cozy Cat Bed
+Cat Scratching Post
+Pet Water Fountain
+Stainless Steel Food Bowl
+Cat Litter Box
+Clumping Cat Litter 5kg
+Pet Grooming Brush
+Dog Shampoo 250ml
+Flea and Tick Spray
+Pet Nail Clipper
+Dog Dental Chews 10pk
+Cat Scratching Pad
+Squeaky Dog Toy
+Cat Toy Mouse 3pk
+Interactive Puzzle Toy
+Bird Cage Medium
+Bird Seed Mix 1kg
+Fish Tank 20L
+Fish Food Flakes
+Hamster Cage
+Rabbit Hutch
+Hard-Shell Pet Carrier Crate
+Dog Raincoat
+Dog Sweater
+Pet ID Tag
+Pet Feeding Mat
+Cat Tree Tower
+Dog Muzzle
+Pet Stroller
+Dog Poop Bags 120pk
+Pet Odor Eliminator Spray
+Pet First Aid Kit
+Dog Harness
+Cat Harness
+Aquarium Filter
+Reptile Heat Lamp
+Pet Multivitamin Supplement
