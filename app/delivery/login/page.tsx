@@ -72,21 +72,21 @@ function DeliveryLoginForm() {
   }
 
   return (
-    <div className="mx-auto max-w-sm">
-      <h1 className="mb-4 text-xl font-bold text-brand-ink">
+    <div className="mx-auto mt-12 max-w-md rounded-lg border border-brand-ink-muted/10 bg-brand-surface p-6">
+      <h1 className="mb-4 font-heading text-2xl text-brand-ink">
         {mode === "login" ? "Delivery partner log in" : "Delivery partner sign up"}
       </h1>
       <div className="flex flex-col gap-2">
         {mode === "signup" && (
           <>
             <input
-              className="rounded-lg border border-brand-ink-muted/20 px-2 py-1 focus:border-brand-primary focus:outline-none"
+              className="w-full rounded-lg border border-brand-ink-muted/20 px-3 py-2 focus:border-brand-primary focus:outline-none"
               placeholder="Your full name"
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
             />
             <select
-              className="rounded-lg border border-brand-ink-muted/20 px-2 py-1 focus:border-brand-primary focus:outline-none"
+              className="w-full rounded-lg border border-brand-ink-muted/20 px-3 py-2 focus:border-brand-primary focus:outline-none"
               value={vehicleType}
               onChange={(e) => setVehicleType(e.target.value)}
             >
@@ -98,14 +98,14 @@ function DeliveryLoginForm() {
           </>
         )}
         <input
-          className="rounded-lg border border-brand-ink-muted/20 px-2 py-1 focus:border-brand-primary focus:outline-none"
+          className="w-full rounded-lg border border-brand-ink-muted/20 px-3 py-2 focus:border-brand-primary focus:outline-none"
           placeholder="Email"
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
         />
         <input
-          className="rounded-lg border border-brand-ink-muted/20 px-2 py-1 focus:border-brand-primary focus:outline-none"
+          className="w-full rounded-lg border border-brand-ink-muted/20 px-3 py-2 focus:border-brand-primary focus:outline-none"
           placeholder="Password"
           type="password"
           value={password}
@@ -115,13 +115,13 @@ function DeliveryLoginForm() {
         <button
           disabled={submitting}
           onClick={mode === "login" ? handleLogin : handleSignup}
-          className="rounded-full bg-brand-primary px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
+          className="w-full rounded-full bg-brand-primary px-4 py-2 text-white disabled:opacity-50"
         >
           {submitting ? "Please wait…" : mode === "login" ? "Log in" : "Sign up"}
         </button>
         <button
           onClick={() => setMode(mode === "login" ? "signup" : "login")}
-          className="text-sm text-brand-ink-muted underline"
+          className="rounded-full text-sm text-brand-ink-muted underline"
         >
           {mode === "login" ? "New partner? Sign up" : "Have an account? Log in"}
         </button>
