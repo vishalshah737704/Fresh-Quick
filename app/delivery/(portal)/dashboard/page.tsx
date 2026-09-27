@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { useDeliverySession } from "@/components/delivery/useDeliverySession";
+import { useDeliverySessionContext } from "@/components/delivery/DeliverySessionContext";
 
 type OrderRow = {
   id: string;
@@ -22,18 +22,13 @@ async function authHeader() {
 }
 
 export default function DeliveryDashboardPage() {
-  const { loading, isOnline: initialOnline } = useDeliverySession();
-  const [online, setOnline] = useState(false);
+  const { isOnline, setIsOnline } = useDeliverySessionContext();
   const [available, setAvailable] = useState<OrderRow[]>([]);
   const [mine, setMine] = useState<OrderRow[]>([]);
   const [lat, setLat] = useState("12.9716");
   const [lng, setLng] = useState("77.5946");
   const [error, setError] = useState<string | null>(null);
   const [addresses, setAddresses] = useState<Record<string, string>>({});
-
-  useEffect(() => {
-    if (!loading) setOnline(initialOnline);
-  }, [loading, initialOnline]);
 
   async function loadOrders() {
     const headers = await authHeader();
@@ -63,11 +58,11 @@ export default function DeliveryDashboardPage() {
   }
 
   useEffect(() => {
-    if (!loading) loadOrders();
-  }, [loading]);
+    loadOrders();
+  }, []);
 
   useEffect(() => {
-    if (!online || typeof navigator === "undefined" || !navigator.geolocation) return;
+    if (!isOnline || typeof navigator === "undefined" || !navigator.geolocation) return;
     navigator.geolocation.getCurrentPosition(
       (position) => {
         setLat(String(position.coords.latitude));
@@ -78,10 +73,10 @@ export default function DeliveryDashboardPage() {
       },
       { timeout: 5000 }
     );
-  }, [online]);
+  }, [isOnline]);
 
   useEffect(() => {
-    if (!online) return;
+    if (!isOnline) return;
     const interval = setInterval(async () => {
       await fetch("/api/delivery/ping", {
         method: "POST",
@@ -90,13 +85,13 @@ export default function DeliveryDashboardPage() {
       });
     }, 15000);
     return () => clearInterval(interval);
-  }, [online, lat, lng]);
+  }, [isOnline, lat, lng]);
 
   useEffect(() => {
-    if (!online) return;
+    if (!isOnline) return;
     const interval = setInterval(loadOrders, 10000);
     return () => clearInterval(interval);
-  }, [online]);
+  }, [isOnline]);
 
   async function toggleOnline() {
     const res = await fetch("/api/delivery/toggle-online", {
@@ -104,7 +99,7 @@ export default function DeliveryDashboardPage() {
       headers: await authHeader(),
     });
     const body = await res.json();
-    if (res.ok) setOnline(body.isOnline);
+    if (res.ok) setIsOnline(body.isOnline);
     await loadOrders();
   }
 
@@ -149,30 +144,28 @@ export default function DeliveryDashboardPage() {
     setAddresses((prev) => ({ ...prev, [orderId]: body.address.line1 }));
   }
 
-  if (loading) return <p>Loading…</p>;
-
   return (
-    <div className="mx-auto max-w-2xl">
-      <h1 className="mb-4 text-xl font-bold text-brand-ink">Delivery dashboard</h1>
+    <div>
+      <h1 className="mb-4 font-heading text-2xl text-brand-ink">Dashboard</h1>
       {error && <p className="mb-2 text-sm text-red-600">{error}</p>}
-      <div className="mb-4 flex items-center gap-3">
+      <div className="mb-4 flex flex-wrap items-center gap-3 rounded-lg border border-brand-ink-muted/10 bg-brand-surface p-3">
         <button
           onClick={toggleOnline}
-          className={`rounded px-3 py-2 text-sm text-white ${
-            online ? "bg-green-600" : "bg-brand-ink-muted/40"
+          className={`rounded-full px-4 py-2 text-sm text-white ${
+            isOnline ? "bg-green-600" : "bg-brand-ink-muted/40"
           }`}
         >
-          {online ? "Online" : "Offline"} — tap to toggle
+          {isOnline ? "Online" : "Offline"} — tap to toggle
         </button>
-        {online && (
-          <div className="flex gap-1 text-xs">
+        {isOnline && (
+          <div className="flex gap-2 text-xs">
             <input
-              className="w-20 rounded-lg border border-brand-ink-muted/20 px-1"
+              className="w-24 rounded-lg border border-brand-ink-muted/20 px-2 py-1"
               value={lat}
               onChange={(e) => setLat(e.target.value)}
             />
             <input
-              className="w-20 rounded-lg border border-brand-ink-muted/20 px-1"
+              className="w-24 rounded-lg border border-brand-ink-muted/20 px-2 py-1"
               value={lng}
               onChange={(e) => setLng(e.target.value)}
             />
@@ -180,58 +173,74 @@ export default function DeliveryDashboardPage() {
         )}
       </div>
 
-      <h2 className="mb-2 font-semibold text-brand-ink">Available orders</h2>
-      <ul className="mb-6 flex flex-col gap-2">
-        {available.map((o) => (
-          <li key={o.id} className="flex items-center justify-between rounded-lg border border-brand-ink-muted/10 bg-brand-surface p-2">
-            <span>
-              #{o.id.slice(0, 8)} · {o.stores?.name ?? "Restaurant"} · ₹{o.total.toFixed(2)}
-            </span>
-            <button
-              onClick={() => claim(o.id)}
-              className="rounded-full bg-brand-primary px-2 py-1 text-xs text-white"
-            >
-              Claim
-            </button>
-          </li>
-        ))}
-        {available.length === 0 && <p className="text-sm text-brand-ink-muted">None right now.</p>}
-      </ul>
-
-      <h2 className="mb-2 font-semibold text-brand-ink">Your deliveries</h2>
-      <ul className="flex flex-col gap-2">
-        {mine.map((o) => (
-          <li key={o.id} className="flex flex-col gap-1 rounded-lg border border-brand-ink-muted/10 bg-brand-surface p-2">
-            <div className="flex items-center justify-between">
-              <span>
-                #{o.id.slice(0, 8)} · {o.status} · ₹{o.total.toFixed(2)}
-              </span>
-              <div className="flex gap-2">
-                {(o.status === "assigned" || o.status === "picked_up") && (
-                  <button
-                    onClick={() => viewAddress(o.id)}
-                    className="rounded-lg border border-brand-ink-muted/20 px-2 py-1 text-xs"
-                  >
-                    View address
-                  </button>
-                )}
-                {NEXT_LABEL[o.status] && (
-                  <button
-                    onClick={() => advance(o.id)}
-                    className="rounded-full bg-brand-primary px-2 py-1 text-xs text-white"
-                  >
-                    {NEXT_LABEL[o.status]}
-                  </button>
-                )}
-              </div>
-            </div>
-            {addresses[o.id] && (
-              <p className="text-xs text-brand-ink-muted">{addresses[o.id]}</p>
+      <div className="grid gap-4 md:grid-cols-2">
+        <div>
+          <h2 className="mb-2 font-semibold text-brand-ink">Available orders</h2>
+          <ul className="flex flex-col gap-2">
+            {available.map((o) => (
+              <li
+                key={o.id}
+                className="flex items-center justify-between rounded-lg border border-brand-ink-muted/10 bg-brand-surface p-3"
+              >
+                <span>
+                  #{o.id.slice(0, 8)} · {o.stores?.name ?? "Restaurant"} · ₹{o.total.toFixed(2)}
+                </span>
+                <button
+                  onClick={() => claim(o.id)}
+                  className="rounded-full bg-brand-primary px-3 py-1 text-xs text-white"
+                >
+                  Claim
+                </button>
+              </li>
+            ))}
+            {available.length === 0 && (
+              <p className="text-sm text-brand-ink-muted">None right now.</p>
             )}
-          </li>
-        ))}
-        {mine.length === 0 && <p className="text-sm text-brand-ink-muted">No deliveries yet.</p>}
-      </ul>
+          </ul>
+        </div>
+
+        <div>
+          <h2 className="mb-2 font-semibold text-brand-ink">Your deliveries</h2>
+          <ul className="flex flex-col gap-2">
+            {mine.map((o) => (
+              <li
+                key={o.id}
+                className="flex flex-col gap-1 rounded-lg border border-brand-ink-muted/10 bg-brand-surface p-3"
+              >
+                <div className="flex items-center justify-between">
+                  <span>
+                    #{o.id.slice(0, 8)} · {o.status} · ₹{o.total.toFixed(2)}
+                  </span>
+                  <div className="flex gap-2">
+                    {(o.status === "assigned" || o.status === "picked_up") && (
+                      <button
+                        onClick={() => viewAddress(o.id)}
+                        className="rounded-full border border-brand-ink-muted/20 px-3 py-1 text-xs"
+                      >
+                        View address
+                      </button>
+                    )}
+                    {NEXT_LABEL[o.status] && (
+                      <button
+                        onClick={() => advance(o.id)}
+                        className="rounded-full bg-brand-primary px-3 py-1 text-xs text-white"
+                      >
+                        {NEXT_LABEL[o.status]}
+                      </button>
+                    )}
+                  </div>
+                </div>
+                {addresses[o.id] && (
+                  <p className="text-xs text-brand-ink-muted">{addresses[o.id]}</p>
+                )}
+              </li>
+            ))}
+            {mine.length === 0 && (
+              <p className="text-sm text-brand-ink-muted">No deliveries yet.</p>
+            )}
+          </ul>
+        </div>
+      </div>
     </div>
   );
 }
