@@ -26,8 +26,14 @@ for piece 1's full design (colors, fonts, shape rules every later piece
 inherits). Piece 2 added real `restaurants.delivery_fee_paise`/
 `promo_text` columns and wired checkout to them — see MEMORY.md's piece 2
 entry before assuming delivery fee is still a flat constant anywhere.
-Next follow-on work (not started): vendor/delivery/admin visual pass and
-the React Native + Expo mobile app — see MEMORY.md and HANDOFF_7.md.
+**Vendor/delivery/admin visual pass (complete):** a separate 3-sub-project
+pass giving the vendor, delivery-partner, and admin portals the same
+route-group-shell + restyled-layout treatment (sidebar/top-bar nav, tables/
+kanban instead of stacked plain lists), on the design tokens the Uber Eats
+redesign established. All 3 sub-projects merged to local `main`. See
+MEMORY.md for per-sub-project status, defects found, and fixes.
+Next follow-on work (not started): the React Native + Expo mobile app —
+see MEMORY.md and HANDOFF_7.md.
 
 ## Stack
 
@@ -155,6 +161,25 @@ See [MEMORY.md](MEMORY.md) for phase-by-phase progress and decisions.
   own Task 6 verification ran entirely via curl and missed a
   login-breaking RLS recursion bug that the final whole-branch review
   only caught by loading `/admin/login` in an actual browser.
+- **A client-side "shell" component providing shared session state
+  (`VendorShell`, `DeliveryShell`, `AdminShell`, or any future one) must
+  live in a Next.js route group that EXCLUDES that role's own login
+  page** (`app/<role>/(portal)/...` with `app/<role>/login` outside it) —
+  never in a layout applied to the whole top-level `app/<role>/` segment.
+  A layout persists across client-side navigation, so one that also wraps
+  login runs its session-resolving effect once too early (before a
+  session exists) and never again after redirecting away, which silently
+  produces two Critical bugs: an infinite post-login "Loading…" hang, and
+  stale session/role data shown after signing out and logging in as a
+  different account in the same browser tab. The vendor-portal visual
+  rebuild shipped this bug and only caught it in final whole-branch
+  review; the delivery- and admin-portal rebuilds baked the route-group
+  exclusion in from their first task instead and both final reviews
+  confirmed live (cleared-storage browser, fresh login, then sign-out +
+  re-login) that the bug class cannot occur. Any future per-role portal
+  work (the planned mobile app's web-facing admin/vendor surfaces, if
+  any, or a new role) should use this route-group structure from its
+  first task, not discover it via review.
 - **A "no `<a href>` tags exist" claim in MEMORY.md/CLAUDE.md is a
   snapshot, not a standing guarantee — re-grep before trusting it.** The
   post-Phase-8 triage recorded that claim after investigating a stale

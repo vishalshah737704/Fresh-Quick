@@ -1000,6 +1000,88 @@ Claude at the start of work in this repo per project CLAUDE.md.
   Spec: docs/superpowers/specs/2026-09-27-phase5-fresh-build-design.md
   Plan: docs/superpowers/plans/2026-09-27-phase5-fresh-build.md
 
+- **Vendor/delivery/admin visual pass**: ✅ Complete, merged to local
+  `main` (not yet pushed at time of this entry — pending explicit push
+  approval per project rule, unless already pushed by the time this is
+  read). Closes the "vendor/delivery/admin visual polish" item deferred
+  since the Uber Eats redesign's piece 1 spec. Three independent
+  sub-projects, each its own brainstorm → spec → plan →
+  `superpowers:subagent-driven-development` → merge cycle:
+  - **Sub-project 1 — Vendor portal** (`app/vendor/*`): sidebar/nav shell
+    (`VendorShell`), dashboard restructured into stat/settings cards,
+    orders rebuilt as a 4-column kanban board (Placed/Accepted/
+    Preparing/Ready, replacing the old filter-dropdown+sort-toggle flat
+    list), menu rebuilt as a table, login restyled. **Final whole-branch
+    review found 2 Critical bugs Task 1's own per-task review missed**:
+    the shell layout (`app/vendor/layout.tsx`) was mounted on ALL routes
+    including `/vendor/login`, and because that layout persists across
+    client-side navigation, (a) logging in left the portal stuck on
+    "Loading…" forever (the session-resolving effect had already run
+    once on the login page and never re-ran after redirecting away), and
+    (b) signing out and logging in as a different vendor in the same tab
+    showed the previous vendor's stale store data. Fixed by moving all
+    authenticated pages into a Next.js route group
+    (`app/vendor/(portal)/...`) so the shell only mounts for
+    authenticated routes and remounts fresh on every login. Also caught
+    in the same fix pass: the menu page had never been migrated off a
+    direct `useVendorSession()` call (Task 4 was scoped to JSX-only) and
+    was inconsistently restyled vs. the other pages.
+    Spec: docs/superpowers/specs/2026-09-27-vendor-portal-visual-rebuild-design.md
+    Plan: docs/superpowers/plans/2026-09-27-vendor-portal-visual-rebuild.md
+  - **Sub-project 2 — Delivery portal** (`app/delivery/*`): simple top-bar
+    shell (no sidebar — only one destination), dashboard rebuilt into a
+    two-column grid (Available orders | Your deliveries, stacking on
+    mobile), login restyled. **The route-group fix from sub-project 1 was
+    baked into Task 1 from the start this time** (`app/delivery/(portal)/...`,
+    login excluded) rather than discovered via a final-review bug — final
+    review independently re-verified live from a cleared-storage browser
+    that both the post-login hang and the cross-account stale-data bug
+    are structurally impossible here. One process note: Task 2's
+    implementer had no browser tool available and substituted curl/
+    code-reading as "verification" for UI-layout and interaction
+    behavior — correctly flagged as insufficient by this project's
+    established "logic-replication ≠ live verification" standard; a
+    follow-up review with real browser access closed 3 of 4 gaps live,
+    and the 4th (claim/advance/view-address flow) was closed by a
+    dedicated verification-only dispatch that seeded one test order
+    (with Vishal's explicit approval, since it required a DB write),
+    exercised the full flow live, and cleaned up afterward.
+    Spec: docs/superpowers/specs/2026-09-27-delivery-portal-visual-rebuild-design.md
+    Plan: docs/superpowers/plans/2026-09-27-delivery-portal-visual-rebuild.md
+  - **Sub-project 3 — Admin portal** (`app/admin/*`): same top-bar shell
+    pattern as delivery, dashboard rebuilt from 3 stacked plain-text lists
+    into a tab bar (Orders/Restaurants/Delivery partners) with each panel
+    a table, login restyled. Route-group fix present from Task 1 again;
+    final review re-confirmed live from a cleared-storage browser (only
+    one seeded admin account exists project-wide, so the cross-account
+    check that vendor/delivery could exercise isn't available here — a
+    single-account cold-login check was accepted as sufficient since the
+    route-group file structure itself is what prevents the bug class).
+    Same reassign-flow verification pattern as delivery's claim flow: the
+    admin order-reassign dropdown+POST was unexercised in Task 2 (no
+    reassignable order in seed data), closed via an approved one-off
+    DB-seed verification pass, confirmed working, cleaned up.
+    Spec: docs/superpowers/specs/2026-09-27-admin-portal-visual-rebuild-design.md
+    Plan: docs/superpowers/plans/2026-09-27-admin-portal-visual-rebuild.md
+  - **New standing lesson (added to project CLAUDE.md)**: a shell/layout
+    component providing shared session state must live in a route group
+    that excludes the login page, never in a layout applied to the whole
+    top-level route segment — a layout persists across client-side
+    navigation, so one that includes login will run its session-resolving
+    effect once too early and never again, and will hold stale state
+    across a sign-out/sign-in-as-different-account cycle in the same tab.
+  - Minor deferred items noted across the three final reviews, none
+    blocking: vendor login lost its branded input focus-ring class in a
+    literal-brief restyle; sidebar/top-bar online-status badges use the
+    same color for both online/offline states in a couple of places
+    (cosmetic parity with existing patterns); admin's 3 tab labels wrap
+    at 390px width (no page-level overflow, just a taller tab bar);
+    `AdminSessionContext`'s `adminId`/`loading` fields have no current
+    consumer (spec-sanctioned parity with vendor/delivery, kept for
+    future use); a few pre-existing `react-hooks/set-state-in-effect`
+    ESLint errors were carried over unchanged from before this pass
+    (build unaffected).
+
 ## Key decisions carried forward (see spec §2 for full list)
 
 - Self-hosted Supabase only, no cloud project.
