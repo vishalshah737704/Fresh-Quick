@@ -1924,3 +1924,53 @@ Dual-Band WiFi Router
 Extension Board with USB Ports
 Cable Organizer Box
 Screen Cleaning Kit
+Smart Electric Kettle
+Air Fryer 4L
+Microwave Oven 20L
+Induction Cooktop
+Sandwich Maker Grill
+Toaster Oven 16L
+Juicer Mixer Grinder
+Electric Rice Cooker 1.8L
+Electric Hand Mixer
+Electric Vegetable Chopper
+Drip Coffee Maker
+Electric Egg Boiler
+Multi-Function Instant Pot
+Electric Tandoor
+Food Dehydrator
+Travel Steel Kettle
+Travel Hair Dryer Compact
+Travel Hair Straightener
+Travel Electric Shaver
+Travel Beard Trimmer
+Smart WiFi LED Bulb
+Smart WiFi Plug
+Smart Video Doorbell
+Home CCTV Camera
+Video Baby Monitor
+Smart Door Lock
+Room Air Purifier
+Room Humidifier
+Room Dehumidifier
+Electric Room Heater
+Electric Table Fan
+Electric Tower Fan
+Wall-Mount Exhaust Fan
+Instant Water Heater
+Steam Iron
+Robot Vacuum Cleaner
+Electric Steam Mop
+Electric Fly Swatter
+Electric Mosquito Killer Machine
+Digital Photo Frame
+Mini Home Projector
+Portable Air Conditioner
+Electric Blanket Single
+Massage Chair Pad
+Electric Neck Massager
+Smart Body Weighing Scale
+Digital Kitchen Scale
+Electric Milk Frother
+Grill Sandwich Toaster
+Portable USB Blender Bottle
