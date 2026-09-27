@@ -56,7 +56,7 @@ export default function VendorShell({ children }: { children: React.ReactNode })
           <span className="font-heading text-lg text-brand-ink">Vendor</span>
           <button
             onClick={() => setDrawerOpen(!drawerOpen)}
-            className="rounded-lg border border-brand-ink-muted/20 px-3 py-1 text-sm"
+            className="rounded-full border border-brand-ink-muted/20 px-3 py-1 text-sm"
           >
             Menu
           </button>
@@ -84,7 +84,7 @@ export default function VendorShell({ children }: { children: React.ReactNode })
           ))}
           <button
             onClick={signOut}
-            className="mt-auto rounded-lg px-3 py-2 text-left text-sm text-brand-ink-muted hover:bg-brand-accent/10"
+            className="mt-auto rounded-full px-3 py-2 text-left text-sm text-brand-ink-muted hover:bg-brand-accent/10"
           >
             Sign out
           </button>
