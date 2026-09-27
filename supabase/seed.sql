@@ -3021,7 +3021,7 @@ insert into public.products (id, store_id, name, description, price, category, p
   ('d0300000-4444-4444-4444-000000000050', 'd0300000-3333-3333-3333-333333333333', 'Pet Grooming Table', 'Adjustable-height grooming table', 3450.50, 'Grooming & Health', '{}'::jsonb, true, 'https://images.pexels.com/photos/6816847/pexels-photo-6816847.jpeg?auto=compress&cs=tinysrgb&h=650&w=940')
 on conflict (id) do nothing;
 
-insert into public.products (id, store_id, name, description, price_paise, category, product_attributes, is_available, image_url)
+insert into public.products (id, store_id, name, description, price, category, product_attributes, is_available, image_url)
 values
   ('d0400000-4444-4444-4444-000000000001', 'd0400000-3333-3333-3333-333333333333', 'Weight Management Dog Food 3kg', 'Low-calorie weight management kibble', 950.50, 'Pet Food', '{}'::jsonb, true, 'https://images.pexels.com/photos/10994727/pexels-photo-10994727.jpeg?auto=compress&cs=tinysrgb&h=650&w=940'),
   ('d0400000-4444-4444-4444-000000000002', 'd0400000-3333-3333-3333-333333333333', 'Hypoallergenic Dog Food 3kg', 'Limited-ingredient hypoallergenic food', 1250.00, 'Pet Food', '{}'::jsonb, true, 'https://images.pexels.com/photos/17786589/pexels-photo-17786589.jpeg?auto=compress&cs=tinysrgb&h=650&w=940'),
