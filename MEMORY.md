@@ -1120,6 +1120,84 @@ Claude at the start of work in this repo per project CLAUDE.md.
     files) and implemented directly after a short in-chat design +
     screenshot approval, per that skill's bounded-path process.
 
+- **Account-scoped cart persistence**: ✅ Complete, merged to local `main`
+  (commit `669eef3`). Full spec/plan/subagent-driven-development cycle,
+  requested after Vishal noticed the cart persisted across reload even
+  when logged out. New `carts` table (owner-scoped RLS, select-only —
+  see below), `GET`/`PUT /api/cart` routes, and a full rewrite of
+  `lib/cart-store.tsx` dropping all `localStorage` use:
+  - **Anonymous**: cart lives in memory only, never survives a reload.
+  - **Logged in**: cart loads from/saves to the server, follows the
+    account across devices. Debounced save (500ms) on every mutation.
+  - **Login-time merge rule**: if the account has an existing saved
+    server cart, it wins (in-memory/anonymous cart discarded); if not,
+    the in-progress cart (anonymous or otherwise) becomes the account's
+    saved cart.
+  - **Account switch in the same tab** (login A, then login B without A
+    signing out — the realistic path today since there's no customer
+    sign-out UI, see below) clears in-memory state before reconciling B,
+    so A's cart/order-note never leaks into B.
+  - Final whole-branch review (Opus) found 3 Important issues beyond
+    what the 3 per-task reviews caught:
+    1. **RLS design mistake of the controller's own spec**: the spec
+       assumed the client would write directly to `carts`, so it
+       specified 4 owner-scoped RLS policies (select/insert/update/
+       delete). The actual implementation correctly routes all writes
+       through the service-role-backed `PUT /api/cart` route instead —
+       meaning the 3 write policies were never used by legitimate code,
+       but Supabase's default grants still let `authenticated`/`anon`
+       hit them directly via PostgREST, bypassing the route's payload
+       validation. This is the exact "unused RLS write policy = live
+       PostgREST bypass" pattern this file's standing rules already
+       warn about (see the Phase 4/5/6 `menu_items`/`delivery_partners`
+       history) — caught here because the migration hadn't merged to
+       `main` yet, so it was fixed in-branch rather than needing a
+       separate closing migration. Fixed by dropping the 3 write
+       policies, keeping only the select policy.
+    2. A failed `GET /api/cart` was treated identically to "no server
+       cart exists yet," risking a transient network blip pushing a
+       stale/anonymous cart over a real server cart — fixed by making
+       the fetch result 3-state (found/none/error), with "error" never
+       triggering a save-over.
+    3. The account-switch leakage described above (found on this exact
+       review, not caught by any per-task review since none of them
+       tested a same-tab A→B login without a logout in between).
+    The fix wave (one dispatch, per this project's "one fix wave, not
+    one per finding" convention) also added two defenses beyond what was
+    asked: a `reconciledFor` "save gate" (saves blocked until the
+    current user's cart has genuinely reconciled from the server) and an
+    "account check on save" (a pending save silently no-ops if the live
+    session has already switched to a different user by the time it
+    fires) — both independently re-verified in the scoped re-review.
+  - **New standing lesson**: a per-task review approving RLS SQL against
+    its own migration's stated intent is not sufficient — the final
+    whole-branch review must also check what the REST of the codebase
+    actually does with that table (does anything really write to it the
+    way the policy assumes?), since a table's RLS design can be
+    internally consistent and still wrong once you see how it's really
+    used.
+  - **Known gap, not fixed here (flagged as a required fast-follow, not
+    a merge-blocker since the account-switch leakage that made it acute
+    was fixed)**: there is no sign-out UI anywhere in the customer-facing
+    app — `components/SidebarNav.tsx`'s Sign In/Sign Up links render
+    unconditionally, not gated on session state, and nothing in
+    `app/customer/**` calls `supabase.auth.signOut()` for a customer
+    (unlike the vendor/delivery/admin shells, which all have one). A
+    logged-in customer today can only "switch accounts" by logging into
+    a different one over the same session — exactly the path the
+    account-switch fix above had to defend against. Worth its own
+    bounded task: make `SidebarNav`'s Sign In/Sign Up session-aware,
+    showing a Sign Out action when a session exists.
+  - Other deferred minors, non-blocking: a mutation made in the last
+    500ms before logout/account-switch/checkout's `clearCart()` can be
+    dropped rather than flushed (debounce timer is cleared, not fired,
+    on unmount); `saveServerCart` failures are currently silent (no
+    error surfaced to the user or console); `/api/cart`'s PUT validates
+    only the top-level payload shape (array/string/string-or-null), not
+    per-item structure or a size cap.
+  Spec: docs/superpowers/specs/2026-09-27-account-scoped-cart-persistence-design.md
+  Plan: docs/superpowers/plans/2026-09-27-account-scoped-cart-persistence.md
+
 ## Key decisions carried forward (see spec §2 for full list)
 
 - Self-hosted Supabase only, no cloud project.

@@ -120,7 +120,16 @@ See [MEMORY.md](MEMORY.md) for phase-by-phase progress and decisions.
   chain or create their own orderable restaurant. Only add an RLS write
   policy for a table a client is actually meant to write to directly; read
   policies are fine since they're the intended defense layer for session-
-  scoped browser reads.
+  scoped browser reads. Recurred a fourth time in the customer cart
+  persistence feature — this time the *spec itself* (not just the
+  migration) assumed direct client writes, then the actual implementation
+  correctly routed writes through a service-role API route instead,
+  leaving the spec's 3 write policies live and unused. A per-task review
+  approving RLS SQL against its own migration's stated intent is not
+  enough — the final whole-branch review must also check what the rest
+  of the codebase actually does with that table, since a self-consistent
+  RLS design can still be wrong once you see how it's really used. Caught
+  before merge only because the migration hadn't shipped to `main` yet.
 - **When adding RLS policies to a table in a new migration, first list
   every EXISTING policy on that table (`select * from pg_policies where
   tablename = '...'`, or just grep every prior migration file for the
