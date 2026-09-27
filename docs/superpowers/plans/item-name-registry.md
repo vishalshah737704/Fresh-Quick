@@ -1874,3 +1874,53 @@ Pimple Patches Box 36pc
 Clay Mask Bar
 Vitamin C Face Wash 100ml
 Hydrating Gel Moisturizer 100g
+Budget Smartphone 64GB
+Silicone Phone Case
+Tempered Glass Screen Protector
+USB-C Charging Cable 1m
+20W Wall Charger Adapter
+Car Phone Charger Dual Port
+Wireless Charging Pad
+Power Bank 10000mAh
+Phone PopSocket Grip
+Phone Ring Holder
+Phone Tripod Stand
+Selfie Stick with Remote
+Bluetooth Earbuds TWS
+Wired Earphones with Mic
+Over-Ear Headphones
+Neckband Bluetooth Earphones
+Portable Bluetooth Speaker
+Soundbar 2.1 Channel
+5.1 Home Theater System
+Wireless Karaoke Microphone
+14-inch Laptop Intel i3
+Laptop Sleeve Bag 14-inch
+Wireless Mouse
+Wired USB Mouse
+Mechanical Keyboard
+Laptop Cooling Pad
+HD Webcam 1080p
+4-Port USB Hub
+External Hard Drive 1TB
+USB Pen Drive 64GB
+MicroSD Card 128GB
+Adjustable Laptop Stand
+24-inch Full HD Monitor
+HDMI Cable 2m
+USB-C to USB-C Cable
+USB-C Hub Multiport Adapter
+Fitness Smartwatch
+Fitness Band
+Smart Ring Tracker
+4K Action Camera
+Flexible Tripod Camera Stand
+LED Ring Light with Stand
+Wireless Gaming Controller
+Gaming Headset with Mic
+Graphic Drawing Tablet
+Inkjet All-in-One Printer
+Dual-Band WiFi Router
+Extension Board with USB Ports
+Cable Organizer Box
+Screen Cleaning Kit
