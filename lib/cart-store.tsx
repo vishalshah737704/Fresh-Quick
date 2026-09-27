@@ -102,7 +102,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
     if (!userId) {
       // Logged out (or never logged in): clear in-memory cart, no server calls.
       if (wasLoggedIn) {
-        skipNextSave.current = true;
         setItems([]);
         setStoreId(null);
         setStoreName(null);
@@ -113,6 +112,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
 
     // Logged in (fresh login or session already existed on mount): reconcile with server.
+    // Set this synchronously, before the async fetch below, so the sibling
+    // debounced-save effect's very next run (triggered by this same userId
+    // change) skips its save instead of racing ahead of reconciliation and
+    // clobbering a real server cart with whatever's in memory anonymously.
+    skipNextSave.current = true;
     let cancelled = false;
     (async () => {
       const serverCart = await fetchServerCart();
