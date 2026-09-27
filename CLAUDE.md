@@ -382,6 +382,25 @@ See [MEMORY.md](MEMORY.md) for phase-by-phase progress and decisions.
   should say this explicitly, and a task's own verification step should
   re-check the counts of stores/rows it did NOT intend to touch, not just
   the one it added.
+- **The "never edit another store's already-committed row" rule above
+  also applies when a task is trying to FIX its own image_url collision
+  — the fix must always be "fetch a new photo for MY OWN colliding row,"
+  never "edit the other store's row that happens to share the photo."**
+  Sub-project D's Task 12 (the last store task) tried to resolve its own
+  collisions by directly editing 7 rows across 5 unrelated already-
+  committed stores, then got confused mid-fix and corrupted its own
+  uncommitted edits with a botched `sed` pass, going BLOCKED. Recovery:
+  since the corrupted edits were entirely uncommitted in an isolated
+  worktree (nothing pushed or shared), the controller safely discarded
+  them with `git checkout -- <file>` and applied the fix directly rather
+  than re-dispatching a subagent into the same confusion — restore every
+  wrongly-touched row to its exact prior committed content via `git show
+  <prior-commit>:<file>`, then re-fetch only the offending task's own
+  colliding photos. **When an implementer subagent reports BLOCKED after
+  corrupting its own uncommitted work, check `git status`/`git diff
+  --stat` first — if the damage is small and entirely uncommitted, the
+  controller can discard and reapply the fix directly instead of treating
+  it as an unrecoverable failure.**
 
 ## Standing phrase: "Commit Work" — NON-NEGOTIABLE
 

@@ -925,6 +925,81 @@ Claude at the start of work in this repo per project CLAUDE.md.
   Spec: docs/superpowers/specs/2026-09-26-phase4-redo-design.md
   Plan: docs/superpowers/plans/2026-09-26-phase4-redo.md
 
+- **Phase 5 Fresh Build (sub-project D of the 50-unique-items redesign,
+  the FINAL sub-project)**: ✅ Complete. This closes out the entire
+  "50+ unique items per store" content redesign started in sub-project A.
+  12 brand-new stores across 3 categories never seeded before — Pet,
+  Flowers, Baby (4 stores each) — each built entirely from scratch (no
+  prior data of any kind, unlike B/C) with a fresh, fully unique,
+  hand-curated 50-item catalog (600 new rows total). Vendor accounts,
+  addresses, and store rows were all created new in Task 0 (UUID prefix
+  block `d01`-`d0c`). `is_veg`/`product_attributes` is `{}'::jsonb` on
+  every row (no veg/non-veg concept for these categories), and prices
+  continue sub-project C's decimal-rupees.paise convention. Registry grew
+  from 2,076 to 2,676 lines. Executed via
+  `superpowers:subagent-driven-development` in worktree
+  `.claude/worktrees/phase5-fresh-build`, one Haiku implementer + Sonnet
+  reviewer per store; final whole-branch review used Opus.
+  - **This was the roughest sub-project of the four** — nearly every one
+    of the 12 store tasks needed a fix round:
+    - Task 1 (Paws & Claws) shipped all 50 prices as ×100 integer paise
+      instead of decimal — the exact pricing-scale defect class this
+      whole redesign has warned against since sub-project A, recurring
+      here despite explicit dispatch warnings.
+    - Task 4 (Whiskers & Wags) used a non-existent column name
+      (`price_paise` instead of `price`) in its INSERT statement — a
+      new defect class not seen in prior sub-projects. This would have
+      made `npx supabase db reset` fail outright and abort the whole
+      seed file; the implementer's own report never actually confirmed
+      running the reset command, so it went undetected until task review.
+    - **Cross-task image_url collisions remained the dominant defect**,
+      worse than sub-project C: real collisions were found in Tasks 2, 3,
+      9 (6 collisions), and 11 (10 collisions in a single task — the
+      worst single-task count across all four sub-projects), because
+      Pet/Baby items share heavily overlapping search terms across their
+      4 stores per category. Every dispatch was given a literal
+      copy-pasteable whole-file grep command from early on; it still
+      wasn't enough on its own.
+    - **A severe scope-violation regression**: Task 12 (Cuddle & Co., the
+      LAST store task) tried to fix its own image collisions by directly
+      editing 7 already-committed rows across 5 *other*, unrelated stores
+      (Skincare, Electronics, Pet, and 2 other Baby stores) — a direct
+      violation of the "always append a new insert, never edit an
+      existing one" rule established after sub-project C's Task 10
+      regression. The implementer then got confused mid-fix and corrupted
+      its own uncommitted edits with a botched `sed` pass, going BLOCKED.
+      The controller discarded the corrupted uncommitted diff directly
+      (safe: nothing had been pushed or shared, isolated worktree),
+      manually reverted all 7 other-store rows to their exact prior
+      committed values via `git show`, then fetched and verified fresh
+      unique photos for Cuddle & Co.'s own remaining collisions. An
+      independent re-review confirmed net-zero impact on the 5 other
+      stores and full spec compliance for Cuddle & Co.
+    - **Final whole-branch review caught 2 more defects** every individual
+      task review missed: a name collision (Little Steps' "Baby Nasal
+      Aspirator" duplicated an existing sub-project-C MedPlus Pharmacy
+      item — renamed to "Silicone Baby Nose Aspirator"), and a registry
+      formatting bug where 100 flower-store lines had picked up a stray
+      `"- "` bullet prefix that silently hid them from `sort | uniq -d`
+      exact-match duplicate detection in every prior task's own check.
+  - **New standing lesson**: a task must NEVER edit another store's
+    already-committed row for any reason, including "fixing" a collision
+    it caused — always fetch a new photo for your OWN colliding row
+    instead. If an implementer subagent gets confused mid-fix and starts
+    corrupting its own uncommitted edits, the controller can safely
+    discard uncommitted changes in an isolated worktree directly (nothing
+    lost, nothing shared) rather than have the subagent attempt risky
+    recovery itself.
+  - Non-blocking note: `components/MenuItemRow.tsx` renders a red
+    non-veg indicator dot on every item lacking `is_veg` in
+    `product_attributes` — true of all 600 new Pet/Flowers/Baby rows by
+    design (and of sub-project C's Retail/Personal Care/Electronics rows
+    too). Pre-existing UI component gap, not a data problem; worth a
+    future UI pass to only show the dot for restaurant/Health-category
+    items where veg/non-veg is meaningful.
+  Spec: docs/superpowers/specs/2026-09-27-phase5-fresh-build-design.md
+  Plan: docs/superpowers/plans/2026-09-27-phase5-fresh-build.md
+
 ## Key decisions carried forward (see spec §2 for full list)
 
 - Self-hosted Supabase only, no cloud project.
