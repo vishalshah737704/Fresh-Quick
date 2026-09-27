@@ -2524,3 +2524,53 @@ Crib Mattress
 Fitted Crib Sheet
 Digital Baby Thermometer
 Baby Nasal Aspirator
+Toddler Spout Sippy Cup
+Toddler Snack Cup
+Baby-Led Weaning Spoon Set
+Silicone Toddler Bib
+Baby Food Maker Blender
+Electric Breast Pump
+Breast Milk Storage Bags 50pk
+Baby Bottle Brush
+Toddler Booster Seat
+Foldable Travel High Chair
+Reusable Cloth Diapers Set 5pk
+Diaper Disposal Pail
+Baby Wet Bag
+Swim Diapers 12pk
+Baby Sunscreen SPF 50
+Baby Mosquito Repellent Patch
+Toddler Pajama Set
+Baby Girl Dress
+Soft-Sole Baby Shoes
+Toddler First-Walker Shoes
+Baby Sun Hat
+Baby Swimwear Set
+Baby Bathrobe
+Hooded Baby Towel
+White Noise Sleep Machine
+Baby Room Thermometer
+Blackout Curtains for Nursery
+Diaper Stacker
+Wooden Building Blocks Set
+Shape Sorter Toy
+Wooden Toddler Puzzle
+Musical Toy Piano
+Cloth Baby Book
+Board Book Set 5pk
+Ride-On Toy
+Push Walker Toy
+Baby Bouncer Seat
+Electric Baby Swing
+Foam Playmat Tiles Set
+Doorway Baby Jumper
+Diaper Changing Table
+Baby Wardrobe Organizer
+Baby Clothes Hangers Set 20pk
+Baby Laundry Detergent 1L
+Baby Fabric Softener 1L
+Baby Clothes Stain Remover
+Baby Food Steamer Blender
+Toddler Fork and Spoon Set
+Silicone Baby Placemat
+Baby Snack Container Set
