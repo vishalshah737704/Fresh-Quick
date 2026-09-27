@@ -3336,7 +3336,7 @@ insert into public.products (id, store_id, name, description, price, category, p
   ('d0900000-4444-4444-4444-000000000047', 'd0900000-3333-3333-3333-333333333333', 'Crib Mattress', 'Breathable foam crib mattress', 3450.75, 'Nursery & Safety', '{}'::jsonb, true, 'https://images.pexels.com/photos/7491094/pexels-photo-7491094.jpeg?auto=compress&cs=tinysrgb&h=650&w=940'),
   ('d0900000-4444-4444-4444-000000000048', 'd0900000-3333-3333-3333-333333333333', 'Fitted Crib Sheet', 'Soft cotton fitted crib sheet', 450.00, 'Nursery & Safety', '{}'::jsonb, true, 'https://images.pexels.com/photos/4347500/pexels-photo-4347500.jpeg?auto=compress&cs=tinysrgb&h=650&w=940'),
   ('d0900000-4444-4444-4444-000000000049', 'd0900000-3333-3333-3333-333333333333', 'Digital Baby Thermometer', 'Fast no-touch baby thermometer', 380.50, 'Diapering & Bath', '{}'::jsonb, true, 'https://images.pexels.com/photos/7946798/pexels-photo-7946798.jpeg?auto=compress&cs=tinysrgb&h=650&w=940'),
-  ('d0900000-4444-4444-4444-000000000050', 'd0900000-3333-3333-3333-333333333333', 'Baby Nasal Aspirator', 'Gentle nasal mucus aspirator', 220.00, 'Diapering & Bath', '{}'::jsonb, true, 'https://images.pexels.com/photos/16579303/pexels-photo-16579303.jpeg?auto=compress&cs=tinysrgb&h=650&w=940')
+  ('d0900000-4444-4444-4444-000000000050', 'd0900000-3333-3333-3333-333333333333', 'Silicone Baby Nose Aspirator', 'Gentle nasal mucus aspirator', 220.00, 'Diapering & Bath', '{}'::jsonb, true, 'https://images.pexels.com/photos/16579303/pexels-photo-16579303.jpeg?auto=compress&cs=tinysrgb&h=650&w=940')
 on conflict (id) do nothing;
 
 insert into public.products (id, store_id, name, description, price, category, product_attributes, is_available, image_url) values
