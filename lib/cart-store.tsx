@@ -1,6 +1,8 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { createContext, useContext, useEffect, useRef, useState, ReactNode } from "react";
+import { supabase } from "@/lib/supabase";
+import { useSession } from "@/lib/auth";
 
 export type SelectedOption = {
   groupId: string;
@@ -48,127 +50,105 @@ type CartContextValue = {
 
 const CartContext = createContext<CartContextValue | null>(null);
 
-const STORAGE_KEY = "foodhub_cart";
+export function buildLineId(menuItemId: string, selectedOptions: SelectedOption[]): string {
+  const optionIds = selectedOptions.map((o) => o.optionId).sort();
+  return `${menuItemId}::${optionIds.join(",")}`;
+}
 
-type StoredCart = {
+type ServerCart = {
   storeId: string | null;
   storeName: string | null;
   items: CartItem[];
   orderNote: string;
 };
 
-export function buildLineId(menuItemId: string, selectedOptions: SelectedOption[]): string {
-  const optionIds = selectedOptions.map((o) => o.optionId).sort();
-  return `${menuItemId}::${optionIds.join(",")}`;
+async function authHeader(): Promise<Record<string, string>> {
+  const { data } = await supabase.auth.getSession();
+  return { Authorization: `Bearer ${data.session?.access_token ?? ""}` };
 }
 
-// Accepts both the current shape and the pre-piece-4 shape (menuItemId/
-// name/price/quantity only) so an in-progress customer cart already in
-// localStorage survives this deploy instead of being wiped.
-function normalizeStoredItem(raw: Record<string, unknown>): CartItem | null {
-  if (
-    typeof raw.menuItemId !== "string" ||
-    typeof raw.name !== "string" ||
-    typeof raw.price !== "number" ||
-    typeof raw.quantity !== "number" ||
-    raw.quantity <= 0
-  ) {
-    return null;
-  }
-  const selectedOptions: SelectedOption[] = Array.isArray(raw.selectedOptions)
-    ? (raw.selectedOptions as unknown[]).filter(
-        (o): o is SelectedOption =>
-          o !== null &&
-          typeof o === "object" &&
-          typeof (o as Record<string, unknown>).groupId === "string" &&
-          typeof (o as Record<string, unknown>).groupName === "string" &&
-          typeof (o as Record<string, unknown>).optionId === "string" &&
-          typeof (o as Record<string, unknown>).optionName === "string" &&
-          typeof (o as Record<string, unknown>).priceDeltaPaise === "number"
-      )
-    : [];
-  const specialInstructions =
-    typeof raw.specialInstructions === "string" ? raw.specialInstructions : null;
-  const imageUrl = typeof raw.imageUrl === "string" ? raw.imageUrl : null;
-  const lineId =
-    typeof raw.lineId === "string" ? raw.lineId : buildLineId(raw.menuItemId, selectedOptions);
-  return {
-    lineId,
-    menuItemId: raw.menuItemId,
-    name: raw.name,
-    price: raw.price,
-    quantity: raw.quantity,
-    imageUrl,
-    selectedOptions,
-    specialInstructions,
-  };
+async function fetchServerCart(): Promise<ServerCart | null> {
+  const res = await fetch("/api/cart", { headers: await authHeader() });
+  if (!res.ok) return null;
+  const body = await res.json();
+  return body.cart ?? null;
 }
 
-function loadStoredCart(): StoredCart {
-  if (typeof window === "undefined") {
-    return { storeId: null, storeName: null, items: [], orderNote: "" };
-  }
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return { storeId: null, storeName: null, items: [], orderNote: "" };
-    const parsed = JSON.parse(raw);
-    if (!parsed || typeof parsed !== "object") {
-      return { storeId: null, storeName: null, items: [], orderNote: "" };
-    }
-    // Fall back to the pre-rename field names (restaurantId/restaurantName)
-    // so a cart saved in a browser before the stores/products rename shipped
-    // isn't silently wiped. Reading only — new writes still use storeId/storeName.
-    const storeIdRaw = "storeId" in parsed ? parsed.storeId : parsed.restaurantId;
-    const storeNameRaw = "storeName" in parsed ? parsed.storeName : parsed.restaurantName;
-    if (
-      !(storeIdRaw === null || storeIdRaw === undefined || typeof storeIdRaw === "string") ||
-      !(storeNameRaw === null || storeNameRaw === undefined || typeof storeNameRaw === "string") ||
-      !Array.isArray(parsed.items)
-    ) {
-      return { storeId: null, storeName: null, items: [], orderNote: "" };
-    }
-    const items = (parsed.items as unknown[])
-      .map((i) =>
-        i !== null && typeof i === "object"
-          ? normalizeStoredItem(i as Record<string, unknown>)
-          : null
-      )
-      .filter((i): i is CartItem => i !== null);
-    const orderNote = typeof parsed.orderNote === "string" ? parsed.orderNote : "";
-    return { storeId: storeIdRaw ?? null, storeName: storeNameRaw ?? null, items, orderNote };
-  } catch {
-    return { storeId: null, storeName: null, items: [], orderNote: "" };
-  }
+async function saveServerCart(cart: ServerCart): Promise<void> {
+  await fetch("/api/cart", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...(await authHeader()) },
+    body: JSON.stringify(cart),
+  });
 }
 
 export function CartProvider({ children }: { children: ReactNode }) {
+  const { userId, loading: sessionLoading } = useSession();
   const [storeId, setStoreId] = useState<string | null>(null);
   const [storeName, setStoreName] = useState<string | null>(null);
   const [items, setItems] = useState<CartItem[]>([]);
   const [orderNote, setOrderNoteState] = useState("");
   const [pendingConflict, setPendingConflict] = useState<PendingConflict>(null);
-  const [hydrated, setHydrated] = useState(false);
+  const previousUserId = useRef<string | null | undefined>(undefined);
+  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const skipNextSave = useRef(false);
 
+  // Handle login/logout/mount transitions.
   useEffect(() => {
-    const stored = loadStoredCart();
-    setStoreId(stored.storeId);
-    setStoreName(stored.storeName);
-    setItems(stored.items);
-    setOrderNoteState(stored.orderNote);
-    setHydrated(true);
-  }, []);
+    if (sessionLoading) return;
+    const wasLoggedIn = previousUserId.current;
+    previousUserId.current = userId;
 
-  useEffect(() => {
-    if (!hydrated) return;
-    try {
-      window.localStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify({ storeId, storeName, items, orderNote })
-      );
-    } catch {
-      // localStorage unavailable (private mode, quota) — cart just won't persist
+    if (!userId) {
+      // Logged out (or never logged in): clear in-memory cart, no server calls.
+      if (wasLoggedIn) {
+        skipNextSave.current = true;
+        setItems([]);
+        setStoreId(null);
+        setStoreName(null);
+        setOrderNoteState("");
+        setPendingConflict(null);
+      }
+      return;
     }
-  }, [storeId, storeName, items, orderNote, hydrated]);
+
+    // Logged in (fresh login or session already existed on mount): reconcile with server.
+    let cancelled = false;
+    (async () => {
+      const serverCart = await fetchServerCart();
+      if (cancelled) return;
+      if (serverCart) {
+        skipNextSave.current = true;
+        setStoreId(serverCart.storeId);
+        setStoreName(serverCart.storeName);
+        setItems(serverCart.items);
+        setOrderNoteState(serverCart.orderNote);
+      } else {
+        // No saved cart yet — persist whatever's in memory (anonymous cart in progress, or empty).
+        await saveServerCart({ storeId, storeName, items, orderNote });
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId, sessionLoading]);
+
+  // Debounced save on every mutation, only while logged in.
+  useEffect(() => {
+    if (!userId) return;
+    if (skipNextSave.current) {
+      skipNextSave.current = false;
+      return;
+    }
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    saveTimer.current = setTimeout(() => {
+      saveServerCart({ storeId, storeName, items, orderNote });
+    }, 500);
+    return () => {
+      if (saveTimer.current) clearTimeout(saveTimer.current);
+    };
+  }, [userId, storeId, storeName, items, orderNote]);
 
   function addItemDirect(sId: string, sName: string, item: NewCartItem) {
     const lineId = buildLineId(item.menuItemId, item.selectedOptions);
