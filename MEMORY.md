@@ -1224,7 +1224,37 @@ Claude at the start of work in this repo per project CLAUDE.md.
   (customer home/restaurant/cart/checkout flow, vendor/delivery/admin
   portals), with screenshots captured from a local dev run. Generated with
   docx-js; not auto-regenerated — re-run manually and re-screenshot if the
-  UI changes significantly enough to make it stale.
+  UI changes significantly enough to make it stale. **Regenerated
+  2026-09-27** (12 pages) after the vendor/delivery/admin visual pass —
+  Vendor/Delivery/Admin sections rewritten to describe the new
+  sidebar/top-bar + kanban/two-column/tabbed UI, plus a new "Non-Restaurant
+  Categories" subsection with a grocery-store example. Seed data has no
+  orders by default, so the order-tracking screens (vendor kanban, admin
+  Orders tab, delivery available/mine columns) were screenshotted against
+  one manually-seeded demo order (advanced through its real status chain
+  via the actual UI buttons, then deleted afterward — never touched
+  `seed.sql`) rather than shipping misleading empty-state screenshots.
+- `docs/UserList.docx` — test account reference for all seeded logins.
+  **Regenerated 2026-09-27** (3 pages) to cover all 60 accounts now in
+  `seed.sql` (previously only listed the original 20): 4 core role
+  accounts, 16 restaurant vendors, and 40 non-restaurant marketplace
+  vendors across 10 categories (Grocery, Convenience, Alcohol, Health,
+  Retail, Pet, Flowers, Baby, Personal Care, Electronics — 4 stores
+  each), pulled live from the DB rather than hand-transcribed. Same
+  "not auto-regenerated" caveat — re-run if `seed.sql`'s account list
+  changes again.
+- **Rendering a `.docx` to check it visually on this machine needs
+  LibreOffice + Poppler (`choco install libreoffice-fresh poppler`,
+  requires an elevated/admin shell — a non-elevated `choco install` fails
+  on a lock-file permission error that looks like a stale-lock message
+  but is actually the admin-rights requirement), and the `docx` skill's
+  own `soffice.py` wrapper is currently broken on this Windows Python
+  (`socket.AF_UNIX` doesn't exist here) — call `soffice.exe` directly**
+  (e.g. `"/c/Program Files/LibreOffice/program/soffice.exe" --headless
+  --convert-to pdf <file>.docx`) **and `pdftoppm` from
+  `C:\ProgramData\chocolatey\lib\poppler\tools`** (both get shimmed onto
+  PATH by chocolatey) rather than relying on the skill's wrapper script.
+  Both packages are now installed on this machine as of 2026-09-27.
 
 ## External API keys in use
 
