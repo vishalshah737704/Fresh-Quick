@@ -1724,3 +1724,53 @@ Nail Polish Remover 100ml
 Cuticle Oil 10ml
 Compact Makeup Mirror
 Vanity Organizer Box
+Beard Oil 30ml
+Beard Wax 50g
+Beard Trimmer
+Electric Shaver
+Razor Blade Cartridge Pack 4pc
+Shaving Foam 200g
+Shaving Brush
+Aftershave Lotion 100ml
+Aftershave Balm 100ml
+Pre-Shave Gel 100ml
+Men's Face Wash 100ml
+Men's Moisturizer 100g
+Men's Sunscreen 50ml
+Hair Wax 100g
+Hair Gel 250ml
+Hair Spray 250ml
+Hair Clipper
+Nose Hair Trimmer
+Ear Hair Trimmer
+Men's Nail Clipper Set
+Men's Cologne 100ml
+Men's Deodorant Spray 150ml
+Men's Body Wash 250ml
+Men's Talc Powder 150g
+Men's Face Scrub 100g
+Men's Under Eye Roll-On 15ml
+Men's Lip Balm
+Men's Hair Color
+Grey Coverage Cream 30g
+Hair Loss Treatment Serum 60ml
+Scalp Massager Brush
+Men's Comb Set 3pc
+Men's Grooming Kit Box
+Men's Manicure Set
+Men's Pedicure Kit
+Foot Scrubber Brush
+Back Scrubber Long Handle
+Loofah Sponge
+Shaving Mirror
+Travel Shaving Kit
+Men's Bath Towel
+Men's Flip Flops
+Men's Dressing Gown
+Men's Boxers 3pc Pack
+Men's Undershirt Pack 3pc
+Men's Crew Socks Pack 5pc
+Men's Card Holder Wallet
+Men's Keychain
+Men's Tie Clip
+Men's Cufflinks
