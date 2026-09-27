@@ -2024,3 +2024,53 @@ Surge Protector Power Strip
 Voltage Stabilizer
 Small Inverter Battery
 Solar Power Bank
+Soldering Iron Kit
+Digital Multimeter
+Electronics Breadboard
+Arduino-Compatible Board
+Raspberry Pi Board
+Jumper Wires Pack 120pc
+Assorted Resistor Kit
+Assorted Capacitor Kit
+Assorted LED Light Kit
+Wire Stripper Tool
+Precision Screwdriver Set
+Electronic Project Enclosure Box
+Battery Holder Pack
+AA Batteries Pack 8pc
+AAA Batteries Pack 8pc
+Rechargeable Battery Charger
+9V Battery Pack 4pc
+Coin Cell Battery Pack
+Electrical Insulation Tape Roll
+Heat Shrink Tubing Pack
+Circuit Tester Pen
+Wire Terminal Blocks Pack
+Blank PCB Board Pack
+IC Chip Sockets Pack
+Relay Module 4-Channel
+Small Servo Motor
+Small Stepper Motor
+Small DC Motor
+12V Power Adapter
+USB Power Meter
+Small Solar Panel
+Battery Capacity Tester
+Rechargeable LED Flashlight
+Rechargeable LED Headlamp
+Clip-On Reading Light
+Magnifying Glass with LED Light
+Digital Vernier Caliper
+Laser Distance Measuring Tool
+Wall Stud Finder Tool
+Non-Contact Infrared Thermometer
+Smoke Detector Alarm
+Carbon Monoxide Detector
+Door Window Alarm Sensor
+Motion Sensor Light
+Walkie Talkie Pair
+Wireless Intercom System
+Amplifier Circuit Board Module
+Capacitor ESR Tester
+Handheld Digital Oscilloscope
+Function Generator Module
