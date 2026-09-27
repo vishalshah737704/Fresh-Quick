@@ -8,7 +8,7 @@ export function RestaurantMenuAnchorNav({
   onSelect: (key: string) => void;
 }) {
   return (
-    <div className="sticky top-0 z-10 flex gap-2 overflow-x-auto border-b border-brand-ink-muted/10 bg-brand-bg py-2">
+    <div className="sticky top-0 z-10 flex gap-2 overflow-x-auto border-b border-brand-ink-muted/10 bg-brand-bg py-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
       {groups.map((group) => (
         <button
           key={group.key}

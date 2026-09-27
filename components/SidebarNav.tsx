@@ -19,18 +19,18 @@ export function SidebarNav() {
   const activeCategory = searchParams.get("category");
 
   return (
-    <nav className="sticky top-0 hidden h-screen w-56 shrink-0 flex-col gap-1 overflow-y-auto border-r border-brand-ink-muted/10 bg-brand-surface p-4 md:flex">
+    <nav className="hidden h-full w-72 shrink-0 flex-col gap-2 overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden border-r border-brand-ink-muted/10 bg-brand-surface p-5 md:flex">
       {STATIC_ITEMS_TOP.map((item) => (
         <Link
           key={item.href}
           href={item.href}
-          className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium ${
+          className={`flex items-center gap-4 rounded-lg px-4 py-3 text-base font-medium ${
             pathname === "/customer" && !activeCategory
               ? "bg-brand-primary/10 text-brand-primary"
               : "text-brand-ink-muted hover:bg-brand-accent/10"
           }`}
         >
-          <span className="text-lg">{item.icon}</span>
+          <span className="text-2xl">{item.icon}</span>
           {item.label}
         </Link>
       ))}
@@ -41,7 +41,7 @@ export function SidebarNav() {
           <Link
             key={category}
             href={`/customer?category=${category}`}
-            className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium ${
+            className={`flex items-center gap-4 rounded-lg px-4 py-3 text-base font-medium ${
               active
                 ? "bg-brand-primary/10 text-brand-primary"
                 : "text-brand-ink-muted hover:bg-brand-accent/10"
@@ -50,9 +50,9 @@ export function SidebarNav() {
             <Image
               src={icon}
               alt=""
-              width={24}
-              height={24}
-              className="h-6 w-6 shrink-0 rounded-full object-cover"
+              width={28}
+              height={28}
+              className="h-7 w-7 shrink-0 rounded-full object-cover"
             />
             {label}
           </Link>
@@ -62,16 +62,31 @@ export function SidebarNav() {
         <Link
           key={item.label}
           href={item.href}
-          className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium ${
+          className={`flex items-center gap-4 rounded-lg px-4 py-3 text-base font-medium ${
             pathname.startsWith(item.label === "Orders" ? "/customer/orders" : "/customer/login")
               ? "bg-brand-primary/10 text-brand-primary"
               : "text-brand-ink-muted hover:bg-brand-accent/10"
           }`}
         >
-          <span className="text-lg">{item.icon}</span>
+          <span className="text-2xl">{item.icon}</span>
           {item.label}
         </Link>
       ))}
+
+      <div className="mt-auto flex flex-col gap-2 border-t border-brand-ink-muted/10 pt-4">
+        <Link
+          href="/customer/login"
+          className="flex items-center justify-center rounded-full border border-brand-ink-muted/20 px-4 py-3 text-base font-medium text-brand-ink hover:bg-brand-accent/10"
+        >
+          Sign In
+        </Link>
+        <Link
+          href="/customer/login"
+          className="flex items-center justify-center rounded-full bg-brand-primary px-4 py-3 text-base font-medium text-white"
+        >
+          Sign Up
+        </Link>
+      </div>
     </nav>
   );
 }

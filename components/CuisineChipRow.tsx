@@ -10,7 +10,7 @@ export function CuisineChipRow({
   onSelect: (slug: string | null) => void;
 }) {
   return (
-    <div className="flex gap-2 overflow-x-auto pb-2">
+    <div className="flex gap-2 overflow-x-auto pb-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
       <CuisineChip label="All" active={selected === null} onClick={() => onSelect(null)} />
       {cuisines.map((c) => (
         <CuisineChip

@@ -24,7 +24,7 @@ export function CuisineCarouselRow({
   return (
     <section>
       <h2 className="mb-2 text-lg font-bold text-brand-ink">{label}</h2>
-      <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2">
+      <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
         {restaurants.map(({ restaurant, distanceKm }) => (
           <div key={restaurant.id} className="w-56 shrink-0 snap-start">
             <RestaurantCard restaurant={restaurant} distanceKm={distanceKm} />

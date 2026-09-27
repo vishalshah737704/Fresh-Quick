@@ -14,27 +14,24 @@ export default function CustomerLayout({ children }: { children: ReactNode }) {
     <AddressProvider>
       <CartProvider>
         <CartConflictDialog />
-        <div className="flex min-h-screen">
+        <div className="flex h-screen overflow-hidden">
           <Suspense fallback={null}>
             <SidebarNav />
           </Suspense>
-          <div className="flex min-w-0 flex-1 flex-col">
-            <header className="flex flex-wrap items-center gap-3 border-b border-brand-ink-muted/10 bg-brand-surface px-4 py-3">
+          <div className="flex h-full min-w-0 flex-1 flex-col">
+            <header className="flex shrink-0 flex-wrap items-center gap-3 border-b border-brand-ink-muted/10 bg-brand-surface px-4 py-3">
               <Link href="/customer" className="shrink-0 text-lg font-bold text-brand-primary">
                 {BRAND.name}
               </Link>
               <AddressPicker />
               <DeliveryPickupToggle />
-              <div className="ml-auto flex items-center gap-3">
-                <Link href="/customer/login" className="text-sm font-medium text-brand-ink-muted">
-                  Sign In
-                </Link>
-              </div>
             </header>
-            <main className="mx-auto w-full max-w-5xl flex-1 p-4 pb-24">{children}</main>
+            <main className="w-full flex-1 overflow-y-auto p-4">{children}</main>
           </div>
+          <Suspense fallback={null}>
+            <CartPanel />
+          </Suspense>
         </div>
-        <CartPanel />
       </CartProvider>
     </AddressProvider>
   );
