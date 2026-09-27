@@ -1474,3 +1474,53 @@ Disposable Head Cap 100pc
 Biohazard Waste Bag Pack
 Digital Armpit Thermometer
 Medical Alert Bracelet
+Non-Stick Frying Pan 24cm
+Pressure Cooker 5L
+Stainless Steel Kettle 1.5L
+Chopping Board Set 3pc
+Kitchen Knife Set 5pc
+Mixing Bowl Set 4pc
+Food Storage Containers Set 6pc
+Cutlery Set 24pc
+Dinner Plate Set 6pc
+Ceramic Mug Set 4pc
+Glass Tumbler Set 6pc
+Insulated Water Bottle 1L
+Lunch Box Tiffin 3-Tier
+Electric Kettle 1.8L
+Hand Blender 300W
+Pop-Up Toaster 2-Slice
+Microwave Safe Bowls Set 3pc
+Wooden Spoon Set 5pc
+Spice Rack Organizer
+Dish Drying Rack
+Kitchen Trash Can 20L
+Broom and Dustpan Set
+Mop and Bucket Set
+Laundry Basket Foldable
+Clothes Drying Rack
+Steam Iron Box
+Handheld Vacuum Cleaner
+Bed Sheet Set Double
+Pillow Pair
+Single Blanket
+Bath Towel Set 4pc
+Window Curtain Set 2pc
+Door Mat
+Shoe Rack 3-Tier
+Storage Boxes Set 3pc
+Wall Clock
+Table Lamp
+Extension Board 4-Socket
+LED Bulb Pack 4pc
+Study Table Compact
+Plastic Chair
+Clothes Hanger Set 12pc
+Ironing Board
+Kitchen Towel Set 6pc
+Water Filter Jug
+Gas Lighter
+Aluminum Foil Roll 20m
+Cling Wrap Roll 100m
+Garbage Bags Roll 30pc
+Room Air Freshener Spray
