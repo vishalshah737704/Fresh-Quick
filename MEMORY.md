@@ -1082,6 +1082,44 @@ Claude at the start of work in this repo per project CLAUDE.md.
     ESLint errors were carried over unchanged from before this pass
     (build unaffected).
 
+- **Customer layout redesign (sidebar/content/cart 3-column rework)**: ✅
+  Complete, merged to local `main` (commit `dccb1ef`). Ad hoc bounded
+  change (not a full spec/plan cycle) requested directly by Vishal after
+  reviewing screenshots of the live customer app:
+  - `SidebarNav`: wider (56→72 Tailwind units), larger font/icons/padding,
+    Sign In/Sign Up links moved from the top header into the sidebar
+    footer (previously only a single "Sign In" link lived in the header).
+  - `app/customer/layout.tsx`: dropped the `max-w-5xl mx-auto` constraint
+    on `<main>` so center content stretches to fill the space next to the
+    sidebar instead of floating centered with dead space on both sides.
+    Also restructured to a fixed `h-screen overflow-hidden` 3-column flex
+    (sidebar | content | cart), each column scrolling independently via
+    its own `overflow-y-auto`, eliminating the whole-page vertical
+    scrollbar that the first layout draft introduced.
+  - `CartPanel`: replaced the floating-bottom-bar + slide-over-drawer
+    pattern with a persistent right column (`lg:flex`, hidden below that
+    breakpoint) that renders only once the cart has items. Items stack
+    top-to-bottom in normal document flow (no forced `flex-1` spacer), so
+    the Checkout button sits directly under the last item and moves down
+    naturally as more items are added, rather than being pinned to the
+    bottom of the viewport.
+  - Hid (but kept functional) the horizontal scrollbars on
+    `CuisineChipRow`, `CuisineCarouselRow`, and `RestaurantMenuAnchorNav`
+    via `[scrollbar-width:none] [-ms-overflow-style:none]
+    [&::-webkit-scrollbar]:hidden` — these rows are still scrollable by
+    drag/trackpad, just without a visible scrollbar track.
+  - Process note: built and screenshotted in an isolated git worktree
+    (`.claude/worktrees/customer-layout-preview`) against a Playwright
+    browser before touching `main`, per Vishal's explicit request for a
+    preview-and-approve step; went through 2 rounds (first draft still
+    had a page-level scrollbar and a Checkout button pinned to the
+    viewport bottom instead of following the item list — fixed in round
+    2 per Vishal's follow-up screenshot).
+  - This change was NOT scoped through `superpowers:brainstorming`'s full
+    spec/plan path — classified as bounded (existing flow, existing
+    files) and implemented directly after a short in-chat design +
+    screenshot approval, per that skill's bounded-path process.
+
 ## Key decisions carried forward (see spec §2 for full list)
 
 - Self-hosted Supabase only, no cloud project.
