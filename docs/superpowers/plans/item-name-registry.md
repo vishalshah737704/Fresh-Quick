@@ -2224,3 +2224,53 @@ Pet Microchip Scanner
 Silent Dog Training Whistle
 Dog Training Treat Pouch
 Pet Grooming Table
+Weight Management Dog Food 3kg
+Hypoallergenic Dog Food 3kg
+Kitten Milk Replacer
+Puppy Milk Formula
+Bully Stick Dog Chew 5pk
+Yak Cheese Dog Chew
+Cat Grass Growing Kit
+Catnip Spray Bottle
+LED Light-Up Dog Collar
+GPS Dog Tracker
+Breakaway Cat Safety Collar
+Martingale Dog Collar
+Wheeled Pet Carrier
+Soft-Sided Pet Crate
+Cooling Vest for Dogs
+Heating Pad for Pets
+Raised Dog Bowl Set
+No-Spill Dog Bowl
+Automatic Self-Cleaning Litter Box
+Cat Litter Scoop
+Handheld Pet Hair Vacuum
+Dog Nail Grinder
+Pet Ear Cleaning Powder
+Waterless Pet Shampoo
+Cat Teeth Cleaning Treats
+Dog Breath Freshener Spray
+Puppy Chew Toy Set 5pk
+Rubber Treat-Dispensing Toy
+Feather Wand Cat Toy
+Automatic Dog Ball Launcher
+Flirt Pole Cat Toy
+Snuffle Mat for Dogs
+Bird Swing Toy
+Parakeet Cage
+Cockatiel Chew Toys 4pk
+Finch Cage
+Hedgehog Cage
+Sugar Glider Cage
+Tortoise Enclosure
+Lizard Terrarium Starter Kit
+Long Training Leash 10m
+No-Pull Front-Clip Harness
+Cat Calming Pheromone Spray
+Dog Anxiety Wrap
+Airline-Approved Pet Travel Carrier
+Dog Booster Car Seat
+Pet Food Scoop
+Pet Pill Dispenser
+Digital Pet Thermometer
+Cooling Bandana for Dogs
