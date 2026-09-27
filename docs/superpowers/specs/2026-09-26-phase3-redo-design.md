@@ -72,9 +72,10 @@ this table is a starting reference, not authoritative):
   `Beverages`, `Frozen`
 - Convenience: `Beverages`, `Snacks`, `Frozen`, `Reading`, `Essentials`,
   `Electronics`, `Stationery`
-- Alcohol: TBD — read live from `The Wine Cellar`, `Craft Beer Co.`,
-  `Spirits & More`, `The Bottle Shop`'s existing rows before writing (not
-  yet inspected as of this spec).
+- Alcohol: `Wine`, `Beer`, `Spirits`, `Accessories`, `Snacks` — confirmed
+  live during Task 0 against `The Wine Cellar`, `Craft Beer Co.`,
+  `Spirits & More`, and `The Bottle Shop`'s existing rows; identical
+  across all four alcohol stores.
 
 New items for a given store may introduce a genuinely new category value
 only if nothing existing fits (e.g. a grocery store might reasonably add
