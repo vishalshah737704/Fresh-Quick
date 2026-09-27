@@ -10,6 +10,7 @@ import { HeroSearch } from "@/components/HeroSearch";
 import { PromoBanner } from "@/components/PromoBanner";
 import { CuisineChipRow } from "@/components/CuisineChipRow";
 import { CuisineCarouselRow } from "@/components/CuisineCarouselRow";
+import { CategoryIconRow } from "@/components/CategoryIconRow";
 import { HeaderSearchBox } from "@/components/HeaderSearchBox";
 import { SortFilterBar, type SortOption } from "@/components/SortFilterBar";
 import { CATEGORY_ICONS, CATEGORY_ORDER, type CategoryType } from "@/lib/category-icons";
@@ -187,6 +188,7 @@ function CustomerHomeContent() {
         restaurants={restaurants.map((r) => ({ id: r.id, name: r.name, cuisine_tags: r.cuisine_tags }))}
         cuisines={cuisines}
       />
+      <CategoryIconRow activeCategory={validCategory} />
       <SortFilterBar sortBy={sortBy} onSortByChange={setSortBy} under30={under30} onUnder30Toggle={setUnder30} />
       {(validCategory === null || validCategory === "restaurant") && (
         <CuisineChipRow cuisines={cuisines} selected={selectedCuisine} onSelect={setSelectedCuisine} />

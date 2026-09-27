@@ -436,6 +436,22 @@ See [MEMORY.md](MEMORY.md) for phase-by-phase progress and decisions.
   controller can discard and reapply the fix directly instead of treating
   it as an unrecoverable failure.**
 
+- **When a subagent is told to invent original names for new seed rows
+  (stores, users, anything with a unique-constrained email/name), require
+  its own "no collisions" verification to explicitly grep those
+  names/emails against the WHOLE existing file — not just the photo-id
+  dedup check it may already know to run.** Generating 20 new fictitious
+  non-restaurant stores, a subagent reused two already-existing store
+  names/emails verbatim (`Green Grocer`/`green-grocer@foodhub.local`,
+  `Daily Basket`/`daily-basket@foodhub.local`) despite being told to
+  invent originals — its own report claimed a clean dedup check but had
+  only verified Pexels photo-id uniqueness, not name/email uniqueness.
+  Unlike a duplicate photo (silent, cosmetic), a duplicate email breaks
+  `supabase db reset` outright via the `users_email_partial_key`
+  constraint, so this class of bug surfaces immediately and loudly — but
+  only if someone actually runs a reset before committing, not from
+  reading the subagent's self-report alone.
+
 ## Standing phrase: "Commit Work" — NON-NEGOTIABLE
 
 When Vishal says **"Commit Work"** in this project, perform these three

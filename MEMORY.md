@@ -1197,6 +1197,40 @@ Claude at the start of work in this repo per project CLAUDE.md.
     per-item structure or a size cap.
   Spec: docs/superpowers/specs/2026-09-27-account-scoped-cart-persistence-design.md
   Plan: docs/superpowers/plans/2026-09-27-account-scoped-cart-persistence.md
+- **Homepage category icon row + carousel arrows, plus 20 new fictitious
+  non-restaurant stores**: ✅ Complete, bounded change (short in-chat
+  design, no full spec/plan cycle). Added `ScrollArrowRow` (reusable
+  left/right scroll-button wrapper) and `CategoryIconRow` (UberEats-style
+  round category icon strip) to `app/customer/page.tsx`;
+  `CuisineCarouselRow` now uses `ScrollArrowRow` too. Researched
+  ubereats.com's category structure and carousel-arrow placement live via
+  Playwright (Claude in Chrome wasn't connected this session, fell back
+  per plan) — confirmed our category list already matches theirs; their
+  icons are flat illustrations vs. our Pexels photos (a separate,
+  not-yet-scoped asset task if wanted later), and their arrows sit beside
+  section headings rather than overlaid on hover like ours.
+  Added 2 new fictitious stores to each of the 10 non-restaurant
+  categories (grocery, convenience, alcohol, health, retail, pet, flowers,
+  baby, personal_care, electronics — 20 stores total, `e`-prefixed ids in
+  `supabase/seed.sql`) via a background subagent, each with a small
+  4-6-item product catalog. **The subagent's first run reused two
+  already-existing store names/emails verbatim** (`Green Grocer` /
+  `green-grocer@foodhub.local` and `Daily Basket` /
+  `daily-basket@foodhub.local`) despite being told to invent original
+  names — `supabase db reset` failed on
+  `users_email_partial_key` duplicate-key before this was caught; the
+  subagent's own report claimed a clean dedup check but only checked
+  Pexels photo-id collisions, not name/email collisions. Fixed by hand
+  (renamed to `Pantry Post` / `Harvest Greens` with fresh emails),
+  re-verified with a whole-file grep for duplicate emails, then re-ran
+  `db reset` clean. **Lesson: when a subagent is told to invent original
+  names for new seed rows, its own "no collisions" verification must
+  explicitly grep names/emails against the WHOLE existing file, not just
+  the photo-id dedup it was told to check — a store name collision is at
+  least as likely as a photo-id collision and breaks `db reset` outright
+  (unlike a photo dupe, which is silent).** Live-verified post-reset in
+  browser (new "Wagging Tails" pet store renders correctly in category
+  grid with its own banner/product images).
 
 ## Key decisions carried forward (see spec §2 for full list)
 
