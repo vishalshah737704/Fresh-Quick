@@ -1424,3 +1424,53 @@ Nasal Breathing Strips 10s
 Throat Spray 30ml
 Antifungal Powder 100g
 Herbal Immunity Syrup 200ml
+Cetirizine Tablets 10mg 10s
+Loratadine Tablets 10mg 10s
+Multi-Symptom Cold Tablets 10s
+Vitamin C Powder Sachet 20s
+Herbal Digestive Tablets 30s
+Aloe Vera Juice 500ml
+Amla Juice 500ml
+Chyawanprash 500g
+Triphala Powder 100g
+Ayurvedic Joint Pain Oil 100ml
+Neem Tablets 60s
+Giloy Tablets 60s
+Shilajit Capsules 30s
+Brahmi Capsules 60s
+Tulsi Drops 30ml
+Arjuna Capsules 60s
+Liver Detox Capsules 60s
+Kidney Cleanse Capsules 60s
+Hormonal Balance Capsules (Women) 60s
+Menopause Support Tablets 30s
+Prostate Health Capsules (Men) 60s
+Testosterone Booster Capsules 60s
+Diabetic Care Tablets 60s
+Cholesterol Support Tablets 60s
+Blood Circulation Support Capsules 60s
+Anti-Aging Supplement Capsules 60s
+Collagen Skin Capsules 60s
+Hyaluronic Acid Capsules 30s
+Biotin Hair Growth Capsules 60s
+Keratin Hair Capsules 60s
+Digital Nebulizer Kit
+Portable Oxygen Concentrator
+TENS Unit Pain Relief Device
+Infrared Heating Pad
+Electric Heating Pad
+Cervical Traction Device
+Handheld Back Massager
+Foot Massager Machine
+Leg Massager Machine
+Eye Massager Device
+Sitz Bath Tub
+Enema Kit
+Colostomy Bag Pack 10pc
+N95 Surgical Mask Box 20pc
+PPE Kit Full Body
+Disposable Shoe Covers 50pc
+Disposable Head Cap 100pc
+Biohazard Waste Bag Pack
+Digital Armpit Thermometer
+Medical Alert Bracelet
