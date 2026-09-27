@@ -1674,3 +1674,53 @@ Hair Scrunchie Set 6pc
 Kids School Bag
 Insulated Lunch Bag
 Canvas Tote Bag
+Facial Cleanser 150ml
+Face Moisturizer 100g
+Face Serum 30ml
+Facial Toner 200ml
+Sheet Mask Pack 5pc
+Clay Face Mask 100g
+Under Eye Cream 20g
+Night Cream 50g
+Day Cream SPF 30 50g
+Sunscreen Gel 50ml
+Face Scrub 100g
+Makeup Remover 200ml
+Micellar Water 200ml
+Vitamin C Serum 30ml
+Hyaluronic Acid Serum 30ml
+Retinol Serum 30ml
+Lip Scrub 15g
+Under Eye Patches Box 30pc
+Blackhead Remover Strips 10pc
+Pore Strip Pack 6pc
+Facial Mist Spray 100ml
+Acne Spot Treatment Gel 15g
+Skin Brightening Cream 50g
+Anti-Aging Cream 50g
+Body Lotion 400ml
+Body Butter 200g
+Body Scrub 200g
+Shower Gel 250ml
+Bar Soap Pack 3pc
+Hand Cream 75ml
+Foot Cream 100g
+Talcum Powder 200g
+Compact Powder
+Liquid Foundation 30ml
+Concealer Stick
+Blush Palette
+Eyeshadow Palette 12-Shade
+Eyeliner Pencil
+Mascara
+Matte Lipstick
+Lip Gloss
+Makeup Brush Set 8pc
+Beauty Blender Sponge
+Makeup Remover Wipes 25pc
+Cotton Pads Box 100pc
+Nail Polish
+Nail Polish Remover 100ml
+Cuticle Oil 10ml
+Compact Makeup Mirror
+Vanity Organizer Box
