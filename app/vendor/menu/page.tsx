@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useVendorSession } from "@/components/vendor/useVendorSession";
 
@@ -293,43 +293,70 @@ export default function VendorMenuPage() {
           Add item
         </button>
       </div>
-      <ul className="flex flex-col gap-2">
-        {items.map((item) => (
-          <li key={item.id} className="flex flex-col gap-2 rounded-lg border border-brand-ink-muted/10 bg-brand-surface p-2">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="font-medium">{item.name}</p>
-                <p className="text-sm text-brand-ink-muted">
-                  ₹{item.price.toFixed(2)} · {item.is_available ? "Available" : "Unavailable"}
-                </p>
-              </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => (editingId === item.id ? cancelEdit() : startEdit(item))}
-                  className="rounded-lg bg-brand-accent/10 px-2 py-1 text-xs text-brand-ink"
-                >
-                  {editingId === item.id ? "Cancel" : "Edit"}
-                </button>
-                <button
-                  onClick={() => toggleAvailable(item)}
-                  className="rounded-lg bg-brand-accent/10 px-2 py-1 text-xs text-brand-ink"
-                >
-                  {item.is_available ? "Mark unavailable" : "Mark available"}
-                </button>
-                <button
-                  onClick={() => deleteItem(item.id)}
-                  className="rounded bg-red-100 px-2 py-1 text-xs text-red-700"
-                >
-                  Delete
-                </button>
-                <button
-                  onClick={() => toggleOptions(item.id)}
-                  className="rounded-lg bg-brand-accent/10 px-2 py-1 text-xs text-brand-ink"
-                >
-                  {optionsOpenId === item.id ? "Hide options" : "Options"}
-                </button>
-              </div>
-            </div>
+      <div className="overflow-x-auto rounded-lg border border-brand-ink-muted/10">
+        <table className="w-full text-left text-sm">
+          <thead className="bg-brand-accent/10 text-brand-ink-muted">
+            <tr>
+              <th className="p-2">Image</th>
+              <th className="p-2">Name</th>
+              <th className="p-2">Price</th>
+              <th className="p-2">Veg</th>
+              <th className="p-2">Available</th>
+              <th className="p-2">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {items.map((item) => (
+              <React.Fragment key={item.id}>
+                <tr className="border-t border-brand-ink-muted/10">
+                  <td className="p-2">
+                    {item.image_url && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={item.image_url} alt={item.name} className="h-10 w-10 rounded-lg object-cover" />
+                    )}
+                  </td>
+                  <td className="p-2 font-medium text-brand-ink">{item.name}</td>
+                  <td className="p-2">₹{item.price.toFixed(2)}</td>
+                  <td className="p-2">
+                    {item.product_attributes?.is_veg ? (
+                      <span className="rounded-full bg-brand-accent/20 px-2 py-0.5 text-xs">Veg</span>
+                    ) : (
+                      "—"
+                    )}
+                  </td>
+                  <td className="p-2">{item.is_available ? "Yes" : "No"}</td>
+                  <td className="p-2">
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        onClick={() => (editingId === item.id ? cancelEdit() : startEdit(item))}
+                        className="rounded-full bg-brand-accent/10 px-2 py-1 text-xs text-brand-ink"
+                      >
+                        {editingId === item.id ? "Cancel" : "Edit"}
+                      </button>
+                      <button
+                        onClick={() => toggleAvailable(item)}
+                        className="rounded-full bg-brand-accent/10 px-2 py-1 text-xs text-brand-ink"
+                      >
+                        {item.is_available ? "Mark unavailable" : "Mark available"}
+                      </button>
+                      <button
+                        onClick={() => deleteItem(item.id)}
+                        className="rounded-full bg-red-100 px-2 py-1 text-xs text-red-700"
+                      >
+                        Delete
+                      </button>
+                      <button
+                        onClick={() => toggleOptions(item.id)}
+                        className="rounded-full bg-brand-accent/10 px-2 py-1 text-xs text-brand-ink"
+                      >
+                        {optionsOpenId === item.id ? "Hide options" : "Options"}
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+                {(editingId === item.id || optionsOpenId === item.id) && (
+                  <tr key={`${item.id}-expanded`} className="border-t border-brand-ink-muted/10 bg-brand-surface">
+                    <td colSpan={6} className="p-2">
             {editingId === item.id && (
               <div className="flex flex-col gap-2 rounded border bg-brand-accent/5 p-2">
                 <input
@@ -480,9 +507,21 @@ export default function VendorMenuPage() {
                 ))}
               </div>
             )}
-          </li>
-        ))}
-      </ul>
+                    </td>
+                  </tr>
+                )}
+              </React.Fragment>
+            ))}
+            {items.length === 0 && (
+              <tr>
+                <td colSpan={6} className="p-4 text-center text-brand-ink-muted">
+                  No menu items yet.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
