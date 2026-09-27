@@ -12,11 +12,6 @@ alter table public.carts enable row level security;
 create policy "customer_can_read_own_cart" on public.carts
   for select using (auth.uid() = user_id);
 
-create policy "customer_can_insert_own_cart" on public.carts
-  for insert with check (auth.uid() = user_id);
-
-create policy "customer_can_update_own_cart" on public.carts
-  for update using (auth.uid() = user_id) with check (auth.uid() = user_id);
-
-create policy "customer_can_delete_own_cart" on public.carts
-  for delete using (auth.uid() = user_id);
+-- No insert/update/delete policies: all writes go through the service-role
+-- PUT /api/cart route. An unused RLS write policy would be a live PostgREST
+-- bypass of that route's validation.

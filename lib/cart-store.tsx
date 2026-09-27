@@ -62,22 +62,42 @@ type ServerCart = {
   orderNote: string;
 };
 
+// "none" means the server confirmed no row exists; "error" means we don't know,
+// so callers must never treat it as permission to overwrite the server cart.
+type FetchCartResult =
+  | { status: "found"; cart: ServerCart }
+  | { status: "none" }
+  | { status: "error" };
+
+const FETCH_RETRY_DELAY_MS = 2000;
+
 async function authHeader(): Promise<Record<string, string>> {
   const { data } = await supabase.auth.getSession();
   return { Authorization: `Bearer ${data.session?.access_token ?? ""}` };
 }
 
-async function fetchServerCart(): Promise<ServerCart | null> {
-  const res = await fetch("/api/cart", { headers: await authHeader() });
-  if (!res.ok) return null;
-  const body = await res.json();
-  return body.cart ?? null;
+async function fetchServerCart(): Promise<FetchCartResult> {
+  try {
+    const res = await fetch("/api/cart", { headers: await authHeader() });
+    if (!res.ok) return { status: "error" };
+    const body = await res.json();
+    return body.cart ? { status: "found", cart: body.cart } : { status: "none" };
+  } catch {
+    return { status: "error" };
+  }
 }
 
-async function saveServerCart(cart: ServerCart): Promise<void> {
+async function saveServerCart(expectedUserId: string, cart: ServerCart): Promise<void> {
+  // The live session can switch accounts before React re-renders with the new
+  // userId; refuse to send one account's cart under another account's token.
+  const { data } = await supabase.auth.getSession();
+  if (data.session?.user.id !== expectedUserId) return;
   await fetch("/api/cart", {
     method: "PUT",
-    headers: { "Content-Type": "application/json", ...(await authHeader()) },
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${data.session.access_token}`,
+    },
     body: JSON.stringify(cart),
   });
 }
@@ -92,45 +112,65 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const previousUserId = useRef<string | null | undefined>(undefined);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const skipNextSave = useRef(false);
+  // Which userId has successfully reconciled with the server. Debounced saves
+  // are blocked until this matches the current userId, so neither the login
+  // race nor a failed GET can let in-memory state clobber a real server cart.
+  const reconciledFor = useRef<string | null>(null);
+
+  function resetCartState() {
+    setItems([]);
+    setStoreId(null);
+    setStoreName(null);
+    setOrderNoteState("");
+    setPendingConflict(null);
+  }
 
   // Handle login/logout/mount transitions.
   useEffect(() => {
     if (sessionLoading) return;
-    const wasLoggedIn = previousUserId.current;
+    const previous = previousUserId.current;
     previousUserId.current = userId;
+    reconciledFor.current = null;
 
     if (!userId) {
       // Logged out (or never logged in): clear in-memory cart, no server calls.
-      if (wasLoggedIn) {
-        setItems([]);
-        setStoreId(null);
-        setStoreName(null);
-        setOrderNoteState("");
-        setPendingConflict(null);
-      }
+      if (previous) resetCartState();
       return;
     }
 
-    // Logged in (fresh login or session already existed on mount): reconcile with server.
-    // Set this synchronously, before the async fetch below, so the sibling
-    // debounced-save effect's very next run (triggered by this same userId
-    // change) skips its save instead of racing ahead of reconciliation and
-    // clobbering a real server cart with whatever's in memory anonymously.
-    skipNextSave.current = true;
+    // Switching directly from one account to another: the previous account's
+    // cart (including its order note) must never carry into the new account.
+    const switchedAccount = typeof previous === "string" && previous !== userId;
+    if (switchedAccount) resetCartState();
+    const carryOver: ServerCart = switchedAccount
+      ? { storeId: null, storeName: null, items: [], orderNote: "" }
+      : { storeId, storeName, items, orderNote };
+
     let cancelled = false;
     (async () => {
-      const serverCart = await fetchServerCart();
+      let result = await fetchServerCart();
       if (cancelled) return;
-      if (serverCart) {
-        skipNextSave.current = true;
-        setStoreId(serverCart.storeId);
-        setStoreName(serverCart.storeName);
-        setItems(serverCart.items);
-        setOrderNoteState(serverCart.orderNote);
-      } else {
-        // No saved cart yet — persist whatever's in memory (anonymous cart in progress, or empty).
-        await saveServerCart({ storeId, storeName, items, orderNote });
+      if (result.status === "error") {
+        await new Promise((resolve) => setTimeout(resolve, FETCH_RETRY_DELAY_MS));
+        if (cancelled) return;
+        result = await fetchServerCart();
+        if (cancelled) return;
       }
+      if (result.status === "found") {
+        reconciledFor.current = userId;
+        skipNextSave.current = true;
+        setStoreId(result.cart.storeId);
+        setStoreName(result.cart.storeName);
+        setItems(result.cart.items);
+        setOrderNoteState(result.cart.orderNote);
+      } else if (result.status === "none") {
+        // Server confirmed no saved cart yet — persist the anonymous cart in progress (or empty).
+        await saveServerCart(userId, carryOver);
+        if (cancelled) return;
+        reconciledFor.current = userId;
+      }
+      // "error" after retry: leave memory and server untouched; saves stay
+      // blocked until the next reconciliation (next mount or login).
     })();
     return () => {
       cancelled = true;
@@ -138,16 +178,17 @@ export function CartProvider({ children }: { children: ReactNode }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId, sessionLoading]);
 
-  // Debounced save on every mutation, only while logged in.
+  // Debounced save on every mutation, only while logged in and reconciled.
   useEffect(() => {
     if (!userId) return;
     if (skipNextSave.current) {
       skipNextSave.current = false;
       return;
     }
+    if (reconciledFor.current !== userId) return;
     if (saveTimer.current) clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(() => {
-      saveServerCart({ storeId, storeName, items, orderNote });
+      saveServerCart(userId, { storeId, storeName, items, orderNote });
     }, 500);
     return () => {
       if (saveTimer.current) clearTimeout(saveTimer.current);
