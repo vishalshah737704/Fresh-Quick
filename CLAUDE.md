@@ -451,6 +451,17 @@ See [MEMORY.md](MEMORY.md) for phase-by-phase progress and decisions.
   constraint, so this class of bug surfaces immediately and loudly — but
   only if someone actually runs a reset before committing, not from
   reading the subagent's self-report alone.
+- **When any subagent invents Pexels image URLs without live Pexels API
+  access, curl-check every one of them for a 200 status before trusting
+  the seed data — a plausible-looking numeric photo id is not evidence
+  the photo exists.** The same 20-fictitious-store task above also
+  shipped 28 of 92 image URLs as flat-out 404s (guessed ids that don't
+  correspond to real Pexels photos); the subagent's own "no collisions"
+  verification only checked photo-id uniqueness, not existence, so it
+  reported clean. Only surfaced by chance — a broken-image icon spotted
+  while taking screenshots for a docs update. Fixed by curl-checking
+  every new URL and remapping dead ids to verified-working ones already
+  proven live elsewhere in the file.
 
 ## Standing phrase: "Commit Work" — NON-NEGOTIABLE
 

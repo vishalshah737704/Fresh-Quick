@@ -1231,6 +1231,17 @@ Claude at the start of work in this repo per project CLAUDE.md.
   (unlike a photo dupe, which is silent).** Live-verified post-reset in
   browser (new "Wagging Tails" pet store renders correctly in category
   grid with its own banner/product images).
+  **Second, separate defect found while preparing the docs update**: 28
+  of the 92 new image URLs (guessed Pexels photo ids, no live Pexels API
+  access in the subagent's environment) were flat-out 404s — a broken
+  image icon on "Trend Corner" surfaced it. Curl-checked every new URL,
+  remapped all 28 dead ids to verified-working ones from elsewhere in the
+  same batch, re-ran `db reset`, re-confirmed all 64 distinct new URLs
+  return 200 and render live. **Lesson: when any subagent invents Pexels
+  URLs without live API access, curl-check every one of them for a 200
+  before trusting the seed data — a plausible-looking numeric id is not
+  evidence the photo exists, and the agent's own "no collisions" report
+  checked uniqueness, not existence.**
 
 ## Key decisions carried forward (see spec §2 for full list)
 
