@@ -343,6 +343,17 @@ See [MEMORY.md](MEMORY.md) for phase-by-phase progress and decisions.
   calling it unnecessary was itself wrong. Don't assume `create or
   replace function` is a drop-in replacement for `drop` + `create` just
   because it usually is for same-signature changes.
+- **A new git worktree does not inherit the main checkout's gitignored
+  `.env.local`** — copy it in explicitly as part of worktree setup for
+  any task that needs a working external API key (Pexels, etc.) or that
+  runs `npm run build` (which needs `NEXT_PUBLIC_SUPABASE_URL` etc. to
+  resolve). Sub-project B's Phase 3 Redo shipped 10 of 12 store tasks
+  with mismatched product photos because the Pexels key was silently
+  unreachable from inside `.claude/worktrees/phase3-redo` — each task
+  fell back to reusing an unrelated existing photo instead of surfacing
+  the failure, and no per-task diff-only review could catch a
+  wrong-but-well-formed URL. Caught only by the final whole-branch review
+  spot-checking fetched photo ids against product names.
 
 ## Standing phrase: "Commit Work" — NON-NEGOTIABLE
 

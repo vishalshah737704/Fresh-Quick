@@ -810,6 +810,58 @@ Claude at the start of work in this repo per project CLAUDE.md.
     brainstorm → spec → plan cycle.
   Plan: docs/superpowers/plans/2026-09-26-restaurant-menu-expansion.md
 
+- **Phase 3 Redo (sub-project B of the 50-unique-items redesign)**: ✅
+  Complete. All 12 Grocery/Convenience/Alcohol stores now carry 50 items
+  each (up from the old shared-20-item-per-4-stores model), 360 new
+  hand-curated rows total. Base store per category (Fresh Mart, QuickStop,
+  The Wine Cellar — first-in-file) kept its original 20 items untouched
+  and only got padded; the other 9 stores kept their old duplicate-name
+  20-item rows too (grandfathered, never renamed — same treatment as
+  sub-project A's parked residuals) and got 30 brand-new, app-unique items
+  added on top. Only the newly-added 360 names had to be unique — the old
+  duplicate rows across categories were explicitly out of scope. Registry
+  grew from 916 to 1,276 lines (append-only, zero internal dupes,
+  independently re-verified by the controller after every single task,
+  not just trusted from implementer self-reports). Executed via
+  `superpowers:subagent-driven-development` in worktree
+  `.claude/worktrees/phase3-redo`, one Haiku implementer + Haiku reviewer
+  per store (Task 13's final verification used Sonnet; final whole-branch
+  review used Opus).
+  - **New defect class this sub-project surfaced**: a git worktree does
+    not inherit the main checkout's gitignored `.env.local`, so the
+    Pexels API key was unreachable for 10 of the 12 store tasks — they
+    silently fell back to reusing unrelated existing products' photos
+    (e.g. a Power Bank showing a phone-charging-cable photo) rather than
+    surfacing the failure, and every one of those 10 tasks' own reviews
+    passed it as "review clean" since a diff-only reviewer can't fetch
+    URLs to notice a wrong-but-well-formed one. Caught only by the final
+    whole-branch review actually spot-checking fetched photo ids against
+    product names. Fixed in one dispatch (re-fetched real photos for all
+    10 stores' 30 new rows each, image_url column only) after Task 13
+    copied `.env.local` into the worktree. **Any future worktree in this
+    repo that needs a working Pexels/external-API key must have
+    `.env.local` copied in as part of worktree setup, not discovered
+    missing mid-plan or at final review.**
+  - Also reconfirmed sub-project A's registry-fragility lesson held for
+    grocery/convenience/alcohol content too — no repeat of that defect
+    class this time, since every dispatch was warned upfront and the
+    controller independently verified line count + zero dupes after each
+    of the 12 tasks rather than trusting self-reports.
+  - Parked (minor, deferred, not blocking): a few same-product-different-
+    name overlaps across stores (e.g. "Flavored Vodka 750ml" vs "Citrus
+    Vodka 750ml") that pass exact-string registry uniqueness but aren't
+    fully distinct content; a few plan-mandated category placements a
+    stricter taxonomy might argue with (Premium Cigars as Snacks, Lottery
+    Scratch Card as Essentials); malformed `Co-Authored-By` trailers on 5
+    commits (cosmetic, not rewritten).
+  - **Next up**: sub-project C (Phase 4 Redo — Health/Retail/Personal
+    Care/Electronics, un-merged worktree
+    `.claude/worktrees/marketplace-phase4`, do not merge as-is) then
+    sub-project D (Phase 5 Fresh Build — Pet/Flowers/Baby, simplest, no
+    legacy to reconcile).
+  Spec: docs/superpowers/specs/2026-09-26-phase3-redo-design.md
+  Plan: docs/superpowers/plans/2026-09-26-phase3-redo.md
+
 ## Key decisions carried forward (see spec §2 for full list)
 
 - Self-hosted Supabase only, no cloud project.
