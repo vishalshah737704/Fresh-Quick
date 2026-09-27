@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { useVendorSession } from "@/components/vendor/useVendorSession";
 
 type MenuItem = {
   id: string;
@@ -31,7 +30,6 @@ async function authHeader() {
 }
 
 export default function VendorMenuPage() {
-  const { loading } = useVendorSession();
   const [items, setItems] = useState<MenuItem[]>([]);
   const [name, setName] = useState("");
   const [price, setPrice] = useState("");
@@ -160,8 +158,8 @@ export default function VendorMenuPage() {
   }
 
   useEffect(() => {
-    if (!loading) loadItems();
-  }, [loading]);
+    loadItems();
+  }, []);
 
   async function addItem() {
     setError(null);
@@ -260,27 +258,25 @@ export default function VendorMenuPage() {
     await loadItems();
   }
 
-  if (loading) return <p>Loading…</p>;
-
   return (
-    <div className="mx-auto max-w-2xl">
-      <h1 className="mb-4 text-xl font-bold text-brand-ink">Menu</h1>
+    <div>
+      <h1 className="mb-4 font-heading text-2xl text-brand-ink">Menu</h1>
       {actionError && <p className="mb-4 text-sm text-red-600">{actionError}</p>}
-      <div className="mb-6 flex flex-col gap-2 rounded-lg border border-brand-ink-muted/10 bg-brand-surface p-3">
+      <div className="mb-6 flex flex-col gap-2 rounded-lg border border-brand-ink-muted/10 bg-brand-surface p-4">
         <input
-          className="rounded-lg border border-brand-ink-muted/20 px-2 py-1"
+          className="rounded-lg border border-brand-ink-muted/20 px-3 py-2"
           placeholder="Item name"
           value={name}
           onChange={(e) => setName(e.target.value)}
         />
         <input
-          className="rounded-lg border border-brand-ink-muted/20 px-2 py-1"
+          className="rounded-lg border border-brand-ink-muted/20 px-3 py-2"
           placeholder="Price (rupees)"
           value={price}
           onChange={(e) => setPrice(e.target.value)}
         />
         <input
-          className="rounded-lg border border-brand-ink-muted/20 px-2 py-1"
+          className="rounded-lg border border-brand-ink-muted/20 px-3 py-2"
           placeholder="Image URL (optional)"
           value={imageUrl}
           onChange={(e) => setImageUrl(e.target.value)}
@@ -358,21 +354,21 @@ export default function VendorMenuPage() {
                   <tr key={`${item.id}-expanded`} className="border-t border-brand-ink-muted/10 bg-brand-surface">
                     <td colSpan={6} className="p-2">
             {editingId === item.id && (
-              <div className="flex flex-col gap-2 rounded border bg-brand-accent/5 p-2">
+              <div className="flex flex-col gap-2 rounded-lg border bg-brand-accent/5 p-2">
                 <input
-                  className="rounded-lg border border-brand-ink-muted/20 px-2 py-1"
+                  className="rounded-lg border border-brand-ink-muted/20 px-3 py-2"
                   placeholder="Name"
                   value={editName}
                   onChange={(e) => setEditName(e.target.value)}
                 />
                 <input
-                  className="rounded-lg border border-brand-ink-muted/20 px-2 py-1"
+                  className="rounded-lg border border-brand-ink-muted/20 px-3 py-2"
                   placeholder="Description"
                   value={editDescription}
                   onChange={(e) => setEditDescription(e.target.value)}
                 />
                 <input
-                  className="rounded-lg border border-brand-ink-muted/20 px-2 py-1"
+                  className="rounded-lg border border-brand-ink-muted/20 px-3 py-2"
                   placeholder="Category"
                   value={editCategory}
                   onChange={(e) => setEditCategory(e.target.value)}
@@ -386,14 +382,14 @@ export default function VendorMenuPage() {
                   Veg
                 </label>
                 <input
-                  className="rounded-lg border border-brand-ink-muted/20 px-2 py-1"
+                  className="rounded-lg border border-brand-ink-muted/20 px-3 py-2"
                   placeholder="Price (rupees)"
                   type="number"
                   value={editPrice}
                   onChange={(e) => setEditPrice(e.target.value)}
                 />
                 <input
-                  className="rounded-lg border border-brand-ink-muted/20 px-2 py-1"
+                  className="rounded-lg border border-brand-ink-muted/20 px-3 py-2"
                   placeholder="Image URL"
                   value={editImageUrl}
                   onChange={(e) => setEditImageUrl(e.target.value)}
@@ -408,26 +404,26 @@ export default function VendorMenuPage() {
               </div>
             )}
             {optionsOpenId === item.id && (
-              <div className="flex flex-col gap-3 rounded border bg-brand-accent/5 p-2">
+              <div className="flex flex-col gap-3 rounded-lg border bg-brand-accent/5 p-2">
                 {optionsError && <p className="text-sm text-red-600">{optionsError}</p>}
-                <div className="flex flex-col gap-1 rounded border border-brand-ink-muted/15 p-2">
+                <div className="flex flex-col gap-1 rounded-lg border border-brand-ink-muted/15 p-2">
                   <p className="text-xs font-semibold text-brand-ink">Add option group</p>
                   <input
-                    className="rounded-lg border border-brand-ink-muted/20 px-2 py-1 text-sm"
+                    className="rounded-lg border border-brand-ink-muted/20 px-3 py-2 text-sm"
                     placeholder="Group name (e.g. Size)"
                     value={groupName}
                     onChange={(e) => setGroupName(e.target.value)}
                   />
                   <div className="flex gap-2">
                     <input
-                      className="w-1/2 rounded-lg border border-brand-ink-muted/20 px-2 py-1 text-sm"
+                      className="w-1/2 rounded-lg border border-brand-ink-muted/20 px-3 py-2 text-sm"
                       placeholder="Min select"
                       type="number"
                       value={groupMin}
                       onChange={(e) => setGroupMin(e.target.value)}
                     />
                     <input
-                      className="w-1/2 rounded-lg border border-brand-ink-muted/20 px-2 py-1 text-sm"
+                      className="w-1/2 rounded-lg border border-brand-ink-muted/20 px-3 py-2 text-sm"
                       placeholder="Max select"
                       type="number"
                       value={groupMax}
@@ -442,7 +438,7 @@ export default function VendorMenuPage() {
                   </button>
                 </div>
                 {(groupsByItem[item.id] ?? []).map((group) => (
-                  <div key={group.id} className="rounded border border-brand-ink-muted/15 p-2">
+                  <div key={group.id} className="rounded-lg border border-brand-ink-muted/15 p-2">
                     <div className="flex items-center justify-between">
                       <p className="text-sm font-semibold text-brand-ink">
                         {group.name}{" "}
@@ -452,7 +448,7 @@ export default function VendorMenuPage() {
                       </p>
                       <button
                         onClick={() => deleteGroup(item.id, group.id)}
-                        className="rounded bg-red-100 px-2 py-1 text-xs text-red-700"
+                        className="rounded-full bg-red-100 px-2 py-1 text-xs text-red-700"
                       >
                         Delete group
                       </button>
@@ -474,7 +470,7 @@ export default function VendorMenuPage() {
                     </ul>
                     <div className="mt-2 flex gap-2">
                       <input
-                        className="flex-1 rounded-lg border border-brand-ink-muted/20 px-2 py-1 text-sm"
+                        className="flex-1 rounded-lg border border-brand-ink-muted/20 px-3 py-2 text-sm"
                         placeholder="Option name"
                         value={optionForms[group.id]?.name ?? ""}
                         onChange={(e) =>
@@ -485,7 +481,7 @@ export default function VendorMenuPage() {
                         }
                       />
                       <input
-                        className="w-24 rounded-lg border border-brand-ink-muted/20 px-2 py-1 text-sm"
+                        className="w-24 rounded-lg border border-brand-ink-muted/20 px-3 py-2 text-sm"
                         placeholder="+₹"
                         type="number"
                         value={optionForms[group.id]?.price ?? "0"}

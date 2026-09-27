@@ -35,10 +35,6 @@ export default function VendorShell({ children }: { children: React.ReactNode })
     router.push("/vendor/login");
   }
 
-  if (pathname === "/vendor/login") {
-    return <>{children}</>;
-  }
-
   if (loading) return <p className="p-4">Loading…</p>;
 
   if (!storeId) {
