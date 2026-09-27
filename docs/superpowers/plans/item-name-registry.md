@@ -1974,3 +1974,53 @@ Digital Kitchen Scale
 Electric Milk Frother
 Grill Sandwich Toaster
 Portable USB Blender Bottle
+Gaming Laptop RTX Series
+RGB Gaming Mouse
+RGB Mechanical Gaming Keyboard
+144Hz Gaming Monitor 24-inch
+Ergonomic Gaming Chair
+Gaming Desk
+VR Headset
+Gaming Console
+Extra Wireless Game Controller
+Physical Game Disc
+Graphics Card Mid-Range
+Desktop CPU Processor
+RAM Memory Stick 8GB
+SSD Solid State Drive 512GB
+Computer Motherboard
+PC Power Supply Unit 650W
+PC Cabinet Case
+CPU Cooler Fan
+Desktop Computer Speakers
+USB Podcast Microphone
+Video Capture Card
+Green Screen Backdrop
+Streaming Light Kit
+DSLR Camera Body
+DSLR Camera Lens 50mm
+Padded Camera Bag
+Memory Card Reader
+Professional Tripod
+Drone with 4K Camera
+Smart AR Glasses
+E-Reader Device
+Android Tablet 10-inch
+Tablet Stylus Pen
+Tablet Keyboard Case
+Portable SSD Drive 1TB
+Laptop Docking Station
+Network Switch 8-Port
+WiFi Range Extender
+Ethernet Cable 10m
+Bluetooth USB Adapter
+SIM Card Tray Ejector Tool
+Phone Repair Tool Kit
+Laptop Repair Tool Kit
+Anti-Static Wrist Band
+Cable Ties Pack 100pc
+Velcro Cable Straps Pack
+Surge Protector Power Strip
+Voltage Stabilizer
+Small Inverter Battery
+Solar Power Bank
