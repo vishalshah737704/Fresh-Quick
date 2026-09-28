@@ -479,6 +479,17 @@ See [MEMORY.md](MEMORY.md) for phase-by-phase progress and decisions.
   while taking screenshots for a docs update. Fixed by curl-checking
   every new URL and remapping dead ids to verified-working ones already
   proven live elsewhere in the file.
+- **A docx-js `TableOfContents` field is fine for a `.docx` opened in
+  Word, but renders permanently blank in any PDF exported from it** —
+  Word/LibreOffice only populate a TOC field on an explicit "Update
+  Field" action, which nothing in a static PDF export pipeline triggers
+  automatically. `docs/User_Manual.docx`/`.pdf` shipped with a blank TOC
+  page in the PDF on first build; fixed by hand-editing the docx XML to
+  replace the field with a static, pre-computed page-numbered list (page
+  numbers read off a rendered proof, not guessed). Any future docx-js
+  document whose PDF export matters must either pre-compute a static TOC
+  this way or programmatically resolve the field before converting to
+  PDF — never ship a bare TOC field as the final PDF deliverable.
 
 ## Standing phrase: "Commit Work" — NON-NEGOTIABLE
 

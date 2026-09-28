@@ -1459,6 +1459,38 @@ Claude at the start of work in this repo per project CLAUDE.md.
   `C:\ProgramData\chocolatey\lib\poppler\tools`** (both get shimmed onto
   PATH by chocolatey) rather than relying on the skill's wrapper script.
   Both packages are now installed on this machine as of 2026-09-27.
+- `docs/User_Manual.docx` / `docs/User_Manual.pdf` — new, separate from
+  `Usage_Guide.docx`: a full industry-standard technical manual/book
+  covering all 4 portals in much greater depth, with a generic
+  professional navy/amber color theme (not the app's own green/amber
+  brand), a real (static, page-numbered) Table of Contents, 4 hand-drawn
+  SVG diagrams (system architecture + one workflow flowchart per
+  module), and a Technical Appendix (stack, DB schema summary, seeded
+  accounts, glossary). **Created 2026-09-28**, 34 pages. Built with
+  docx-js from an isolated scratch npm install (this repo's own
+  `package.json`/lockfile were never touched — `docx` was not already a
+  dependency here despite an earlier assumption). Screenshots (21) were
+  captured live across all 4 portals, including one order driven through
+  its full real status chain so vendor/admin/delivery screens show
+  genuine data, not empty states. **The docx-js-generated Word TOC field
+  rendered blank in the static PDF** (Word/LibreOffice both require an
+  explicit "Update Field" action to populate a TOC field, which a PDF
+  reader can never do) — fixed by hand-editing the underlying XML to
+  replace the TOC field with a static, pre-computed page-numbered list
+  (page numbers taken directly from a rendered proof of the document, not
+  guessed). **Lesson: never ship a docx-js `TableOfContents` field as-is
+  in a document whose primary deliverable is a static PDF — always
+  either pre-compute a static TOC from a rendered proof, or programmatically
+  update the field before PDF export; a field-based TOC is fine for a
+  `.docx` a person will open in Word, but is a guaranteed-blank dead page
+  in any PDF export pipeline that doesn't explicitly resolve it first.**
+  Also noted, not yet fixed: Appendix B's schema summary uses this app's
+  original pre-rename table names (`restaurants`/`menu_items`) rather
+  than the current live names (`stores`/`products`) — read from
+  migration `00000000000001` rather than the actual current schema;
+  cosmetic/informational staleness, not a functional defect, worth
+  correcting in a future regeneration pass. Same "not auto-regenerated"
+  caveat as the other two docs applies here too.
 
 ## External API keys in use
 
