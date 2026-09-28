@@ -13,9 +13,10 @@ actual customer/vendor/delivery UI** (2026-09-25 session) — see section 5's
 per-workflow notes for what was actually observed, and section 1 for two
 real environment-variable bugs found and fixed during that pass. See
 `docs/superpowers/specs/2026-09-25-phase7-n8n-automation-design.md` for the
-full design and what stays on the tested synchronous path in the meantime
-(checkout payment, vendor status updates, delivery self-claim, and the
-delivery-address view all still work today without n8n).
+full design. Checkout payment resolution now uses workflow 02 with an
+in-process fallback (see section 5's "02" entry) — everything else
+(vendor status updates, delivery self-claim, and the delivery-address
+view) stays on its own tested path that works today without n8n.
 
 Supabase Database Webhooks fire on every row event for the table they're
 configured on — there is no column-level or conditional filtering on the
@@ -195,24 +196,29 @@ is the end-to-end path below.
 
 **01 — Order Placed.** Place a real order through `/customer/checkout`.
 Expect: the webhook fires on the `orders` INSERT, the filter passes
-(status is `placed` on insert), and the placeholder "Notify Restaurant"
-no-op node executes (check n8n's execution log — there's no visible
-in-app effect yet since the notification channel itself isn't built).
+(status is `placed` on insert), and the "Notify Restaurant" node now
+calls a real internal route, `POST /api/internal/orders/[id]/notify-
+vendor`, which writes a row to the new `public.notifications` table
+(order_id, restaurant_id, channel, message) — check that table in
+Supabase Studio for the new row, not just n8n's execution log. This
+route requires the `X-Internal-Secret` header to match Postgres's
+`app.n8n_internal_secret` setting (see section 1's prerequisite for
+setting it — this was previously undocumented and caused a real setup
+gap the first time this workflow was tested live end-to-end).
 
-**02 — Payment Mock Confirmation.** This is the async alternative to
-Phase 3's synchronous checkout payment resolution — the two paths would
-conflict if both are active, since Phase 3 already inserts a payment row
-with a final `status` (`success`/`failed`), not `pending`, so this
-workflow's own INSERT-triggered logic wouldn't find anything to change
-(the payment-result route's `.eq("status", "pending")` guard, see
-CLAUDE.md's "real bug worth remembering" note in MEMORY.md's Phase 7
-entry, means this workflow only ever affects orders inserted with a
-`pending` payment status, which the current checkout flow never produces).
-**Don't activate this workflow without first changing checkout to insert
-payments as `pending` instead of resolving synchronously** — otherwise
-it's inert. Once that change exists, test by placing an order and
-confirming the payment's `status` updates from `pending` to
-`success`/`failed` a couple of seconds later.
+**02 — Payment Mock Confirmation.** Now live and active in the checkout
+flow. Checkout inserts the payment row as `status='pending'` and then
+(server-side, inside `app/api/cart/checkout/route.ts`) polls for up to
+~10s for this workflow to resolve it via `/api/internal/payments/[id]/
+result`. If n8n doesn't respond within that window (most commonly
+because n8n isn't running locally, which is the default dev state), the
+same route falls back to resolving the payment itself via the same
+`applyPaymentResult()` helper this workflow's callback route uses, so
+behavior is identical either way. Test by placing an order with n8n
+running and confirming the payment's `status` updates from `pending` to
+`success`/`failed` within a couple of seconds (well inside the 10s
+fallback boundary); with n8n stopped, confirm the order instead takes
+the full ~10s before the fallback resolves it.
 
 **03 — Restaurant Accepts / Status Change.** As the seeded vendor, advance
 an order through `/vendor/orders` (accept → preparing → ready). Expect:
@@ -233,9 +239,13 @@ broken.
 `/vendor/orders`'s Reject button) does **not** go through n8n — the
 order's status update to `rejected` and the mock payment refund
 (`payments.status` → `refunded`) both happen synchronously in
-`app/api/vendor/orders/[id]/reject/route.ts`, the same way Phase 3's
-checkout resolves payment synchronously rather than via workflow 02.
-There is nothing to test in n8n for this path.
+`app/api/vendor/orders/[id]/reject/route.ts`. That route (and the
+sibling accept/advance route,
+`app/api/vendor/orders/[id]/status/route.ts`) now also checks whether
+the order's payment is still `pending` before allowing the action,
+since checkout's poll+fallback window means a vendor can see a
+`placed` order whose payment hasn't resolved yet. There is nothing to
+test in n8n for this path.
 
 **04 — Delivery Partner Assignment.** Advance an order to `ready` as the
 vendor, with at least one delivery partner online (`/delivery/dashboard`,

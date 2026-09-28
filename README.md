@@ -41,13 +41,21 @@ an item to cart and clicking Checkout will prompt you to sign up / log in
 first (`/customer/login`, a re-skinned card — same email/password flow,
 account created locally). Checkout is a single-page, two-column layout
 (address + payment method as selectable cards on the left, a sticky
-order-summary card with the place-order button on the right). Complete
-checkout with any mock payment method ("Cash on Delivery" always
-succeeds; card/UPI resolve randomly ~80% success) to land on the order
-confirmation page, which now shows a 4-step status timeline
-(Placed/Preparing/On the way/Delivered) instead of a plain text line,
-plus a bordered coordinate box in place of a live map once a delivery
-partner is assigned (no Google Maps key yet).
+order-summary card with the place-order button on the right). Checkout
+also collects a recipient name/email and payment-method-specific fields
+(card number/expiry/name for card, a UPI ID for UPI; nothing extra for
+Cash on Delivery) — the Place Order button stays disabled until these
+validate. Complete checkout with any mock payment method ("Cash on
+Delivery" always succeeds; card/UPI resolve randomly ~80% success) to
+land on the order confirmation page, which now shows a 4-step status
+timeline (Placed/Preparing/On the way/Delivered) instead of a plain text
+line, plus a bordered coordinate box in place of a live map once a
+delivery partner is assigned (no Google Maps key yet). Placing an order
+resolves its payment via a local n8n workflow if one is running
+(typically ~1-3s); if no local n8n instance is running — the default
+dev state — the checkout route waits out a full ~10s poll timeout
+before its in-process fallback resolves the payment, so **every order
+takes the full ~10 seconds to confirm without n8n running**, not less.
 
 ## Trying the vendor flow
 

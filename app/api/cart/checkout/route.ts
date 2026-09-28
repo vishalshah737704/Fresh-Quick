@@ -339,7 +339,19 @@ export async function POST(request: NextRequest) {
       paymentMethod === "mock_cod" || Math.random() < PAYMENT_SUCCESS_RATE;
     const fallbackStatus = fallbackSucceeds ? "success" : "failed";
     const applied = await applyPaymentResult(paymentId, fallbackStatus);
-    paymentStatus = applied.ok ? fallbackStatus : "failed";
+    if (applied.ok) {
+      paymentStatus = fallbackStatus;
+    } else {
+      // Payment was already resolved (e.g. by n8n) between our last poll
+      // check and this fallback attempt — re-read the real status instead
+      // of assuming failure.
+      const { data: currentPayment } = await supabaseServer
+        .from("payments")
+        .select("status")
+        .eq("id", paymentId)
+        .single();
+      paymentStatus = (currentPayment?.status as "success" | "failed" | undefined) ?? "failed";
+    }
   }
 
   return NextResponse.json({ orderId: order.id, paymentStatus });

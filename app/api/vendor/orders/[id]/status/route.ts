@@ -15,7 +15,7 @@ export async function POST(
 
   const { data: order, error: orderError } = await supabaseServer
     .from("orders")
-    .select("id, status, store_id")
+    .select("id, status, store_id, payments(status)")
     .eq("id", id)
     .eq("store_id", resolved.storeId)
     .single();
@@ -29,6 +29,24 @@ export async function POST(
       { error: `Order in status "${order.status}" cannot be advanced by a vendor` },
       { status: 400 }
     );
+  }
+
+  // A "placed" order's payment can still be "pending" for up to ~10s while
+  // checkout polls n8n / runs its fallback (see app/api/cart/checkout/
+  // route.ts). Advancing a vendor order past "placed" while payment is
+  // still pending would let a later payment failure slip through, since
+  // applyPaymentResult() only cancels an order still "placed".
+  if (order.status === "placed") {
+    const paymentsField = order.payments as { status: string }[] | { status: string } | null;
+    const paymentStatus = Array.isArray(paymentsField)
+      ? paymentsField[0]?.status
+      : paymentsField?.status;
+    if (paymentStatus === "pending") {
+      return NextResponse.json(
+        { error: "Order payment is still processing — try again in a moment" },
+        { status: 409 }
+      );
+    }
   }
 
   const { data: updated, error: updateError } = await supabaseServer

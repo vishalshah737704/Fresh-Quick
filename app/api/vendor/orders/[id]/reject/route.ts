@@ -17,7 +17,7 @@ export async function POST(
 
   const { data: order, error: orderError } = await supabaseServer
     .from("orders")
-    .select("id, status, store_id")
+    .select("id, status, store_id, payments(status)")
     .eq("id", id)
     .eq("store_id", resolved.storeId)
     .single();
@@ -28,6 +28,23 @@ export async function POST(
     return NextResponse.json(
       { error: `Order in status "${order.status}" cannot be rejected` },
       { status: 400 }
+    );
+  }
+
+  // A "placed" order's payment can still be "pending" for up to ~10s while
+  // checkout polls n8n / runs its fallback (see app/api/cart/checkout/
+  // route.ts) — it's no longer guaranteed to already be resolved by the
+  // time a vendor can see the order. Rejecting now would let a payment
+  // that later resolves to "success" go unrefunded, since the refund
+  // below only matches payments already in "success".
+  const paymentsField = order.payments as { status: string }[] | { status: string } | null;
+  const paymentStatus = Array.isArray(paymentsField)
+    ? paymentsField[0]?.status
+    : paymentsField?.status;
+  if (paymentStatus === "pending") {
+    return NextResponse.json(
+      { error: "Order payment is still processing — try again in a moment" },
+      { status: 409 }
     );
   }
 
@@ -50,10 +67,10 @@ export async function POST(
   }
 
   // Refund the payment if it already settled successfully. A rejected
-  // order's checkout payment is, by construction, always either
-  // "success" (checkout already cancels the order itself on payment
-  // failure, so a "placed" order a vendor can see always has a
-  // successful payment) or already refunded by a retried request — the
+  // order's checkout payment is, at this point, either "success" (the
+  // pending-payment check above already ruled out "pending", and checkout
+  // cancels the order itself on payment failure, so "failed" can't reach
+  // here as "placed") or already refunded by a retried request — the
   // "success" filter here just makes that retry safe.
   const { error: refundError } = await supabaseServer
     .from("payments")

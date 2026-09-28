@@ -1251,21 +1251,23 @@ Claude at the start of work in this repo per project CLAUDE.md.
   captures a recipient name + email and payment-method-specific fields
   (card or UPI), validated client- and server-side via shared
   `validateCardFields`/`validateUpiFields`/`validateRecipientEmail`
-  helpers (`lib/payment-validation.ts`); only a masked reference
-  (`buildMaskedReference`, e.g. "Card, ****1234") is ever stored —
+  helpers (`lib/payment-fields.ts`); only a masked reference
+  (`buildMaskedReference`, e.g. "Card •••• 4242") is ever stored —
   raw card/UPI numbers never reach the database. `checkout_place_order`
   now takes `p_recipient_name`, `p_recipient_email`, `p_payment_reference`
   and inserts the payment row as `status='pending'`. Added a
   `public.notifications` table (order_id, restaurant_id, channel,
   message) that a new `/api/internal/orders/{id}/notify-vendor` route
   writes to, wired to n8n via the order-placed workflow. Payment
-  resolution is poll+fallback: the client polls `applyPaymentResult`'s
-  backing status for ~10s, and if n8n hasn't resolved the payment by
-  then, a client-side fallback resolves it directly rather than leaving
-  the order stuck pending. **Task 1 found and fixed a real pre-existing
-  bug**: `n8n_notify()` (the Postgres trigger function firing on
-  `orders`/`payments` inserts) had been sending an empty `'{}'::jsonb`
-  body since Phase 7 — see the new CLAUDE.md bullet below. **Task 9's
+  resolution is poll+fallback, entirely server-side inside
+  `app/api/cart/checkout/route.ts`: the checkout route itself polls
+  `payments.status` for up to ~10s, and if n8n hasn't resolved the
+  payment by then, the same route runs an in-process fallback
+  (`applyPaymentResult`) rather than leaving the order stuck pending.
+  **Task 1 found and fixed a real pre-existing bug**: `n8n_notify()`
+  (the Postgres trigger function firing on `orders`/`payments` inserts)
+  had been sending an empty `'{}'::jsonb` body since Phase 7 — see the
+  CLAUDE.md bullet on n8n webhook payloads. **Task 9's
   live n8n verification genuinely ran in this session** (not skipped) —
   real psql/curl evidence, approved on review with one minor noted gap
   (no direct docker-log line naming the specific order IDs, not
