@@ -43,7 +43,7 @@ export default function RootLayout() {
         <Stack.Screen name="index" options={{ title: BRAND.name, headerShown: false }} />
         <Stack.Screen name="login/customer" options={{ title: "Customer Log In" }} />
         <Stack.Screen name="login/delivery" options={{ title: "Delivery Partner Log In" }} />
-        <Stack.Screen name="customer/home" options={{ title: "Home", headerBackVisible: false }} />
+        <Stack.Screen name="customer/(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="customer/store/[id]" options={{ title: "Menu" }} />
         <Stack.Screen name="customer/cart" options={{ title: "Cart" }} />
         <Stack.Screen name="delivery/dashboard" options={{ title: "Dashboard", headerBackVisible: false }} />

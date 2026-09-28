@@ -13,7 +13,7 @@ import { useLocalSearchParams } from "expo-router";
 import { supabase } from "../../../../lib/supabase";
 import { BRAND } from "../../../../theme";
 import { useCart } from "../../../../lib/cart-store";
-import { CartBadge } from "../../../../components/CartBadge";
+import { FloatingCartPill } from "../../../../components/FloatingCartPill";
 import { ItemCustomizationModal } from "../../../../components/ItemCustomizationModal";
 import { useRequireSession } from "../../../../lib/use-require-session";
 
@@ -260,7 +260,7 @@ export default function StoreDetailScreen() {
         />
       )}
 
-      <CartBadge />
+      <FloatingCartPill />
     </View>
   );
 }

@@ -10,10 +10,10 @@ import {
   StyleSheet,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { supabase } from "../../../lib/supabase";
-import { BRAND } from "../../../theme";
-import { CartBadge } from "../../../components/CartBadge";
-import { useRequireSession } from "../../../lib/use-require-session";
+import { supabase } from "../../../../lib/supabase";
+import { BRAND } from "../../../../theme";
+import { FloatingCartPill } from "../../../../components/FloatingCartPill";
+import { useRequireSession } from "../../../../lib/use-require-session";
 
 type Store = {
   id: string;
@@ -181,7 +181,7 @@ export default function CustomerHomeScreen() {
         />
       )}
 
-      <CartBadge />
+      <FloatingCartPill />
     </View>
   );
 }
