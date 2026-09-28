@@ -7,6 +7,7 @@ process.chdir(root);
 
 const args = process.argv.slice(2);
 const keepSupabase = args.includes("--keep-supabase");
+const keepN8n = args.includes("--keep-n8n");
 const portArg = args.find((a) => a.startsWith("--port="));
 const port = portArg ? Number(portArg.split("=")[1]) : 3000;
 
@@ -41,6 +42,21 @@ if (process.platform === "win32") {
   stopWindows(port);
 } else {
   stopPosix(port);
+}
+
+if (!keepN8n) {
+  console.log("Stopping n8n container (Docker)...");
+  const inspect = spawnSync("docker inspect -f {{.State.Running}} n8n", {
+    encoding: "utf8",
+    shell: true,
+  });
+  if (inspect.status === 0 && inspect.stdout.trim() === "true") {
+    spawnSync("docker stop n8n", { stdio: "inherit", shell: true });
+  } else {
+    console.log("n8n container not running.");
+  }
+} else {
+  console.log("Leaving n8n running (--keep-n8n passed).");
 }
 
 if (!keepSupabase) {
