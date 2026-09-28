@@ -66,6 +66,23 @@ See [MEMORY.md](MEMORY.md) for phase-by-phase progress and decisions.
 
 ## Project-specific rules
 
+- **A Postgres trigger function that fires an n8n webhook must be checked
+  for what it actually puts in the request body, not just that it fires
+  — `create or replace function` silently succeeding is not evidence the
+  payload is populated.** `n8n_notify()` (wiring `orders`/`payments`
+  inserts to n8n webhooks since Phase 7) had been sending an empty
+  `'{}'::jsonb` body the entire time — every webhook fired on schedule,
+  every n8n workflow execution showed as a success, but no node reading
+  a field out of that body could ever have worked, because there was no
+  data to read. This is exactly the "looked right, never verified live"
+  gotcha this file already tracks several instances of (the `users` RLS
+  recursion bug, the `APP_BASE_URL`/`host.docker.internal` container
+  networking bug) — a trigger firing successfully only proves the HTTP
+  call happened, not that its payload was ever exercised end-to-end.
+  Found and fixed in the checkout-payment-details plan's Task 1, only
+  because that task's own live verification actually inspected the
+  webhook payload n8n received, not just whether the workflow execution
+  showed green.
 - **No hosted Supabase, ever.** Local Docker stack only (Vishal's explicit
   cost/scale preference — see spec §2).
 - **Cart is single-restaurant only.** Adding an item from a different

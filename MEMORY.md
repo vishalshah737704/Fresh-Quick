@@ -1243,6 +1243,47 @@ Claude at the start of work in this repo per project CLAUDE.md.
   evidence the photo exists, and the agent's own "no collisions" report
   checked uniqueness, not existence.**
 
+- **Checkout payment details (recipient/payment-method capture + n8n
+  payment resolution)**: ✅ Complete, 10-task plan, all tasks reviewed
+  clean (Task 4 needed 1 fix round for a stale n8n connection reference;
+  Task 8 needed 3 fix rounds, all about proving live verification rather
+  than fixing code — see plan's progress ledger for detail). Checkout now
+  captures a recipient name + email and payment-method-specific fields
+  (card or UPI), validated client- and server-side via shared
+  `validateCardFields`/`validateUpiFields`/`validateRecipientEmail`
+  helpers (`lib/payment-validation.ts`); only a masked reference
+  (`buildMaskedReference`, e.g. "Card, ****1234") is ever stored —
+  raw card/UPI numbers never reach the database. `checkout_place_order`
+  now takes `p_recipient_name`, `p_recipient_email`, `p_payment_reference`
+  and inserts the payment row as `status='pending'`. Added a
+  `public.notifications` table (order_id, restaurant_id, channel,
+  message) that a new `/api/internal/orders/{id}/notify-vendor` route
+  writes to, wired to n8n via the order-placed workflow. Payment
+  resolution is poll+fallback: the client polls `applyPaymentResult`'s
+  backing status for ~10s, and if n8n hasn't resolved the payment by
+  then, a client-side fallback resolves it directly rather than leaving
+  the order stuck pending. **Task 1 found and fixed a real pre-existing
+  bug**: `n8n_notify()` (the Postgres trigger function firing on
+  `orders`/`payments` inserts) had been sending an empty `'{}'::jsonb`
+  body since Phase 7 — see the new CLAUDE.md bullet below. **Task 9's
+  live n8n verification genuinely ran in this session** (not skipped) —
+  real psql/curl evidence, approved on review with one minor noted gap
+  (no direct docker-log line naming the specific order IDs, not
+  disqualifying given the 10s-fallback-boundary timing proof). It found
+  and fixed two more real infra bugs along the way: n8n's
+  `APP_BASE_URL` was pointing at the wrong port, and
+  `app.n8n_internal_secret` had never been set on this Postgres
+  instance. Both n8n workflow JSON files' `_untested_reference_only`
+  flags were flipped to `false` on the strength of this real evidence.
+  Note: Task 9's implementer repointed the shared local n8n container's
+  `APP_BASE_URL` from :3000 (main checkout) to :3001 (this worktree) to
+  make live verification possible — this is local Docker/Postgres state,
+  not a committed file, so re-point it back to :3000 (re-run the docker
+  setup command from `docs/n8n-webhook-setup.md`) before testing n8n
+  callbacks against the main checkout, or they'll silently go nowhere.
+  Spec: docs/superpowers/specs/2026-09-28-checkout-payment-details-design.md
+  Plan: docs/superpowers/plans/2026-09-28-checkout-payment-details.md
+
 ## Key decisions carried forward (see spec §2 for full list)
 
 - Self-hosted Supabase only, no cloud project.
