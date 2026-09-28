@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/lib/cart-store";
@@ -8,6 +8,7 @@ import { useAddress } from "@/lib/address-store";
 import { useSession } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
 import { useDeliveryFee } from "@/lib/use-delivery-fee";
+import { validateCardFields, validateUpiFields, validateRecipientEmail } from "@/lib/payment-fields";
 
 const PAYMENT_METHODS = [
   { value: "mock_card", label: "Mock Card", icon: "💳" },
@@ -26,6 +27,33 @@ export default function CheckoutPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { deliveryFeePaise, error: feeLoadError } = useDeliveryFee(storeId);
+  const [recipientName, setRecipientName] = useState("");
+  const [recipientEmail, setRecipientEmail] = useState("");
+  const [cardNumber, setCardNumber] = useState("");
+  const [cardExpiry, setCardExpiry] = useState("");
+  const [cardholderName, setCardholderName] = useState("");
+  const [upiId, setUpiId] = useState("");
+
+  useEffect(() => {
+    if (!userId) return;
+    let cancelled = false;
+    async function loadProfile() {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const email = sessionData.session?.user.email ?? "";
+      const { data: profile } = await supabase
+        .from("users")
+        .select("full_name")
+        .eq("id", userId)
+        .single();
+      if (cancelled) return;
+      setRecipientEmail(email);
+      setRecipientName(profile?.full_name ?? "");
+    }
+    loadProfile();
+    return () => {
+      cancelled = true;
+    };
+  }, [userId]);
 
   if (sessionLoading) {
     return <p className="text-gray-500">Loading…</p>;
@@ -50,6 +78,17 @@ export default function CheckoutPage() {
 
   const totalPaise = Math.round(subtotal * 100) + deliveryFeePaise;
   const total = totalPaise / 100;
+
+  const recipientNameError = recipientName.trim().length === 0 ? "Name is required" : null;
+  const recipientEmailError = validateRecipientEmail(recipientEmail);
+  const paymentFieldError =
+    paymentMethod === "mock_card"
+      ? validateCardFields({ cardNumber, expiry: cardExpiry, cardholderName })
+      : paymentMethod === "mock_upi"
+        ? validateUpiFields({ upiId })
+        : null;
+  const canPlaceOrder =
+    !recipientNameError && !recipientEmailError && !paymentFieldError;
 
   async function handleSubmit() {
     setSubmitting(true);
@@ -79,6 +118,10 @@ export default function CheckoutPage() {
           paymentMethod,
           expectedTotal: total,
           deliveryNote: orderNote.trim() === "" ? null : orderNote,
+          recipientName: recipientName.trim(),
+          recipientEmail: recipientEmail.trim(),
+          cardFields: paymentMethod === "mock_card" ? { cardNumber, expiry: cardExpiry, cardholderName } : undefined,
+          upiFields: paymentMethod === "mock_upi" ? { upiId } : undefined,
         }),
       });
       const result = await res.json();
@@ -103,6 +146,32 @@ export default function CheckoutPage() {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="flex flex-col gap-6 lg:col-span-2">
           <section className="rounded-lg border border-brand-ink-muted/10 bg-brand-surface p-4">
+            <h2 className="mb-3 font-semibold text-brand-ink">Contact details</h2>
+            <div className="flex flex-col gap-3">
+              <div>
+                <label className="mb-1 block text-sm font-medium text-brand-ink">Name</label>
+                <input
+                  type="text"
+                  value={recipientName}
+                  onChange={(e) => setRecipientName(e.target.value)}
+                  className="w-full rounded border border-brand-ink-muted/15 px-3 py-2 text-sm"
+                  placeholder="Who's this order for?"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-brand-ink">Email</label>
+                <input
+                  type="email"
+                  value={recipientEmail}
+                  onChange={(e) => setRecipientEmail(e.target.value)}
+                  className="w-full rounded border border-brand-ink-muted/15 px-3 py-2 text-sm"
+                  placeholder="Where should order updates go?"
+                />
+              </div>
+            </div>
+          </section>
+
+          <section className="rounded-lg border border-brand-ink-muted/10 bg-brand-surface p-4">
             <h2 className="mb-1 font-semibold text-brand-ink">Delivery address</h2>
             <p className="text-sm text-brand-ink-muted">{label}</p>
           </section>
@@ -111,24 +180,63 @@ export default function CheckoutPage() {
             <h2 className="mb-3 font-semibold text-brand-ink">Payment method</h2>
             <div className="flex flex-col gap-2">
               {PAYMENT_METHODS.map((m) => (
-                <label
-                  key={m.value}
-                  className={`flex cursor-pointer items-center gap-3 rounded-lg border px-4 py-3 text-sm ${
-                    paymentMethod === m.value
-                      ? "border-brand-primary bg-brand-primary/5"
-                      : "border-brand-ink-muted/15"
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="paymentMethod"
-                    checked={paymentMethod === m.value}
-                    onChange={() => setPaymentMethod(m.value)}
-                    className="accent-brand-primary"
-                  />
-                  <span className="text-lg">{m.icon}</span>
-                  <span className="font-medium text-brand-ink">{m.label}</span>
-                </label>
+                <div key={m.value}>
+                  <label
+                    className={`flex cursor-pointer items-center gap-3 rounded-lg border px-4 py-3 text-sm ${
+                      paymentMethod === m.value
+                        ? "border-brand-primary bg-brand-primary/5"
+                        : "border-brand-ink-muted/15"
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="paymentMethod"
+                      checked={paymentMethod === m.value}
+                      onChange={() => setPaymentMethod(m.value)}
+                      className="accent-brand-primary"
+                    />
+                    <span className="text-lg">{m.icon}</span>
+                    <span className="font-medium text-brand-ink">{m.label}</span>
+                  </label>
+                  {paymentMethod === m.value && m.value === "mock_card" && (
+                    <div className="mt-2 flex flex-col gap-2 border-t border-brand-ink-muted/10 pt-2">
+                      <input
+                        type="text"
+                        value={cardNumber}
+                        onChange={(e) => setCardNumber(e.target.value)}
+                        placeholder="Card number (16 digits)"
+                        className="w-full rounded border border-brand-ink-muted/15 px-3 py-2 text-sm"
+                      />
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={cardExpiry}
+                          onChange={(e) => setCardExpiry(e.target.value)}
+                          placeholder="MM/YY"
+                          className="w-24 rounded border border-brand-ink-muted/15 px-3 py-2 text-sm"
+                        />
+                        <input
+                          type="text"
+                          value={cardholderName}
+                          onChange={(e) => setCardholderName(e.target.value)}
+                          placeholder="Cardholder name"
+                          className="flex-1 rounded border border-brand-ink-muted/15 px-3 py-2 text-sm"
+                        />
+                      </div>
+                    </div>
+                  )}
+                  {paymentMethod === m.value && m.value === "mock_upi" && (
+                    <div className="mt-2 border-t border-brand-ink-muted/10 pt-2">
+                      <input
+                        type="text"
+                        value={upiId}
+                        onChange={(e) => setUpiId(e.target.value)}
+                        placeholder="UPI ID, e.g. name@bank"
+                        className="w-full rounded border border-brand-ink-muted/15 px-3 py-2 text-sm"
+                      />
+                    </div>
+                  )}
+                </div>
               ))}
             </div>
           </section>
@@ -193,7 +301,7 @@ export default function CheckoutPage() {
             {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
 
             <button
-              disabled={submitting}
+              disabled={submitting || !canPlaceOrder}
               onClick={handleSubmit}
               className="mt-4 w-full rounded-full bg-brand-primary px-4 py-2 font-semibold text-white disabled:opacity-50"
             >
