@@ -1752,6 +1752,86 @@ ping + 10s list polling, matching web's cadence exactly).
 - Nothing pushed to `origin` yet — awaiting Vishal's review or the
   "Commit Work" standing phrase.
 
+## Mobile app — UberEats-style redesign (complete, local main, not pushed)
+
+Built 2026-09-28, same session as the mobile v1 build, per Vishal's
+explicit request to "mimic Fresh & Quick Mobile to the UberEats Mobile
+App." Scope confirmed via AskUserQuestion before starting: fresh research
+into the real UberEats mobile app's own UI patterns (not a reuse of the
+web app's earlier, separate "Uber Eats-style redesign" — different
+research, mobile-native patterns), plus new UberEats-app features, not
+just visual polish. See `md_version/MOBILE_UBEREATS_REDESIGN_SPEC.md` for
+the full design reference (colors/layout/component patterns per screen,
+with Fresh & Quick's own brand tokens substituted for Uber's — no Uber
+logo/wordmark/asset ever used).
+
+4 phases, 6 commits (ef94d42 nav shell, 0507211 store+cart, 1daa782 home,
+8c8320d checkout+tracking, 7f282fd final-review fixes — home and store+cart
+briefly landed in one shared commit `e15165d` from a two-agent race in the
+same non-worktree checkout, then were correctly split back into 0507211/
+1daa782 by the agents themselves before anything was pushed):
+
+- **New**: bottom tab bar (Home/Orders/Account) replacing the old
+  stack-only nav — store detail/cart/checkout/order-detail stay
+  stack-pushed on top of the tabs, per Expo Router's `Tabs` + root `Stack`
+  pattern (`customer/(tabs)/_layout.tsx`). Floating cart pill
+  (`FloatingCartPill.tsx`, renamed from `CartBadge.tsx`) shown only on
+  Home/Store-detail. New Account tab (Wallet/Help/Sign-out list, first
+  customer-side sign-out logic — didn't exist before, only delivery had
+  one). New reorder row on Home (past-ordered distinct stores, navigates
+  to store page, does NOT auto-add items — explicitly out of scope).
+  Skeleton loading + pull-to-refresh on Home.
+- **Restyled**: Home (floating address pill — non-functional stub, no
+  address picker exists yet; search pill; category chips; promo carousel;
+  `StoreCard.tsx` with a local-only favorite-heart toggle, no backend),
+  store detail (hero + floating chips, truly-sticky category-pill nav via
+  `stickyHeaderIndices`, item rows with overlapping "+" badge), cart
+  (bottom-sheet visual treatment — `✕` close, not real gesture
+  drag-to-dismiss, since no bottom-sheet library is installed and one
+  wasn't added without approval; new tip selector that is **UI-only**,
+  never touches `subtotalPaise`/`totalPaise`/the checkout payload —
+  no `tip_paise` column exists), checkout (collapsible row sections
+  instead of one long form, bottom-pinned "Place order · ₹X" button),
+  order tracking (`OrderStatusStepper.tsx` segmented progress bar reusing
+  the existing `TIMELINE_STEP_INDEX` logic unchanged, `CourierCard.tsx`
+  with call/message buttons that are explicit non-functional stubs — no
+  telephony/chat backend, and courier name is always a fallback since
+  neither mobile nor web ever fetches the delivery partner's actual name,
+  a pre-existing gap this redesign didn't introduce or fix).
+- **Delivery-partner portal untouched** — redesign was customer-app-only
+  per the spec, confirmed by final review.
+- **Two-agent race, caught and self-corrected**: the Home-screen and
+  store-detail/cart phases were dispatched in parallel into the same
+  non-worktree checkout (worktrees still broken in this repo — see
+  "Cleanup noted, not yet done"). One agent's commit briefly swept in the
+  other's uncommitted files; the second agent caught it via `git show
+  --stat`, soft-reset its own commit, and recommitted only its own files
+  — but that left the first agent's work uncommitted until the
+  controlling session noticed and committed it separately afterward.
+  **Same lesson as the v1 build's concurrent-agent note**: briefing
+  concurrent agents to leave an explicit marker/TODO when they touch nothing
+  outside their assigned files would make this class of race
+  self-diagnosing instead of requiring a controller-level git-log check
+  after the fact.
+- **Final whole-tree review caught 2 High-severity gaps** the 4 build
+  phases individually missed: `checkout.tsx` had no `useRequireSession`
+  guard at all (relied on the API failing at 401 instead — same auth-guard
+  gap class as the v1 build's final review, recurring because a new screen
+  written fresh in a later phase didn't carry forward the established
+  per-screen guard convention), and the new Orders tab used an inline
+  "Not signed in" error-text fallback instead of the shared
+  redirect-to-login guard every other screen uses. Both fixed (commit
+  `7f282fd`) — **this makes the second time in one mobile-app session
+  that a final review, not any per-phase build, caught a missing
+  session guard; worth treating "does this new/rewritten screen have
+  `useRequireSession`" as a standing final-review checklist item for any
+  future mobile screen work, not just something to hope individual
+  phases remember.**
+- Not yet run on a real device/simulator — same outstanding item as v1.
+- `Mobile_App_User_Manual.docx`/`.pdf` NOT yet updated for the new tab
+  bar / bottom-sheet cart / row-based checkout — the manual still
+  describes the pre-redesign flow. Flagged, not done this session.
+
 ## External API keys in use
 
 - `PEXELS_API_KEY` — Pexels Search API, used once (not at runtime) to fetch

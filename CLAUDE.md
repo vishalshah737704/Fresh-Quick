@@ -32,13 +32,18 @@ route-group-shell + restyled-layout treatment (sidebar/top-bar nav, tables/
 kanban instead of stacked plain lists), on the design tokens the Uber Eats
 redesign established. All 3 sub-projects merged to local `main`. See
 MEMORY.md for per-sub-project status, defects found, and fixes.
-**React Native + Expo mobile app (v1 built, local `main`, not pushed):**
-Customer + Delivery Partner portals only (Vendor/Admin stay web-only), same
-backend/API routes as web, no new backend code. See
-`md_version/MOBILE_APP_SPEC.md` for architecture and MEMORY.md's "Mobile
-app" entry for build history, review findings, and what's still
-outstanding (no real device/simulator run yet). `Mobile_App_User_Manual.docx`/
-`.pdf` created in `docs/`.
+**React Native + Expo mobile app (v1 built + UberEats-style redesign
+complete, local `main`, not pushed):** Customer + Delivery Partner portals
+only (Vendor/Admin stay web-only), same backend/API routes as web, no new
+backend code. See `md_version/MOBILE_APP_SPEC.md` for v1 architecture and
+`md_version/MOBILE_UBEREATS_REDESIGN_SPEC.md` for the redesign (bottom
+tab nav, UberEats-style Home/store/cart/checkout/tracking, new
+reorder row, floating cart pill). See MEMORY.md's "Mobile app" and
+"Mobile app — UberEats-style redesign" entries for build history, review
+findings, and what's still outstanding (no real device/simulator run yet;
+`Mobile_App_User_Manual.docx`/`.pdf` in `docs/` describes the
+pre-redesign flow, not yet updated for the new tab bar/bottom-sheet
+cart/row-based checkout).
 
 ## Stack
 
