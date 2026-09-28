@@ -6,6 +6,8 @@ import Image from "next/image";
 import { supabase } from "@/lib/supabase";
 import { MenuItemRow } from "@/components/MenuItemRow";
 import { RestaurantMenuAnchorNav } from "@/components/RestaurantMenuAnchorNav";
+import { FeaturedItemsRow } from "@/components/FeaturedItemsRow";
+import { StoreRatingSummary } from "@/components/StoreRatingSummary";
 
 type Option = { id: string; name: string; price_delta_paise: number; sort_order: number };
 type OptionGroup = {
@@ -157,6 +159,17 @@ export default function RestaurantMenuPage() {
   const groups = buildGroups(filteredItems);
   const useGroupedView = groups.length >= 2;
 
+  // Featured items: no real popularity/sales signal exists in this app's
+  // schema (see MEMORY.md), so this is an honest heuristic — the first N
+  // available items that have a photo — not a fabricated "most liked"
+  // claim. Independent of the search box, like a real featured rail.
+  const featuredItems = (menuItems ?? [])
+    .filter((item) => item.is_available && item.image_url)
+    .slice(0, 8);
+  const optionGroupsById = new Map(
+    (menuItems ?? []).map((item) => [item.id, sortedGroups(item)])
+  );
+
   // Scroll-spy: highlight whichever grouped section is most visible.
   // Re-runs whenever the rendered section set changes (new search query,
   // grouped view toggling on/off) so it always observes the current DOM.
@@ -239,6 +252,14 @@ export default function RestaurantMenuPage() {
         placeholder="Search this menu"
         className="mb-4 w-full rounded-lg border border-brand-ink-muted/20 bg-brand-surface px-4 py-2 text-sm text-brand-ink focus:border-brand-primary focus:outline-none"
       />
+      <StoreRatingSummary rating={restaurant.rating} />
+      <FeaturedItemsRow
+        items={featuredItems}
+        storeId={restaurant.id}
+        storeName={restaurant.name}
+        disabled={isUnavailable}
+        optionGroupsById={optionGroupsById}
+      />
       {filteredItems.length === 0 ? (
         <p className="text-brand-ink-muted">No items match &quot;{searchQuery}&quot;.</p>
       ) : useGroupedView ? (
@@ -257,7 +278,7 @@ export default function RestaurantMenuPage() {
                 className="scroll-mt-16"
               >
                 <h2 className="mb-2 text-lg font-bold text-brand-ink">{group.label}</h2>
-                <div className="flex flex-col divide-y divide-brand-ink-muted/10 rounded-lg border border-brand-ink-muted/10 bg-brand-surface px-4">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
                   {group.items.map((item) => (
                     <MenuItemRow
                       key={item.id}
@@ -274,7 +295,7 @@ export default function RestaurantMenuPage() {
           </div>
         </>
       ) : (
-        <div className="flex flex-col divide-y divide-brand-ink-muted/10 rounded-lg border border-brand-ink-muted/10 bg-brand-surface px-4">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {filteredItems.map((item) => (
             <MenuItemRow
               key={item.id}

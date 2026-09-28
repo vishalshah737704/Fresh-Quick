@@ -7,7 +7,6 @@ import { ItemCustomizationModal } from "@/components/ItemCustomizationModal";
 type MenuItem = {
   id: string;
   name: string;
-  description: string | null;
   price: number;
   product_attributes: { is_veg?: boolean } | null;
   is_available: boolean;
@@ -23,7 +22,7 @@ type OptionGroup = {
   menu_item_options: Option[];
 };
 
-export function MenuItemRow({
+export function FeaturedItemCard({
   item,
   storeId,
   storeName,
@@ -45,32 +44,12 @@ export function MenuItemRow({
   const canAdd = !disabled && item.is_available;
 
   return (
-    <div className="flex items-start justify-between gap-4 rounded-lg border border-brand-ink-muted/10 bg-brand-surface p-3">
-      <div className="min-w-0 flex-1">
-        <p className="font-semibold text-brand-ink">
-          {item.product_attributes?.is_veg ? "🟢" : "🔴"} {item.name}
-        </p>
-        {item.description && (
-          <p className="mt-0.5 line-clamp-2 text-sm text-brand-ink-muted">{item.description}</p>
-        )}
-        <p className="mt-1 text-sm font-semibold text-brand-ink">₹{item.price.toFixed(2)}</p>
-        {!canAdd && (
-          <p className="mt-1 text-xs text-brand-ink-muted">
-            {disabled ? "Restaurant unavailable" : "Currently unavailable"}
-          </p>
-        )}
-      </div>
-      <div className="relative h-[88px] w-[88px] shrink-0">
+    <div className="w-40 shrink-0 snap-start overflow-hidden rounded-lg border border-brand-ink-muted/10 bg-brand-surface">
+      <div className="relative h-28 w-full bg-brand-accent/10">
         {item.image_url ? (
-          <Image
-            src={item.image_url}
-            alt={item.name}
-            width={88}
-            height={88}
-            className="h-[88px] w-[88px] rounded-lg object-cover"
-          />
+          <Image src={item.image_url} alt={item.name} fill sizes="160px" className="object-cover" />
         ) : (
-          <div className="h-[88px] w-[88px] rounded-lg bg-brand-accent/10" />
+          <div className="flex h-full w-full items-center justify-center text-3xl">🍽️</div>
         )}
         <button
           disabled={!canAdd}
@@ -80,6 +59,12 @@ export function MenuItemRow({
         >
           +
         </button>
+      </div>
+      <div className="p-2">
+        <p className="line-clamp-1 text-sm font-semibold text-brand-ink">
+          {item.product_attributes?.is_veg ? "🟢" : "🔴"} {item.name}
+        </p>
+        <p className="mt-0.5 text-xs font-semibold text-brand-ink-muted">₹{item.price.toFixed(2)}</p>
       </div>
       {modalOpen && (
         <ItemCustomizationModal

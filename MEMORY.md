@@ -1588,6 +1588,100 @@ Claude at the start of work in this repo per project CLAUDE.md.
   gets zero feedback during the client-side transition and reasonably
   concludes the click was broken, even though it always worked.
 
+## Design-style preview (tried, reverted) and store-page redesign (2026-09-28)
+
+- **Design-style preview, reverted**: Vishal asked to preview 3 refero.design
+  style URLs (plus 2 more I sourced — Eventbrite and sweetgreen) live on the
+  running site via a temporary floating theme switcher (`data-theme` attribute
+  + `[data-theme="x"]` CSS variable overrides on the existing 6 brand tokens,
+  no per-component changes needed since color/font already flow through
+  `--color-brand-*`/`--font-sans` custom properties). After reviewing, Vishal
+  decided to **keep the current color scheme** — the switcher, its 4 extra
+  `next/font/google` imports, and all `[data-theme]` CSS blocks were fully
+  removed (not just hidden) in the same session. If a design-style preview is
+  wanted again later, the `refero-design` skill is now installed at
+  `.agents/skills/refero-design/` (via `npx skills add
+  https://github.com/referodesign/refero_skill --skill refero-design`) — the
+  MCP tool `refero_get_style` needs the *catalog* UUID for a style, not
+  necessarily the UUID in a `styles.refero.design/style/<uuid>` URL (two of
+  the three URLs Vishal gave didn't resolve via `refero_get_style` directly;
+  WebFetching the URL page itself to read the style's title, then
+  `refero_search_styles` on that title, found the matching catalog UUID both
+  times).
+- **Store page redesigned to a Domino's-style layout**, same color scheme,
+  applied to every store in every category (single template:
+  `app/customer/stores/[id]/page.tsx` — `app/customer/restaurants/[id]/
+  page.tsx` is just a redirect to it, confirmed no duplicate implementation
+  to update). Three additions, per Vishal's reference screenshot of a
+  Domino's item page:
+  - **Featured items row**: new `components/FeaturedItemsRow.tsx` +
+    `FeaturedItemCard.tsx`, a horizontal carousel (reusing the existing
+    `ScrollArrowRow`) of the first 8 available items that have a photo.
+    **This is an honest heuristic, not real popularity data** — the schema
+    has no `sort_order`/`featured`/`sales_count` column on `products` and no
+    denormalized order-count signal, confirmed by grep before building
+    anything. Domino's own page shows fake-looking "#1 most liked" badges;
+    those were deliberately left out since nothing here backs that claim.
+  - **Rating summary**: new `components/StoreRatingSummary.tsx`, shows the
+    store's real `rating` value (same number already shown on cards/the page
+    header) as a big number + star row. **Deliberately does not show
+    individual review snippets or a review count** — the `reviews` table
+    (schema since Phase 1) has zero rows, no UI anywhere reads or writes it,
+    and it still has only its original Phase-1 stub RLS read policy with no
+    insert policy at all. Vishal explicitly chose "rating summary only, no
+    fake reviews" when asked, over building a real review-submission feature
+    (bigger, separate scope) or dropping the section entirely.
+  - **Item grid (4 columns on wide screens)**: `MenuItemRow` (used both in
+    the grouped-by-category view and the ungrouped fallback) changed from a
+    full-width single-column list row to a self-contained bordered card,
+    and both of the page's item-list containers changed from `flex
+    flex-col divide-y` to `grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4
+    gap-3` (started as 2 columns, Vishal asked to widen to 4). Same
+    image-right/text-left row shape as before, just boxed and
+    grid-arranged instead of stacked.
+  - New shared `lib/use-add-to-cart.ts` hook extracts the add-to-cart-or-
+    open-customization-modal logic that both `MenuItemRow` and the new
+    `FeaturedItemCard` need, instead of duplicating it.
+  - Grid widened from 2 to 4 columns (`sm:grid-cols-2 lg:grid-cols-4`) per
+    Vishal's follow-up ask, same session.
+
+## `docs/User_Manual.docx`/`.pdf` updated for this session's changes
+(2026-09-28)
+
+- Used `python-docx` (already available in this environment) rather than
+  regenerating the whole manual from the original docx-js script — targeted
+  edits: swapped 4 screenshots in place (Figures 3.2, 3.3, 3.6, 3.7) by
+  overwriting the existing image part's blob via each figure paragraph's own
+  `r:embed` relationship id, and inserted one brand-new section ("3.7 Account
+  Menu", with its own new image relationship via
+  `document.part.get_or_add_image` — reusing a deep-copied paragraph's
+  existing rId would have silently overwritten the image it was copied
+  from, since both paragraphs would share one target part) before the
+  Chapter 4 heading. Also corrected prose that was now factually wrong
+  (checkout's old "two columns, sticky order summary on the right"
+  description; delivery address described as "read-only") and updated
+  Appendix B.2's `addresses` description + the B.10 schema summary table's
+  `addresses` row for the new `line2`/`city`/`state`/`pincode` columns.
+- **This doc's Table of Contents is a static, hand-typed page-number list
+  (see the `docx-js TableOfContents field renders blank in PDF` lesson
+  earlier in this file) — inserting new content shifts every page number
+  after the insertion point, and nothing recomputes it automatically.**
+  Verified this concretely: after adding the new section, `pypdf` text
+  extraction showed Chapter 5 onward had drifted from the TOC's listed
+  page numbers (e.g. TOC said Chapter 5 was page 19, actual rendered page
+  was 20) while Chapter 4 itself still coincidentally matched. Fixed by
+  re-reading each chapter/appendix heading's actual rendered page from the
+  regenerated PDF and rewriting the TOC paragraphs' page numbers to match,
+  then regenerating the PDF again and re-verifying every TOC entry against
+  the actual rendered page one more time before calling it done. **Any
+  future edit to this docx that adds or removes content must redo this
+  same TOC-drift check — never trust the existing TOC numbers to still be
+  correct after inserting a new section or paragraph.**
+- New screenshots (Sweet Tooth's store page, Daily Basket's store page,
+  checkout with Mock Card + the new address form, checkout with Mock UPI,
+  the account-menu flyout) were captured live via Playwright against the
+  running dev server, not fabricated or reused from before.
+
 ## External API keys in use
 
 - `PEXELS_API_KEY` — Pexels Search API, used once (not at runtime) to fetch
