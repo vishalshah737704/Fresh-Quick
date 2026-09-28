@@ -106,9 +106,8 @@ if (mobile) {
   console.log("Starting Expo (mobile app) in a new window...");
   if (process.platform === "win32") {
     spawnSync(
-      "cmd",
-      ["/c", "start", "\"Mobile (Expo)\"", "cmd", "/k", "cd /d mobile && npx expo start"],
-      { stdio: "inherit", shell: false }
+      'start "Mobile (Expo)" cmd /k "cd /d mobile && npx expo start"',
+      { stdio: "inherit", shell: true }
     );
   } else {
     const child = spawn("bash", ["-c", "cd mobile && npx expo start"], {
