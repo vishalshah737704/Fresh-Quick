@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -9,7 +9,7 @@ import {
   StyleSheet,
   Alert,
 } from "react-native";
-import { useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { supabase } from "../../../../lib/supabase";
 import { BRAND } from "../../../../theme";
 import { useCart } from "../../../../lib/cart-store";
@@ -91,12 +91,17 @@ function sortedGroups(item: MenuItem): OptionGroup[] {
 
 export default function StoreDetailScreen() {
   useRequireSession("/login/customer");
+  const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { addItem, pendingConflict, confirmClearAndAdd, cancelPendingAdd } = useCart();
   const [store, setStore] = useState<Store | null>(null);
   const [menuItems, setMenuItems] = useState<MenuItem[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [modalItem, setModalItem] = useState<MenuItem | null>(null);
+  const [isFavorite, setIsFavorite] = useState(false); // local UI-only toggle, no backend
+  const scrollRef = useRef<ScrollView>(null);
+  const sectionOffsets = useRef<Record<string, number>>({});
+  const [activeGroupKey, setActiveGroupKey] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -178,33 +183,84 @@ export default function StoreDetailScreen() {
     setModalItem(item);
   }
 
+  function scrollToGroup(key: string) {
+    setActiveGroupKey(key);
+    const y = sectionOffsets.current[key];
+    if (y !== undefined) {
+      scrollRef.current?.scrollTo({ y: Math.max(0, y - 8), animated: true });
+    }
+  }
+
+  // True sticky pill nav via ScrollView's stickyHeaderIndices, which pins
+  // whichever direct child index it's given once scrolled past — the pill
+  // row is index 1 (after the hero+info block at index 0). Menu content and
+  // tap-to-scroll into the right group is a functional fallback for full
+  // scroll-spy highlighting, which is not implemented (see report).
   return (
     <View style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <View style={styles.banner}>
-          {store.banner_url ? (
-            <Image source={{ uri: store.banner_url }} style={styles.bannerImage} />
-          ) : (
-            <Text style={{ fontSize: 40 }}>🍽️</Text>
-          )}
-        </View>
-        <Text style={styles.storeName}>{store.name}</Text>
-        <Text style={styles.storeMeta}>
-          {store.cuisine_tags.join(", ")} · ⭐ {store.rating.toFixed(1)} · {store.avg_prep_minutes} min
-        </Text>
-        {isUnavailable && (
-          <View style={styles.unavailableBanner}>
-            <Text style={styles.unavailableText}>
-              {store.is_suspended ? "This restaurant is currently unavailable." : "This restaurant is currently closed."}
+      <ScrollView ref={scrollRef} stickyHeaderIndices={[1]} contentContainerStyle={styles.scrollContent}>
+        <View>
+          <View style={styles.banner}>
+            {store.banner_url ? (
+              <Image source={{ uri: store.banner_url }} style={styles.bannerImage} />
+            ) : (
+              <Text style={{ fontSize: 40 }}>🍽️</Text>
+            )}
+            <Pressable style={[styles.chip, styles.chipBack]} onPress={() => router.back()} hitSlop={8}>
+              <Text style={styles.chipIcon}>‹</Text>
+            </Pressable>
+            <Pressable
+              style={[styles.chip, styles.chipFavorite]}
+              onPress={() => setIsFavorite((v) => !v)}
+              hitSlop={8}
+            >
+              <Text style={styles.chipIcon}>{isFavorite ? "♥" : "♡"}</Text>
+            </Pressable>
+          </View>
+          <View style={styles.infoBlock}>
+            <Text style={styles.storeName}>{store.name}</Text>
+            <Text style={styles.storeMeta}>
+              {store.cuisine_tags.join(", ")} · ⭐ {store.rating.toFixed(1)} · {store.avg_prep_minutes} min
             </Text>
+            {isUnavailable && (
+              <View style={styles.unavailableBanner}>
+                <Text style={styles.unavailableText}>
+                  {store.is_suspended ? "This restaurant is currently unavailable." : "This restaurant is currently closed."}
+                </Text>
+              </View>
+            )}
+          </View>
+        </View>
+
+        {groups.length > 0 && (
+          <View style={styles.pillNav}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.pillNavContent}>
+              {groups.map((group) => (
+                <Pressable
+                  key={group.key}
+                  onPress={() => scrollToGroup(group.key)}
+                  style={[styles.pill, activeGroupKey === group.key && styles.pillActive]}
+                >
+                  <Text style={[styles.pillText, activeGroupKey === group.key && styles.pillTextActive]}>
+                    {group.label}
+                  </Text>
+                </Pressable>
+              ))}
+            </ScrollView>
           </View>
         )}
 
         {menuItems.length === 0 ? (
-          <Text style={styles.mutedText}>{store.name} has no menu items yet.</Text>
+          <Text style={[styles.mutedText, { paddingHorizontal: 16 }]}>{store.name} has no menu items yet.</Text>
         ) : (
           groups.map((group) => (
-            <View key={group.key} style={styles.group}>
+            <View
+              key={group.key}
+              style={styles.group}
+              onLayout={(e) => {
+                sectionOffsets.current[group.key] = e.nativeEvent.layout.y;
+              }}
+            >
               <Text style={styles.groupTitle}>{group.label}</Text>
               {group.items.map((item) => {
                 const canAdd = !isUnavailable && item.is_available;
@@ -290,7 +346,7 @@ const styles = StyleSheet.create({
     paddingBottom: 100,
   },
   banner: {
-    height: 160,
+    height: 200,
     borderRadius: BRAND.radius,
     backgroundColor: BRAND.colors.accent + "20",
     alignItems: "center",
@@ -301,6 +357,59 @@ const styles = StyleSheet.create({
   bannerImage: {
     width: "100%",
     height: "100%",
+  },
+  chip: {
+    position: "absolute",
+    top: 12,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: BRAND.colors.surface,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
+  },
+  chipBack: { left: 12 },
+  chipFavorite: { right: 12 },
+  chipIcon: {
+    fontSize: 18,
+    color: BRAND.colors.ink,
+  },
+  infoBlock: {
+    marginBottom: 0,
+  },
+  pillNav: {
+    backgroundColor: BRAND.colors.background,
+    paddingVertical: 10,
+    marginBottom: 4,
+  },
+  pillNavContent: {
+    gap: 8,
+    paddingRight: 8,
+  },
+  pill: {
+    borderWidth: 1,
+    borderColor: BRAND.colors.inkMuted + "30",
+    borderRadius: 999,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    backgroundColor: BRAND.colors.surface,
+  },
+  pillActive: {
+    backgroundColor: BRAND.colors.primary,
+    borderColor: BRAND.colors.primary,
+  },
+  pillText: {
+    fontFamily: BRAND.fonts.bodyMedium,
+    fontSize: 13,
+    color: BRAND.colors.ink,
+  },
+  pillTextActive: {
+    color: BRAND.colors.surface,
   },
   storeName: {
     fontFamily: BRAND.fonts.heading,

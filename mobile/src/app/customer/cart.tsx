@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { View, Text, TextInput, Pressable, FlatList, Image, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
 import { useCart, CartItem } from "../../../lib/cart-store";
@@ -5,9 +6,16 @@ import { useDeliveryFee } from "../../../lib/use-delivery-fee";
 import { BRAND } from "../../../theme";
 import { useRequireSession } from "../../../lib/use-require-session";
 
-// Mirrors components/CartPanel.tsx on the web, as a dedicated screen rather
-// than a persistent sidebar (no room for one on a phone). Same paise-
-// arithmetic total calc via useDeliveryFee.
+// Mirrors components/CartPanel.tsx on the web. Styled as a bottom-sheet
+// (rounded top corners, drag-handle bar, ✕ close) reached from the
+// FloatingCartPill, per the mobile UberEats redesign spec. Still the same
+// route/screen rather than a true overlay-on-top-of-store-screen — a real
+// gesture-driven drag-to-dismiss sheet needs a library (e.g.
+// @gorhom/bottom-sheet) that isn't installed; the ✕ close button (→
+// router.back()) is the documented fallback. Same paise-arithmetic total
+// calc via useDeliveryFee.
+const TIP_OPTIONS = [15, 18, 20] as const;
+
 export default function CartScreen() {
   useRequireSession("/login/customer");
   const router = useRouter();
@@ -24,6 +32,12 @@ export default function CartScreen() {
     clearCart,
   } = useCart();
   const { deliveryFeePaise, loading: feeLoading } = useDeliveryFee(storeId);
+
+  // Tip selector is UI-only — there is no tip_paise column in the backend
+  // yet, so the selected tip is never added to subtotalPaise/totalPaise or
+  // sent to checkout. Purely cosmetic per the redesign spec's honest-scope
+  // note.
+  const [selectedTip, setSelectedTip] = useState<number | "other" | null>(null);
 
   const totalPaise = deliveryFeePaise !== null ? subtotalPaise + deliveryFeePaise : null;
 
@@ -86,7 +100,15 @@ export default function CartScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.storeName}>{storeName}</Text>
+      <View style={styles.sheetHeader}>
+        <View style={styles.dragHandle} />
+        <View style={styles.sheetTitleRow}>
+          <Text style={styles.storeName}>{storeName}</Text>
+          <Pressable onPress={() => router.back()} hitSlop={12}>
+            <Text style={styles.closeIcon}>✕</Text>
+          </Pressable>
+        </View>
+      </View>
       <FlatList
         data={items}
         keyExtractor={(i) => i.lineId}
@@ -107,6 +129,34 @@ export default function CartScreen() {
             <Pressable onPress={clearCart}>
               <Text style={styles.clearText}>Clear cart</Text>
             </Pressable>
+
+            <View style={styles.tipWrap}>
+              <Text style={styles.orderNoteLabel}>Add a tip (not added to total)</Text>
+              <View style={styles.tipRow}>
+                {TIP_OPTIONS.map((pct) => (
+                  <Pressable
+                    key={pct}
+                    onPress={() => setSelectedTip(selectedTip === pct ? null : pct)}
+                    style={[styles.tipButton, selectedTip === pct && styles.tipButtonActive]}
+                  >
+                    <Text style={[styles.tipButtonText, selectedTip === pct && styles.tipButtonTextActive]}>
+                      {pct}%
+                    </Text>
+                  </Pressable>
+                ))}
+                <Pressable
+                  onPress={() => setSelectedTip(selectedTip === "other" ? null : "other")}
+                  style={[styles.tipButton, selectedTip === "other" && styles.tipButtonActive]}
+                >
+                  <Text style={[styles.tipButtonText, selectedTip === "other" && styles.tipButtonTextActive]}>
+                    Other
+                  </Text>
+                </Pressable>
+              </View>
+              <Text style={styles.tipDisclaimer}>
+                Tip UI-only — not wired to a backend column yet, excluded from your total.
+              </Text>
+            </View>
           </View>
         }
       />
@@ -143,6 +193,63 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: BRAND.colors.background,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    overflow: "hidden",
+  },
+  sheetHeader: {
+    backgroundColor: BRAND.colors.background,
+    paddingTop: 8,
+  },
+  dragHandle: {
+    alignSelf: "center",
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: BRAND.colors.inkMuted + "40",
+    marginBottom: 8,
+  },
+  sheetTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+  },
+  closeIcon: {
+    fontSize: 18,
+    color: BRAND.colors.inkMuted,
+  },
+  tipWrap: {
+    marginTop: 14,
+    gap: 6,
+  },
+  tipRow: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  tipButton: {
+    borderWidth: 1,
+    borderColor: BRAND.colors.inkMuted + "40",
+    borderRadius: 999,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+  },
+  tipButtonActive: {
+    backgroundColor: BRAND.colors.accent,
+    borderColor: BRAND.colors.accent,
+  },
+  tipButtonText: {
+    fontFamily: BRAND.fonts.bodyMedium,
+    fontSize: 13,
+    color: BRAND.colors.ink,
+  },
+  tipButtonTextActive: {
+    color: BRAND.colors.ink,
+  },
+  tipDisclaimer: {
+    fontFamily: BRAND.fonts.body,
+    fontSize: 10,
+    color: BRAND.colors.inkMuted,
   },
   center: {
     flex: 1,
@@ -171,8 +278,6 @@ const styles = StyleSheet.create({
     fontFamily: BRAND.fonts.heading,
     fontSize: 18,
     color: BRAND.colors.ink,
-    paddingHorizontal: 16,
-    paddingTop: 12,
   },
   listContent: {
     padding: 16,

@@ -111,6 +111,7 @@ export function ItemCustomizationModal({
     <Modal visible={visible} animationType="slide" transparent onRequestClose={handleClose}>
       <View style={styles.backdrop}>
         <View style={styles.sheet}>
+          <View style={styles.dragHandle} />
           <View style={styles.header}>
             <Text style={styles.title}>{item.name}</Text>
             <Pressable onPress={handleClose} hitSlop={12}>
@@ -195,10 +196,18 @@ const styles = StyleSheet.create({
   },
   sheet: {
     backgroundColor: BRAND.colors.surface,
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
     padding: 16,
     maxHeight: "85%",
+  },
+  dragHandle: {
+    alignSelf: "center",
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: BRAND.colors.inkMuted + "40",
+    marginBottom: 10,
   },
   header: {
     flexDirection: "row",
