@@ -62,6 +62,6 @@
   },
   "active": false,
   "settings": {},
-  "_untested_reference_only": true,
-  "_note": "Hand-authored to n8n's export JSON shape; never imported into or run against a real n8n instance. See docs/superpowers/specs/2026-09-25-phase7-n8n-automation-design.md."
+  "_untested_reference_only": false,
+  "_note": "Verified live 2026-09-28 (Task 9 of the checkout-payment-details plan) against a real local n8n instance (docker n8n container, N8N_BLOCK_ENV_ACCESS_IN_NODE=false, SUPABASE_URL/APP_BASE_URL via host.docker.internal) wired to the local Supabase stack and the checkout-payment-details worktree's own Next.js dev server (port 3001). A real order placed through POST /api/cart/checkout triggered this workflow via the orders-INSERT Database Webhook, which called POST /api/internal/orders/:id/notify-vendor and produced a real public.notifications row referencing the new order's id. See docs/superpowers/specs/2026-09-25-phase7-n8n-automation-design.md."
 }
