@@ -9,6 +9,7 @@ import {
   StyleSheet,
 } from "react-native";
 import { useRouter } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 import { supabase } from "../../../lib/supabase";
 import { apiFetch, ApiError } from "../../../lib/api";
 import { useCart } from "../../../lib/cart-store";
@@ -42,9 +43,51 @@ function validateUpi(upiId: string): string | null {
   return /^[\w.\-]+@[\w]+$/.test(upiId.trim()) ? null : "Enter a valid UPI ID, e.g. name@bank";
 }
 
+// Row-based tappable section matching UberEats checkout: a collapsed summary
+// row that expands in place to reveal its fields — no new bottom-sheet
+// dependency needed since this screen already scrolls.
+function CheckoutRow({
+  icon,
+  title,
+  summary,
+  expanded,
+  onToggle,
+  children,
+  error,
+}: {
+  icon: keyof typeof Ionicons.glyphMap;
+  title: string;
+  summary: string;
+  expanded: boolean;
+  onToggle: () => void;
+  children: React.ReactNode;
+  error?: string | null;
+}) {
+  return (
+    <View style={styles.section}>
+      <Pressable style={styles.rowHeader} onPress={onToggle}>
+        <Ionicons name={icon} size={20} color={BRAND.colors.ink} style={styles.rowIcon} />
+        <View style={styles.rowHeaderText}>
+          <Text style={styles.sectionTitle}>{title}</Text>
+          <Text style={styles.rowSummary} numberOfLines={1}>
+            {summary}
+          </Text>
+        </View>
+        <Ionicons
+          name={expanded ? "chevron-up" : "chevron-down"}
+          size={18}
+          color={BRAND.colors.inkMuted}
+        />
+      </Pressable>
+      {error && !expanded && <Text style={styles.errorTextSmall}>{error}</Text>}
+      {expanded && <View style={styles.rowBody}>{children}</View>}
+    </View>
+  );
+}
+
 export default function CheckoutScreen() {
   const router = useRouter();
-  const { storeId, items, subtotalPaise, orderNote, clearCart } = useCart();
+  const { storeId, items, subtotalPaise, orderNote, setOrderNote, clearCart } = useCart();
   const [deliveryFeePaise, setDeliveryFeePaise] = useState<number | null>(null);
   const [feeError, setFeeError] = useState<string | null>(null);
   const [profileLoaded, setProfileLoaded] = useState(false);
@@ -63,6 +106,14 @@ export default function CheckoutScreen() {
   const [upiId, setUpiId] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Which row is currently expanded — only one at a time, UberEats-style.
+  const [expandedRow, setExpandedRow] = useState<"address" | "instructions" | "payment" | null>(
+    null
+  );
+  function toggleRow(row: "address" | "instructions" | "payment") {
+    setExpandedRow((prev) => (prev === row ? null : row));
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -160,6 +211,13 @@ export default function CheckoutScreen() {
   const canPlaceOrder =
     !recipientNameError && !recipientEmailError && !paymentFieldError && !addressFieldError && !submitting;
 
+  const addressSummary =
+    line1.trim().length > 0
+      ? [line1.trim(), city.trim()].filter(Boolean).join(", ")
+      : "Add a delivery address";
+  const paymentSummary = PAYMENT_METHODS.find((m) => m.value === paymentMethod)?.label ?? "";
+  const instructionsSummary = orderNote.trim().length > 0 ? orderNote.trim() : "Add delivery instructions (optional)";
+
   async function handlePlaceOrder() {
     if (!canPlaceOrder || !storeId) return;
     setSubmitting(true);
@@ -211,122 +269,158 @@ export default function CheckoutScreen() {
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.heading}>Checkout</Text>
+    <View style={styles.screen}>
+      <ScrollView contentContainerStyle={styles.container}>
+        <Text style={styles.heading}>Checkout</Text>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Contact details</Text>
-        <Text style={styles.label}>Name</Text>
-        <TextInput
-          style={styles.input}
-          value={recipientName}
-          onChangeText={setRecipientName}
-          placeholder="Who's this order for?"
-        />
-        <Text style={styles.label}>Email</Text>
-        <TextInput
-          style={styles.input}
-          value={recipientEmail}
-          onChangeText={setRecipientEmail}
-          keyboardType="email-address"
-          autoCapitalize="none"
-        />
-      </View>
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Contact details</Text>
+          <Text style={styles.label}>Name</Text>
+          <TextInput
+            style={styles.input}
+            value={recipientName}
+            onChangeText={setRecipientName}
+            placeholder="Who's this order for?"
+          />
+          <Text style={styles.label}>Email</Text>
+          <TextInput
+            style={styles.input}
+            value={recipientEmail}
+            onChangeText={setRecipientEmail}
+            keyboardType="email-address"
+            autoCapitalize="none"
+          />
+        </View>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Delivery address</Text>
-        <Text style={styles.label}>Address 1</Text>
-        <TextInput style={styles.input} value={line1} onChangeText={setLine1} placeholder="House/flat no., building, street" />
-        <Text style={styles.label}>Address 2</Text>
-        <TextInput style={styles.input} value={line2} onChangeText={setLine2} placeholder="Landmark, area (optional)" />
-        <Text style={styles.label}>City</Text>
-        <TextInput style={styles.input} value={city} onChangeText={setCity} />
-        <Text style={styles.label}>State</Text>
-        <TextInput style={styles.input} value={stateField} onChangeText={setStateField} />
-        <Text style={styles.label}>Pincode</Text>
-        <TextInput style={styles.input} value={pincode} onChangeText={setPincode} keyboardType="number-pad" />
-      </View>
+        <CheckoutRow
+          icon="location-outline"
+          title="Delivery address"
+          summary={addressSummary}
+          expanded={expandedRow === "address"}
+          onToggle={() => toggleRow("address")}
+          error={addressFieldError}
+        >
+          <Text style={styles.label}>Address 1</Text>
+          <TextInput style={styles.input} value={line1} onChangeText={setLine1} placeholder="House/flat no., building, street" />
+          <Text style={styles.label}>Address 2</Text>
+          <TextInput style={styles.input} value={line2} onChangeText={setLine2} placeholder="Landmark, area (optional)" />
+          <Text style={styles.label}>City</Text>
+          <TextInput style={styles.input} value={city} onChangeText={setCity} />
+          <Text style={styles.label}>State</Text>
+          <TextInput style={styles.input} value={stateField} onChangeText={setStateField} />
+          <Text style={styles.label}>Pincode</Text>
+          <TextInput style={styles.input} value={pincode} onChangeText={setPincode} keyboardType="number-pad" />
+        </CheckoutRow>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Payment method</Text>
-        {PAYMENT_METHODS.map((m) => (
-          <View key={m.value}>
-            <Pressable
-              style={[styles.paymentRow, paymentMethod === m.value && styles.paymentRowActive]}
-              onPress={() => setPaymentMethod(m.value)}
-            >
-              <Text style={styles.paymentIcon}>{m.icon}</Text>
-              <Text style={styles.paymentLabel}>{m.label}</Text>
-            </Pressable>
-            {paymentMethod === m.value && m.value === "mock_card" && (
-              <View style={styles.subFields}>
-                <TextInput
-                  style={styles.input}
-                  value={cardNumber}
-                  onChangeText={setCardNumber}
-                  placeholder="Card number (16 digits)"
-                  keyboardType="number-pad"
-                />
-                <View style={styles.row}>
+        <CheckoutRow
+          icon="chatbubble-outline"
+          title="Delivery instructions"
+          summary={instructionsSummary}
+          expanded={expandedRow === "instructions"}
+          onToggle={() => toggleRow("instructions")}
+        >
+          <TextInput
+            style={[styles.input, styles.textArea]}
+            value={orderNote}
+            onChangeText={setOrderNote}
+            placeholder="e.g. Leave at the door, call on arrival…"
+            multiline
+          />
+        </CheckoutRow>
+
+        <CheckoutRow
+          icon="card-outline"
+          title="Payment method"
+          summary={paymentSummary}
+          expanded={expandedRow === "payment"}
+          onToggle={() => toggleRow("payment")}
+          error={paymentFieldError}
+        >
+          {PAYMENT_METHODS.map((m) => (
+            <View key={m.value}>
+              <Pressable
+                style={[styles.paymentRow, paymentMethod === m.value && styles.paymentRowActive]}
+                onPress={() => setPaymentMethod(m.value)}
+              >
+                <Text style={styles.paymentIcon}>{m.icon}</Text>
+                <Text style={styles.paymentLabel}>{m.label}</Text>
+              </Pressable>
+              {paymentMethod === m.value && m.value === "mock_card" && (
+                <View style={styles.subFields}>
                   <TextInput
-                    style={[styles.input, styles.inputSmall]}
-                    value={cardExpiry}
-                    onChangeText={setCardExpiry}
-                    placeholder="MM/YY"
+                    style={styles.input}
+                    value={cardNumber}
+                    onChangeText={setCardNumber}
+                    placeholder="Card number (16 digits)"
+                    keyboardType="number-pad"
                   />
-                  <TextInput
-                    style={[styles.input, styles.inputFlex]}
-                    value={cardholderName}
-                    onChangeText={setCardholderName}
-                    placeholder="Cardholder name"
-                  />
+                  <View style={styles.row}>
+                    <TextInput
+                      style={[styles.input, styles.inputSmall]}
+                      value={cardExpiry}
+                      onChangeText={setCardExpiry}
+                      placeholder="MM/YY"
+                    />
+                    <TextInput
+                      style={[styles.input, styles.inputFlex]}
+                      value={cardholderName}
+                      onChangeText={setCardholderName}
+                      placeholder="Cardholder name"
+                    />
+                  </View>
                 </View>
-              </View>
-            )}
-            {paymentMethod === m.value && m.value === "mock_upi" && (
-              <View style={styles.subFields}>
-                <TextInput style={styles.input} value={upiId} onChangeText={setUpiId} placeholder="UPI ID, e.g. name@bank" autoCapitalize="none" />
-              </View>
-            )}
+              )}
+              {paymentMethod === m.value && m.value === "mock_upi" && (
+                <View style={styles.subFields}>
+                  <TextInput style={styles.input} value={upiId} onChangeText={setUpiId} placeholder="UPI ID, e.g. name@bank" autoCapitalize="none" />
+                </View>
+              )}
+            </View>
+          ))}
+        </CheckoutRow>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Order summary</Text>
+          <View style={styles.summaryRow}>
+            <Text style={styles.mutedText}>Subtotal</Text>
+            <Text style={styles.summaryValue}>₹{(subtotalPaise / 100).toFixed(2)}</Text>
           </View>
-        ))}
+          <View style={styles.summaryRow}>
+            <Text style={styles.mutedText}>Delivery fee</Text>
+            <Text style={styles.summaryValue}>₹{(deliveryFeePaise / 100).toFixed(2)}</Text>
+          </View>
+          <View style={styles.summaryRow}>
+            <Text style={styles.sectionTitle}>Total</Text>
+            <Text style={styles.sectionTitle}>₹{total.toFixed(2)}</Text>
+          </View>
+        </View>
+
+        {error && <Text style={styles.errorText}>{error}</Text>}
+
+        {/* Spacer so the last section isn't hidden behind the pinned button */}
+        <View style={{ height: 72 }} />
+      </ScrollView>
+
+      <View style={styles.pinnedBar}>
+        <Pressable
+          style={[styles.placeOrderButton, !canPlaceOrder && styles.placeOrderButtonDisabled]}
+          onPress={handlePlaceOrder}
+          disabled={!canPlaceOrder}
+        >
+          {submitting ? (
+            <ActivityIndicator color={BRAND.colors.surface} />
+          ) : (
+            <Text style={styles.placeOrderButtonText}>Place order · ₹{total.toFixed(2)}</Text>
+          )}
+        </Pressable>
       </View>
-
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Order summary</Text>
-        <View style={styles.summaryRow}>
-          <Text style={styles.mutedText}>Subtotal</Text>
-          <Text style={styles.summaryValue}>₹{(subtotalPaise / 100).toFixed(2)}</Text>
-        </View>
-        <View style={styles.summaryRow}>
-          <Text style={styles.mutedText}>Delivery fee</Text>
-          <Text style={styles.summaryValue}>₹{(deliveryFeePaise / 100).toFixed(2)}</Text>
-        </View>
-        <View style={styles.summaryRow}>
-          <Text style={styles.sectionTitle}>Total</Text>
-          <Text style={styles.sectionTitle}>₹{total.toFixed(2)}</Text>
-        </View>
-      </View>
-
-      {error && <Text style={styles.errorText}>{error}</Text>}
-
-      <Pressable
-        style={[styles.placeOrderButton, !canPlaceOrder && styles.placeOrderButtonDisabled]}
-        onPress={handlePlaceOrder}
-        disabled={!canPlaceOrder}
-      >
-        {submitting ? (
-          <ActivityIndicator color={BRAND.colors.surface} />
-        ) : (
-          <Text style={styles.placeOrderButtonText}>Place order</Text>
-        )}
-      </Pressable>
-    </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 16, gap: 16, backgroundColor: BRAND.colors.background },
+  screen: { flex: 1, backgroundColor: BRAND.colors.background },
+  container: { padding: 16, gap: 16 },
   centered: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: BRAND.colors.background },
   heading: { fontFamily: BRAND.fonts.heading, fontSize: 24, color: BRAND.colors.ink },
   section: {
@@ -337,6 +431,11 @@ const styles = StyleSheet.create({
     padding: 16,
     gap: 8,
   },
+  rowHeader: { flexDirection: "row", alignItems: "center", gap: 12 },
+  rowIcon: { width: 20 },
+  rowHeaderText: { flex: 1, gap: 2 },
+  rowSummary: { fontFamily: BRAND.fonts.body, fontSize: 13, color: BRAND.colors.inkMuted },
+  rowBody: { gap: 8, paddingTop: 12, marginTop: 4, borderTopWidth: 1, borderTopColor: BRAND.colors.inkMuted + "22" },
   sectionTitle: { fontFamily: BRAND.fonts.bodySemiBold, fontSize: 15, color: BRAND.colors.ink },
   label: { fontFamily: BRAND.fonts.bodyMedium, fontSize: 13, color: BRAND.colors.ink },
   input: {
@@ -348,6 +447,7 @@ const styles = StyleSheet.create({
     fontFamily: BRAND.fonts.body,
     color: BRAND.colors.ink,
   },
+  textArea: { minHeight: 72, textAlignVertical: "top" },
   inputSmall: { width: 96 },
   inputFlex: { flex: 1 },
   row: { flexDirection: "row", gap: 8 },
@@ -369,12 +469,20 @@ const styles = StyleSheet.create({
   summaryValue: { fontFamily: BRAND.fonts.bodyMedium, color: BRAND.colors.ink },
   mutedText: { fontFamily: BRAND.fonts.body, color: BRAND.colors.inkMuted },
   errorText: { fontFamily: BRAND.fonts.body, color: "#dc2626" },
+  errorTextSmall: { fontFamily: BRAND.fonts.body, fontSize: 12, color: "#dc2626" },
+  pinnedBar: {
+    padding: 16,
+    paddingBottom: 24,
+    backgroundColor: BRAND.colors.background,
+    borderTopWidth: 1,
+    borderTopColor: BRAND.colors.inkMuted + "22",
+  },
   placeOrderButton: {
-    backgroundColor: BRAND.colors.primary,
+    backgroundColor: BRAND.colors.accent,
     borderRadius: 999,
     paddingVertical: 14,
     alignItems: "center",
   },
   placeOrderButtonDisabled: { opacity: 0.5 },
-  placeOrderButtonText: { fontFamily: BRAND.fonts.bodySemiBold, color: BRAND.colors.surface },
+  placeOrderButtonText: { fontFamily: BRAND.fonts.bodySemiBold, color: BRAND.colors.primary },
 });

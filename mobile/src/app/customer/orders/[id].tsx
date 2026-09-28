@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { useFocusEffect } from "expo-router";
 import { useCallback } from "react";
@@ -6,7 +6,6 @@ import { useLocalSearchParams } from "expo-router";
 import { supabase } from "../../../../lib/supabase";
 import {
   ORDER_DETAIL_STATUS_LABEL,
-  TIMELINE_STEPS,
   TIMELINE_STEP_INDEX,
   SHOW_LOCATION_FOR_STATUS,
   TERMINAL_STATUSES,
@@ -14,6 +13,8 @@ import {
 } from "../../../../lib/order-status";
 import { BRAND } from "../../../../theme";
 import { useRequireSession } from "../../../../lib/use-require-session";
+import { OrderStatusStepper } from "../../../../components/OrderStatusStepper";
+import { CourierCard } from "../../../../components/CourierCard";
 
 type OrderView = {
   id: string;
@@ -33,6 +34,8 @@ type PartnerLocation = {
   last_ping_at: string | null;
 };
 
+// cancelled/rejected keep their exact early-return special case — they
+// never map onto a TIMELINE_STEP_INDEX entry (see lib/order-status.ts).
 function OrderTimeline({ status }: { status: OrderStatus }) {
   if (status === "cancelled") {
     return (
@@ -49,26 +52,7 @@ function OrderTimeline({ status }: { status: OrderStatus }) {
     );
   }
 
-  const currentIndex = TIMELINE_STEP_INDEX[status];
-
-  return (
-    <View style={styles.timelineRow}>
-      {TIMELINE_STEPS.map((label, index) => {
-        const complete = index < currentIndex;
-        const active = index === currentIndex;
-        return (
-          <View key={label} style={styles.timelineStep}>
-            <View style={[styles.timelineDot, (complete || active) && styles.timelineDotActive]}>
-              <Text style={[styles.timelineDotText, (complete || active) && styles.timelineDotTextActive]}>
-                {complete ? "✓" : index + 1}
-              </Text>
-            </View>
-            <Text style={[styles.timelineLabel, active && styles.timelineLabelActive]}>{label}</Text>
-          </View>
-        );
-      })}
-    </View>
-  );
+  return <OrderStatusStepper currentIndex={TIMELINE_STEP_INDEX[status]} />;
 }
 
 export default function OrderDetailScreen() {
@@ -145,6 +129,8 @@ export default function OrderDetailScreen() {
     );
   }
 
+  const courierAssigned = order.delivery_partner_id != null && (order.status === "assigned" || order.status === "picked_up");
+
   return (
     <View style={styles.container}>
       <Text style={styles.heading}>Order #{order.id.slice(0, 8)}</Text>
@@ -154,10 +140,13 @@ export default function OrderDetailScreen() {
         </Text>
       ) : (
         <>
+          <Text style={styles.etaText}>{ORDER_DETAIL_STATUS_LABEL[order.status]}</Text>
+
           <View style={styles.section}>
             <OrderTimeline status={order.status} />
-            <Text style={styles.statusLabel}>{ORDER_DETAIL_STATUS_LABEL[order.status]}</Text>
           </View>
+
+          {courierAssigned && <CourierCard name={null} />}
 
           {partnerLocation?.current_lat != null && partnerLocation?.current_lng != null && (
             <View style={styles.locationBox}>
@@ -200,22 +189,7 @@ const styles = StyleSheet.create({
     padding: 16,
     gap: 4,
   },
-  statusLabel: { fontFamily: BRAND.fonts.body, fontSize: 13, color: BRAND.colors.inkMuted, marginTop: 8 },
-  timelineRow: { flexDirection: "row", alignItems: "flex-start" },
-  timelineStep: { flex: 1, alignItems: "center", gap: 4 },
-  timelineDot: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: BRAND.colors.inkMuted + "22",
-  },
-  timelineDotActive: { backgroundColor: BRAND.colors.primary },
-  timelineDotText: { fontFamily: BRAND.fonts.bodySemiBold, fontSize: 12, color: BRAND.colors.inkMuted },
-  timelineDotTextActive: { color: BRAND.colors.surface },
-  timelineLabel: { fontFamily: BRAND.fonts.body, fontSize: 11, color: BRAND.colors.inkMuted },
-  timelineLabelActive: { fontFamily: BRAND.fonts.bodySemiBold, color: BRAND.colors.ink },
+  etaText: { fontFamily: BRAND.fonts.heading, fontSize: 20, color: BRAND.colors.ink },
   bannerError: { borderWidth: 1, borderColor: "#fecaca", backgroundColor: "#fef2f2", borderRadius: BRAND.radius, padding: 12 },
   bannerErrorText: { fontFamily: BRAND.fonts.bodyMedium, color: "#b91c1c" },
   locationBox: {
