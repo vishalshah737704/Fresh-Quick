@@ -8,8 +8,11 @@ process.chdir(root);
 const args = process.argv.slice(2);
 const keepSupabase = args.includes("--keep-supabase");
 const keepN8n = args.includes("--keep-n8n");
+const stopMobile = args.includes("--mobile");
 const portArg = args.find((a) => a.startsWith("--port="));
 const port = portArg ? Number(portArg.split("=")[1]) : 3000;
+const mobilePortArg = args.find((a) => a.startsWith("--mobile-port="));
+const mobilePort = mobilePortArg ? Number(mobilePortArg.split("=")[1]) : 8081;
 
 function stopWindows(port) {
   const netstat = spawnSync("netstat", ["-ano"], { encoding: "utf8" });
@@ -42,6 +45,15 @@ if (process.platform === "win32") {
   stopWindows(port);
 } else {
   stopPosix(port);
+}
+
+if (stopMobile) {
+  console.log(`Stopping Expo/Metro (mobile app) on port ${mobilePort}...`);
+  if (process.platform === "win32") {
+    stopWindows(mobilePort);
+  } else {
+    stopPosix(mobilePort);
+  }
 }
 
 if (!keepN8n) {

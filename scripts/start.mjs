@@ -1,5 +1,5 @@
 import { existsSync, readFileSync } from "node:fs";
-import { spawnSync } from "node:child_process";
+import { spawnSync, spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
@@ -8,6 +8,7 @@ process.chdir(root);
 
 const dev = process.argv.includes("--dev");
 const skipN8n = process.argv.includes("--skip-n8n");
+const mobile = process.argv.includes("--mobile");
 
 if (!existsSync(".env.local")) {
   console.error(
@@ -92,6 +93,30 @@ if (!skipN8n) {
         process.exit(1);
       }
     }
+  }
+}
+
+if (mobile) {
+  if (!existsSync(join("mobile", ".env"))) {
+    console.error(
+      "mobile/.env not found. Copy mobile/.env.example to mobile/.env and fill in Supabase URL/anon key + EXPO_PUBLIC_API_BASE_URL (your machine's LAN IP, not localhost) before using --mobile."
+    );
+    process.exit(1);
+  }
+  console.log("Starting Expo (mobile app) in a new window...");
+  if (process.platform === "win32") {
+    spawnSync(
+      "cmd",
+      ["/c", "start", "\"Mobile (Expo)\"", "cmd", "/k", "cd /d mobile && npx expo start"],
+      { stdio: "inherit", shell: false }
+    );
+  } else {
+    const child = spawn("bash", ["-c", "cd mobile && npx expo start"], {
+      stdio: "ignore",
+      detached: true,
+    });
+    child.unref();
+    console.log("Expo started detached (stdio ignored) — run 'cd mobile && npx expo start' yourself for the QR code/logs.");
   }
 }
 

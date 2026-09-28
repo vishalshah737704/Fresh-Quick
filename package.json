@@ -10,7 +10,9 @@
     "app:build": "node scripts/build.mjs",
     "app:start": "node scripts/start.mjs",
     "app:start:dev": "node scripts/start.mjs --dev",
+    "app:start:mobile": "node scripts/start.mjs --dev --mobile",
     "app:stop": "node scripts/stop.mjs",
+    "app:stop:mobile": "node scripts/stop.mjs --mobile",
     "app:seed": "node scripts/seed.mjs"
   },
   "dependencies": {
