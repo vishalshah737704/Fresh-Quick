@@ -4,6 +4,7 @@ import { useFonts, Inter_400Regular, Inter_500Medium, Inter_600SemiBold } from "
 import { Poppins_300Light } from "@expo-google-fonts/poppins";
 import { View, ActivityIndicator } from "react-native";
 import { BRAND } from "../../theme";
+import { CartProvider } from "../../lib/cart-store";
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
@@ -29,7 +30,7 @@ export default function RootLayout() {
   }
 
   return (
-    <>
+    <CartProvider>
       <StatusBar style="dark" />
       <Stack
         screenOptions={{
@@ -43,8 +44,10 @@ export default function RootLayout() {
         <Stack.Screen name="login/customer" options={{ title: "Customer Log In" }} />
         <Stack.Screen name="login/delivery" options={{ title: "Delivery Partner Log In" }} />
         <Stack.Screen name="customer/home" options={{ title: "Home", headerBackVisible: false }} />
+        <Stack.Screen name="customer/store/[id]" options={{ title: "Menu" }} />
+        <Stack.Screen name="customer/cart" options={{ title: "Cart" }} />
         <Stack.Screen name="delivery/dashboard" options={{ title: "Dashboard", headerBackVisible: false }} />
       </Stack>
-    </>
+    </CartProvider>
   );
 }
