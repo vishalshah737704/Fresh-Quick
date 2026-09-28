@@ -8,7 +8,17 @@ process.chdir(root);
 
 const dev = process.argv.includes("--dev");
 const skipN8n = process.argv.includes("--skip-n8n");
-const mobile = process.argv.includes("--mobile");
+const skipMobile = process.argv.includes("--skip-mobile");
+
+function openWindow(title, command) {
+  if (process.platform === "win32") {
+    spawnSync(`start "${title}" cmd /k "${command}"`, { stdio: "inherit", shell: true });
+  } else {
+    const child = spawn("bash", ["-c", command], { stdio: "ignore", detached: true });
+    child.unref();
+    console.log(`${title} started detached (stdio ignored) — run '${command}' yourself to see logs.`);
+  }
+}
 
 if (!existsSync(".env.local")) {
   console.error(
@@ -96,39 +106,29 @@ if (!skipN8n) {
   }
 }
 
-if (mobile) {
+if (!skipMobile) {
   if (!existsSync(join("mobile", ".env"))) {
-    console.error(
-      "mobile/.env not found. Copy mobile/.env.example to mobile/.env and fill in Supabase URL/anon key + EXPO_PUBLIC_API_BASE_URL (your machine's LAN IP, not localhost) before using --mobile."
-    );
-    process.exit(1);
-  }
-  console.log("Starting Expo (mobile app) in a new window...");
-  if (process.platform === "win32") {
-    spawnSync(
-      'start "Mobile (Expo)" cmd /k "cd /d mobile && npx expo start"',
-      { stdio: "inherit", shell: true }
+    console.warn(
+      "mobile/.env not found — skipping mobile app. Copy mobile/.env.example to mobile/.env and fill in Supabase URL/anon key + EXPO_PUBLIC_API_BASE_URL (your machine's LAN IP, not localhost), or pass --skip-mobile to silence this."
     );
   } else {
-    const child = spawn("bash", ["-c", "cd mobile && npx expo start"], {
-      stdio: "ignore",
-      detached: true,
-    });
-    child.unref();
-    console.log("Expo started detached (stdio ignored) — run 'cd mobile && npx expo start' yourself for the QR code/logs.");
+    console.log("Starting Expo (mobile app) in a new window...");
+    openWindow("Mobile (Expo)", "cd /d mobile && npx expo start");
   }
+} else {
+  console.log("Skipping mobile app (--skip-mobile passed).");
 }
 
 if (dev) {
-  console.log("Starting Next.js dev server...");
-  const result = spawnSync("npm run dev", { stdio: "inherit", shell: true });
-  process.exit(result.status ?? 1);
+  console.log("Starting Next.js dev server (new window)...");
+  openWindow("Web (Next.js dev)", "npm run dev");
+} else {
+  if (!existsSync(".next")) {
+    console.error("No production build found. Run 'npm run app:build' first, or pass --dev for the dev server.");
+    process.exit(1);
+  }
+  console.log("Starting Next.js production server (new window)...");
+  openWindow("Web (Next.js)", "npm start");
 }
 
-if (!existsSync(".next")) {
-  console.error("No production build found. Run 'npm run app:build' first, or pass --dev for the dev server.");
-  process.exit(1);
-}
-console.log("Starting Next.js production server...");
-const result = spawnSync("npm start", { stdio: "inherit", shell: true });
-process.exit(result.status ?? 1);
+console.log("All requested services launched. This script has returned control of the terminal — check each service's own window for logs.");

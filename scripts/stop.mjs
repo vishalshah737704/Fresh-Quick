@@ -8,7 +8,7 @@ process.chdir(root);
 const args = process.argv.slice(2);
 const keepSupabase = args.includes("--keep-supabase");
 const keepN8n = args.includes("--keep-n8n");
-const stopMobile = args.includes("--mobile");
+const keepMobile = args.includes("--keep-mobile");
 const portArg = args.find((a) => a.startsWith("--port="));
 const port = portArg ? Number(portArg.split("=")[1]) : 3000;
 const mobilePortArg = args.find((a) => a.startsWith("--mobile-port="));
@@ -47,13 +47,15 @@ if (process.platform === "win32") {
   stopPosix(port);
 }
 
-if (stopMobile) {
+if (!keepMobile) {
   console.log(`Stopping Expo/Metro (mobile app) on port ${mobilePort}...`);
   if (process.platform === "win32") {
     stopWindows(mobilePort);
   } else {
     stopPosix(mobilePort);
   }
+} else {
+  console.log("Leaving mobile app running (--keep-mobile passed).");
 }
 
 if (!keepN8n) {
