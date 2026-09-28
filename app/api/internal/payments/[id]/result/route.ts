@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseServer } from "@/lib/supabase-server";
 import { verifyInternalSecret } from "@/lib/internal-auth";
+import { applyPaymentResult } from "@/lib/mock-payment";
 
 // Called by n8n's "Payment Mock Confirmation" workflow (spec §5 workflow 2)
 // after it simulates a gateway delay. Writes the payment result and, on
@@ -28,31 +28,10 @@ export async function POST(
     return NextResponse.json({ error: "status must be 'success' or 'failed'" }, { status: 400 });
   }
 
-  const { data: payment, error: paymentError } = await supabaseServer
-    .from("payments")
-    .update({
-      status,
-      paid_at: status === "success" ? new Date().toISOString() : null,
-    })
-    .eq("id", id)
-    .eq("status", "pending")
-    .select("id, order_id, status")
-    .single();
-
-  if (paymentError || !payment) {
-    return NextResponse.json({ error: "Payment is not pending" }, { status: 409 });
+  const result = await applyPaymentResult(id, status);
+  if (!result.ok) {
+    return NextResponse.json({ error: result.reason }, { status: 409 });
   }
 
-  if (status === "failed") {
-    const { error: cancelError } = await supabaseServer
-      .from("orders")
-      .update({ status: "cancelled" })
-      .eq("id", payment.order_id)
-      .eq("status", "placed");
-    if (cancelError) {
-      console.error("Failed to cancel order after payment failure:", payment.order_id, cancelError);
-    }
-  }
-
-  return NextResponse.json({ payment });
+  return NextResponse.json({ payment: { id, status } });
 }
