@@ -1484,13 +1484,37 @@ Claude at the start of work in this repo per project CLAUDE.md.
   update the field before PDF export; a field-based TOC is fine for a
   `.docx` a person will open in Word, but is a guaranteed-blank dead page
   in any PDF export pipeline that doesn't explicitly resolve it first.**
-  Also noted, not yet fixed: Appendix B's schema summary uses this app's
-  original pre-rename table names (`restaurants`/`menu_items`) rather
-  than the current live names (`stores`/`products`) — read from
-  migration `00000000000001` rather than the actual current schema;
-  cosmetic/informational staleness, not a functional defect, worth
-  correcting in a future regeneration pass. Same "not auto-regenerated"
-  caveat as the other two docs applies here too.
+  **Fixed 2026-09-28**: Appendix B's schema summary used this app's
+  original pre-rename table names (`restaurants`/`menu_items`, read from
+  migration `00000000000001` rather than the actual current schema)
+  instead of the current live names (`stores`/`products`) —
+  cosmetic/informational staleness, not a functional defect. Corrected
+  directly in `word/document.xml` (B.3/B.4 headings, the schema-index
+  table's two name cells, and one prose line in the money-arithmetic
+  section naming `menu_items`), rezipped into `docs/User_Manual.docx`,
+  and `docs/User_Manual.pdf` regenerated via
+  `soffice.exe --headless --convert-to pdf`. `Usage_Guide.docx` and
+  `UserList.docx` were checked for the same stale names — both only use
+  "restaurants" as plain English (marketplace concept), never as a table
+  name in a schema section, so neither needed a change. Same "not
+  auto-regenerated" caveat as the other two docs still applies — any
+  future schema change still needs a manual doc pass.
+
+## n8n container env var fix (2026-09-28)
+
+- `APP_BASE_URL` in the running n8n Docker container was pointed at
+  `:3001` instead of the app's actual `:3000` — found when Vishal noticed
+  the mismatch outside this session. Fixed by stopping/removing the old
+  `n8n` container (it used `--rm`, so no explicit `docker rm` was needed)
+  and recreating it with the confirmed-working run command from
+  `docs/n8n-webhook-setup.md` section 1, with `APP_BASE_URL` corrected to
+  `http://host.docker.internal:3000`. The `n8n_data` named volume persists
+  across recreation, so workflows/activation state were not lost. Also
+  re-ran the `alter database postgres set app.n8n_internal_secret = ...`
+  statement against `supabase_db_phase1-scaffold-db` (project id from
+  `supabase/config.toml`) as a precaution, even though that setting isn't
+  affected by an n8n container restart — it's a Postgres-side setting,
+  not part of the n8n container.
 
 ## External API keys in use
 
