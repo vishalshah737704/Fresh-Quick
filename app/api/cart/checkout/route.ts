@@ -1,6 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase-server";
 import { PAYMENT_SUCCESS_RATE } from "@/lib/order-constants";
+import {
+  validateCardFields,
+  validateUpiFields,
+  validateRecipientEmail,
+  buildMaskedReference,
+  type CardFields,
+  type UpiFields,
+} from "@/lib/payment-fields";
+import { applyPaymentResult } from "@/lib/mock-payment";
 
 type CheckoutRequestItem = {
   productId: string;
@@ -29,6 +38,10 @@ export async function POST(request: NextRequest) {
     paymentMethod,
     expectedTotal,
     deliveryNote,
+    recipientName,
+    recipientEmail,
+    cardFields,
+    upiFields,
   }: {
     storeId: string;
     items: CheckoutRequestItem[];
@@ -36,6 +49,10 @@ export async function POST(request: NextRequest) {
     paymentMethod: "mock_card" | "mock_upi" | "mock_cod";
     expectedTotal?: number;
     deliveryNote?: string | null;
+    recipientName: string;
+    recipientEmail: string;
+    cardFields?: CardFields;
+    upiFields?: UpiFields;
   } = body;
 
   if (!storeId || !items?.length || !deliveryAddress) {
@@ -101,6 +118,31 @@ export async function POST(request: NextRequest) {
   }
   const normalizedDeliveryNote =
     typeof deliveryNote === "string" && deliveryNote.trim() !== "" ? deliveryNote : null;
+
+  const normalizedRecipientName = typeof recipientName === "string" ? recipientName.trim() : "";
+  if (normalizedRecipientName.length === 0) {
+    return NextResponse.json({ error: "Recipient name is required" }, { status: 400 });
+  }
+  const emailError = validateRecipientEmail(typeof recipientEmail === "string" ? recipientEmail : "");
+  if (emailError) {
+    return NextResponse.json({ error: emailError }, { status: 400 });
+  }
+
+  let paymentFieldError: string | null = null;
+  if (paymentMethod === "mock_card") {
+    paymentFieldError = validateCardFields(cardFields ?? { cardNumber: "", expiry: "", cardholderName: "" });
+  } else if (paymentMethod === "mock_upi") {
+    paymentFieldError = validateUpiFields(upiFields ?? { upiId: "" });
+  }
+  if (paymentFieldError) {
+    return NextResponse.json({ error: paymentFieldError }, { status: 400 });
+  }
+
+  const maskedReference = buildMaskedReference(
+    paymentMethod,
+    cardFields ?? { cardNumber: "", expiry: "", cardholderName: "" },
+    upiFields ?? { upiId: "" }
+  );
 
   const { data: store, error: storeError } = await supabaseServer
     .from("stores")
@@ -242,17 +284,10 @@ export async function POST(request: NextRequest) {
     };
   });
 
-  // Mock payment resolution — synchronous, in-process (no n8n yet).
-  // mock_cod always succeeds; mock_card/mock_upi resolve randomly.
-  // This determination is not itself a write, so it stays here in TS
-  // and its result is passed into the RPC to be inserted atomically
-  // with the order/address/order_items.
-  const paymentSucceeds =
-    paymentMethod === "mock_cod" || Math.random() < PAYMENT_SUCCESS_RATE;
-  const paymentStatus = paymentSucceeds ? "success" : "failed";
-
   const { data: rpcRows, error: rpcError } = await supabaseServer.rpc("checkout_place_order", {
     p_customer_id: customerId,
+    p_recipient_name: normalizedRecipientName,
+    p_recipient_email: recipientEmail.trim(),
     p_address_label: deliveryAddress.label,
     p_address_line1: deliveryAddress.label,
     p_address_lat: deliveryAddress.lat,
@@ -263,9 +298,8 @@ export async function POST(request: NextRequest) {
     p_total: total,
     p_items: orderItemsPayload,
     p_payment_method: paymentMethod,
-    p_payment_status: paymentStatus,
     p_payment_amount: total,
-    p_payment_paid_at: paymentSucceeds ? new Date().toISOString() : null,
+    p_payment_reference: maskedReference,
     p_delivery_note: normalizedDeliveryNote,
   });
 
@@ -274,15 +308,38 @@ export async function POST(request: NextRequest) {
   }
 
   const order = { id: rpcRows[0].order_id as string };
+  const paymentId = rpcRows[0].payment_id as string;
 
-  if (!paymentSucceeds) {
-    const { error: cancelError } = await supabaseServer
-      .from("orders")
-      .update({ status: "cancelled" })
-      .eq("id", order.id);
-    if (cancelError) {
-      console.error("Failed to mark order cancelled after payment failure:", order.id, cancelError);
+  // Poll briefly for n8n to resolve the payment via
+  // /api/internal/payments/[id]/result (workflow 02). If it doesn't
+  // resolve in time -- most commonly because n8n isn't running locally,
+  // which is the default dev state -- fall back to the same in-process
+  // random-outcome logic Phase 3 always used, applied through the same
+  // applyPaymentResult() helper the n8n callback route uses, so behavior
+  // is identical either way.
+  const POLL_INTERVAL_MS = 400;
+  const POLL_TIMEOUT_MS = 10_000;
+  let paymentStatus: "success" | "failed" | null = null;
+  const deadline = Date.now() + POLL_TIMEOUT_MS;
+  while (Date.now() < deadline) {
+    const { data: paymentRow } = await supabaseServer
+      .from("payments")
+      .select("status")
+      .eq("id", paymentId)
+      .single();
+    if (paymentRow && paymentRow.status !== "pending") {
+      paymentStatus = paymentRow.status as "success" | "failed";
+      break;
     }
+    await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL_MS));
+  }
+
+  if (paymentStatus === null) {
+    const fallbackSucceeds =
+      paymentMethod === "mock_cod" || Math.random() < PAYMENT_SUCCESS_RATE;
+    const fallbackStatus = fallbackSucceeds ? "success" : "failed";
+    const applied = await applyPaymentResult(paymentId, fallbackStatus);
+    paymentStatus = applied.ok ? fallbackStatus : "failed";
   }
 
   return NextResponse.json({ orderId: order.id, paymentStatus });
