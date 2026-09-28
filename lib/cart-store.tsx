@@ -31,6 +31,16 @@ type PendingConflict = {
   item: NewCartItem;
 } | null;
 
+// The checkout page registers this so the persistent CartPanel sidebar can
+// render a single "Place order" button when on the checkout route, instead
+// of both the page and the sidebar showing their own competing summary.
+export type CheckoutHandler = {
+  canPlaceOrder: boolean;
+  submitting: boolean;
+  error: string | null;
+  onPlaceOrder: () => void;
+} | null;
+
 type CartContextValue = {
   storeId: string | null;
   storeName: string | null;
@@ -38,6 +48,7 @@ type CartContextValue = {
   subtotal: number;
   orderNote: string;
   pendingConflict: PendingConflict;
+  checkoutHandler: CheckoutHandler;
   addItem: (storeId: string, storeName: string, item: NewCartItem) => void;
   updateQuantity: (lineId: string, quantity: number) => void;
   removeItem: (lineId: string) => void;
@@ -46,6 +57,7 @@ type CartContextValue = {
   clearCart: () => void;
   confirmClearAndAdd: () => void;
   cancelPendingAdd: () => void;
+  setCheckoutHandler: (handler: CheckoutHandler) => void;
 };
 
 const CartContext = createContext<CartContextValue | null>(null);
@@ -109,6 +121,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
   const [orderNote, setOrderNoteState] = useState("");
   const [pendingConflict, setPendingConflict] = useState<PendingConflict>(null);
+  const [checkoutHandler, setCheckoutHandler] = useState<CheckoutHandler>(null);
   const previousUserId = useRef<string | null | undefined>(undefined);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const skipNextSave = useRef(false);
@@ -282,6 +295,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         subtotal,
         orderNote,
         pendingConflict,
+        checkoutHandler,
         addItem,
         updateQuantity,
         removeItem,
@@ -290,6 +304,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         clearCart,
         confirmClearAndAdd,
         cancelPendingAdd,
+        setCheckoutHandler,
       }}
     >
       {children}

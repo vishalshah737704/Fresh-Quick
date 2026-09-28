@@ -1516,6 +1516,78 @@ Claude at the start of work in this repo per project CLAUDE.md.
   affected by an n8n container restart — it's a Postgres-side setting,
   not part of the n8n container.
 
+## Checkout/cart/account UX fixes (2026-09-28)
+
+- **Checkout page no longer duplicates the cart summary.** Previously the
+  checkout page rendered its own order-summary card (items, subtotal,
+  total, "Place order" button) right next to the persistent `CartPanel`
+  sidebar, which also showed the same items/total — two visibly separate
+  cart blocks on one screen. Fixed by removing checkout's own summary/
+  button entirely and adding a `checkoutHandler` bridge to `CartContext`
+  (`lib/cart-store.tsx`): the checkout page registers `{canPlaceOrder,
+  submitting, error, onPlaceOrder}` via a `useEffect`, and `CartPanel`
+  renders the single "Place order" button (disabled until valid) when on
+  `/customer/checkout`, reading that handler instead of its normal
+  "Checkout" link. Only one cart panel is ever visible now.
+- **Delivery address is now a real structured form** — Address 1,
+  Address 2 (optional), City, State, Pincode — instead of a read-only
+  label showing the coarse lat/lng browse-location stub. New migration
+  `00000000000024_address_details.sql` adds `line2`, `city`, `state`,
+  `pincode` columns to `public.addresses` and updates the
+  `checkout_place_order` RPC signature to accept and persist them.
+  `lib/address-store.tsx`'s `AddressProvider` gained a separate
+  `deliveryDetails`/`setDeliveryDetails` slot (persisted in the same
+  `foodhub_address` localStorage blob) so the checkout form's values
+  survive across visits, without touching the existing lat/lng/label used
+  for restaurant-distance sorting. The coarse address picker's lat/lng
+  stub is unchanged — this only adds the human-entered street address
+  collected and stored alongside it.
+- **Customer app now has session-aware nav + a real account menu** —
+  closing the long-standing "no sign-out UI" gap from KICKOFF_11/12/13.
+  `components/SidebarNav.tsx` now uses the existing `useSession()` hook
+  (`lib/auth.ts`, already used elsewhere — no new session hook needed)
+  to hide Sign In/Sign Up when logged in and point "Orders" at a real
+  `/customer/orders` list page (new — previously only an order-detail-by-
+  id page existed, no list). New `components/AccountMenu.tsx`: a
+  hamburger icon in the customer layout's header (mounted next to
+  `DeliveryPickupToggle`, visible only when a session exists) opens a
+  flyout with the account's name only (no "Manage account" link, per
+  spec), Orders, Wallet, Help, and Sign out (`supabase.auth.signOut()` +
+  redirect to `/customer`). New placeholder pages `/customer/wallet`
+  (lists the 3 mock payment methods available at checkout, read-only)
+  and `/customer/help` (static FAQ, no backend) back the two new menu
+  items that had nothing to link to before.
+- **Found and fixed a real React anti-pattern in the new checkout address
+  form**: the first draft's `updateAddressField` called
+  `setDeliveryDetails` (an update to `AddressProvider`'s state, a
+  different component) synchronously inside the local `setAddress`
+  updater callback, tripping React's "Cannot update a component while
+  rendering a different component" warning and causing genuinely flaky
+  login-redirect/navigation behavior in testing. Fixed by moving the
+  cross-component sync into its own `useEffect` keyed on the local
+  `address` state instead of calling it from inside another state
+  setter's updater function.
+- **Root-caused a real, Vishal-confirmed bug: clicking a restaurant/store
+  card on the home feed appeared to do nothing.** Extensive live testing
+  (including a deliberate `git stash` to confirm the same symptom
+  reproduces on unmodified `main`, and a production `next build && next
+  start` run to rule out dev-mode/Turbopack overhead) showed navigation
+  was never actually failing — `/customer/stores/[id]` has no `loading.js`
+  route segment, so Next shows literally nothing for the ~900ms it takes
+  to fetch and mount that client-rendered page, which reads as "the click
+  did nothing" with no visual feedback at all. Fixed per Next's own
+  guidance (`useLinkStatus` docs, "Version History" confirms it's
+  available as of this project's Next 16) by adding
+  `app/customer/stores/[id]/loading.tsx` (and the same for
+  `app/customer/restaurants/[id]/loading.tsx`, the sibling detail route)
+  — a simple pulse-animated skeleton shown instantly on navigation.
+  **Lesson for future dynamic client-rendered routes**: any
+  `app/**/[id]/page.tsx` that is `"use client"` and fetches its own data
+  after mount (the pattern this whole app uses for restaurant/store/order
+  detail pages) needs a sibling `loading.tsx` — without one, a real user
+  gets zero feedback during the client-side transition and reasonably
+  concludes the click was broken, even though it always worked.
+
 ## External API keys in use
 
 - `PEXELS_API_KEY` — Pexels Search API, used once (not at runtime) to fetch

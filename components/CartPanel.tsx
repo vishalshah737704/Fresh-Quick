@@ -21,6 +21,7 @@ export function CartPanel() {
     setSpecialInstructions,
     setOrderNote,
     clearCart,
+    checkoutHandler,
   } = useCart();
   const [noteDrafts, setNoteDrafts] = useState<Record<string, string>>({});
   const [orderNoteDraft, setOrderNoteDraft] = useState<string | null>(null);
@@ -123,6 +124,20 @@ export function CartPanel() {
           >
             Checkout
           </Link>
+        )}
+        {isOnCheckoutPage && checkoutHandler && (
+          <>
+            {checkoutHandler.error && (
+              <p className="mt-2 text-xs text-red-600">{checkoutHandler.error}</p>
+            )}
+            <button
+              disabled={checkoutHandler.submitting || !checkoutHandler.canPlaceOrder}
+              onClick={checkoutHandler.onPlaceOrder}
+              className="mt-2 block w-full rounded-full bg-brand-primary px-3 py-2 text-center text-sm font-semibold text-white disabled:opacity-50"
+            >
+              {checkoutHandler.submitting ? "Placing order…" : "Place order"}
+            </button>
+          </>
         )}
       </div>
 

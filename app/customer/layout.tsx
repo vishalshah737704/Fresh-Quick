@@ -7,6 +7,7 @@ import { CartConflictDialog } from "@/components/CartConflictDialog";
 import { CartPanel } from "@/components/CartPanel";
 import { SidebarNav } from "@/components/SidebarNav";
 import { DeliveryPickupToggle } from "@/components/DeliveryPickupToggle";
+import { AccountMenu } from "@/components/AccountMenu";
 import { BRAND } from "@/lib/branding";
 
 export default function CustomerLayout({ children }: { children: ReactNode }) {
@@ -25,6 +26,11 @@ export default function CustomerLayout({ children }: { children: ReactNode }) {
               </Link>
               <AddressPicker />
               <DeliveryPickupToggle />
+              <div className="ml-auto">
+                <Suspense fallback={null}>
+                  <AccountMenu />
+                </Suspense>
+              </div>
             </header>
             <main className="w-full flex-1 overflow-y-auto p-4">{children}</main>
           </div>

@@ -66,6 +66,15 @@ See [MEMORY.md](MEMORY.md) for phase-by-phase progress and decisions.
 
 ## Project-specific rules
 
+- **Every `"use client"` dynamic detail page (`app/**/[id]/page.tsx`) that
+  fetches its own data after mount needs a sibling `loading.tsx`.**
+  Without one, Next shows nothing at all during the client-side route
+  transition, which a real user reads as "the click did nothing" — this
+  is exactly what happened with restaurant/store cards on the home feed
+  (confirmed live by Vishal, root-caused 2026-09-28: `/customer/
+  stores/[id]` had no `loading.js`, navigation always worked but took
+  ~900ms with zero visual feedback). See MEMORY.md's "Checkout/cart/
+  account UX fixes" entry for the full investigation.
 - **A Postgres trigger function that fires an n8n webhook must be checked
   for what it actually puts in the request body, not just that it fires
   — `create or replace function` silently succeeding is not evidence the

@@ -45,7 +45,16 @@ export async function POST(request: NextRequest) {
   }: {
     storeId: string;
     items: CheckoutRequestItem[];
-    deliveryAddress: { label: string; lat: number; lng: number };
+    deliveryAddress: {
+      label: string;
+      lat: number;
+      lng: number;
+      line1: string;
+      line2: string | null;
+      city: string;
+      state: string;
+      pincode: string;
+    };
     paymentMethod: "mock_card" | "mock_upi" | "mock_cod";
     expectedTotal?: number;
     deliveryNote?: string | null;
@@ -104,6 +113,19 @@ export async function POST(request: NextRequest) {
     !Number.isFinite(deliveryAddress.lng) ||
     typeof deliveryAddress.label !== "string" ||
     deliveryAddress.label.trim().length === 0
+  ) {
+    return NextResponse.json({ error: "Invalid delivery address" }, { status: 400 });
+  }
+  const requiredAddressFields: (keyof typeof deliveryAddress)[] = ["line1", "city", "state", "pincode"];
+  for (const field of requiredAddressFields) {
+    if (typeof deliveryAddress[field] !== "string" || (deliveryAddress[field] as string).trim().length === 0) {
+      return NextResponse.json({ error: "Address 1, City, State, and Pincode are required" }, { status: 400 });
+    }
+  }
+  if (
+    deliveryAddress.line2 !== null &&
+    deliveryAddress.line2 !== undefined &&
+    typeof deliveryAddress.line2 !== "string"
   ) {
     return NextResponse.json({ error: "Invalid delivery address" }, { status: 400 });
   }
@@ -289,7 +311,11 @@ export async function POST(request: NextRequest) {
     p_recipient_name: normalizedRecipientName,
     p_recipient_email: recipientEmail.trim(),
     p_address_label: deliveryAddress.label,
-    p_address_line1: deliveryAddress.label,
+    p_address_line1: deliveryAddress.line1,
+    p_address_line2: deliveryAddress.line2 ?? null,
+    p_address_city: deliveryAddress.city,
+    p_address_state: deliveryAddress.state,
+    p_address_pincode: deliveryAddress.pincode,
     p_address_lat: deliveryAddress.lat,
     p_address_lng: deliveryAddress.lng,
     p_store_id: storeId,
