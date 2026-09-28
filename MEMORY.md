@@ -1682,6 +1682,76 @@ Claude at the start of work in this repo per project CLAUDE.md.
   the account-menu flyout) were captured live via Playwright against the
   running dev server, not fabricated or reused from before.
 
+## Mobile app (React Native + Expo) — v1 complete, local main, not pushed
+
+Built 2026-09-28 per KICKOFF_14's mobile-app candidate, executed autonomously
+(Vishal explicitly said not to ask questions and to build/spec/test end to
+end). New `mobile/` directory, own package.json, separate from the Next.js
+web app — same self-hosted local Supabase backend and same Next.js API
+routes (`/api/cart/checkout`, `/api/delivery/*`) called over HTTP, no new
+backend code. See `md_version/MOBILE_APP_SPEC.md` for the full architecture
+spec. Scope: Customer + Delivery Partner portals only (full feature parity
+with their web equivalents) — Vendor and Admin stay web-only, desk tools.
+
+Built across 5 commits (6593205 scaffold, f34fcc2 customer home/store/cart,
+1dc620a customer checkout/orders/wallet/help, cc78150 delivery dashboard,
+14f368b + ece5b67 reconciliation/review fixes): role picker, per-role login
+with the same role-mismatch-signs-out pattern as web, customer home (search
++ category chips + store grid), store detail (grouped menu + item
+customization modal), cart (AsyncStorage-persisted, single-store enforced,
+paise-integer math), checkout (address/payment/recipient, calls the same
+checkout API as web), orders list + order detail with the same 3s-poll
+tracking and 4-step status timeline as web, wallet/help (static, matching
+web content), delivery dashboard (online/offline toggle, available-orders
+claim, status-chain buttons, address reveal, foreground-only 15s location
+ping + 10s list polling, matching web's cadence exactly).
+
+- **Two phases (customer home/store/cart, and customer checkout/orders/
+  wallet) were built by concurrent agents in the same non-worktree checkout**
+  (worktree creation is currently broken in this repo — a stale
+  `core.worktree` redirect under `.claude/worktrees/`, not yet cleaned up,
+  see "Cleanup noted, not yet done" in KICKOFF_14). They stayed compatible
+  because both were briefed with the same cart-shape contract, but this was
+  fragile — a final reconciliation pass (commit 14f368b) was still needed to
+  wire the cart screen's checkout button to the real checkout route, since
+  the earlier-landing agent had stubbed it as "coming soon" before the
+  other agent's checkout screen existed. **If concurrent agents ever build
+  into the same non-worktree tree again, brief them explicitly to leave a
+  stub/TODO comment referencing the file the other phase owns, not just a
+  disabled button with no pointer** — would have made this reconciliation
+  a zero-thought grep instead of a manual read.
+- **Final whole-tree review (a dedicated review agent, not a builder) caught
+  what none of the four per-phase agents did: most customer/delivery
+  screens had no session check at all** — only `login/delivery.tsx`'s own
+  role-check gated anything; `home.tsx`, `store/[id].tsx`, `cart.tsx`,
+  `orders/[id].tsx`, and the delivery dashboard would all render (reading
+  publicly-RLS-readable data) for a signed-out session restored via deep
+  link or cold start, only failing later at an authenticated action. Fixed
+  with a shared `mobile/lib/use-require-session.ts` hook applied to all
+  five screens (commit ece5b67) — same "final review must check what the
+  rest of the codebase actually does" lesson this file already has for RLS
+  policies, now confirmed to apply to per-screen auth guards too.
+- `mobile/.env.example`'s `EXPO_PUBLIC_API_BASE_URL` placeholder originally
+  defaulted to `http://127.0.0.1:3000`, unreachable from a physical device
+  (the phone, not the dev machine) even though the comment above it
+  correctly warned about this — fixed to a LAN-IP-shaped placeholder.
+- `Mobile_App_User_Manual.docx`/`.pdf` created in `docs/`, 9 pages, same
+  static-TOC-verified-against-rendered-PDF process as `User_Manual.docx`
+  (see the TOC-drift lesson above) — actual render caught the first-guess
+  TOC page numbers as wrong (guessed 3/4/6/12/15/17, actual 3/4/5/7/8/9)
+  before the PDF was finalized. Documents plainly that mobile has no
+  in-app sign-up (create an account via the web app first, then sign in on
+  mobile with the same credentials), and that maps/payments/push
+  notifications/background location are all absent or mocked, matching
+  this project's honest-documentation convention.
+- **Not yet done**: `npx tsc --noEmit` passes and Metro bundles cleanly for
+  every phase, but nothing has been run on an actual device or simulator —
+  none was available to any agent this session. First real device/
+  simulator run is still outstanding before this counts as fully verified,
+  not just type-checked and bundle-tested.
+- Nothing pushed to `origin` yet — awaiting Vishal's review or the
+  "Commit Work" standing phrase.
+
 ## External API keys in use
 
 - `PEXELS_API_KEY` — Pexels Search API, used once (not at runtime) to fetch
