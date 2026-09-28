@@ -3,10 +3,13 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useCart } from "@/lib/cart-store";
 import { useDeliveryFee } from "@/lib/use-delivery-fee";
 
 export function CartPanel() {
+  const pathname = usePathname();
+  const isOnCheckoutPage = pathname === "/customer/checkout";
   const {
     storeId,
     storeName,
@@ -113,12 +116,14 @@ export function CartPanel() {
             <p className="font-semibold text-brand-ink">Total: ₹{total.toFixed(2)}</p>
           )}
         </div>
-        <Link
-          href="/customer/checkout"
-          className="mt-2 block rounded-full bg-brand-primary px-3 py-2 text-center text-sm font-semibold text-white"
-        >
-          Checkout
-        </Link>
+        {!isOnCheckoutPage && (
+          <Link
+            href="/customer/checkout"
+            className="mt-2 block rounded-full bg-brand-primary px-3 py-2 text-center text-sm font-semibold text-white"
+          >
+            Checkout
+          </Link>
+        )}
       </div>
 
       <div className="px-4 py-3">
