@@ -126,12 +126,12 @@ export default function CartScreen() {
             <Text style={styles.totalValue}>₹{(totalPaise / 100).toFixed(2)}</Text>
           </View>
         )}
-        <View style={[styles.checkoutButton, styles.checkoutButtonDisabled]}>
-          <Text style={styles.checkoutButtonText}>Checkout — coming soon</Text>
-        </View>
-        <Text style={styles.checkoutNote}>
-          Checkout isn&apos;t built yet in this mobile pass — browse and cart only.
-        </Text>
+        <Pressable
+          style={styles.checkoutButton}
+          onPress={() => router.push("/customer/checkout")}
+        >
+          <Text style={styles.checkoutButtonText}>Checkout</Text>
+        </Pressable>
       </View>
     </View>
   );
