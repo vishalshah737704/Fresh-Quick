@@ -57,7 +57,7 @@
       "main": [[{ "node": "Filter: status = placed", "type": "main", "index": 0 }]]
     },
     "Filter: status = placed": {
-      "main": [[{ "node": "Notify Restaurant (placeholder)", "type": "main", "index": 0 }], []]
+      "main": [[{ "node": "Notify Restaurant (write notification row)", "type": "main", "index": 0 }], []]
     }
   },
   "active": false,
