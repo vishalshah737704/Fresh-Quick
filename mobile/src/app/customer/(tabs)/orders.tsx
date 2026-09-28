@@ -4,6 +4,7 @@ import { useRouter, useFocusEffect } from "expo-router";
 import { supabase } from "../../../../lib/supabase";
 import { ORDERS_LIST_STATUS_LABEL } from "../../../../lib/order-status";
 import { BRAND } from "../../../../theme";
+import { useRequireSession } from "../../../../lib/use-require-session";
 
 type OrderRow = {
   id: string;
@@ -14,6 +15,7 @@ type OrderRow = {
 };
 
 export default function CustomerOrdersScreen() {
+  useRequireSession("/login/customer");
   const router = useRouter();
   const [orders, setOrders] = useState<OrderRow[] | null>(null);
   const [error, setError] = useState<string | null>(null);

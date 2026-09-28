@@ -14,6 +14,7 @@ import { supabase } from "../../../lib/supabase";
 import { apiFetch, ApiError } from "../../../lib/api";
 import { useCart } from "../../../lib/cart-store";
 import { BRAND } from "../../../theme";
+import { useRequireSession } from "../../../lib/use-require-session";
 
 type PaymentMethod = "mock_card" | "mock_upi" | "mock_cod";
 
@@ -86,6 +87,7 @@ function CheckoutRow({
 }
 
 export default function CheckoutScreen() {
+  useRequireSession("/login/customer");
   const router = useRouter();
   const { storeId, items, subtotalPaise, orderNote, setOrderNote, clearCart } = useCart();
   const [deliveryFeePaise, setDeliveryFeePaise] = useState<number | null>(null);
