@@ -12,6 +12,7 @@ import * as Location from "expo-location";
 import { supabase } from "../../../lib/supabase";
 import { apiFetch, ApiError } from "../../../lib/api";
 import { BRAND } from "../../../theme";
+import { useRequireSession } from "../../../lib/use-require-session";
 
 // Mirrors app/delivery/(portal)/dashboard/page.tsx on the web: online/
 // offline toggle, available-orders self-claim list, "mine" list with the
@@ -35,6 +36,7 @@ const NEXT_LABEL: Record<string, string> = {
 };
 
 export default function DeliveryDashboardScreen() {
+  useRequireSession("/login/delivery");
   const router = useRouter();
   const [isOnline, setIsOnline] = useState(false);
   const [toggling, setToggling] = useState(false);

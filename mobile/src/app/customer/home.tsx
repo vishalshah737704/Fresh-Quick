@@ -13,6 +13,7 @@ import { useRouter } from "expo-router";
 import { supabase } from "../../../lib/supabase";
 import { BRAND } from "../../../theme";
 import { CartBadge } from "../../../components/CartBadge";
+import { useRequireSession } from "../../../lib/use-require-session";
 
 type Store = {
   id: string;
@@ -34,6 +35,7 @@ type Cuisine = { slug: string; label: string };
 type ProductLite = { store_id: string; name: string };
 
 export default function CustomerHomeScreen() {
+  useRequireSession("/login/customer");
   const router = useRouter();
   const [stores, setStores] = useState<Store[] | null>(null);
   const [cuisines, setCuisines] = useState<Cuisine[]>([]);

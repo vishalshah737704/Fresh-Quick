@@ -15,6 +15,7 @@ import { BRAND } from "../../../../theme";
 import { useCart } from "../../../../lib/cart-store";
 import { CartBadge } from "../../../../components/CartBadge";
 import { ItemCustomizationModal } from "../../../../components/ItemCustomizationModal";
+import { useRequireSession } from "../../../../lib/use-require-session";
 
 type Option = { id: string; name: string; price_delta_paise: number; sort_order: number };
 type OptionGroup = {
@@ -89,6 +90,7 @@ function sortedGroups(item: MenuItem): OptionGroup[] {
 }
 
 export default function StoreDetailScreen() {
+  useRequireSession("/login/customer");
   const { id } = useLocalSearchParams<{ id: string }>();
   const { addItem, pendingConflict, confirmClearAndAdd, cancelPendingAdd } = useCart();
   const [store, setStore] = useState<Store | null>(null);

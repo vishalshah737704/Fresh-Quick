@@ -3,11 +3,13 @@ import { useRouter } from "expo-router";
 import { useCart, CartItem } from "../../../lib/cart-store";
 import { useDeliveryFee } from "../../../lib/use-delivery-fee";
 import { BRAND } from "../../../theme";
+import { useRequireSession } from "../../../lib/use-require-session";
 
 // Mirrors components/CartPanel.tsx on the web, as a dedicated screen rather
 // than a persistent sidebar (no room for one on a phone). Same paise-
 // arithmetic total calc via useDeliveryFee.
 export default function CartScreen() {
+  useRequireSession("/login/customer");
   const router = useRouter();
   const {
     storeName,

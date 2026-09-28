@@ -13,6 +13,7 @@ import {
   type OrderStatus,
 } from "../../../../lib/order-status";
 import { BRAND } from "../../../../theme";
+import { useRequireSession } from "../../../../lib/use-require-session";
 
 type OrderView = {
   id: string;
@@ -71,6 +72,7 @@ function OrderTimeline({ status }: { status: OrderStatus }) {
 }
 
 export default function OrderDetailScreen() {
+  useRequireSession("/login/customer");
   const { id } = useLocalSearchParams<{ id: string }>();
   const [order, setOrder] = useState<OrderView | null>(null);
   const [payment, setPayment] = useState<PaymentView | null>(null);
