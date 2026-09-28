@@ -34,11 +34,22 @@
     },
     {
       "id": "notify-restaurant",
-      "name": "Notify Restaurant (placeholder)",
-      "type": "n8n-nodes-base.noOp",
-      "typeVersion": 1,
+      "name": "Notify Restaurant (write notification row)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
       "position": [680, 220],
-      "notes": "Replace with an email/notification node (e.g. Supabase email, or a webhook back to the vendor dashboard) once a notification channel is decided."
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.APP_BASE_URL}}/api/internal/orders/{{$json[\"body\"][\"record\"][\"id\"]}}/notify-vendor",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "X-Internal-Secret", "value": "={{$env.N8N_INTERNAL_SECRET}}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        }
+      },
+      "notes": "Calls the internal route added in this plan's Task 3, which writes a real public.notifications row -- see docs/n8n-webhook-setup.md for APP_BASE_URL/N8N_INTERNAL_SECRET env requirements inside the n8n container."
     }
   ],
   "connections": {
