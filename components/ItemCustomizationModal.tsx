@@ -94,81 +94,111 @@ export function ItemCustomizationModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center">
-      <div className="max-h-[85vh] w-full max-w-md overflow-y-auto rounded-t-lg bg-brand-surface p-4 sm:rounded-lg">
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-lg font-bold text-brand-ink">{item.name}</h2>
-          <button onClick={onClose} className="text-brand-ink-muted" aria-label="Close">
+      <div className="max-h-[85vh] w-full max-w-md overflow-y-auto rounded-t-[var(--radius-card)] bg-brand-surface pb-24 sm:rounded-[var(--radius-card)]">
+        <div className="relative">
+          {item.image_url ? (
+            <img
+              src={item.image_url}
+              alt={item.name}
+              className="h-40 w-full rounded-t-[var(--radius-card)] object-cover sm:rounded-t-[var(--radius-card)]"
+            />
+          ) : (
+            <div className="h-40 w-full rounded-t-[var(--radius-card)] bg-brand-ink-muted/15" />
+          )}
+          <button
+            onClick={onClose}
+            className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-brand-surface text-brand-ink shadow"
+            aria-label="Close"
+          >
             ✕
           </button>
         </div>
-        {optionGroups.map((group) => (
-          <div key={group.id} className="mb-4">
-            <p className="mb-1 text-sm font-semibold text-brand-ink">
-              {group.name}
-              <span className="ml-2 text-xs font-normal text-brand-ink-muted">
-                {group.min_select > 0
-                  ? `Required · choose ${
-                      group.min_select === group.max_select
-                        ? group.min_select
-                        : `${group.min_select}-${group.max_select}`
-                    }`
-                  : `Optional · up to ${group.max_select}`}
-              </span>
-            </p>
-            <div className="flex flex-col gap-1">
-              {group.menu_item_options.map((option) => (
-                <label
-                  key={option.id}
-                  className="flex cursor-pointer items-center justify-between rounded-lg border border-brand-ink-muted/15 px-3 py-2 text-sm"
-                >
-                  <span className="flex items-center gap-2">
-                    <input
-                      type={group.max_select === 1 ? "radio" : "checkbox"}
-                      name={group.id}
-                      checked={isSelected(group.id, option.id)}
-                      onChange={() => toggleOption(group, option.id)}
-                      className="accent-brand-primary"
-                    />
-                    {option.name}
-                  </span>
-                  {option.price_delta_paise > 0 && (
-                    <span className="text-brand-ink-muted">
-                      +₹{(option.price_delta_paise / 100).toFixed(2)}
-                    </span>
-                  )}
-                </label>
-              ))}
-              {group.menu_item_options.length === 0 && (
-                <p className="text-xs text-brand-ink-muted">No options available yet.</p>
-              )}
+        <div className="px-4 pt-3">
+          <p className="mb-1 text-xs font-medium text-brand-ink-muted">
+            {storeName} <span className="mx-1">›</span> {item.name}
+          </p>
+          <h2 className="mb-3 text-lg font-bold text-brand-ink">{item.name}</h2>
+          {optionGroups.map((group) => (
+            <div key={group.id} className="mb-4 overflow-hidden rounded-[var(--radius-card)] border border-brand-ink-muted/15">
+              <div className="flex items-center justify-between bg-brand-ink px-3 py-2">
+                <p className="text-sm font-semibold text-white">{group.name}</p>
+                <span className="text-xs font-normal text-white/70">
+                  {group.min_select > 0
+                    ? `Required · choose ${
+                        group.min_select === group.max_select
+                          ? group.min_select
+                          : `${group.min_select}-${group.max_select}`
+                      }`
+                    : `Optional · up to ${group.max_select}`}
+                </span>
+              </div>
+              <div className="flex flex-col gap-1 p-2">
+                {group.menu_item_options.map((option) => {
+                  const checked = isSelected(group.id, option.id);
+                  return (
+                    <label
+                      key={option.id}
+                      className={`flex cursor-pointer items-center justify-between rounded-[var(--radius-pill)] border px-3 py-2 text-sm transition-colors ${
+                        checked
+                          ? "border-brand-accent bg-brand-accent/10"
+                          : "border-brand-ink-muted/15"
+                      }`}
+                    >
+                      <span className="flex items-center gap-2">
+                        <input
+                          type={group.max_select === 1 ? "radio" : "checkbox"}
+                          name={group.id}
+                          checked={checked}
+                          onChange={() => toggleOption(group, option.id)}
+                          className="accent-brand-accent"
+                        />
+                        {option.name}
+                      </span>
+                      {option.price_delta_paise > 0 && (
+                        <span className="text-brand-ink-muted">
+                          +₹{(option.price_delta_paise / 100).toFixed(2)}
+                        </span>
+                      )}
+                    </label>
+                  );
+                })}
+                {group.menu_item_options.length === 0 && (
+                  <p className="text-xs text-brand-ink-muted">No options available yet.</p>
+                )}
+              </div>
+            </div>
+          ))}
+          <div className="mb-4 flex items-center justify-between">
+            <span className="text-sm font-medium text-brand-ink">Quantity</span>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                className="rounded-full border border-brand-ink-muted/20 px-2"
+              >
+                −
+              </button>
+              <span>{quantity}</span>
+              <button
+                onClick={() => setQuantity((q) => q + 1)}
+                className="rounded-full border border-brand-ink-muted/20 px-2"
+              >
+                +
+              </button>
             </div>
           </div>
-        ))}
-        <div className="mb-4 flex items-center justify-between">
-          <span className="text-sm font-medium text-brand-ink">Quantity</span>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-              className="rounded-full border border-brand-ink-muted/20 px-2"
-            >
-              −
-            </button>
-            <span>{quantity}</span>
-            <button
-              onClick={() => setQuantity((q) => q + 1)}
-              className="rounded-full border border-brand-ink-muted/20 px-2"
-            >
-              +
-            </button>
-          </div>
         </div>
-        <button
-          disabled={!allGroupsValid}
-          onClick={handleAdd}
-          className="w-full rounded-full bg-brand-primary px-4 py-2 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          Add {quantity} to cart · ₹{(totalPaise / 100).toFixed(2)}
-        </button>
+        <div className="fixed inset-x-0 bottom-0 z-10 mx-auto flex max-w-md items-center justify-between gap-3 border-t border-brand-ink-muted/15 bg-brand-surface px-4 py-3 sm:static sm:mx-0 sm:border-0 sm:px-4 sm:pt-0">
+          <span className="rounded-[var(--radius-pill)] bg-brand-primary px-4 py-2 text-sm font-semibold text-white">
+            ₹{(totalPaise / 100).toFixed(2)}
+          </span>
+          <button
+            disabled={!allGroupsValid}
+            onClick={handleAdd}
+            className="flex-1 rounded-[var(--radius-pill)] bg-brand-accent px-4 py-2 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Add {quantity} to cart
+          </button>
+        </div>
       </div>
     </div>
   );

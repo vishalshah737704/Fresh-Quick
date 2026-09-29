@@ -52,9 +52,11 @@ export function OrderStatusTimeline({ status }: { status: OrderStatus }) {
             <div className="flex flex-col items-center gap-1">
               <div
                 className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold ${
-                  complete || active
+                  complete
+                    ? "bg-brand-accent text-white"
+                    : active
                     ? "bg-brand-primary text-white"
-                    : "bg-brand-ink-muted/15 text-brand-ink-muted"
+                    : "bg-brand-ink-muted/20 text-brand-ink-muted"
                 }`}
               >
                 {complete ? "✓" : index + 1}
@@ -70,7 +72,7 @@ export function OrderStatusTimeline({ status }: { status: OrderStatus }) {
             {index < STEPS.length - 1 && (
               <div
                 className={`h-0.5 flex-1 ${
-                  complete ? "bg-brand-primary" : "bg-brand-ink-muted/15"
+                  complete ? "bg-brand-accent" : "bg-brand-ink-muted/20"
                 }`}
               />
             )}
