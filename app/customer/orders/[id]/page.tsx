@@ -125,9 +125,13 @@ export default function OrderConfirmationPage() {
   }
 
   return (
-    <div className="-m-6 flex flex-col gap-6 bg-brand-bg pb-6">
+    <div className="-m-4 flex flex-col gap-6 bg-brand-bg pb-6">
       <div className="flex flex-col items-center gap-2 bg-brand-ink px-6 pb-14 pt-8 text-center">
-        <span className="text-3xl">✅</span>
+        <span className="text-3xl">
+          {payment.status === "failed" || order.status === "cancelled" || order.status === "rejected"
+            ? "ℹ️"
+            : "✅"}
+        </span>
         <h1 className="text-2xl font-bold text-white">Order #{order.id.slice(0, 8)}</h1>
       </div>
       <div className="flex flex-col gap-6 px-6">

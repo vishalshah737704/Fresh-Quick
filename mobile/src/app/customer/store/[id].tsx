@@ -101,6 +101,11 @@ export default function StoreDetailScreen() {
   const [isFavorite, setIsFavorite] = useState(false); // local UI-only toggle, no backend
   const scrollRef = useRef<ScrollView>(null);
   const sectionOffsets = useRef<Record<string, number>>({});
+  // onLayout's y is relative to the IMMEDIATE PARENT, not the ScrollView's
+  // content view — since group offsets are captured inside menuListContainer
+  // (added for the background tint), this offset must be added back on to
+  // make sectionOffsets values ScrollView-content-relative again.
+  const menuListContainerOffset = useRef(0);
   const [activeGroupKey, setActiveGroupKey] = useState<string | null>(null);
 
   useEffect(() => {
@@ -187,7 +192,8 @@ export default function StoreDetailScreen() {
     setActiveGroupKey(key);
     const y = sectionOffsets.current[key];
     if (y !== undefined) {
-      scrollRef.current?.scrollTo({ y: Math.max(0, y - 8), animated: true });
+      const absoluteY = y + menuListContainerOffset.current;
+      scrollRef.current?.scrollTo({ y: Math.max(0, absoluteY - 8), animated: true });
     }
   }
 
@@ -253,7 +259,12 @@ export default function StoreDetailScreen() {
         {menuItems.length === 0 ? (
           <Text style={[styles.mutedText, { paddingHorizontal: 16 }]}>{store.name} has no menu items yet.</Text>
         ) : (
-          <View style={styles.menuListContainer}>
+          <View
+            style={styles.menuListContainer}
+            onLayout={(e) => {
+              menuListContainerOffset.current = e.nativeEvent.layout.y;
+            }}
+          >
             {groups.map((group) => (
               <View
                 key={group.key}

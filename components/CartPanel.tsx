@@ -132,7 +132,9 @@ export function CartPanel() {
         {isOnCheckoutPage && checkoutHandler && (
           <>
             {checkoutHandler.error && (
-              <p className="mt-2 text-xs text-red-100">{checkoutHandler.error}</p>
+              <p className="mt-2 rounded-[var(--radius-pill)] bg-white px-2 py-1 text-xs font-medium text-brand-danger">
+                {checkoutHandler.error}
+              </p>
             )}
             <button
               disabled={checkoutHandler.submitting || !checkoutHandler.canPlaceOrder}

@@ -9,6 +9,17 @@ import { supabase } from "@/lib/supabase";
 import { useDeliveryFee } from "@/lib/use-delivery-fee";
 import { validateCardFields, validateUpiFields, validateRecipientEmail } from "@/lib/payment-fields";
 
+// Spec requires every checkout field blank on every visit — never seed the
+// form from AddressProvider's deliveryDetails, which survives client-side
+// navigation within a session (see Finding 5).
+const EMPTY_DELIVERY_DETAILS: DeliveryDetails = {
+  line1: "",
+  line2: "",
+  city: "",
+  state: "",
+  pincode: "",
+};
+
 const PAYMENT_METHODS = [
   { value: "mock_card", label: "Mock Card", icon: "💳" },
   { value: "mock_upi", label: "Mock UPI", icon: "📱" },
@@ -18,7 +29,7 @@ const PAYMENT_METHODS = [
 export default function CheckoutPage() {
   const router = useRouter();
   const { storeId, items, subtotal, orderNote, clearCart, setCheckoutHandler } = useCart();
-  const { lat, lng, label, deliveryDetails, setDeliveryDetails } = useAddress();
+  const { lat, lng, label, setDeliveryDetails } = useAddress();
   const { userId, loading: sessionLoading } = useSession();
 
   const [paymentMethod, setPaymentMethod] =
@@ -32,7 +43,7 @@ export default function CheckoutPage() {
   const [cardExpiry, setCardExpiry] = useState("");
   const [cardholderName, setCardholderName] = useState("");
   const [upiId, setUpiId] = useState("");
-  const [address, setAddress] = useState<DeliveryDetails>(deliveryDetails);
+  const [address, setAddress] = useState<DeliveryDetails>(EMPTY_DELIVERY_DETAILS);
 
   function updateAddressField(field: keyof DeliveryDetails, value: string) {
     setAddress((prev) => ({ ...prev, [field]: value }));
@@ -200,13 +211,13 @@ export default function CheckoutPage() {
 
   return (
     <div
-      className="-m-6 p-6"
+      className="-m-4 p-4"
       style={{
         background:
           "linear-gradient(180deg, var(--color-brand-primary-tint) 0%, var(--color-brand-bg) 260px)",
       }}
     >
-      <div className="-mx-6 -mt-6 mb-6 bg-brand-ink px-6 py-4">
+      <div className="-mx-4 -mt-4 mb-6 bg-brand-ink px-6 py-4">
         <h1 className="text-2xl font-bold text-white">Checkout</h1>
       </div>
       <div className="flex max-w-2xl flex-col gap-6">

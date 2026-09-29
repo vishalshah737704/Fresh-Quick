@@ -31,7 +31,8 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
           </button>
         </div>
         <aside
-          className={`${drawerOpen ? "flex" : "hidden"} w-full flex-col gap-2 bg-brand-ink p-4 text-white md:flex md:w-56 md:min-h-screen`}
+          className={`${drawerOpen ? "flex" : "hidden"} w-full flex-col gap-2 p-4 text-white md:flex md:w-56 md:min-h-screen`}
+          style={{ background: "linear-gradient(180deg, var(--color-brand-ink) 0%, #132849 100%)" }}
         >
           <span className="mb-2 hidden font-heading text-lg text-white md:block">Admin</span>
           <span className="rounded-[var(--radius-pill)] bg-brand-primary px-3 py-2 text-sm text-white">
