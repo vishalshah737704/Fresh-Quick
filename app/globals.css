@@ -17,6 +17,9 @@
   --color-brand-ink: #0B1D3A;
   --color-brand-ink-muted: #6B7280;
   --color-brand-danger: #E0524D;
+  --color-brand-primary-tint: #FFF4E8;
+  --color-brand-accent-tint: #EAF7EE;
+  --color-brand-ink-tint: #E8ECF4;
   --radius-card: 16px;
   --radius-pill: 999px;
 }
