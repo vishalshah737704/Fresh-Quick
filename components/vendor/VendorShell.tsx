@@ -48,20 +48,20 @@ export default function VendorShell({ children }: { children: React.ReactNode })
   return (
     <VendorSessionContext.Provider value={{ loading, storeId, isOpen, refreshIsOpen }}>
       <div className="flex min-h-screen flex-col md:flex-row">
-        <div className="flex items-center justify-between border-b border-brand-ink-muted/10 bg-brand-surface p-3 md:hidden">
+        <div className="flex items-center justify-between bg-brand-surface p-3 text-brand-ink md:hidden">
           <span className="font-heading text-lg text-brand-ink">Vendor</span>
           <button
             onClick={() => setDrawerOpen(!drawerOpen)}
-            className="rounded-full border border-brand-ink-muted/20 px-3 py-1 text-sm"
+            className="rounded-[var(--radius-pill)] border border-brand-ink-muted/20 px-3 py-1 text-sm text-brand-ink"
           >
             Menu
           </button>
         </div>
         <aside
-          className={`${drawerOpen ? "flex" : "hidden"} w-full flex-col gap-2 border-b border-brand-ink-muted/10 bg-brand-surface p-4 md:flex md:w-56 md:border-b-0 md:border-r md:min-h-screen`}
+          className={`${drawerOpen ? "flex" : "hidden"} w-full flex-col gap-2 bg-brand-ink p-4 text-white md:flex md:w-56 md:min-h-screen`}
         >
-          <span className="mb-2 hidden font-heading text-lg text-brand-ink md:block">Vendor</span>
-          <span className="mb-2 inline-flex w-fit items-center rounded-full bg-brand-accent/20 px-3 py-1 text-xs font-medium text-brand-ink">
+          <span className="mb-2 hidden font-heading text-lg text-white md:block">Vendor</span>
+          <span className="mb-2 inline-flex w-fit items-center rounded-[var(--radius-pill)] bg-brand-accent/20 px-3 py-1 text-xs font-medium text-white">
             {isOpen === null ? "…" : isOpen ? "Open" : "Closed"}
           </span>
           {NAV_LINKS.map((link) => (
@@ -69,10 +69,10 @@ export default function VendorShell({ children }: { children: React.ReactNode })
               key={link.href}
               href={link.href}
               onClick={() => setDrawerOpen(false)}
-              className={`rounded-lg px-3 py-2 text-sm ${
+              className={`rounded-[var(--radius-pill)] px-3 py-2 text-sm ${
                 pathname === link.href
                   ? "bg-brand-primary text-white"
-                  : "text-brand-ink hover:bg-brand-accent/10"
+                  : "text-white/80 hover:bg-white/10"
               }`}
             >
               {link.label}
@@ -80,12 +80,12 @@ export default function VendorShell({ children }: { children: React.ReactNode })
           ))}
           <button
             onClick={signOut}
-            className="mt-auto rounded-full px-3 py-2 text-left text-sm text-brand-ink-muted hover:bg-brand-accent/10"
+            className="mt-auto rounded-[var(--radius-pill)] px-3 py-2 text-left text-sm text-white/70 hover:bg-white/10"
           >
             Sign out
           </button>
         </aside>
-        <main className="flex-1 p-4">{children}</main>
+        <main className="flex-1 bg-brand-bg p-4">{children}</main>
       </div>
     </VendorSessionContext.Provider>
   );

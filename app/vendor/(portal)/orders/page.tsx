@@ -29,6 +29,13 @@ const COLUMN_LABEL: Record<(typeof KANBAN_STATUSES)[number], string> = {
   ready: "Ready",
 };
 
+const COLUMN_HEADER_CLASS: Record<(typeof KANBAN_STATUSES)[number], string> = {
+  placed: "bg-brand-primary text-white",
+  accepted: "bg-brand-ink text-white",
+  preparing: "bg-brand-accent text-white",
+  ready: "bg-gray-500 text-white",
+};
+
 const NEXT_LABEL: Record<string, string> = {
   placed: "Accept",
   accepted: "Start preparing",
@@ -100,7 +107,9 @@ export default function VendorOrdersPage() {
             const columnOrders = ordersForColumn(status);
             return (
               <div key={status} className="flex flex-col gap-3">
-                <h2 className="text-sm font-medium text-brand-ink-muted">
+                <h2
+                  className={`rounded-[var(--radius-pill)] px-3 py-1 text-center text-sm font-medium ${COLUMN_HEADER_CLASS[status]}`}
+                >
                   {COLUMN_LABEL[status]} ({columnOrders.length})
                 </h2>
                 {columnOrders.length === 0 && (
@@ -109,7 +118,7 @@ export default function VendorOrdersPage() {
                 {columnOrders.map((order) => (
                   <div
                     key={order.id}
-                    className="rounded-lg border border-brand-ink-muted/10 bg-brand-surface p-3"
+                    className="rounded-[var(--radius-card)] border border-brand-ink-muted/10 bg-brand-surface p-3"
                   >
                     <p className="mb-2 font-medium text-brand-ink">
                       #{order.id.slice(0, 8)}
