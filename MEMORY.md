@@ -2021,6 +2021,18 @@ the first two fixes as done.
   `ParentProcessId` pointed at `WmiPrvSE.exe`, several hops removed from
   the calling shell. **This is the actual, final mechanism —
   `scripts/lib/background-service.mjs`'s Windows path now uses it.**
+- **Third bug in the same file, found immediately after the above**:
+  unlike `Start-Process`, `Win32_Process::Create` has no built-in hidden-
+  window switch — without an explicit `Win32_ProcessStartup` with
+  `ShowWindow=0` passed as `ProcessStartupInformation`, it allocates a
+  normal VISIBLE console, reintroducing the original "extra window with
+  raw output" problem (confirmed live in a screenshot: one pair of
+  windows per role instead of one). Fixed by constructing a hidden
+  `Win32_ProcessStartup` CIM instance and passing it through. Verified
+  live: no visible `cmd.exe` window (checked via
+  `Get-Process|MainWindowTitle`), log file still gets full output, and
+  the process still runs independent of the launching shell (finished
+  its own command on its own timeline).
 - **A second, independent bug found while testing --all-roles with this
   fix in place**: Vendor/Delivery/Admin (ports 3001-3003) silently failed
   to start, while Customer (3000) worked. Root cause: Next.js 16
