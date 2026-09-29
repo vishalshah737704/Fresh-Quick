@@ -13,9 +13,9 @@ export function RestaurantMenuAnchorNav({
         <button
           key={group.key}
           onClick={() => onSelect(group.key)}
-          className={`shrink-0 rounded-full border px-4 py-1.5 text-sm font-medium transition-colors ${
+          className={`shrink-0 rounded-[var(--radius-pill)] border px-4 py-1.5 text-sm font-medium transition-colors ${
             activeKey === group.key
-              ? "border-brand-primary bg-brand-primary text-white"
+              ? "border-brand-ink bg-brand-ink text-white"
               : "border-brand-ink-muted/20 bg-brand-surface text-brand-ink hover:border-brand-primary"
           }`}
         >

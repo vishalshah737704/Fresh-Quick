@@ -221,25 +221,31 @@ export default function RestaurantMenuPage() {
 
   return (
     <div>
-      <div className="relative mb-6 h-64 w-full overflow-hidden rounded-lg bg-brand-accent/10">
+      <div className="relative mb-6 h-64 w-full overflow-hidden rounded-[var(--radius-card)] bg-brand-ink">
         {restaurant.banner_url ? (
           <Image
             src={restaurant.banner_url}
             alt={restaurant.name}
             fill
             sizes="100vw"
-            className="object-cover"
+            className="object-cover opacity-80"
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center text-6xl">🍽️</div>
         )}
+        <div className="absolute inset-0 bg-gradient-to-t from-brand-ink/90 via-brand-ink/20 to-transparent" />
+        <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-3 p-5">
+          <h1 className="font-heading text-2xl text-white">{restaurant.name}</h1>
+          <span className="shrink-0 rounded-[var(--radius-card)] bg-brand-surface px-3 py-1.5 text-sm font-semibold text-brand-ink">
+            ⭐ {restaurant.rating.toFixed(1)}
+          </span>
+        </div>
       </div>
-      <h1 className="mb-1 text-2xl font-bold text-brand-ink">{restaurant.name}</h1>
       <p className="mb-4 text-sm text-brand-ink-muted">
         {restaurant.cuisine_tags.join(", ")} · ⭐ {restaurant.rating.toFixed(1)} · {restaurant.avg_prep_minutes} min
       </p>
       {isUnavailable && (
-        <div className="mb-4 rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+        <div className="mb-4 rounded-[var(--radius-card)] border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
           {restaurant.is_suspended
             ? "This restaurant is currently unavailable."
             : "This restaurant is currently closed."}
@@ -250,7 +256,7 @@ export default function RestaurantMenuPage() {
         value={searchQuery}
         onChange={(e) => setSearchQuery(e.target.value)}
         placeholder="Search this menu"
-        className="mb-4 w-full rounded-lg border border-brand-ink-muted/20 bg-brand-surface px-4 py-2 text-sm text-brand-ink focus:border-brand-primary focus:outline-none"
+        className="mb-4 w-full rounded-[var(--radius-pill)] border border-brand-ink-muted/20 bg-brand-surface px-4 py-2 text-sm text-brand-ink focus:border-brand-primary focus:outline-none"
       />
       <StoreRatingSummary rating={restaurant.rating} />
       <FeaturedItemsRow
@@ -277,7 +283,7 @@ export default function RestaurantMenuPage() {
                 ref={(el) => registerSection(group.key, el)}
                 className="scroll-mt-16"
               >
-                <h2 className="mb-2 text-lg font-bold text-brand-ink">{group.label}</h2>
+                <h2 className="mb-2 font-heading text-lg text-brand-ink">{group.label}</h2>
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
                   {group.items.map((item) => (
                     <MenuItemRow

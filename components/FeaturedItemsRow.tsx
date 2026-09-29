@@ -38,7 +38,7 @@ export function FeaturedItemsRow({
 
   return (
     <section className="mb-6">
-      <h2 className="mb-2 text-lg font-bold text-brand-ink">Featured items</h2>
+      <h2 className="mb-2 font-heading text-lg text-brand-ink">Featured items</h2>
       <ScrollArrowRow>
         {items.map((item) => (
           <FeaturedItemCard
