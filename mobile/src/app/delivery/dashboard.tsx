@@ -211,7 +211,7 @@ export default function DeliveryDashboardScreen() {
       {error && <Text style={styles.errorText}>{error}</Text>}
 
       <Pressable
-        style={[styles.toggle, isOnline ? styles.toggleOn : styles.toggleOff]}
+        style={styles.earningsBar}
         onPress={toggleOnline}
         disabled={toggling}
       >
@@ -243,14 +243,14 @@ export default function DeliveryDashboardScreen() {
                       {Number(o.total).toFixed(2)}
                     </Text>
                     <Pressable
-                      style={styles.smallButton}
+                      style={styles.acceptButton}
                       onPress={() => claim(o.id)}
                       disabled={busyOrderId === o.id}
                     >
                       {busyOrderId === o.id ? (
                         <ActivityIndicator color={BRAND.colors.surface} size="small" />
                       ) : (
-                        <Text style={styles.smallButtonText}>Claim</Text>
+                        <Text style={styles.smallButtonText}>Accept</Text>
                       )}
                     </Pressable>
                   </View>
@@ -317,13 +317,12 @@ const styles = StyleSheet.create({
   centered: { alignItems: "center", paddingVertical: 24 },
   mutedText: { fontFamily: BRAND.fonts.body, color: BRAND.colors.inkMuted, fontSize: 13 },
   errorText: { fontFamily: BRAND.fonts.body, color: "#dc2626" },
-  toggle: {
-    borderRadius: 999,
+  earningsBar: {
+    borderRadius: BRAND.radiusPill,
     paddingVertical: 14,
     alignItems: "center",
+    backgroundColor: BRAND.colors.ink,
   },
-  toggleOn: { backgroundColor: "#16a34a" },
-  toggleOff: { backgroundColor: BRAND.colors.inkMuted },
   toggleText: {
     fontFamily: BRAND.fonts.bodySemiBold,
     color: BRAND.colors.surface,
@@ -342,7 +341,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: BRAND.colors.inkMuted + "22",
     backgroundColor: BRAND.colors.surface,
-    borderRadius: BRAND.radius,
+    borderRadius: 16,
     padding: 12,
     gap: 8,
   },
@@ -350,7 +349,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: BRAND.colors.inkMuted + "22",
     backgroundColor: BRAND.colors.surface,
-    borderRadius: BRAND.radius,
+    borderRadius: 16,
     padding: 12,
     gap: 6,
   },
@@ -370,7 +369,16 @@ const styles = StyleSheet.create({
   actionRow: { flexDirection: "row", gap: 8 },
   smallButton: {
     backgroundColor: BRAND.colors.primary,
-    borderRadius: 999,
+    borderRadius: BRAND.radiusPill,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    minWidth: 32,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  acceptButton: {
+    backgroundColor: BRAND.colors.accent,
+    borderRadius: BRAND.radiusPill,
     paddingHorizontal: 12,
     paddingVertical: 6,
     minWidth: 32,
