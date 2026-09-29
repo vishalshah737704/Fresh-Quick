@@ -56,27 +56,6 @@ export default function CheckoutPage() {
     }
   }, [sessionLoading, userId, router]);
 
-  useEffect(() => {
-    if (!userId) return;
-    let cancelled = false;
-    async function loadProfile() {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const email = sessionData.session?.user.email ?? "";
-      const { data: profile } = await supabase
-        .from("users")
-        .select("full_name")
-        .eq("id", userId)
-        .single();
-      if (cancelled) return;
-      setRecipientEmail(email);
-      setRecipientName(profile?.full_name ?? "");
-    }
-    loadProfile();
-    return () => {
-      cancelled = true;
-    };
-  }, [userId]);
-
   const total = deliveryFeePaise !== null ? (Math.round(subtotal * 100) + deliveryFeePaise) / 100 : null;
 
   const recipientNameError = recipientName.trim().length === 0 ? "Name is required" : null;
