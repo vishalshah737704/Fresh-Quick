@@ -26,9 +26,14 @@ export function startBackgroundService(title, command, logPath, opts = {}) {
 
   // The service itself: detached + unref'd so it outlives this script and
   // is not a child of whatever window we open next to view its logs.
+  // windowsHide is required on Windows -- without it, a detached child
+  // gets its OWN visible console window from the OS regardless of the
+  // stdio redirection below, so its real output goes there instead of
+  // the log file, leaving the log-viewer window blank.
   const child = spawn(command, {
     shell: true,
     detached: true,
+    windowsHide: true,
     stdio: ["ignore", out, out],
     cwd: opts.cwd,
   });
