@@ -58,7 +58,8 @@ export default function VendorShell({ children }: { children: React.ReactNode })
           </button>
         </div>
         <aside
-          className={`${drawerOpen ? "flex" : "hidden"} w-full flex-col gap-2 bg-brand-ink p-4 text-white md:flex md:w-56 md:min-h-screen`}
+          className={`${drawerOpen ? "flex" : "hidden"} w-full flex-col gap-2 p-4 text-white md:flex md:w-56 md:min-h-screen`}
+          style={{ background: "linear-gradient(180deg, var(--color-brand-ink) 0%, #132849 100%)" }}
         >
           <span className="mb-2 hidden font-heading text-lg text-white md:block">Vendor</span>
           <span className="mb-2 inline-flex w-fit items-center rounded-[var(--radius-pill)] bg-brand-accent/20 px-3 py-1 text-xs font-medium text-white">
@@ -85,7 +86,15 @@ export default function VendorShell({ children }: { children: React.ReactNode })
             Sign out
           </button>
         </aside>
-        <main className="flex-1 bg-brand-bg p-4">{children}</main>
+        <main
+          className="flex-1 p-4"
+          style={{
+            background:
+              "linear-gradient(180deg, var(--color-brand-primary-tint) 0%, var(--color-brand-bg) 160px)",
+          }}
+        >
+          {children}
+        </main>
       </div>
     </VendorSessionContext.Provider>
   );

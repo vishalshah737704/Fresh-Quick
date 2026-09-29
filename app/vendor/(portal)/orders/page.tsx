@@ -36,6 +36,13 @@ const COLUMN_HEADER_CLASS: Record<(typeof KANBAN_STATUSES)[number], string> = {
   ready: "bg-gray-500 text-white",
 };
 
+const COLUMN_BODY_CLASS: Record<(typeof KANBAN_STATUSES)[number], string> = {
+  placed: "bg-brand-primary-tint",
+  accepted: "bg-brand-ink-tint",
+  preparing: "bg-brand-accent-tint",
+  ready: "bg-gray-100",
+};
+
 const NEXT_LABEL: Record<string, string> = {
   placed: "Accept",
   accepted: "Start preparing",
@@ -106,7 +113,10 @@ export default function VendorOrdersPage() {
           {KANBAN_STATUSES.map((status) => {
             const columnOrders = ordersForColumn(status);
             return (
-              <div key={status} className="flex flex-col gap-3">
+              <div
+                key={status}
+                className={`flex flex-col gap-3 rounded-[var(--radius-card)] p-3 ${COLUMN_BODY_CLASS[status]}`}
+              >
                 <h2
                   className={`rounded-[var(--radius-pill)] px-3 py-1 text-center text-sm font-medium ${COLUMN_HEADER_CLASS[status]}`}
                 >
@@ -118,7 +128,7 @@ export default function VendorOrdersPage() {
                 {columnOrders.map((order) => (
                   <div
                     key={order.id}
-                    className="rounded-[var(--radius-card)] border border-brand-ink-muted/10 bg-brand-surface p-3"
+                    className="rounded-[var(--radius-card)] border border-brand-ink-muted/10 bg-white p-3"
                   >
                     <p className="mb-2 font-medium text-brand-ink">
                       #{order.id.slice(0, 8)}
