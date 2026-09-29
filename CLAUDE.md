@@ -68,7 +68,14 @@ See [README.md](README.md) for run instructions and
 (local/self-hosted only — no cloud target). Requires Docker Desktop
 running before `npx supabase start`. `scripts/` has build/start/stop/seed
 entry points (`npm run app:build` / `app:start` / `app:stop` / `app:seed`,
-Node `.mjs` canonical + PowerShell `.ps1` wrappers).
+Node `.mjs` canonical + PowerShell `.ps1` wrappers). Every started service
+runs as a true detached background process (`scripts/lib/
+background-service.mjs`) with a log-viewer window that can be closed
+without stopping the service. `--all-roles` (`app:start:all-roles` /
+`.\scripts\start.ps1 -Dev -AllRoles`) runs 4 instances of the app on
+ports 3000-3003, one per role, so customer/vendor/delivery/admin can all
+be logged in at once — each port is its own browser origin, so Supabase
+Auth sessions (which live in per-origin `localStorage`) don't collide.
 
 ## Status
 

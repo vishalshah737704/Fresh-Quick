@@ -1952,7 +1952,51 @@ accepts. Debugged with `superpowers:systematic-debugging`.
   n8n just never got called to prove the end-to-end webhook path this
   time.
 
-## External API keys in use
+## Scripts: multi-role dev servers + true background processes (2026-09-29)
+
+Vishal found that having customer/vendor/delivery/admin logged in
+simultaneously in one browser was impossible — Supabase Auth sessions
+live in per-origin `localStorage`, shared across every tab on
+`localhost:3000`, so logging into a second role silently overwrote the
+first role's session. This is what caused the "Cannot coerce the result
+to a single JSON object" bug above (a customer page was queried with a
+vendor session after a same-origin tab collision).
+
+- **Fix**: `--all-roles` on `scripts/start.mjs`/`start.ps1` (and
+  `stop.mjs`/`stop.ps1`) runs the same Next.js app 4 times, one per port
+  (3000 Customer, 3001 Vendor, 3002 Delivery, 3003 Admin) — each port is
+  its own browser origin with its own isolated session, so all 4 roles
+  can be logged in at once with no Incognito windows needed.
+  `start-all-roles.mjs`/`stop-all-roles.mjs` are now thin wrappers
+  delegating to `start.mjs --all-roles`/`stop.mjs --all-roles`, so
+  there's one implementation, not two to keep in sync. **n8n workflows
+  needed no changes** — their internal API calls all use
+  `$env.APP_BASE_URL`, not a hardcoded port, and hit the same shared
+  database regardless of which port served the browser UI.
+- **A second, real bug found while building this**: every service window
+  (web dev/prod, mobile Expo) was a direct child of its `cmd /k` window —
+  closing the window killed the service, defeating the point of having
+  a separate window at all. Fixed with `scripts/lib/background-service.mjs`:
+  starts the real process detached + unref'd with output redirected to
+  a log file under `.dev-logs/` (gitignored), then opens a separate
+  PowerShell window that only tails that log — closing the viewer window
+  now only stops watching it. Verified live (log content survived after
+  killing the viewer).
+- **Found and fixed a related edge case while testing this fix itself**:
+  a plain `Get-Content -Wait` hard-errors and exits if the file it's
+  watching gets deleted/rotated mid-tail — discovered by deleting a
+  smoke-test log while its own viewer window was still open. Wrapped in
+  a retry loop (`while ($true) { if (Test-Path ...) { Get-Content -Wait }
+  else { wait and retry } }`) so a real log rotation or restart doesn't
+  leave the viewer window dead with a red error screen.
+- **Trade-off, not yet resolved**: Expo's interactive keypress commands
+  (r/j/m/etc.) don't work through a detached background process since
+  stdin isn't a real tty — the QR code still prints to the log for
+  scanning, but anyone needing Expo's interactive dev-menu controls
+  should run `cd mobile && npx expo start` directly instead of through
+  `--mobile`/`app:start:mobile`.
+
+## n8n trigger bug found and fixed via live debugging (2026-09-29)
 
 - `PEXELS_API_KEY` — Pexels Search API, used once (not at runtime) to fetch
   menu item photo URLs baked into `supabase/seed.sql`. Key lives in
