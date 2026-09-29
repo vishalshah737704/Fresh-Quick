@@ -146,16 +146,22 @@ with scroll-spy, in-menu search, a corner "Quick Add" button restyle),
 piece 4 (item customization: vendor-managed option groups/options, an
 `ItemCustomizationModal` replacing instant add for items with options, a
 `lineId`-keyed cart so different customizations of the same dish coexist
-as separate lines), piece 5 (cart redesign: `CartPanel` rebuilt as a
-slide-out drawer with line-item thumbnails, a whole-order note distinct
-from per-line special instructions, and a shared delivery-fee hook so the
-drawer's preview total matches checkout exactly), and piece 6 (checkout
-visual polish: a full read-only line-item breakdown on the order summary,
-a read-only order-note display, and an icon+card payment-method picker).
+as separate lines), piece 5 (cart redesign: line-item thumbnails, a
+whole-order note distinct from per-line special instructions, and a
+shared delivery-fee hook so the cart's preview total matches checkout
+exactly — **note:** an earlier version of this line described `CartPanel`
+as a slide-out drawer; as of the Figma-kit redesign below, `CartPanel` is
+confirmed a plain always-rendered sidebar, not a drawer — see MEMORY.md),
+and piece 6 (checkout visual polish: a full read-only line-item breakdown
+on the order summary, a read-only order-note display, and an icon+card
+payment-method picker). A fourth redesign — a full rebrand using a Figma
+community UI kit's palette (orange/navy/green, pill buttons, rounded
+cards, Poppins-700 headings) across all 6 real surfaces (web Customer/
+Vendor/Delivery/Admin, mobile Customer/Delivery) — is **complete on
+branch `figma-kit-redesign`, not yet merged to `main`** as of 2026-09-29.
 See [MEMORY.md](MEMORY.md) for the phase-by-phase build
 log, including every bug found and fixed along the way, and its "Known
 deferred items" section for what's still intentionally left for later.
-The React Native mobile app is a planned follow-on, not started.
 
 ## Local service URLs
 - App: http://localhost:3000

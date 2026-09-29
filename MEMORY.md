@@ -2065,6 +2065,92 @@ the first two fixes as done.
   a scratchpad file and copied into place only after Vishal confirmed he
   closed it in Word, avoiding an overwrite race.
 
+## Figma community kit redesign — full rebrand, all 6 surfaces (2026-09-29)
+
+Full visual-token rebrand of web (Customer/Vendor/Delivery/Admin) and
+mobile (Customer/Delivery) using a Figma community UI kit
+("Food Delivery Website + App Design UI Kit", duplicated copy
+`mGN05EK0Aqfj7LP7dzNcl7` — Figma MCP had no editor access, account seat
+is View-tier; design pulled from Vishal-provided screenshots instead).
+Spec: `docs/superpowers/specs/2026-09-29-figma-kit-redesign-design.md`.
+Plan: `docs/superpowers/plans/2026-09-29-figma-kit-redesign.md`. Built
+via `superpowers:subagent-driven-development` on branch
+`figma-kit-redesign`, one implementer + one reviewer per task, all 13
+tasks approved, plus a final whole-branch review with one fix wave.
+Visual approval gate used an Artifact canvas preview (6 static mockups)
+before any real code was touched, per Vishal's explicit request.
+
+- **New tokens** (`lib/branding.ts` / `app/globals.css` web,
+  `mobile/theme.ts` mobile): primary `#F5821F` (orange), accent
+  `#1E8A3E` (green), bg `#F4F4F4`, surface `#FFFFFF`, ink `#0B1D3A`
+  (navy), ink-muted `#6B7280`, plus new `danger` (`#E0524D`) and shape
+  tokens `--radius-card` (16px) / `--radius-pill` (999px). Headings
+  moved to Poppins 700 (was 300) — `.font-heading` moved into
+  `@layer utilities` in `app/globals.css`.
+- **Vendor/Delivery/Admin got freeform new layouts**, not a literal
+  reskin — the Figma kit has zero dashboard designs (customer-ordering
+  kit only). Vendor got a new kanban order board (New/Preparing/Ready/
+  Completed columns, grouped from the same fetched `orders` array, no
+  new API call). Admin got a new vendor table with status pills, same
+  pattern. Delivery kept its existing card-list, restyled only. All
+  three portals' `(portal)` route-group login exclusion verified
+  untouched at every task.
+- **Two mid-execution plan-defect rulings** (both held up under
+  final review): (1) `app/customer/page.tsx` has no inline markup — the
+  home page's actual visual components are `HeroSearch`, `PromoBanner`,
+  `CuisineChip` (not `CuisineChipRow`, which is an empty wrapper),
+  `CuisineCarouselRow`, `CategoryIconRow`, `HeaderSearchBox`,
+  `SortFilterBar`, `RestaurantCard` — all restyled instead of the page
+  file. (2) **`components/CartPanel.tsx` is NOT the slide-out drawer
+  this file's own earlier entries describe** ("piece 5" — Escape-flush,
+  close-before-nav, `clearCart` resetting `open` state). Confirmed via
+  repo-wide grep: no Escape/keydown handler, no drawer open/close state,
+  anywhere in the current codebase. It's a plain always-rendered
+  `<aside>` sidebar today. **Correction to this file's own prior
+  entries**: wherever "CartPanel drawer" behavior is referenced above,
+  treat it as stale — either a later refactor removed the drawer model,
+  or the description never matched what actually shipped. Don't trust
+  a past MEMORY.md entry's description of a component's *current*
+  behavior without grepping the live code first.
+- **Final whole-branch review found 3 real Important bugs**, all fixed
+  in one follow-up commit: (1) `app/layout.tsx` still loaded Poppins
+  weight `["300"]` only — `.font-heading`'s new weight-700 request was
+  being browser-faked (synthesized bold) instead of loading the real
+  typeface; fixed to `["700"]`. (2) The token swap silently broke
+  contrast in code this redesign never touched: old palette paired a
+  near-black `primary` against a lime `accent`; new palette's
+  orange-`primary`-on-green-`accent` pairing is ~1.7:1 contrast —
+  found on `mobile/src/app/customer/checkout.tsx`'s "Place order"
+  button (fixed: text → white). **A broader sweep is still open** —
+  `mobile/components/CourierCard.tsx`, `OrderStatusStepper.tsx`,
+  `components/RestaurantCard.tsx`'s promo pill, `MenuItemRow.tsx`/
+  `FeaturedItemCard.tsx`'s add buttons, `components/SidebarNav.tsx`'s
+  active state all inherited the same orange/green pairing problem and
+  were NOT fixed (out of this plan's file scope, real follow-up work).
+  (3) `app/admin/(portal)/dashboard/page.tsx`'s new revenue figure
+  summed ALL orders including cancelled, via plain float arithmetic —
+  violates the project's integer-cents money rule; fixed to exclude
+  cancelled orders and sum via `Math.round(total*100)` integer cents,
+  divide by 100 once at display.
+- **Open design decision for Vishal, not fixed**: white text on the
+  approved brand-primary orange and brand-accent green is below WCAG AA
+  (~2.6:1 orange, ~4.4:1 green) — a consequence of the approved palette
+  itself, not an implementation bug. Needs his call: navy text on
+  orange fills, or a darker orange token reserved for text-bearing
+  fills.
+- **Other known gaps, not yet closed** (see the branch's final review
+  for full detail): `.font-heading`'s `@layer utilities` wrap is only a
+  partial fix for the original cascade gotcha — a future
+  `font-heading font-semibold` pairing still needs the Tailwind v4
+  `@utility font-heading {...}` form, not just the layer wrap, to
+  reliably win. ~35 remaining `text-red-*`/`bg-red-*`/`text-gray-*`
+  Tailwind classes across `app/`/`components/` not yet on
+  `brand-danger`/`brand-ink-muted` tokens. Checkout CTA color is
+  inconsistent across surfaces (navy web `CartPanel`, orange mobile
+  `cart.tsx`, spec calls for accent-green everywhere). Mobile has
+  still never run on a real device/simulator (carried-over gap, spec
+  explicitly out of scope for this pass).
+
 ## External API keys in use
 
 - `PEXELS_API_KEY` — Pexels Search API, used once (not at runtime) to fetch

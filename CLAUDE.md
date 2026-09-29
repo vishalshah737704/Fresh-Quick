@@ -44,6 +44,31 @@ findings, and what's still outstanding (no real device/simulator run yet;
 `Mobile_App_User_Manual.docx`/`.pdf` in `docs/` describes the
 pre-redesign flow, not yet updated for the new tab bar/bottom-sheet
 cart/row-based checkout).
+**Figma community kit redesign (complete, branch `figma-kit-redesign`,
+not yet merged to `main` as of 2026-09-29):** full rebrand of ALL 6
+surfaces (web Customer/Vendor/Delivery/Admin, mobile Customer/Delivery)
+in one pass, using a Figma community UI kit's palette/shape language
+(orange/navy/green, pill buttons, rounded-16px cards, Poppins-700
+headings) as the new single source of truth for `lib/branding.ts` /
+`app/globals.css` / `mobile/theme.ts`, replacing the Uber-Eats-era
+tokens. Built via `superpowers:subagent-driven-development`, 13 tasks,
+one final whole-branch review + fix wave. See MEMORY.md's "Figma
+community kit redesign" entry for full detail, including two
+mid-execution corrections to this file's own prior claims (see next
+paragraph) and one open design decision (white-text-on-brand-color
+contrast) still awaiting Vishal's call.
+**Correction to the "cart redesign (slide-out panel)" claim above
+(line ~21) and to any other reference to `CartPanel.tsx` as a
+slide-out drawer with Escape-flush/close-before-nav/open-state logic**:
+as of the Figma-kit redesign's Task 5 (2026-09-29), `CartPanel.tsx` is
+confirmed — by repo-wide grep, not just inspection — to be a plain
+always-rendered `<aside>` sidebar with no Escape-keydown handler and no
+open/close state. Either a later refactor quietly removed the drawer
+model, or this file's own past entries never matched what shipped.
+Don't trust this file's description of a component's *current*
+behavior without grepping the live code first — MEMORY.md and CLAUDE.md
+are snapshots, not standing guarantees (an existing gotcha below already
+warns about this for `<a href>` tags; it applies here too).
 
 ## Stack
 
