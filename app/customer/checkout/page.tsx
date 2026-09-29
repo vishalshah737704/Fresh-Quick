@@ -199,11 +199,19 @@ export default function CheckoutPage() {
   }
 
   return (
-    <div className="bg-brand-bg">
-      <h1 className="mb-6 text-2xl font-bold text-brand-ink">Checkout</h1>
+    <div
+      className="-m-6 p-6"
+      style={{
+        background:
+          "linear-gradient(180deg, var(--color-brand-primary-tint) 0%, var(--color-brand-bg) 260px)",
+      }}
+    >
+      <div className="-mx-6 -mt-6 mb-6 bg-brand-ink px-6 py-4">
+        <h1 className="text-2xl font-bold text-white">Checkout</h1>
+      </div>
       <div className="flex max-w-2xl flex-col gap-6">
-        <section className="rounded-[var(--radius-card)] border border-brand-ink-muted/10 bg-brand-surface p-4">
-          <h2 className="mb-3 font-semibold text-brand-ink">Contact details</h2>
+        <section className="rounded-[var(--radius-card)] border-t-4 border-brand-primary bg-brand-surface p-4 shadow-sm">
+          <h2 className="mb-3 font-semibold text-brand-primary">Contact details</h2>
           <div className="flex flex-col gap-3">
             <div>
               <label className="mb-1 block text-sm font-medium text-brand-ink">Name</label>
@@ -211,7 +219,11 @@ export default function CheckoutPage() {
                 type="text"
                 value={recipientName}
                 onChange={(e) => setRecipientName(e.target.value)}
-                className="w-full rounded border border-brand-ink-muted/15 px-3 py-2 text-sm"
+                className={`w-full rounded border px-3 py-2 text-sm ${
+                  recipientName
+                    ? "border-brand-ink-muted/15"
+                    : "border-brand-primary/30 bg-brand-primary-tint"
+                }`}
                 placeholder="Who's this order for?"
               />
             </div>
@@ -221,15 +233,19 @@ export default function CheckoutPage() {
                 type="email"
                 value={recipientEmail}
                 onChange={(e) => setRecipientEmail(e.target.value)}
-                className="w-full rounded border border-brand-ink-muted/15 px-3 py-2 text-sm"
+                className={`w-full rounded border px-3 py-2 text-sm ${
+                  recipientEmail
+                    ? "border-brand-ink-muted/15"
+                    : "border-brand-primary/30 bg-brand-primary-tint"
+                }`}
                 placeholder="Where should order updates go?"
               />
             </div>
           </div>
         </section>
 
-        <section className="rounded-[var(--radius-card)] border border-brand-ink-muted/10 bg-brand-surface p-4">
-          <h2 className="mb-3 font-semibold text-brand-ink">Delivery address</h2>
+        <section className="rounded-[var(--radius-card)] border-t-4 border-brand-accent bg-brand-surface p-4 shadow-sm">
+          <h2 className="mb-3 font-semibold text-brand-accent">Delivery address</h2>
           <div className="flex flex-col gap-3">
             <div>
               <label className="mb-1 block text-sm font-medium text-brand-ink">Address 1</label>
@@ -237,7 +253,11 @@ export default function CheckoutPage() {
                 type="text"
                 value={address.line1}
                 onChange={(e) => updateAddressField("line1", e.target.value)}
-                className="w-full rounded border border-brand-ink-muted/15 px-3 py-2 text-sm"
+                className={`w-full rounded border px-3 py-2 text-sm ${
+                  address.line1
+                    ? "border-brand-ink-muted/15"
+                    : "border-brand-accent/30 bg-brand-accent-tint"
+                }`}
                 placeholder="House/flat no., building, street"
               />
             </div>
@@ -247,7 +267,11 @@ export default function CheckoutPage() {
                 type="text"
                 value={address.line2}
                 onChange={(e) => updateAddressField("line2", e.target.value)}
-                className="w-full rounded border border-brand-ink-muted/15 px-3 py-2 text-sm"
+                className={`w-full rounded border px-3 py-2 text-sm ${
+                  address.line2
+                    ? "border-brand-ink-muted/15"
+                    : "border-brand-accent/30 bg-brand-accent-tint"
+                }`}
                 placeholder="Landmark, area (optional)"
               />
             </div>
@@ -258,7 +282,11 @@ export default function CheckoutPage() {
                   type="text"
                   value={address.city}
                   onChange={(e) => updateAddressField("city", e.target.value)}
-                  className="w-full rounded border border-brand-ink-muted/15 px-3 py-2 text-sm"
+                  className={`w-full rounded border px-3 py-2 text-sm ${
+                    address.city
+                      ? "border-brand-ink-muted/15"
+                      : "border-brand-accent/30 bg-brand-accent-tint"
+                  }`}
                 />
               </div>
               <div>
@@ -267,7 +295,11 @@ export default function CheckoutPage() {
                   type="text"
                   value={address.state}
                   onChange={(e) => updateAddressField("state", e.target.value)}
-                  className="w-full rounded border border-brand-ink-muted/15 px-3 py-2 text-sm"
+                  className={`w-full rounded border px-3 py-2 text-sm ${
+                    address.state
+                      ? "border-brand-ink-muted/15"
+                      : "border-brand-accent/30 bg-brand-accent-tint"
+                  }`}
                 />
               </div>
             </div>
@@ -277,13 +309,17 @@ export default function CheckoutPage() {
                 type="text"
                 value={address.pincode}
                 onChange={(e) => updateAddressField("pincode", e.target.value)}
-                className="w-full max-w-[160px] rounded border border-brand-ink-muted/15 px-3 py-2 text-sm"
+                className={`w-full max-w-[160px] rounded border px-3 py-2 text-sm ${
+                  address.pincode
+                    ? "border-brand-ink-muted/15"
+                    : "border-brand-accent/30 bg-brand-accent-tint"
+                }`}
               />
             </div>
           </div>
         </section>
 
-        <section className="rounded-[var(--radius-card)] border border-brand-ink-muted/10 bg-brand-surface p-4">
+        <section className="rounded-[var(--radius-card)] border-t-4 border-brand-ink bg-brand-surface p-4 shadow-sm">
           <h2 className="mb-3 font-semibold text-brand-ink">Payment method</h2>
           <div className="flex flex-col gap-2">
             {PAYMENT_METHODS.map((m) => (
@@ -312,7 +348,11 @@ export default function CheckoutPage() {
                       value={cardNumber}
                       onChange={(e) => setCardNumber(e.target.value)}
                       placeholder="Card number (16 digits)"
-                      className="w-full rounded border border-brand-ink-muted/15 px-3 py-2 text-sm"
+                      className={`w-full rounded border px-3 py-2 text-sm ${
+                        cardNumber
+                          ? "border-brand-ink-muted/15"
+                          : "border-brand-ink/30 bg-brand-ink-tint"
+                      }`}
                     />
                     <div className="flex gap-2">
                       <input
@@ -320,14 +360,22 @@ export default function CheckoutPage() {
                         value={cardExpiry}
                         onChange={(e) => setCardExpiry(e.target.value)}
                         placeholder="MM/YY"
-                        className="w-24 rounded border border-brand-ink-muted/15 px-3 py-2 text-sm"
+                        className={`w-24 rounded border px-3 py-2 text-sm ${
+                          cardExpiry
+                            ? "border-brand-ink-muted/15"
+                            : "border-brand-ink/30 bg-brand-ink-tint"
+                        }`}
                       />
                       <input
                         type="text"
                         value={cardholderName}
                         onChange={(e) => setCardholderName(e.target.value)}
                         placeholder="Cardholder name"
-                        className="flex-1 rounded border border-brand-ink-muted/15 px-3 py-2 text-sm"
+                        className={`flex-1 rounded border px-3 py-2 text-sm ${
+                          cardholderName
+                            ? "border-brand-ink-muted/15"
+                            : "border-brand-ink/30 bg-brand-ink-tint"
+                        }`}
                       />
                     </div>
                   </div>
@@ -339,7 +387,11 @@ export default function CheckoutPage() {
                       value={upiId}
                       onChange={(e) => setUpiId(e.target.value)}
                       placeholder="UPI ID, e.g. name@bank"
-                      className="w-full rounded border border-brand-ink-muted/15 px-3 py-2 text-sm"
+                      className={`w-full rounded border px-3 py-2 text-sm ${
+                        upiId
+                          ? "border-brand-ink-muted/15"
+                          : "border-brand-ink/30 bg-brand-ink-tint"
+                      }`}
                     />
                   </div>
                 )}

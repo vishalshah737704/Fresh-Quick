@@ -125,43 +125,56 @@ export default function OrderConfirmationPage() {
   }
 
   return (
-    <div className="flex flex-col gap-6">
-      <h1 className="text-2xl font-bold text-brand-ink">Order #{order.id.slice(0, 8)}</h1>
-      {payment.status === "failed" ? (
-        <p className="text-red-600">
-          Payment failed. Your order was not placed — please try checking out
-          again.
-        </p>
-      ) : (
-        <>
-          <section className="rounded-lg border border-brand-ink-muted/10 bg-brand-surface p-4">
-            <OrderStatusTimeline status={order.status} />
-            <p className="mt-3 text-sm text-brand-ink-muted">{STATUS_LABEL[order.status]}</p>
-          </section>
+    <div className="-m-6 flex flex-col gap-6 bg-brand-bg pb-6">
+      <div className="flex flex-col items-center gap-2 bg-brand-ink px-6 pb-14 pt-8 text-center">
+        <span className="text-3xl">✅</span>
+        <h1 className="text-2xl font-bold text-white">Order #{order.id.slice(0, 8)}</h1>
+      </div>
+      <div className="flex flex-col gap-6 px-6">
+        {payment.status === "failed" ? (
+          <p className="text-red-600">
+            Payment failed. Your order was not placed — please try checking out
+            again.
+          </p>
+        ) : (
+          <>
+            <section className="-mt-14 rounded-[var(--radius-card)] bg-brand-surface p-4 shadow-lg">
+              <OrderStatusTimeline status={order.status} />
+              <p className="mt-3 text-sm text-brand-ink-muted">{STATUS_LABEL[order.status]}</p>
+            </section>
 
-          {partnerLocation?.current_lat != null && partnerLocation?.current_lng != null && (
-            <div className="flex flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-brand-ink-muted/25 bg-brand-ink-muted/5 px-4 py-8 text-center">
-              <span className="text-2xl">📍</span>
-              <p className="text-sm font-medium text-brand-ink">
-                {partnerLocation.current_lat.toFixed(4)}, {partnerLocation.current_lng.toFixed(4)}
-              </p>
-              {partnerLocation.last_ping_at && (
-                <p className="text-xs text-brand-ink-muted">
-                  Updated {new Date(partnerLocation.last_ping_at).toLocaleTimeString()}
+            {partnerLocation?.current_lat != null && partnerLocation?.current_lng != null && (
+              <div className="flex flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-brand-ink-muted/25 bg-brand-ink-muted/5 px-4 py-8 text-center">
+                <span className="text-2xl">📍</span>
+                <p className="text-sm font-medium text-brand-ink">
+                  {partnerLocation.current_lat.toFixed(4)}, {partnerLocation.current_lng.toFixed(4)}
                 </p>
-              )}
-              <p className="mt-1 text-xs text-brand-ink-muted/70">
-                Live map coming soon — showing raw coordinates for now.
-              </p>
-            </div>
-          )}
+                {partnerLocation.last_ping_at && (
+                  <p className="text-xs text-brand-ink-muted">
+                    Updated {new Date(partnerLocation.last_ping_at).toLocaleTimeString()}
+                  </p>
+                )}
+                <p className="mt-1 text-xs text-brand-ink-muted/70">
+                  Live map coming soon — showing raw coordinates for now.
+                </p>
+              </div>
+            )}
 
-          <section className="rounded-lg border border-brand-ink-muted/10 bg-brand-surface p-4 text-sm text-brand-ink-muted">
-            <p>Total: ₹{order.total.toFixed(2)}</p>
-            <p>Payment: {payment.status} ({payment.method})</p>
-          </section>
-        </>
-      )}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="rounded-[var(--radius-card)] bg-brand-accent-tint p-4">
+                <p className="text-xs font-medium text-brand-accent">Total</p>
+                <p className="mt-1 text-lg font-semibold text-brand-ink">₹{order.total.toFixed(2)}</p>
+              </div>
+              <div className="rounded-[var(--radius-card)] bg-brand-primary-tint p-4">
+                <p className="text-xs font-medium text-brand-primary">Payment</p>
+                <p className="mt-1 text-lg font-semibold text-brand-ink">
+                  {payment.status} ({payment.method})
+                </p>
+              </div>
+            </div>
+          </>
+        )}
+      </div>
     </div>
   );
 }
