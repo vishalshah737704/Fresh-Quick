@@ -9,21 +9,21 @@ export function CartConflictDialog() {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="rounded-lg bg-white p-6 shadow-lg">
-        <p className="mb-4">
+      <div className="rounded-[var(--radius-card)] bg-brand-surface p-6 shadow-lg">
+        <p className="mb-4 text-brand-ink">
           Your cart has items from another restaurant. Start a new cart for{" "}
           <strong>{pendingConflict.storeName}</strong>?
         </p>
         <div className="flex justify-end gap-2">
           <button
             onClick={cancelPendingAdd}
-            className="rounded border px-3 py-1 text-sm"
+            className="rounded-[var(--radius-pill)] border border-brand-ink-muted/20 px-3 py-1 text-sm text-brand-ink"
           >
             Cancel
           </button>
           <button
             onClick={confirmClearAndAdd}
-            className="rounded bg-brand-primary px-3 py-1 text-sm text-white"
+            className="rounded-[var(--radius-pill)] bg-brand-accent px-3 py-1 text-sm text-white"
           >
             Clear cart and add
           </button>

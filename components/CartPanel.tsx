@@ -38,9 +38,10 @@ export function CartPanel() {
   const total = totalPaise !== null ? totalPaise / 100 : null;
 
   return (
-    <aside className="hidden h-full w-96 shrink-0 flex-col overflow-y-auto border-l border-brand-ink-muted/10 bg-brand-surface [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden lg:flex">
-      <div className="border-b border-brand-ink-muted/10 px-4 py-3">
-        <h2 className="text-lg font-bold text-brand-ink">{storeName}</h2>
+    <aside className="hidden h-full w-96 shrink-0 flex-col overflow-y-auto rounded-[var(--radius-card)] border border-brand-ink-muted/10 bg-brand-surface [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden lg:flex">
+      <div className="rounded-t-[var(--radius-card)] bg-brand-accent px-4 py-3">
+        <h2 className="text-lg font-bold text-white">My Basket</h2>
+        <p className="text-sm text-white/85">{storeName}</p>
       </div>
 
       <div className="px-4 py-2">
@@ -65,14 +66,14 @@ export function CartPanel() {
                 <div className="mt-1 flex shrink-0 items-center gap-2">
                   <button
                     onClick={() => updateQuantity(item.lineId, item.quantity - 1)}
-                    className="rounded border border-brand-ink-muted/20 px-2"
+                    className="rounded-[var(--radius-pill)] border border-brand-ink-muted/20 px-2 text-brand-ink"
                   >
                     −
                   </button>
                   <span className="text-brand-ink">{item.quantity}</span>
                   <button
                     onClick={() => updateQuantity(item.lineId, item.quantity + 1)}
-                    className="rounded border border-brand-ink-muted/20 px-2"
+                    className="rounded-[var(--radius-pill)] border border-brand-ink-muted/20 px-2 text-brand-ink"
                   >
                     +
                   </button>
@@ -97,7 +98,7 @@ export function CartPanel() {
                   onBlur={(e) => setSpecialInstructions(item.lineId, e.target.value)}
                   maxLength={500}
                   placeholder="Add a note (optional)"
-                  className="mt-1 w-full rounded border border-brand-ink-muted/15 px-2 py-1 text-xs"
+                  className="mt-1 w-full rounded-lg border border-brand-ink-muted/15 px-2 py-1 text-xs text-brand-ink"
                 />
               </div>
             </div>
@@ -114,13 +115,15 @@ export function CartPanel() {
             <p>Delivery fee: ₹{(deliveryFeePaise / 100).toFixed(2)}</p>
           ) : null}
           {total !== null && (
-            <p className="font-semibold text-brand-ink">Total: ₹{total.toFixed(2)}</p>
+            <p className="mt-1 inline-block w-fit rounded-[var(--radius-pill)] bg-brand-primary px-3 py-1 font-semibold text-white">
+              Total: ₹{total.toFixed(2)}
+            </p>
           )}
         </div>
         {!isOnCheckoutPage && (
           <Link
             href="/customer/checkout"
-            className="mt-2 block rounded-full bg-brand-primary px-3 py-2 text-center text-sm font-semibold text-white"
+            className="mt-2 block rounded-[var(--radius-pill)] bg-brand-ink px-3 py-2 text-center text-sm font-semibold text-white"
           >
             Checkout
           </Link>
@@ -133,7 +136,7 @@ export function CartPanel() {
             <button
               disabled={checkoutHandler.submitting || !checkoutHandler.canPlaceOrder}
               onClick={checkoutHandler.onPlaceOrder}
-              className="mt-2 block w-full rounded-full bg-brand-primary px-3 py-2 text-center text-sm font-semibold text-white disabled:opacity-50"
+              className="mt-2 block w-full rounded-[var(--radius-pill)] bg-brand-ink px-3 py-2 text-center text-sm font-semibold text-white disabled:opacity-50"
             >
               {checkoutHandler.submitting ? "Placing order…" : "Place order"}
             </button>
@@ -153,7 +156,7 @@ export function CartPanel() {
           maxLength={500}
           placeholder="Add a note for the whole order (e.g. gate code, leave at door)"
           rows={2}
-          className="w-full rounded border border-brand-ink-muted/15 px-2 py-1 text-sm"
+          className="w-full rounded-lg border border-brand-ink-muted/15 px-2 py-1 text-sm text-brand-ink"
         />
         <button onClick={clearCart} className="mt-2 text-xs text-brand-ink-muted underline">
           Clear cart
