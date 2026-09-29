@@ -186,7 +186,7 @@ export default function CheckoutPage() {
   ]);
 
   if (sessionLoading) {
-    return <p className="text-gray-500">Loading…</p>;
+    return <p className="text-brand-ink-muted">Loading…</p>;
   }
 
   if (!userId) {
@@ -195,22 +195,26 @@ export default function CheckoutPage() {
   }
 
   if (items.length === 0 || !storeId) {
-    return <p className="text-gray-500">Your cart is empty.</p>;
+    return <p className="text-brand-ink-muted">Your cart is empty.</p>;
   }
 
   if (feeLoadError) {
-    return <p className="text-red-600">Couldn&apos;t load delivery fee: {feeLoadError}</p>;
+    return (
+      <p className="rounded-[var(--radius-card)] bg-brand-danger px-4 py-3 text-white">
+        Couldn&apos;t load delivery fee: {feeLoadError}
+      </p>
+    );
   }
 
   if (deliveryFeePaise === null) {
-    return <p className="text-gray-500">Loading…</p>;
+    return <p className="text-brand-ink-muted">Loading…</p>;
   }
 
   return (
-    <div>
+    <div className="bg-brand-bg">
       <h1 className="mb-6 text-2xl font-bold text-brand-ink">Checkout</h1>
       <div className="flex max-w-2xl flex-col gap-6">
-        <section className="rounded-lg border border-brand-ink-muted/10 bg-brand-surface p-4">
+        <section className="rounded-[var(--radius-card)] border border-brand-ink-muted/10 bg-brand-surface p-4">
           <h2 className="mb-3 font-semibold text-brand-ink">Contact details</h2>
           <div className="flex flex-col gap-3">
             <div>
@@ -236,7 +240,7 @@ export default function CheckoutPage() {
           </div>
         </section>
 
-        <section className="rounded-lg border border-brand-ink-muted/10 bg-brand-surface p-4">
+        <section className="rounded-[var(--radius-card)] border border-brand-ink-muted/10 bg-brand-surface p-4">
           <h2 className="mb-3 font-semibold text-brand-ink">Delivery address</h2>
           <div className="flex flex-col gap-3">
             <div>
@@ -291,7 +295,7 @@ export default function CheckoutPage() {
           </div>
         </section>
 
-        <section className="rounded-lg border border-brand-ink-muted/10 bg-brand-surface p-4">
+        <section className="rounded-[var(--radius-card)] border border-brand-ink-muted/10 bg-brand-surface p-4">
           <h2 className="mb-3 font-semibold text-brand-ink">Payment method</h2>
           <div className="flex flex-col gap-2">
             {PAYMENT_METHODS.map((m) => (
