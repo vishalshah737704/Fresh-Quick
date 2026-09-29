@@ -486,5 +486,5 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   placeOrderButtonDisabled: { opacity: 0.5 },
-  placeOrderButtonText: { fontFamily: BRAND.fonts.bodySemiBold, color: BRAND.colors.primary },
+  placeOrderButtonText: { fontFamily: BRAND.fonts.bodySemiBold, color: BRAND.colors.surface },
 });

@@ -92,7 +92,10 @@ export default function AdminDashboardPage() {
   ];
 
   const activeOrdersCount = orders.filter((o) => !["delivered", "cancelled"].includes(o.status)).length;
-  const revenue = orders.reduce((sum, o) => sum + o.total, 0);
+  const revenueCents = orders
+    .filter((o) => o.status !== "cancelled")
+    .reduce((sum, o) => sum + Math.round(o.total * 100), 0);
+  const revenue = revenueCents / 100;
 
   function vendorStatus(r: RestaurantRow): { label: string; className: string } {
     if (r.is_suspended) return { label: "Paused", className: "bg-brand-primary text-white" };

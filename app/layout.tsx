@@ -10,7 +10,7 @@ const inter = Inter({
 
 const poppins = Poppins({
   variable: "--font-poppins",
-  weight: ["300"],
+  weight: ["700"],
   subsets: ["latin"],
 });
 
