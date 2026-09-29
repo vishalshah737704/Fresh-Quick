@@ -10,12 +10,15 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-inter);
   /* Keep in sync with lib/branding.ts's BRAND.theme values. */
-  --color-brand-primary: #12140f;
-  --color-brand-accent: #b6e02e;
-  --color-brand-bg: #faf9f4;
-  --color-brand-surface: #ffffff;
-  --color-brand-ink: #12140f;
-  --color-brand-ink-muted: #6b6b62;
+  --color-brand-primary: #F5821F;
+  --color-brand-accent: #1E8A3E;
+  --color-brand-bg: #F4F4F4;
+  --color-brand-surface: #FFFFFF;
+  --color-brand-ink: #0B1D3A;
+  --color-brand-ink-muted: #6B7280;
+  --color-brand-danger: #E0524D;
+  --radius-card: 16px;
+  --radius-pill: 999px;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -31,10 +34,12 @@ body {
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
 }
 
-/* Deliberately outside @theme: --font-poppins isn't registered as a Tailwind
-   theme token, so this can't collide with an auto-generated Tailwind utility
-   of the same name. */
-.font-heading {
-  font-family: var(--font-poppins), Arial, Helvetica, sans-serif;
-  font-weight: 300;
+@layer utilities {
+  /* Poppins 700 for hero/section headings — kit's bold display style.
+     Inside @layer utilities so a paired Tailwind weight utility
+     (e.g. `font-heading font-semibold`) still wins predictably. */
+  .font-heading {
+    font-family: var(--font-poppins), sans-serif;
+    font-weight: 700;
+  }
 }
