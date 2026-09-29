@@ -28,7 +28,7 @@ export function RestaurantCard({
   return (
     <Link
       href={`/customer/stores/${restaurant.id}`}
-      className="block overflow-hidden rounded-lg border border-brand-ink-muted/10 bg-brand-surface shadow-none transition-shadow hover:shadow-[0_3px_14px_-6px_rgba(0,0,0,0.18)]"
+      className="block overflow-hidden rounded-[var(--radius-card)] border border-brand-ink-muted/10 bg-brand-surface shadow-sm transition-shadow hover:shadow-[0_3px_14px_-6px_rgba(0,0,0,0.18)]"
     >
       <div className="relative h-40 w-full bg-brand-accent/10">
         {restaurant.banner_url ? (
@@ -45,12 +45,12 @@ export function RestaurantCard({
       </div>
       <div className="p-4">
         {restaurant.promo_text && (
-          <span className="mb-1 inline-block rounded-full bg-brand-accent px-2 py-0.5 text-xs font-semibold text-brand-ink">
+          <span className="mb-1 inline-block rounded-[var(--radius-pill)] bg-brand-accent px-2 py-0.5 text-xs font-semibold text-brand-ink">
             {restaurant.promo_text}
           </span>
         )}
         <div className="flex items-center justify-between">
-          <h3 className="font-semibold text-brand-ink">{restaurant.name}</h3>
+          <h3 className="font-heading text-base text-brand-ink">{restaurant.name}</h3>
           <span className="text-sm text-brand-ink-muted">{distanceKm.toFixed(1)} km</span>
         </div>
         <p className="text-sm text-brand-ink-muted">{restaurant.cuisine_tags.join(", ")}</p>

@@ -99,10 +99,10 @@ export function HeaderSearchBox({
         onChange={(e) => onChange(e.target.value)}
         onFocus={() => setOpen(true)}
         placeholder="Search restaurants or cuisines"
-        className="w-full rounded-full border border-brand-ink-muted/20 bg-brand-surface px-4 py-2 text-sm text-brand-ink placeholder:text-brand-ink-muted/60 focus:border-brand-primary focus:outline-none"
+        className="w-full rounded-[var(--radius-pill)] border border-brand-ink-muted/20 bg-brand-surface px-4 py-2 text-sm text-brand-ink placeholder:text-brand-ink-muted/60 focus:border-brand-primary focus:outline-none"
       />
       {showDropdown && (
-        <div className="absolute z-10 mt-1 w-full overflow-hidden rounded-lg border border-brand-ink-muted/10 bg-brand-surface shadow-[0_3px_14px_-6px_rgba(0,0,0,0.18)]">
+        <div className="absolute z-10 mt-1 w-full overflow-hidden rounded-[var(--radius-card)] border border-brand-ink-muted/10 bg-brand-surface shadow-[0_3px_14px_-6px_rgba(0,0,0,0.18)]">
           {restaurantMatches.length > 0 && (
             <div>
               {restaurantMatches.map((r) => (

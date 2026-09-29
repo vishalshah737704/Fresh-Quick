@@ -15,7 +15,7 @@ export function CategoryIconRow({ activeCategory }: { activeCategory: CategoryTy
         <span
           className={`flex h-16 w-16 items-center justify-center rounded-full border-2 text-2xl ${
             activeCategory === null
-              ? "border-brand-primary bg-brand-primary/10"
+              ? "border-brand-ink bg-brand-ink/10"
               : "border-brand-ink-muted/15 bg-brand-surface"
           }`}
         >
@@ -34,18 +34,12 @@ export function CategoryIconRow({ activeCategory }: { activeCategory: CategoryTy
           >
             <span
               className={`flex h-16 w-16 items-center justify-center overflow-hidden rounded-full border-2 ${
-                active ? "border-brand-primary" : "border-brand-ink-muted/15"
+                active ? "border-brand-ink" : "border-brand-ink-muted/15"
               }`}
             >
               <Image src={icon} alt="" width={64} height={64} className="h-full w-full object-cover" />
             </span>
-            <span
-              className={`text-center text-xs font-medium ${
-                active ? "text-brand-primary" : "text-brand-ink"
-              }`}
-            >
-              {label}
-            </span>
+            <span className="text-center text-xs font-medium text-brand-ink">{label}</span>
           </Link>
         );
       })}
