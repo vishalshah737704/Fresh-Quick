@@ -13,6 +13,8 @@
     "app:start:web-only": "node scripts/start.mjs --dev --skip-mobile",
     "app:stop": "node scripts/stop.mjs",
     "app:stop:web-only": "node scripts/stop.mjs --keep-mobile",
+    "app:start:all-roles": "node scripts/start-all-roles.mjs",
+    "app:stop:all-roles": "node scripts/stop-all-roles.mjs",
     "app:seed": "node scripts/seed.mjs"
   },
   "dependencies": {
