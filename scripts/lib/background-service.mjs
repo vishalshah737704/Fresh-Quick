@@ -38,7 +38,13 @@ export function startBackgroundService(title, command, logPath, opts = {}) {
   // independent of the service process above -- closing this window has
   // no effect on `child`.
   if (process.platform === "win32") {
-    const psTail = `Get-Content -Path '${logPath}' -Wait -Tail 100`;
+    // A plain `Get-Content -Wait` hard-errors and exits if the file is
+    // deleted/rotated while being watched -- wrap it in a retry loop so
+    // the viewer window survives that instead of dying with a red error.
+    const psTail =
+      `while ($true) { ` +
+      `if (Test-Path '${logPath}') { Get-Content -Path '${logPath}' -Wait -Tail 100 } ` +
+      `else { Write-Host 'Waiting for log file...'; Start-Sleep -Seconds 1 } }`;
     spawnSync(`start "${title}" powershell -NoExit -Command "${psTail}"`, {
       stdio: "inherit",
       shell: true,
