@@ -44,7 +44,7 @@ export function StoreCard({ store, onPress }: { store: StoreCardData; onPress: (
           <Ionicons
             name={favorited ? "heart" : "heart-outline"}
             size={16}
-            color={favorited ? "#e0245e" : BRAND.colors.ink}
+            color={favorited ? BRAND.colors.danger : BRAND.colors.ink}
           />
         </Pressable>
         {store.promo_text && (

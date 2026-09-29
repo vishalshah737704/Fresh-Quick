@@ -368,7 +368,7 @@ const styles = StyleSheet.create({
   },
   errorText: {
     fontFamily: BRAND.fonts.body,
-    color: "#c0392b",
+    color: BRAND.colors.danger,
     textAlign: "center",
   },
   mutedText: {
@@ -484,7 +484,7 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     padding: 12,
-    backgroundColor: "rgba(18,20,15,0.55)",
+    backgroundColor: BRAND.colors.ink + "8c",
   },
   promoTitle: {
     fontFamily: BRAND.fonts.bodySemiBold,

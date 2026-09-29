@@ -334,7 +334,7 @@ const styles = StyleSheet.create({
   },
   errorText: {
     fontFamily: BRAND.fonts.body,
-    color: "#c0392b",
+    color: BRAND.colors.danger,
     textAlign: "center",
   },
   mutedText: {
@@ -348,7 +348,7 @@ const styles = StyleSheet.create({
   banner: {
     height: 200,
     borderRadius: BRAND.radius,
-    backgroundColor: BRAND.colors.accent + "20",
+    backgroundColor: BRAND.colors.ink,
     alignItems: "center",
     justifyContent: "center",
     overflow: "hidden",
@@ -424,9 +424,9 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   unavailableBanner: {
-    backgroundColor: "#fdecea",
+    backgroundColor: BRAND.colors.danger + "18",
     borderWidth: 1,
-    borderColor: "#f5c2c0",
+    borderColor: BRAND.colors.danger + "40",
     borderRadius: BRAND.radius,
     padding: 10,
     marginBottom: 12,
@@ -434,7 +434,7 @@ const styles = StyleSheet.create({
   unavailableText: {
     fontFamily: BRAND.fonts.body,
     fontSize: 13,
-    color: "#c0392b",
+    color: BRAND.colors.danger,
   },
   group: {
     marginBottom: 16,
@@ -452,7 +452,7 @@ const styles = StyleSheet.create({
     backgroundColor: BRAND.colors.surface,
     borderWidth: 1,
     borderColor: BRAND.colors.inkMuted + "15",
-    borderRadius: BRAND.radius,
+    borderRadius: 16,
     padding: 12,
     marginBottom: 8,
   },
@@ -493,7 +493,7 @@ const styles = StyleSheet.create({
   itemImage: {
     width: 76,
     height: 76,
-    borderRadius: BRAND.radius,
+    borderRadius: 12,
   },
   itemImageFallback: {
     backgroundColor: BRAND.colors.accent + "20",

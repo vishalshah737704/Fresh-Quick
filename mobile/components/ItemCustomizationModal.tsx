@@ -121,8 +121,8 @@ export function ItemCustomizationModal({
           <ScrollView style={{ maxHeight: 380 }}>
             {optionGroups.map((group) => (
               <View key={group.id} style={styles.group}>
-                <Text style={styles.groupTitle}>
-                  {group.name}{" "}
+                <View style={styles.groupHeader}>
+                  <Text style={styles.groupTitle}>{group.name}</Text>
                   <Text style={styles.groupSubtitle}>
                     {group.min_select > 0
                       ? `Required · choose ${
@@ -132,29 +132,31 @@ export function ItemCustomizationModal({
                         }`
                       : `Optional · up to ${group.max_select}`}
                   </Text>
-                </Text>
-                {group.menu_item_options.map((option) => {
-                  const on = isSelected(group.id, option.id);
-                  return (
-                    <Pressable
-                      key={option.id}
-                      onPress={() => toggleOption(group, option.id)}
-                      style={[styles.option, on && styles.optionOn]}
-                    >
-                      <Text style={styles.optionLabel}>
-                        {on ? "●" : "○"} {option.name}
-                      </Text>
-                      {option.price_delta_paise > 0 && (
-                        <Text style={styles.optionPrice}>
-                          +₹{(option.price_delta_paise / 100).toFixed(2)}
+                </View>
+                <View style={styles.groupBody}>
+                  {group.menu_item_options.map((option) => {
+                    const on = isSelected(group.id, option.id);
+                    return (
+                      <Pressable
+                        key={option.id}
+                        onPress={() => toggleOption(group, option.id)}
+                        style={[styles.option, on && styles.optionOn]}
+                      >
+                        <Text style={styles.optionLabel}>
+                          {on ? "●" : "○"} {option.name}
                         </Text>
-                      )}
-                    </Pressable>
-                  );
-                })}
-                {group.menu_item_options.length === 0 && (
-                  <Text style={styles.noOptions}>No options available yet.</Text>
-                )}
+                        {option.price_delta_paise > 0 && (
+                          <Text style={styles.optionPrice}>
+                            +₹{(option.price_delta_paise / 100).toFixed(2)}
+                          </Text>
+                        )}
+                      </Pressable>
+                    );
+                  })}
+                  {group.menu_item_options.length === 0 && (
+                    <Text style={styles.noOptions}>No options available yet.</Text>
+                  )}
+                </View>
               </View>
             ))}
           </ScrollView>
@@ -173,15 +175,18 @@ export function ItemCustomizationModal({
               </Pressable>
             </View>
           </View>
-          <Pressable
-            disabled={!allGroupsValid}
-            onPress={handleAdd}
-            style={[styles.addButton, !allGroupsValid && styles.addButtonDisabled]}
-          >
-            <Text style={styles.addButtonText}>
-              Add {quantity} to cart · ₹{(totalPaise / 100).toFixed(2)}
-            </Text>
-          </Pressable>
+          <View style={styles.footerRow}>
+            <View style={styles.totalPill}>
+              <Text style={styles.totalPillText}>₹{(totalPaise / 100).toFixed(2)}</Text>
+            </View>
+            <Pressable
+              disabled={!allGroupsValid}
+              onPress={handleAdd}
+              style={[styles.addButton, !allGroupsValid && styles.addButtonDisabled]}
+            >
+              <Text style={styles.addButtonText}>Add {quantity} to cart</Text>
+            </Pressable>
+          </View>
         </View>
       </View>
     </Modal>
@@ -191,7 +196,7 @@ export function ItemCustomizationModal({
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.4)",
+    backgroundColor: BRAND.colors.ink + "66",
     justifyContent: "flex-end",
   },
   sheet: {
@@ -226,17 +231,33 @@ const styles = StyleSheet.create({
   },
   group: {
     marginBottom: 16,
+    borderRadius: 16,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: BRAND.colors.inkMuted + "15",
+  },
+  groupHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: BRAND.colors.ink,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
   },
   groupTitle: {
     fontFamily: BRAND.fonts.bodySemiBold,
     fontSize: 14,
-    color: BRAND.colors.ink,
-    marginBottom: 6,
+    color: BRAND.colors.surface,
   },
   groupSubtitle: {
     fontFamily: BRAND.fonts.body,
-    fontSize: 12,
-    color: BRAND.colors.inkMuted,
+    fontSize: 11,
+    color: BRAND.colors.surface + "b3",
+  },
+  groupBody: {
+    flexDirection: "column",
+    gap: 6,
+    padding: 8,
   },
   option: {
     flexDirection: "row",
@@ -244,13 +265,13 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     borderWidth: 1,
     borderColor: BRAND.colors.inkMuted + "30",
-    borderRadius: BRAND.radius,
+    borderRadius: BRAND.radiusPill,
     paddingHorizontal: 12,
     paddingVertical: 10,
-    marginBottom: 6,
   },
   optionOn: {
-    borderColor: BRAND.colors.primary,
+    borderColor: BRAND.colors.accent,
+    backgroundColor: BRAND.colors.accent + "18",
   },
   optionLabel: {
     fontFamily: BRAND.fonts.body,
@@ -305,9 +326,26 @@ const styles = StyleSheet.create({
     minWidth: 16,
     textAlign: "center",
   },
-  addButton: {
+  footerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  totalPill: {
     backgroundColor: BRAND.colors.primary,
-    borderRadius: 999,
+    borderRadius: BRAND.radiusPill,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+  },
+  totalPillText: {
+    fontFamily: BRAND.fonts.bodySemiBold,
+    fontSize: 15,
+    color: BRAND.colors.surface,
+  },
+  addButton: {
+    flex: 1,
+    backgroundColor: BRAND.colors.accent,
+    borderRadius: BRAND.radiusPill,
     paddingVertical: 14,
     alignItems: "center",
   },
