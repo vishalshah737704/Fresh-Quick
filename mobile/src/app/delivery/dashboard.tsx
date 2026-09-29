@@ -306,7 +306,7 @@ export default function DeliveryDashboardScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16, gap: 16, backgroundColor: BRAND.colors.background },
+  container: { flex: 1, padding: 16, gap: 16, backgroundColor: BRAND.colors.primaryTint },
   headerRow: {
     flexDirection: "row",
     alignItems: "center",
