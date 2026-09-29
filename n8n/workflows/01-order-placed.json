@@ -3,7 +3,7 @@
   "nodes": [
     {
       "id": "webhook-order-placed",
-      "name": "Supabase Webhook: orders insert",
+      "name": "Supabase Webhook: payments update (status=success)",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
       "position": [240, 300],
@@ -13,11 +13,11 @@
         "path": "foodhub/order-placed",
         "responseMode": "onReceived"
       },
-      "notes": "Configure as a Supabase Database Webhook on orders (INSERT). See docs/n8n-webhook-setup.md."
+      "notes": "Configure as a Supabase Database Webhook on payments (UPDATE OF status), firing only when the new status is 'success' -- see the n8n_payment_success trigger in supabase/migrations/00000000000025_n8n_trigger_conditions.sql. Previously fired on orders INSERT, which happens before the payment outcome is known -- a failed payment still notified the vendor of a 'new order' that was cancelled moments later. See docs/n8n-webhook-setup.md."
     },
     {
       "id": "filter-status-placed",
-      "name": "Filter: status = placed",
+      "name": "Filter: payment status = success",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [460, 300],
@@ -26,7 +26,7 @@
           "string": [
             {
               "value1": "={{$json[\"body\"][\"record\"][\"status\"]}}",
-              "value2": "placed"
+              "value2": "success"
             }
           ]
         }
@@ -40,7 +40,7 @@
       "position": [680, 220],
       "parameters": {
         "method": "POST",
-        "url": "={{$env.APP_BASE_URL}}/api/internal/orders/{{$json[\"body\"][\"record\"][\"id\"]}}/notify-vendor",
+        "url": "={{$env.APP_BASE_URL}}/api/internal/orders/{{$json[\"body\"][\"record\"][\"order_id\"]}}/notify-vendor",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -53,15 +53,15 @@
     }
   ],
   "connections": {
-    "Supabase Webhook: orders insert": {
-      "main": [[{ "node": "Filter: status = placed", "type": "main", "index": 0 }]]
+    "Supabase Webhook: payments update (status=success)": {
+      "main": [[{ "node": "Filter: payment status = success", "type": "main", "index": 0 }]]
     },
-    "Filter: status = placed": {
+    "Filter: payment status = success": {
       "main": [[{ "node": "Notify Restaurant (write notification row)", "type": "main", "index": 0 }], []]
     }
   },
   "active": false,
   "settings": {},
   "_untested_reference_only": false,
-  "_note": "Verified live 2026-09-28 (Task 9 of the checkout-payment-details plan) against a real local n8n instance (docker n8n container, N8N_BLOCK_ENV_ACCESS_IN_NODE=false, SUPABASE_URL/APP_BASE_URL via host.docker.internal) wired to the local Supabase stack and the checkout-payment-details worktree's own Next.js dev server (port 3001). A real order placed through POST /api/cart/checkout triggered this workflow via the orders-INSERT Database Webhook, which called POST /api/internal/orders/:id/notify-vendor and produced a real public.notifications row referencing the new order's id. See docs/superpowers/specs/2026-09-25-phase7-n8n-automation-design.md."
+  "_note": "Originally verified live 2026-09-28 (Task 9 of the checkout-payment-details plan) triggered by orders-INSERT. Re-pointed 2026-09-29 after a live debugging session found a real bug: firing on orders-INSERT notified the vendor of a 'new order' for orders that then failed payment and were cancelled seconds later, since payment hadn't resolved yet at insert time. Now fires on payments UPDATE OF status WHEN status='success' instead (see supabase/migrations/00000000000025_n8n_trigger_conditions.sql), so the vendor is only notified once payment has actually succeeded. Not yet re-verified live against a real n8n instance after this change -- do that before trusting it the way the original orders-INSERT wiring was trusted."
 }

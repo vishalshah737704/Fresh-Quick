@@ -130,17 +130,28 @@ either at your n8n instance's webhook URLs (the `path` field in each
 workflow JSON, e.g.
 `https://<n8n-host>/webhook/foodhub/order-placed`):
 
-| Table     | Events        | n8n webhook path                          | Workflow |
-|-----------|---------------|--------------------------------------------|----------|
-| `orders`  | INSERT        | `foodhub/order-placed`                     | 01 |
-| `payments`| INSERT        | `foodhub/payment-created`                  | 02 |
-| `orders`  | UPDATE(status)| `foodhub/order-status-changed`             | 03 |
-| `orders`  | UPDATE(status)| `foodhub/order-ready`                      | 04 (filter to status=ready) |
-| `orders`  | UPDATE(status)| `foodhub/order-delivery-status-changed`    | 05 (filter to picked_up/delivered) |
+| Table     | Events                          | n8n webhook path                          | Workflow |
+|-----------|----------------------------------|--------------------------------------------|----------|
+| `payments`| UPDATE(status) WHEN status='success' | `foodhub/order-placed`                | 01 |
+| `payments`| INSERT                           | `foodhub/payment-created`                  | 02 |
+| `orders`  | UPDATE(status) WHEN status in (accepted,preparing,ready) | `foodhub/order-status-changed` | 03 |
+| `orders`  | UPDATE(status) WHEN status='ready' | `foodhub/order-ready`                    | 04 |
+| `orders`  | UPDATE(status) WHEN status in (picked_up,delivered) | `foodhub/order-delivery-status-changed` | 05 |
 
-Workflows 3, 4, and 5 all listen on `orders` UPDATE — Supabase sends every
-column update, so each workflow's own `IF` node filters to the status
-values it cares about (see each JSON file's "Filter" node).
+**Every trigger above now has a `WHEN` clause matching its workflow's own
+`IF`/Filter node condition** (fixed 2026-09-29, `supabase/migrations/
+00000000000025_n8n_trigger_conditions.sql`, after a live debugging session
+found two bugs: (1) the order-status triggers fired unconditionally on
+every status update — including `cancelled` — relying entirely on each
+workflow's own Filter node to no-op, which made n8n's execution log show
+misleading "Success" runs for statuses the workflow didn't actually care
+about; (2) workflow 01 fired on `orders` INSERT, which happens before
+checkout's payment result is known (see `lib/mock-payment.ts`), so a
+vendor got a "new order" notification for an order that failed payment
+and was cancelled moments later. If you're wiring this up via Studio's
+Database → Webhooks UI instead of the migration, replicate the WHEN
+condition in Studio's own filter/condition field for each webhook, or
+you'll reintroduce both bugs.
 
 ## 3. Importing each workflow
 

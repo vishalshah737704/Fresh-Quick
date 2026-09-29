@@ -1892,6 +1892,66 @@ live-verified by placing a real order rather than just read from config.
 - The local Docker stack (Supabase + n8n) and Next.js dev server were left
   running after this verification pass, not torn down.
 
+## n8n trigger bug found and fixed via live debugging (2026-09-29)
+
+Vishal placed a real order through the web app, payment failed (random
+mock outcome), and reported all 5 n8n workflows showed "Success" in n8n's
+execution log even though the order was cancelled — flagged this as
+wrong: only Order Placed + Payment Mock should fire on a failed payment,
+and Restaurant Accepts should only fire once the restaurant actually
+accepts. Debugged with `superpowers:systematic-debugging`.
+
+**Root causes (two, both real, both fixed in
+`supabase/migrations/00000000000025_n8n_trigger_conditions.sql`):**
+
+1. **The order-status triggers (03/04/05) fired unconditionally on ANY
+   `orders.status` update**, including `cancelled` — the Postgres trigger
+   itself never checked the new value, relying entirely on each n8n
+   workflow's own internal `IF`/Filter node to no-op. That's why n8n
+   logged "Success" for a cancelled order: the webhook genuinely fired
+   and genuinely returned success, it just did nothing once inside
+   (confirmed live — the cancelled order never got a `delivery_partner_id`
+   assigned, so no real harm happened, just misleading logs). Fixed by
+   adding a `WHEN (new.status in (...))` clause to each trigger matching
+   its own workflow's Filter condition, so the trigger — and the network
+   call it makes — doesn't fire at all for an irrelevant status.
+2. **The real bug**: `n8n_order_placed` fired on `orders` INSERT, which
+   always happens with `status='placed'` *before* checkout's payment
+   result is known (order is created optimistically, payment resolves
+   ~10s later via n8n or the in-process fallback, see
+   `lib/mock-payment.ts`). Confirmed live in the DB: the failed-payment
+   order (`0cc070b7...`, ended up `status='cancelled'`) still had a real
+   `public.notifications` row — the vendor was told about a "new order"
+   that had already failed payment and been cancelled by the time they'd
+   see it, with no corresponding "never mind" signal. Fixed by moving the
+   trigger from `orders` INSERT to `payments` `UPDATE OF status WHEN
+   (new.status = 'success')` — the vendor is now only notified once
+   payment has actually succeeded. `n8n/workflows/01-order-placed.json`
+   updated to match: its Filter node now checks payment status = 'success'
+   (not order status = 'placed'), and its HTTP node reads
+   `record.order_id` (the payments row's foreign key) instead of
+   `record.id` (which used to be the orders row's own id).
+   `docs/n8n-webhook-setup.md`'s trigger table updated with the new
+   source table and every workflow's WHEN condition spelled out.
+- **Live-verified the Postgres side**: applied the migration to the
+  running local instance, confirmed via `pg_get_triggerdef` that all 5
+  triggers now carry the expected `WHEN` clauses and `n8n_order_placed`
+  is gone. Placed a real COD test order via curl (`customer@foodhub.local`)
+  — payment resolved `success` immediately (COD always succeeds), order
+  stayed `placed`, `payments.status='success'` confirmed in the DB.
+- **Not re-verified against a live n8n workflow execution** — the running
+  n8n container currently has 0 workflows imported ("0 published
+  workflows" in its own startup log), so there was nothing there to
+  receive the trigger's webhook call this session. **Before trusting this
+  fix's n8n-side behavior, re-import `n8n/workflows/01-order-placed.json`
+  (its node names/filter condition changed) and re-run a live order
+  through to confirm the vendor notification now only appears after
+  payment success, not at order-placement time.** The Postgres-side fix
+  (triggers only fire for relevant statuses, and only after payment
+  success) is proven correct independent of n8n being imported or not —
+  n8n just never got called to prove the end-to-end webhook path this
+  time.
+
 ## External API keys in use
 
 - `PEXELS_API_KEY` — Pexels Search API, used once (not at runtime) to fetch
