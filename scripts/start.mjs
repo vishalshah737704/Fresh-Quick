@@ -1,7 +1,8 @@
 import { existsSync, readFileSync } from "node:fs";
-import { spawnSync, spawn } from "node:child_process";
+import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
+import { startBackgroundService, logsDir } from "./lib/background-service.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 process.chdir(root);
@@ -9,16 +10,7 @@ process.chdir(root);
 const dev = process.argv.includes("--dev");
 const skipN8n = process.argv.includes("--skip-n8n");
 const skipMobile = process.argv.includes("--skip-mobile");
-
-function openWindow(title, command) {
-  if (process.platform === "win32") {
-    spawnSync(`start "${title}" cmd /k "${command}"`, { stdio: "inherit", shell: true });
-  } else {
-    const child = spawn("bash", ["-c", command], { stdio: "ignore", detached: true });
-    child.unref();
-    console.log(`${title} started detached (stdio ignored) — run '${command}' yourself to see logs.`);
-  }
-}
+const logDir = logsDir(root);
 
 if (!existsSync(".env.local")) {
   console.error(
@@ -112,23 +104,66 @@ if (!skipMobile) {
       "mobile/.env not found — skipping mobile app. Copy mobile/.env.example to mobile/.env and fill in Supabase URL/anon key + EXPO_PUBLIC_API_BASE_URL (your machine's LAN IP, not localhost), or pass --skip-mobile to silence this."
     );
   } else {
-    console.log("Starting Expo (mobile app) in a new window...");
-    openWindow("Mobile (Expo)", "cd /d mobile && npx expo start");
+    console.log("Starting Expo (mobile app) in the background...");
+    startBackgroundService(
+      "Mobile (Expo)",
+      "npx expo start",
+      join(logDir, "mobile-expo.log"),
+      { cwd: join(root, "mobile") }
+    );
+    console.log(
+      "  Note: Expo runs detached, so its interactive keypress commands (r/j/m/etc.) won't\n" +
+        "  work through the log window — the QR code still prints to the log for scanning.\n" +
+        "  For interactive Expo controls, run 'cd mobile && npx expo start' yourself instead."
+    );
   }
 } else {
   console.log("Skipping mobile app (--skip-mobile passed).");
 }
 
-if (dev) {
-  console.log("Starting Next.js dev server (new window)...");
-  openWindow("Web (Next.js dev)", "npm run dev");
+const allRoles = process.argv.includes("--all-roles");
+const ROLE_PORTS = [
+  { role: "Customer", port: 3000 },
+  { role: "Vendor", port: 3001 },
+  { role: "Delivery", port: 3002 },
+  { role: "Admin", port: 3003 },
+];
+
+if (allRoles) {
+  const webCommand = dev ? "npm run dev --" : "npm start --";
+  if (!dev && !existsSync(".next")) {
+    console.error("No production build found. Run 'npm run app:build' first, or pass --dev for the dev server.");
+    process.exit(1);
+  }
+  console.log("Starting one Next.js server per role, each running in the background:");
+  for (const { role, port } of ROLE_PORTS) {
+    console.log(`  ${role.padEnd(10)} -> http://localhost:${port}`);
+    startBackgroundService(
+      `${role} (localhost:${port})`,
+      `${webCommand} -p ${port}`,
+      join(logDir, `web-${role.toLowerCase()}.log`),
+      { cwd: root }
+    );
+  }
+  console.log(
+    "\nEach port is its own browser origin, so each role's Supabase session lives in its own\n" +
+      "localStorage and won't collide with the others — no Incognito windows needed."
+  );
+} else if (dev) {
+  console.log("Starting Next.js dev server in the background...");
+  startBackgroundService("Web (Next.js dev)", "npm run dev", join(logDir, "web.log"), { cwd: root });
 } else {
   if (!existsSync(".next")) {
     console.error("No production build found. Run 'npm run app:build' first, or pass --dev for the dev server.");
     process.exit(1);
   }
-  console.log("Starting Next.js production server (new window)...");
-  openWindow("Web (Next.js)", "npm start");
+  console.log("Starting Next.js production server in the background...");
+  startBackgroundService("Web (Next.js)", "npm start", join(logDir, "web.log"), { cwd: root });
 }
 
-console.log("All requested services launched. This script has returned control of the terminal — check each service's own window for logs.");
+console.log(
+  "\nAll requested services are running as real detached background processes — closing a\n" +
+    "log-viewer window only stops watching that log, it does NOT stop the service. Use\n" +
+    "'npm run app:stop' (or 'app:stop -- --all-roles' if you started with --all-roles) to\n" +
+    "actually stop them."
+);

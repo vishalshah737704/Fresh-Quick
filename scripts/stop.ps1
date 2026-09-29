@@ -11,21 +11,27 @@
 .PARAMETER KeepMobile
   Leave the Expo/Metro mobile dev server running.
 .PARAMETER Port
-  Port the Next.js server is listening on. Defaults to 3000.
+  Port the Next.js server is listening on. Defaults to 3000. Ignored if
+  -AllRoles is passed.
 .PARAMETER MobilePort
   Port Metro is listening on. Defaults to 8081.
+.PARAMETER AllRoles
+  Stop all 4 role-port web servers (3000/3001/3002/3003) instead of just
+  -Port, matching `-AllRoles` on start.ps1.
 #>
 param(
   [switch]$KeepSupabase,
   [switch]$KeepN8n,
   [switch]$KeepMobile,
   [int]$Port = 3000,
-  [int]$MobilePort = 8081
+  [int]$MobilePort = 8081,
+  [switch]$AllRoles
 )
 $root = Split-Path -Parent $PSScriptRoot
 $scriptArgs = @("--port=$Port", "--mobile-port=$MobilePort")
 if ($KeepSupabase) { $scriptArgs += "--keep-supabase" }
 if ($KeepN8n) { $scriptArgs += "--keep-n8n" }
 if ($KeepMobile) { $scriptArgs += "--keep-mobile" }
+if ($AllRoles) { $scriptArgs += "--all-roles" }
 node (Join-Path $root "scripts/stop.mjs") @scriptArgs
 exit $LASTEXITCODE

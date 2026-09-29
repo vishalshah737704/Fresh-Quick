@@ -52,3 +52,6 @@ next-env.d.ts
 
 # User manual build scratch assets (large PNGs, not needed in repo)
 docs/_manual_assets/
+
+# runtime log files written by scripts/start.mjs's background services
+/.dev-logs/

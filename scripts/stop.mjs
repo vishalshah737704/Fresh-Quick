@@ -9,10 +9,12 @@ const args = process.argv.slice(2);
 const keepSupabase = args.includes("--keep-supabase");
 const keepN8n = args.includes("--keep-n8n");
 const keepMobile = args.includes("--keep-mobile");
+const allRoles = args.includes("--all-roles");
 const portArg = args.find((a) => a.startsWith("--port="));
 const port = portArg ? Number(portArg.split("=")[1]) : 3000;
 const mobilePortArg = args.find((a) => a.startsWith("--mobile-port="));
 const mobilePort = mobilePortArg ? Number(mobilePortArg.split("=")[1]) : 8081;
+const ROLE_PORTS = [3000, 3001, 3002, 3003];
 
 function stopWindows(port) {
   const netstat = spawnSync("netstat", ["-ano"], { encoding: "utf8" });
@@ -41,7 +43,16 @@ function stopPosix(port) {
   }
 }
 
-if (process.platform === "win32") {
+if (allRoles) {
+  for (const p of ROLE_PORTS) {
+    console.log(`Stopping web server on port ${p}...`);
+    if (process.platform === "win32") {
+      stopWindows(p);
+    } else {
+      stopPosix(p);
+    }
+  }
+} else if (process.platform === "win32") {
   stopWindows(port);
 } else {
   stopPosix(port);
