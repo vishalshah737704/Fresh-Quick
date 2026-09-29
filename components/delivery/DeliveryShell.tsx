@@ -10,6 +10,7 @@ export default function DeliveryShell({ children }: { children: React.ReactNode 
   const { loading, partnerId, isOnline: initialOnline } = useDeliverySession();
   const router = useRouter();
   const [isOnline, setIsOnline] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   useEffect(() => {
     if (!loading) setIsOnline(initialOnline);
@@ -24,22 +25,34 @@ export default function DeliveryShell({ children }: { children: React.ReactNode 
 
   return (
     <DeliverySessionContext.Provider value={{ loading, partnerId, isOnline, setIsOnline }}>
-      <div className="flex min-h-screen flex-col">
-        <div className="flex items-center justify-between border-b border-brand-ink-muted/10 bg-brand-surface p-3">
+      <div className="flex min-h-screen flex-col md:flex-row">
+        <div className="flex items-center justify-between bg-brand-surface p-3 text-brand-ink md:hidden">
           <span className="font-heading text-lg text-brand-ink">Delivery</span>
-          <div className="flex items-center gap-3">
-            <span className="inline-flex items-center rounded-full bg-brand-accent/20 px-3 py-1 text-xs font-medium text-brand-ink">
-              {isOnline ? "Online" : "Offline"}
-            </span>
-            <button
-              onClick={signOut}
-              className="rounded-full px-3 py-1 text-sm text-brand-ink-muted hover:bg-brand-accent/10"
-            >
-              Sign out
-            </button>
-          </div>
+          <button
+            onClick={() => setDrawerOpen(!drawerOpen)}
+            className="rounded-[var(--radius-pill)] border border-brand-ink-muted/20 px-3 py-1 text-sm text-brand-ink"
+          >
+            Menu
+          </button>
         </div>
-        <main className="flex-1 p-4">{children}</main>
+        <aside
+          className={`${drawerOpen ? "flex" : "hidden"} w-full flex-col gap-2 bg-brand-ink p-4 text-white md:flex md:w-56 md:min-h-screen`}
+        >
+          <span className="mb-2 hidden font-heading text-lg text-white md:block">Delivery</span>
+          <span className="mb-2 inline-flex w-fit items-center rounded-[var(--radius-pill)] bg-brand-accent/20 px-3 py-1 text-xs font-medium text-white">
+            {isOnline ? "Online" : "Offline"}
+          </span>
+          <span className="rounded-[var(--radius-pill)] bg-brand-primary px-3 py-2 text-sm text-white">
+            Dashboard
+          </span>
+          <button
+            onClick={signOut}
+            className="mt-auto rounded-[var(--radius-pill)] px-3 py-2 text-left text-sm text-white/70 hover:bg-white/10"
+          >
+            Sign out
+          </button>
+        </aside>
+        <main className="flex-1 bg-brand-bg p-4">{children}</main>
       </div>
     </DeliverySessionContext.Provider>
   );
