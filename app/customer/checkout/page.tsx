@@ -46,6 +46,16 @@ export default function CheckoutPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [address]);
 
+  // Redirect to login as an effect, never inside the render body — calling
+  // router.push() during render triggers "Cannot update a component
+  // (Router) while rendering a different component" because it updates the
+  // Next.js router's own state synchronously mid-render.
+  useEffect(() => {
+    if (!sessionLoading && !userId) {
+      router.push("/customer/login?redirectTo=/customer/checkout");
+    }
+  }, [sessionLoading, userId, router]);
+
   useEffect(() => {
     if (!userId) return;
     let cancelled = false;
@@ -190,7 +200,6 @@ export default function CheckoutPage() {
   }
 
   if (!userId) {
-    router.push("/customer/login?redirectTo=/customer/checkout");
     return null;
   }
 
