@@ -2151,6 +2151,84 @@ before any real code was touched, per Vishal's explicit request.
   still never run on a real device/simulator (carried-over gap, spec
   explicitly out of scope for this pass).
 
+## Color-density revision — addendum to Figma-kit redesign (2026-09-29)
+
+After the Figma-kit redesign shipped, Vishal reviewed it live and found
+checkout/order-tracking pages "very blank" (too much flat white/gray)
+and asked for a denser, more colorful treatment across all 6 surfaces,
+plus a real bug fix: checkout's name/email/address were persisting
+across sessions when they should always start blank. Approved via a
+second round on the same Artifact canvas preview ("REVISION 2" boards).
+Spec: `docs/superpowers/specs/2026-09-29-color-density-revision-design.md`.
+Plan: `docs/superpowers/plans/2026-09-29-color-density-revision.md`.
+Same branch (`figma-kit-redesign`), same subagent-driven-development
+process, 12 tasks + 1 final-review fix wave, all approved.
+
+- **New tint tokens**: `brand-primary-tint` (#FFF4E8), `brand-accent-tint`
+  (#EAF7EE), `brand-ink-tint` (#E8ECF4) — added to `app/globals.css`
+  and `mobile/theme.ts`. Used for section-background density (tinted
+  gradients, tinted scroll areas, per-kanban-column tints) — never a
+  replacement for the primary/accent/ink tokens themselves.
+- **Checkout blank-every-session fix**: removed `lib/address-store.tsx`'s
+  `localStorage` persistence entirely and removed
+  `app/customer/checkout/page.tsx`'s profile-based name/email autofill
+  effect. **Side effect surfaced by the final review**: this also
+  stopped persisting the chosen delivery location (`lat`/`lng`/`label`,
+  used for home-feed distance filtering) — every reload now resets to
+  "Mumbai (default)." **Parked, awaiting Vishal's call**: whether to
+  restore `lat`/`lng`/`label` persistence separately (the spec only
+  asked for checkout *fields* to be blank, not the location) — not
+  decided as of this entry.
+- **Vendor/Delivery/Admin got new sidebar gradients** (`linear-gradient(180deg,
+  var(--color-brand-ink) 0%, #132849 100%)`) matching each other — a
+  first pass only applied this to Vendor; the final review caught
+  Delivery/Admin missing it and it was fixed in the same fix wave.
+- **CheckoutV2's footer pattern lives in `CartPanel.tsx`, not the
+  checkout page** — a mid-plan finding (Task 4's review) that widened
+  Task 6's scope: solid `bg-brand-primary` band, white "Total to pay"
+  text, `bg-brand-accent` rounded-pill checkout button. If a future
+  task touches checkout's footer/CTA, check `CartPanel.tsx` first, not
+  the checkout page file.
+- **Final whole-branch review found 6 real bugs, all fixed in one
+  follow-up commit**:
+  1. **Mobile category-pill scroll regression** — a Task 10 wrapper
+     `<View>` added around `mobile/src/app/customer/store/[id].tsx`'s
+     menu list for a background tint silently broke `onLayout`'s
+     coordinate frame (React Native measures `layout.y` relative to
+     the IMMEDIATE parent) — `sectionOffsets` became wrapper-relative
+     instead of ScrollView-relative, so tapping a category pill
+     scrolled to the wrong place. Fixed by capturing the wrapper's own
+     `onLayout` offset and adding it back in `scrollToGroup`.
+     **General lesson**: wrapping existing children in a new View for
+     a purely visual reason changes the coordinate frame of every
+     `onLayout` value inside it — any scroll-offset map built from
+     those values needs re-deriving, not just a visual smoke test.
+  2. Checkout/order-tracking pages had an 8px horizontal overflow —
+     `-m-6 p-6`/`-mx-6 -mt-6` assumed 24px of `<main>` padding, but
+     `app/customer/layout.tsx`'s `<main>` actually uses `p-4` (16px).
+     Fixed to `-m-4 p-4`/`-mx-4 -mt-4`.
+  3. `app/customer/orders/[id]/page.tsx` showed a green ✅ checkmark
+     even when `payment.status === "failed"` or the order was
+     cancelled/rejected. Fixed to gate the checkmark on those states.
+  4. `CartPanel.tsx`'s checkout error message was `text-red-100` on
+     the new solid orange footer band (~2:1 contrast, unreadable) —
+     fixed by moving it to a white chip with `text-brand-danger`.
+  5. Checkout's address fields could still repopulate within a session
+     via client-side navigation (Task 1 only removed `localStorage`
+     persistence, not the in-memory carry-over through
+     `AddressProvider`'s context) — fixed by seeding the form from an
+     empty `DeliveryDetails` object instead of `useAddress()`'s live
+     `deliveryDetails`.
+  6. Delivery/Admin sidebar gradients (see above).
+- **Still open, not addressed by this pass** (same as the original
+  redesign's final review, explicitly out of scope): the white-text-
+  on-brand-primary/-accent WCAG contrast decision, still awaiting
+  Vishal's call. This pass's new solid-color bands add several MORE
+  instances of the same class of low-contrast text (headings/labels
+  in orange or green on white/tint backgrounds) — all plan-mandated,
+  folded into the same open decision rather than treated as new
+  findings.
+
 ## External API keys in use
 
 - `PEXELS_API_KEY` — Pexels Search API, used once (not at runtime) to fetch

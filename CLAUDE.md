@@ -57,6 +57,19 @@ community kit redesign" entry for full detail, including two
 mid-execution corrections to this file's own prior claims (see next
 paragraph) and one open design decision (white-text-on-brand-color
 contrast) still awaiting Vishal's call.
+**Color-density revision (complete, same branch, same day):** a
+same-day follow-on after Vishal reviewed the redesign live and asked
+for denser colored-section backgrounds (less flat white/gray) plus a
+real bug fix (checkout name/email/address should never persist across
+sessions). 12 more tasks + 1 final-review fix wave on the same branch —
+see MEMORY.md's "Color-density revision" entry for full detail,
+including 6 real bugs the final review caught (a mobile scroll-offset
+regression, a checkout/order page overflow, a false success checkmark
+on failed orders, unreadable checkout error text, an address-field
+session leak, missing sidebar gradients — all fixed) and one open
+question still awaiting Vishal's call: whether to restore delivery-
+location (`lat`/`lng`/`label`) persistence, which the blank-session fix
+also dropped as a side effect.
 **Correction to the "cart redesign (slide-out panel)" claim above
 (line ~21) and to any other reference to `CartPanel.tsx` as a
 slide-out drawer with Escape-flush/close-before-nav/open-state logic**:
