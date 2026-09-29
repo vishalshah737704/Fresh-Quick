@@ -1832,6 +1832,66 @@ same non-worktree checkout, then were correctly split back into 0507211/
   bar / bottom-sheet cart / row-based checkout — the manual still
   describes the pre-redesign flow. Flagged, not done this session.
 
+## User Manual updates for mobile redesign + live n8n re-verification (2026-09-28)
+
+Per Vishal's request to bring both manuals fully up to date with all web +
+mobile changes, including architecture/process diagrams and n8n workflow
+execution detail, with a scope decided via AskUserQuestion: mobile
+screenshots stay text/wireframe-only (still no device/simulator available),
+web screenshots only recaptured where actually changed, and n8n behavior
+live-verified by placing a real order rather than just read from config.
+
+- **`docs/Mobile_App_User_Manual.docx`/`.pdf` fully regenerated** (9 -> 15
+  pages) to reflect the UberEats-style redesign: tab-based nav, bottom-sheet
+  cart/customization, collapsible checkout rows, status-stepper tracking,
+  new Account tab, reorder row. 7 wireframe diagrams added (Python/PIL,
+  clearly labeled "WIREFRAME — NOT A SCREENSHOT", no fabricated real
+  screenshots). Every claim grounded in a fresh read of the actual current
+  mobile source, not the old manual or spec docs. New honest-limits items
+  surfaced during this pass: the address-picker stub, non-persisting
+  favorite heart, UI-only tip selector, and courier-card call/message demo
+  stubs, plus a real gap the source comments themselves admit (store
+  detail's sticky category-pill highlight only updates on tap, no
+  scroll-spy for this first mobile pass). TOC re-verified against the real
+  rendered PDF per the established process.
+- **`docs/User_Manual.docx`/`.pdf` was already far more complete than
+  expected** (35 pages, real Playwright screenshots, an architecture
+  diagram, and 3 process-flow diagrams already existed and were verified
+  accurate against current source) — the only real gap was live,
+  dated n8n verification instead of config-only description. Grew to 37
+  pages after adding a dated live-verification section (7.2.1/7.2.2).
+- **Live n8n verification result, worth tracking as its own finding**:
+  placing a real order through the actual running app and following it
+  through vendor accept/preparing/ready confirmed workflows 01 (order
+  notification, 2.6s) and 02 (payment mock resolution, 4.4s — n8n
+  resolved it inside the ~10s fallback window, not the in-process
+  fallback) both fire correctly. **Workflow 04 (delivery-partner
+  distance-based auto-assignment) did NOT fire in this live test** — with
+  the order at `ready` and a partner online, `delivery_partner_id` stayed
+  null until manually self-claimed via the delivery dashboard. This is a
+  real, reproducible gap in this environment (not a documentation
+  choice), now written into the manual honestly as "unconfirmed/not
+  firing" rather than claimed working. **Worth a follow-up session if
+  automatic distance-based assignment (as opposed to the self-claim model
+  the delivery dashboard already relies on) is actually expected to
+  work** — self-claim remains the tested, working path either way.
+  Workflow 03's Gmail-send sub-branch also wasn't confirmed (no Gmail
+  credential configured in this local n8n instance — a known,
+  already-documented gap in `docs/n8n-webhook-setup.md`, not new).
+  n8n's own UI/API couldn't be checked directly (401, no stored owner
+  credentials anywhere in the repo) — verification instead queried
+  Postgres state directly, which the verifying agent judged as stronger
+  evidence than trusting n8n's own execution-log UI anyway (an actual
+  data change, not just a green checkmark).
+- All 5 n8n workflows confirmed to be Postgres-database-webhook-triggered
+  (`n8n_notify()` on insert/update-of-status), **none are cron/interval-
+  based** — worth knowing before assuming any "various intervals" framing
+  applies to n8n itself; the actual interval-based behavior in this app is
+  the client-side polling (3s order tracking, 10s delivery lists, 15s
+  location ping), already documented elsewhere in both manuals.
+- The local Docker stack (Supabase + n8n) and Next.js dev server were left
+  running after this verification pass, not torn down.
+
 ## External API keys in use
 
 - `PEXELS_API_KEY` — Pexels Search API, used once (not at runtime) to fetch
