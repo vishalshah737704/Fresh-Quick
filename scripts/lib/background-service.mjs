@@ -31,26 +31,34 @@ export function startBackgroundService(title, command, logPath, opts = {}) {
   const cwd = opts.cwd ?? process.cwd();
 
   if (process.platform === "win32") {
-    // Node's own spawn({ detached: true, windowsHide: true }) isn't
-    // reliable here: commands like "npm run dev" spawn several nested
-    // layers (npm -> node -> next -> Turbopack workers) and one of those
-    // inner layers can still allocate its own visible console regardless
-    // of the top-level windowsHide flag. PowerShell's
-    // Start-Process -WindowStyle Hidden reliably suppresses the console
-    // for the whole process tree it launches, and genuinely detaches it
-    // from the launching shell (closing that shell does not stop it).
-    // cmd does its own `>` redirection to the log file rather than
-    // relying on Node's stdio plumbing, since Start-Process's own
-    // -RedirectStandardOutput/-RedirectStandardError can't both target
-    // the same file.
+    // Neither Node's spawn({detached:true, windowsHide:true}) nor
+    // PowerShell's Start-Process -WindowStyle Hidden actually escape a
+    // Windows Job Object -- and VS Code's integrated terminal (and many
+    // other terminal apps) assigns EVERY child process it spawns to a
+    // Job Object with kill-on-close semantics, which applies recursively
+    // to the whole descendant tree regardless of console
+    // detachment/hiding. Confirmed live: a Start-Process-launched service
+    // still died when the launching terminal was closed.
+    //
+    // The fix is to not be a descendant of the calling shell at all.
+    // Win32_Process::Create via WMI creates the process as a child of
+    // WmiPrvSE.exe (the WMI provider host, a standing OS service), not
+    // of whatever called it -- confirmed live via CIM (ParentProcessId
+    // pointed at WmiPrvSE.exe, several process-tree hops away from this
+    // script's own shell). That's a real, structural escape from any
+    // job object the calling terminal belongs to, not just a console/
+    // window-visibility trick.
+    //
     // Parenthesize so `>` redirects the WHOLE command, not just its last
     // `&&`-chained segment -- cmd.exe's redirection binds to the final
     // segment otherwise, silently dropping earlier segments' output.
-    const cmdLine = `(${command}) > ${logPath} 2>&1`;
-    const psStart =
-      `Start-Process -FilePath cmd.exe -ArgumentList '/c', ${psQuote(cmdLine)} ` +
-      `-WorkingDirectory ${psQuote(cwd)} -WindowStyle Hidden`;
-    spawnSync("powershell", ["-NoProfile", "-Command", psStart], {
+    const cmdLine = `cmd.exe /c "(${command}) > ${logPath} 2>&1"`;
+    const psCreate =
+      `$r = Invoke-CimMethod -ClassName Win32_Process -MethodName Create -Arguments @{` +
+      `CommandLine=${psQuote(cmdLine)}; CurrentDirectory=${psQuote(cwd)} }; ` +
+      `if ($r.ReturnValue -ne 0) { Write-Host "Failed to start '${title}', Win32_Process.Create returned $($r.ReturnValue)" } ` +
+      `else { Write-Host "Started '${title}' as PID $($r.ProcessId), independent of this shell" }`;
+    spawnSync("powershell", ["-NoProfile", "-Command", psCreate], {
       stdio: "inherit",
       windowsHide: true,
     });
