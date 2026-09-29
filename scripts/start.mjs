@@ -138,9 +138,18 @@ if (allRoles) {
   console.log("Starting one Next.js server per role, each running in the background:");
   for (const { role, port } of ROLE_PORTS) {
     console.log(`  ${role.padEnd(10)} -> http://localhost:${port}`);
+    // next dev acquires a per-project lock at <distDir>/lock (see
+    // next.config.ts) -- with the default shared ".next", only the
+    // first of these 4 concurrent `next dev` instances can start; the
+    // rest exit immediately with "another server is already running".
+    // Giving each role its own distDir gives each its own lock (and
+    // build cache). Not needed/set for production (`next start`),
+    // which has no such lock and should reuse the single `npm run
+    // app:build` output rather than needing 4 separate builds.
+    const envPrefix = dev ? `set NEXT_ROLE_DIST_DIR=.next-${role.toLowerCase()}&& ` : "";
     startBackgroundService(
       `${role} (localhost:${port})`,
-      `${webCommand} -p ${port}`,
+      `${envPrefix}${webCommand} -p ${port}`,
       join(logDir, `web-${role.toLowerCase()}.log`),
       { cwd: root }
     );

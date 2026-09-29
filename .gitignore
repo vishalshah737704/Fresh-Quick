@@ -22,6 +22,11 @@ md_version/
 
 # next.js
 /.next/
+# per-role dev build caches, --all-roles (see next.config.ts NEXT_ROLE_DIST_DIR)
+/.next-customer/
+/.next-vendor/
+/.next-delivery/
+/.next-admin/
 /out/
 # auto-written by `next dev` on every run — not project content
 /AGENTS.md
