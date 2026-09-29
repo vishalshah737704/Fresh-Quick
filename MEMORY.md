@@ -1996,7 +1996,64 @@ vendor session after a same-origin tab collision).
   should run `cd mobile && npx expo start` directly instead of through
   `--mobile`/`app:start:mobile`.
 
-## n8n trigger bug found and fixed via live debugging (2026-09-29)
+## Background-service scripts: two more root causes found after the first fix (2026-09-29)
+
+The "true detached background process" fix (windowsHide, then Start-Process
+-WindowStyle Hidden) turned out not to actually solve the reported problem
+— Vishal closed his terminal windows and every service died anyway. Kept
+debugging with `superpowers:systematic-debugging` rather than accepting
+the first two fixes as done.
+
+- **Real root cause**: VS Code's integrated terminal (and most modern
+  terminal apps) assigns every child process it spawns to a Windows Job
+  Object with kill-on-job-close semantics, applied to the WHOLE descendant
+  process tree — not just the console-visible top-level process. Neither
+  `spawn({detached:true, windowsHide:true})` nor `Start-Process
+  -WindowStyle Hidden` escape a job object; both just control console
+  visibility, and the process is still a job-object descendant of the
+  calling shell either way. **Confirmed by walking the actual process
+  ancestry** (`Get-CimInstance Win32_Process` parent-chain traversal) —
+  this session's own shell chain traced straight back to `Code.exe`.
+- **Fix**: `Win32_Process::Create` via WMI (`Invoke-CimMethod`) creates the
+  process as a child of `WmiPrvSE.exe` (a standing OS service), not of
+  whatever called it — a structural escape from any job object, not a
+  visibility trick. Verified live: the resulting process's
+  `ParentProcessId` pointed at `WmiPrvSE.exe`, several hops removed from
+  the calling shell. **This is the actual, final mechanism —
+  `scripts/lib/background-service.mjs`'s Windows path now uses it.**
+- **A second, independent bug found while testing --all-roles with this
+  fix in place**: Vendor/Delivery/Admin (ports 3001-3003) silently failed
+  to start, while Customer (3000) worked. Root cause: Next.js 16
+  acquires a per-project dev-server lock at `<distDir>/lock`
+  (`node_modules/next/dist/.../lockfile.js`) — all 4 role instances
+  shared the default `.next` distDir, so only the first could acquire the
+  lock; the other 3 exited immediately (non-interactively,
+  `process.exit(1)` — confirmed by reading Next's own source, it does
+  NOT hang waiting for a Y/N prompt as the terminal output first
+  suggested). Fixed by adding `distDir: process.env.NEXT_ROLE_DIST_DIR ||
+  ".next"` to `next.config.ts` and having `start.mjs`'s `--all-roles` dev
+  loop set a unique value per role (`.next-customer`/`.next-vendor`/etc.)
+  — falls back to normal `.next` when unset, so single-instance runs are
+  unaffected. Production (`next start`) has no such lock and deliberately
+  keeps sharing the one build output. **Verified live end-to-end**: all 4
+  ports returned real HTTP 307 responses from independent `next dev`
+  processes after the fix, vs. only port 3000 before it.
+- Both fixes needed genuine live verification, not just a syntax check or
+  a single smoke test — the first "fix" (windowsHide) looked correct in
+  isolation (a real console-suppression behavior) but didn't address the
+  actual mechanism (job objects) the user's report depended on. Cheap
+  smoke tests with plain `echo`/`ping` masked the real `npm run dev`
+  failure mode (nested process chains, the Next.js lock) until tested
+  with the actual production command.
+- `docs/UserList.docx`, `docs/User_Manual.docx`/`.pdf`, and
+  `docs/Mobile_App_User_Manual.docx`/`.pdf` all updated with the
+  multi-port URLs/scheme and this session's user-facing fixes (role
+  guard, multi-role testing). `UserList.docx` was mid-edit blocked by a
+  Word lock file (`docs/~$erList.docx`) — the finished edit was staged in
+  a scratchpad file and copied into place only after Vishal confirmed he
+  closed it in Word, avoiding an overwrite race.
+
+## External API keys in use
 
 - `PEXELS_API_KEY` — Pexels Search API, used once (not at runtime) to fetch
   menu item photo URLs baked into `supabase/seed.sql`. Key lives in
