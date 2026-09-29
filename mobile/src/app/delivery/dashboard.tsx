@@ -316,7 +316,7 @@ const styles = StyleSheet.create({
   signOut: { fontFamily: BRAND.fonts.bodyMedium, color: BRAND.colors.inkMuted },
   centered: { alignItems: "center", paddingVertical: 24 },
   mutedText: { fontFamily: BRAND.fonts.body, color: BRAND.colors.inkMuted, fontSize: 13 },
-  errorText: { fontFamily: BRAND.fonts.body, color: "#dc2626" },
+  errorText: { fontFamily: BRAND.fonts.body, color: BRAND.colors.danger },
   earningsBar: {
     borderRadius: BRAND.radiusPill,
     paddingVertical: 14,
