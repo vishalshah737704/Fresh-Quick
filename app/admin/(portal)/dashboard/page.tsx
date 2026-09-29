@@ -105,22 +105,22 @@ export default function AdminDashboardPage() {
 
   return (
     <div>
-      <h1 className="mb-4 font-heading text-2xl text-brand-ink">Dashboard</h1>
+      <div className="mb-4 rounded-[var(--radius-card)] bg-brand-ink px-4 py-3">
+        <h1 className="font-heading text-2xl text-white">Dashboard</h1>
+      </div>
 
-      <div className="mb-6 rounded-[var(--radius-card)] bg-brand-surface p-4">
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <div className="rounded-[var(--radius-card)] bg-brand-bg p-4">
-            <p className="text-sm text-brand-ink-muted">Active orders</p>
-            <p className="font-heading text-3xl text-brand-primary">{activeOrdersCount}</p>
-          </div>
-          <div className="rounded-[var(--radius-card)] bg-brand-bg p-4">
-            <p className="text-sm text-brand-ink-muted">Vendors</p>
-            <p className="font-heading text-3xl text-brand-ink">{restaurants.length}</p>
-          </div>
-          <div className="rounded-[var(--radius-card)] bg-brand-bg p-4">
-            <p className="text-sm text-brand-ink-muted">Revenue</p>
-            <p className="font-heading text-3xl text-brand-accent">₹{revenue.toFixed(2)}</p>
-          </div>
+      <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <div className="rounded-[var(--radius-card)] bg-brand-primary p-4">
+          <p className="text-sm text-white/80">Active orders</p>
+          <p className="font-heading text-3xl text-white">{activeOrdersCount}</p>
+        </div>
+        <div className="rounded-[var(--radius-card)] bg-brand-ink p-4">
+          <p className="text-sm text-white/80">Vendors</p>
+          <p className="font-heading text-3xl text-white">{restaurants.length}</p>
+        </div>
+        <div className="rounded-[var(--radius-card)] bg-brand-accent p-4">
+          <p className="text-sm text-white/80">Revenue</p>
+          <p className="font-heading text-3xl text-white">₹{revenue.toFixed(2)}</p>
         </div>
       </div>
 
