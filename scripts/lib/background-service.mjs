@@ -14,6 +14,12 @@ export function logsDir(root) {
   return dir;
 }
 
+// Escapes a value for safe use inside a PowerShell single-quoted string
+// (the only special case is doubling an embedded single quote).
+function psQuote(value) {
+  return `'${String(value).replace(/'/g, "''")}'`;
+}
+
 /**
  * @param {string} title Window title, and log file base name.
  * @param {string} command Shell command to run (e.g. "npm run dev -- -p 3000").
@@ -22,30 +28,33 @@ export function logsDir(root) {
  */
 export function startBackgroundService(title, command, logPath, opts = {}) {
   mkdirSync(dirname(logPath), { recursive: true });
-  const out = openSync(logPath, "w");
+  const cwd = opts.cwd ?? process.cwd();
 
-  // The service itself: detached + unref'd so it outlives this script and
-  // is not a child of whatever window we open next to view its logs.
-  // windowsHide is required on Windows -- without it, a detached child
-  // gets its OWN visible console window from the OS regardless of the
-  // stdio redirection below, so its real output goes there instead of
-  // the log file, leaving the log-viewer window blank.
-  const child = spawn(command, {
-    shell: true,
-    detached: true,
-    windowsHide: true,
-    stdio: ["ignore", out, out],
-    cwd: opts.cwd,
-  });
-  child.unref();
-
-  // The viewer: just tails the log file. Its own lifecycle is completely
-  // independent of the service process above -- closing this window has
-  // no effect on `child`.
   if (process.platform === "win32") {
-    // A plain `Get-Content -Wait` hard-errors and exits if the file is
-    // deleted/rotated while being watched -- wrap it in a retry loop so
-    // the viewer window survives that instead of dying with a red error.
+    // Node's own spawn({ detached: true, windowsHide: true }) isn't
+    // reliable here: commands like "npm run dev" spawn several nested
+    // layers (npm -> node -> next -> Turbopack workers) and one of those
+    // inner layers can still allocate its own visible console regardless
+    // of the top-level windowsHide flag. PowerShell's
+    // Start-Process -WindowStyle Hidden reliably suppresses the console
+    // for the whole process tree it launches, and genuinely detaches it
+    // from the launching shell (closing that shell does not stop it).
+    // cmd does its own `>` redirection to the log file rather than
+    // relying on Node's stdio plumbing, since Start-Process's own
+    // -RedirectStandardOutput/-RedirectStandardError can't both target
+    // the same file.
+    // Parenthesize so `>` redirects the WHOLE command, not just its last
+    // `&&`-chained segment -- cmd.exe's redirection binds to the final
+    // segment otherwise, silently dropping earlier segments' output.
+    const cmdLine = `(${command}) > ${logPath} 2>&1`;
+    const psStart =
+      `Start-Process -FilePath cmd.exe -ArgumentList '/c', ${psQuote(cmdLine)} ` +
+      `-WorkingDirectory ${psQuote(cwd)} -WindowStyle Hidden`;
+    spawnSync("powershell", ["-NoProfile", "-Command", psStart], {
+      stdio: "inherit",
+      windowsHide: true,
+    });
+
     const psTail =
       `while ($true) { ` +
       `if (Test-Path '${logPath}') { Get-Content -Path '${logPath}' -Wait -Tail 100 } ` +
@@ -55,6 +64,15 @@ export function startBackgroundService(title, command, logPath, opts = {}) {
       shell: true,
     });
   } else {
+    const out = openSync(logPath, "w");
+    const child = spawn(command, {
+      shell: true,
+      detached: true,
+      stdio: ["ignore", out, out],
+      cwd,
+    });
+    child.unref();
+
     const tailCmd = `tail -n 100 -f '${logPath}'`;
     const viewer = spawn(
       "bash",
@@ -65,5 +83,4 @@ export function startBackgroundService(title, command, logPath, opts = {}) {
   }
 
   console.log(`  ${title}: running in background, log at ${logPath}`);
-  return child;
 }
