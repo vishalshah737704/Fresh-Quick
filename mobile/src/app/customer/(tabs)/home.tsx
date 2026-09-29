@@ -174,29 +174,31 @@ export default function CustomerHomeScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <Pressable
-          style={styles.addressPill}
-          onPress={() =>
-            Alert.alert("Coming soon", "Address selection isn't available in this demo yet.")
-          }
-        >
-          <Ionicons name="location-sharp" size={16} color={BRAND.colors.primary} />
-          <Text style={styles.addressPillText} numberOfLines={1}>
-            Deliver now · Current location
-          </Text>
-          <Ionicons name="chevron-down" size={14} color={BRAND.colors.inkMuted} />
-        </Pressable>
+        <View style={styles.heroSection}>
+          <Pressable
+            style={styles.addressPill}
+            onPress={() =>
+              Alert.alert("Coming soon", "Address selection isn't available in this demo yet.")
+            }
+          >
+            <Ionicons name="location-sharp" size={16} color={BRAND.colors.primary} />
+            <Text style={styles.addressPillText} numberOfLines={1}>
+              Deliver now · Current location
+            </Text>
+            <Ionicons name="chevron-down" size={14} color={BRAND.colors.inkMuted} />
+          </Pressable>
 
-        <View style={styles.searchWrap}>
-          <View style={styles.searchInputWrap}>
-            <Ionicons name="search" size={18} color={BRAND.colors.inkMuted} />
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Search restaurants or dishes"
-              placeholderTextColor={BRAND.colors.inkMuted}
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-            />
+          <View style={styles.searchWrap}>
+            <View style={styles.searchInputWrap}>
+              <Ionicons name="search" size={18} color={BRAND.colors.inkMuted} />
+              <TextInput
+                style={styles.searchInput}
+                placeholder="Search restaurants or dishes"
+                placeholderTextColor={BRAND.colors.inkMuted}
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+              />
+            </View>
           </View>
         </View>
 
@@ -359,6 +361,10 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingBottom: 120,
+  },
+  heroSection: {
+    backgroundColor: BRAND.colors.primaryTint,
+    paddingBottom: 8,
   },
   center: {
     flex: 1,

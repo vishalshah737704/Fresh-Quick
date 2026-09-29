@@ -118,7 +118,7 @@ export function ItemCustomizationModal({
               <Text style={styles.close}>✕</Text>
             </Pressable>
           </View>
-          <ScrollView style={{ maxHeight: 380 }}>
+          <ScrollView style={styles.optionsScrollArea}>
             {optionGroups.map((group) => (
               <View key={group.id} style={styles.group}>
                 <View style={styles.groupHeader}>
@@ -228,6 +228,12 @@ const styles = StyleSheet.create({
   close: {
     fontSize: 18,
     color: BRAND.colors.inkMuted,
+  },
+  optionsScrollArea: {
+    maxHeight: 380,
+    backgroundColor: BRAND.colors.primaryTint,
+    borderRadius: 12,
+    padding: 8,
   },
   group: {
     marginBottom: 16,

@@ -116,6 +116,7 @@ export default function CartScreen() {
         data={items}
         keyExtractor={(i) => i.lineId}
         renderItem={renderItem}
+        style={styles.itemsScrollArea}
         contentContainerStyle={styles.listContent}
         ListFooterComponent={
           <View style={styles.orderNoteWrap}>
@@ -287,6 +288,9 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: BRAND.colors.surface + "d9",
     marginTop: 2,
+  },
+  itemsScrollArea: {
+    backgroundColor: BRAND.colors.accentTint,
   },
   listContent: {
     padding: 16,

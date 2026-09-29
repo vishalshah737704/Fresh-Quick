@@ -253,55 +253,57 @@ export default function StoreDetailScreen() {
         {menuItems.length === 0 ? (
           <Text style={[styles.mutedText, { paddingHorizontal: 16 }]}>{store.name} has no menu items yet.</Text>
         ) : (
-          groups.map((group) => (
-            <View
-              key={group.key}
-              style={styles.group}
-              onLayout={(e) => {
-                sectionOffsets.current[group.key] = e.nativeEvent.layout.y;
-              }}
-            >
-              <Text style={styles.groupTitle}>{group.label}</Text>
-              {group.items.map((item) => {
-                const canAdd = !isUnavailable && item.is_available;
-                return (
-                  <Pressable
-                    key={item.id}
-                    disabled={!canAdd}
-                    onPress={() => handleItemPress(item)}
-                    style={[styles.item, !canAdd && styles.itemDisabled]}
-                  >
-                    <View style={styles.itemBody}>
-                      <Text style={styles.itemName}>
-                        {item.product_attributes?.is_veg ? "🟢" : "🔴"} {item.name}
-                      </Text>
-                      {item.description && (
-                        <Text style={styles.itemDescription} numberOfLines={2}>
-                          {item.description}
+          <View style={styles.menuListContainer}>
+            {groups.map((group) => (
+              <View
+                key={group.key}
+                style={styles.group}
+                onLayout={(e) => {
+                  sectionOffsets.current[group.key] = e.nativeEvent.layout.y;
+                }}
+              >
+                <Text style={styles.groupTitle}>{group.label}</Text>
+                {group.items.map((item) => {
+                  const canAdd = !isUnavailable && item.is_available;
+                  return (
+                    <Pressable
+                      key={item.id}
+                      disabled={!canAdd}
+                      onPress={() => handleItemPress(item)}
+                      style={[styles.item, !canAdd && styles.itemDisabled]}
+                    >
+                      <View style={styles.itemBody}>
+                        <Text style={styles.itemName}>
+                          {item.product_attributes?.is_veg ? "🟢" : "🔴"} {item.name}
                         </Text>
-                      )}
-                      <Text style={styles.itemPrice}>₹{item.price.toFixed(2)}</Text>
-                      {!canAdd && (
-                        <Text style={styles.itemUnavailable}>
-                          {isUnavailable ? "Restaurant unavailable" : "Currently unavailable"}
-                        </Text>
-                      )}
-                    </View>
-                    <View style={styles.itemImageWrap}>
-                      {item.image_url ? (
-                        <Image source={{ uri: item.image_url }} style={styles.itemImage} />
-                      ) : (
-                        <View style={[styles.itemImage, styles.itemImageFallback]} />
-                      )}
-                      <View style={[styles.addBadge, !canAdd && styles.addBadgeDisabled]}>
-                        <Text style={styles.addBadgeText}>+</Text>
+                        {item.description && (
+                          <Text style={styles.itemDescription} numberOfLines={2}>
+                            {item.description}
+                          </Text>
+                        )}
+                        <Text style={styles.itemPrice}>₹{item.price.toFixed(2)}</Text>
+                        {!canAdd && (
+                          <Text style={styles.itemUnavailable}>
+                            {isUnavailable ? "Restaurant unavailable" : "Currently unavailable"}
+                          </Text>
+                        )}
                       </View>
-                    </View>
-                  </Pressable>
-                );
-              })}
-            </View>
-          ))
+                      <View style={styles.itemImageWrap}>
+                        {item.image_url ? (
+                          <Image source={{ uri: item.image_url }} style={styles.itemImage} />
+                        ) : (
+                          <View style={[styles.itemImage, styles.itemImageFallback]} />
+                        )}
+                        <View style={[styles.addBadge, !canAdd && styles.addBadgeDisabled]}>
+                          <Text style={styles.addBadgeText}>+</Text>
+                        </View>
+                      </View>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            ))}
+          </View>
         )}
       </ScrollView>
 
@@ -435,6 +437,12 @@ const styles = StyleSheet.create({
     fontFamily: BRAND.fonts.body,
     fontSize: 13,
     color: BRAND.colors.danger,
+  },
+  menuListContainer: {
+    backgroundColor: BRAND.colors.accentTint,
+    marginHorizontal: -16,
+    paddingHorizontal: 16,
+    paddingTop: 12,
   },
   group: {
     marginBottom: 16,
