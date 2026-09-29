@@ -44,7 +44,7 @@ export function CartPanel() {
         <p className="text-sm text-white/85">{storeName}</p>
       </div>
 
-      <div className="px-4 py-2">
+      <div className="bg-brand-accent-tint px-4 py-2">
         {items.map((item) => (
           <div key={item.lineId} className="border-b border-brand-ink-muted/10 py-3 last:border-b-0">
             <div className="flex items-start gap-3">
@@ -106,8 +106,8 @@ export function CartPanel() {
         ))}
       </div>
 
-      <div className="border-t border-brand-ink-muted/10 px-4 py-3">
-        <div className="flex flex-col gap-1 text-sm text-brand-ink-muted">
+      <div className="border-t border-brand-ink-muted/10 bg-brand-primary px-4 py-3">
+        <div className="flex flex-col gap-1 text-sm text-white/85">
           <p>Subtotal: ₹{subtotal.toFixed(2)}</p>
           {feeLoading ? (
             <p>Delivery fee: …</p>
@@ -115,15 +115,16 @@ export function CartPanel() {
             <p>Delivery fee: ₹{(deliveryFeePaise / 100).toFixed(2)}</p>
           ) : null}
           {total !== null && (
-            <p className="mt-1 inline-block w-fit rounded-[var(--radius-pill)] bg-brand-primary px-3 py-1 font-semibold text-white">
-              Total: ₹{total.toFixed(2)}
+            <p className="mt-1 flex items-center justify-between text-base font-semibold text-white">
+              <span>Total to pay</span>
+              <span>₹{total.toFixed(2)}</span>
             </p>
           )}
         </div>
         {!isOnCheckoutPage && (
           <Link
             href="/customer/checkout"
-            className="mt-2 block rounded-[var(--radius-pill)] bg-brand-ink px-3 py-2 text-center text-sm font-semibold text-white"
+            className="mt-2 block rounded-[var(--radius-pill)] bg-brand-accent px-3 py-2 text-center text-sm font-semibold text-white"
           >
             Checkout
           </Link>
@@ -131,12 +132,12 @@ export function CartPanel() {
         {isOnCheckoutPage && checkoutHandler && (
           <>
             {checkoutHandler.error && (
-              <p className="mt-2 text-xs text-red-600">{checkoutHandler.error}</p>
+              <p className="mt-2 text-xs text-red-100">{checkoutHandler.error}</p>
             )}
             <button
               disabled={checkoutHandler.submitting || !checkoutHandler.canPlaceOrder}
               onClick={checkoutHandler.onPlaceOrder}
-              className="mt-2 block w-full rounded-[var(--radius-pill)] bg-brand-ink px-3 py-2 text-center text-sm font-semibold text-white disabled:opacity-50"
+              className="mt-2 block w-full rounded-[var(--radius-pill)] bg-brand-accent px-3 py-2 text-center text-sm font-semibold text-white disabled:opacity-50"
             >
               {checkoutHandler.submitting ? "Placing order…" : "Place order"}
             </button>

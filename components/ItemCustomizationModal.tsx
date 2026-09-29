@@ -113,7 +113,7 @@ export function ItemCustomizationModal({
             ✕
           </button>
         </div>
-        <div className="px-4 pt-3">
+        <div className="bg-brand-primary-tint px-4 pt-3">
           <p className="mb-1 text-xs font-medium text-brand-ink-muted">
             {storeName} <span className="mx-1">›</span> {item.name}
           </p>
