@@ -5,18 +5,20 @@
 export const BRAND = {
   name: "Fresh & Quick",
   colors: {
-    primary: "#12140f",
-    accent: "#b6e02e",
-    background: "#faf9f4",
-    surface: "#ffffff",
-    ink: "#12140f",
-    inkMuted: "#6b6b62",
+    primary: "#F5821F",
+    accent: "#1E8A3E",
+    background: "#F4F4F4",
+    surface: "#FFFFFF",
+    ink: "#0B1D3A",
+    inkMuted: "#6B7280",
+    danger: "#E0524D",
   },
   fonts: {
     body: "Inter_400Regular",
     bodyMedium: "Inter_500Medium",
     bodySemiBold: "Inter_600SemiBold",
-    heading: "Poppins_300Light",
+    heading: "Poppins_700Bold",
   },
   radius: 8,
+  radiusPill: 999,
 } as const;

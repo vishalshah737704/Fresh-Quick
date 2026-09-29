@@ -1,7 +1,7 @@
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useFonts, Inter_400Regular, Inter_500Medium, Inter_600SemiBold } from "@expo-google-fonts/inter";
-import { Poppins_300Light } from "@expo-google-fonts/poppins";
+import { Poppins_700Bold } from "@expo-google-fonts/poppins";
 import { View, ActivityIndicator } from "react-native";
 import { BRAND } from "../../theme";
 import { CartProvider } from "../../lib/cart-store";
@@ -11,7 +11,7 @@ export default function RootLayout() {
     Inter_400Regular,
     Inter_500Medium,
     Inter_600SemiBold,
-    Poppins_300Light,
+    Poppins_700Bold,
   });
 
   if (!fontsLoaded) {
