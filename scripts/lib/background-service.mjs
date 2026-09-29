@@ -52,10 +52,18 @@ export function startBackgroundService(title, command, logPath, opts = {}) {
     // Parenthesize so `>` redirects the WHOLE command, not just its last
     // `&&`-chained segment -- cmd.exe's redirection binds to the final
     // segment otherwise, silently dropping earlier segments' output.
+    // Win32_Process::Create escapes the job object, but unlike
+    // Start-Process it has no built-in "hidden" switch -- without an
+    // explicit Win32_ProcessStartup with ShowWindow=0 (SW_HIDE) passed as
+    // ProcessStartupInformation, it allocates a normal VISIBLE console
+    // for cmd.exe, defeating the point of the separate log-viewer window
+    // (confirmed live: an extra "next-server"-titled window appeared
+    // showing raw output alongside the intended viewer).
     const cmdLine = `cmd.exe /c "(${command}) > ${logPath} 2>&1"`;
     const psCreate =
+      `$si = New-CimInstance -ClassName Win32_ProcessStartup -ClientOnly -Property @{ShowWindow=[uint16]0}; ` +
       `$r = Invoke-CimMethod -ClassName Win32_Process -MethodName Create -Arguments @{` +
-      `CommandLine=${psQuote(cmdLine)}; CurrentDirectory=${psQuote(cwd)} }; ` +
+      `CommandLine=${psQuote(cmdLine)}; CurrentDirectory=${psQuote(cwd)}; ProcessStartupInformation=$si }; ` +
       `if ($r.ReturnValue -ne 0) { Write-Host "Failed to start '${title}', Win32_Process.Create returned $($r.ReturnValue)" } ` +
       `else { Write-Host "Started '${title}' as PID $($r.ProcessId), independent of this shell" }`;
     spawnSync("powershell", ["-NoProfile", "-Command", psCreate], {
