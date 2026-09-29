@@ -12,6 +12,9 @@ export const BRAND = {
     ink: "#0B1D3A",
     inkMuted: "#6B7280",
     danger: "#E0524D",
+    primaryTint: "#FFF4E8",
+    accentTint: "#EAF7EE",
+    inkTint: "#E8ECF4",
   },
   fonts: {
     body: "Inter_400Regular",
