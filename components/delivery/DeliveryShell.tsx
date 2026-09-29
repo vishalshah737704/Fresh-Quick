@@ -52,7 +52,14 @@ export default function DeliveryShell({ children }: { children: React.ReactNode 
             Sign out
           </button>
         </aside>
-        <main className="flex-1 bg-brand-bg p-4">{children}</main>
+        <main
+          className="flex-1 p-4"
+          style={{
+            background: "linear-gradient(180deg, var(--color-brand-primary-tint) 0%, #fff 200px)",
+          }}
+        >
+          {children}
+        </main>
       </div>
     </DeliverySessionContext.Provider>
   );

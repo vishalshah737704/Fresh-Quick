@@ -146,7 +146,9 @@ export default function DeliveryDashboardPage() {
 
   return (
     <div>
-      <h1 className="mb-4 font-heading text-2xl text-brand-ink">Dashboard</h1>
+      <div className="mb-4 rounded-[var(--radius-card)] bg-brand-primary px-4 py-3">
+        <h1 className="font-heading text-2xl text-white">Dashboard</h1>
+      </div>
       {error && <p className="mb-2 text-sm text-red-600">{error}</p>}
       <div className="mb-4 flex flex-wrap items-center gap-3 rounded-[var(--radius-card)] bg-brand-ink p-3">
         <button
@@ -180,7 +182,7 @@ export default function DeliveryDashboardPage() {
             {available.map((o) => (
               <li
                 key={o.id}
-                className="flex items-center justify-between rounded-[var(--radius-card)] bg-brand-surface p-3"
+                className="flex items-center justify-between rounded-[var(--radius-card)] border-l-4 border-brand-primary bg-brand-surface p-3"
               >
                 <span>
                   #{o.id.slice(0, 8)} · {o.stores?.name ?? "Restaurant"} · ₹{o.total.toFixed(2)}
@@ -205,7 +207,7 @@ export default function DeliveryDashboardPage() {
             {mine.map((o) => (
               <li
                 key={o.id}
-                className="flex flex-col gap-1 rounded-[var(--radius-card)] bg-brand-surface p-3"
+                className="flex flex-col gap-1 rounded-[var(--radius-card)] border-l-4 border-brand-primary bg-brand-surface p-3"
               >
                 <div className="flex items-center justify-between">
                   <span>
