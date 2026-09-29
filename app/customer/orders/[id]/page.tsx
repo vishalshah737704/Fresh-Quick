@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { useRoleGuard } from "@/lib/auth";
 import { OrderStatusTimeline } from "@/components/OrderStatusTimeline";
 
 type OrderStatus =
@@ -50,12 +51,15 @@ const SHOW_LOCATION_FOR: OrderStatus[] = ["assigned", "picked_up"];
 
 export default function OrderConfirmationPage() {
   const params = useParams<{ id: string }>();
+  const { ready } = useRoleGuard("customer", "/customer/login");
   const [order, setOrder] = useState<OrderView | null>(null);
   const [payment, setPayment] = useState<PaymentView | null>(null);
   const [partnerLocation, setPartnerLocation] = useState<PartnerLocation | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!ready) return;
+
     let cancelled = false;
     let interval: ReturnType<typeof setInterval> | null = null;
 
@@ -106,7 +110,11 @@ export default function OrderConfirmationPage() {
       cancelled = true;
       if (interval) clearInterval(interval);
     };
-  }, [params.id]);
+  }, [ready, params.id]);
+
+  if (!ready) {
+    return <p className="text-gray-500">Loading…</p>;
+  }
 
   if (error) {
     return <p className="text-red-600">Couldn&apos;t load order: {error}</p>;
