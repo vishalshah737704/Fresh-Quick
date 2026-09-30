@@ -312,7 +312,9 @@ See [MEMORY.md](MEMORY.md) for phase-by-phase progress and decisions.
   `Record<T, V>` TypeScript type over the *narrowed* union, not the full
   one, when one value needs special-case handling instead of a mapped
   step.** `OrderStatusTimeline` (customer-flow DoorDash-style polish)
-  maps the 8-value `OrderStatus` union onto 4 display steps, with
+  maps the `OrderStatus` union onto display steps (4 originally; 6 as of
+  order-visibility sub-project A, now in `lib/order-status.ts`, where
+  `rejected` is also a banner case), with
   `cancelled` handled as an early-return special case rather than a
   mapped index. Typing the lookup table as
   `Record<Exclude<OrderStatus, "cancelled">, number>` makes the

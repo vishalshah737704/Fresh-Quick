@@ -2343,6 +2343,66 @@ place with python-docx (no rebuild):
   just the last run. `app:start` right after `app:stop` can hit a
   Supabase health-check timeout; wait for the stop to finish first.
 
+## Order visibility — sub-project A (2026-09-30, branch `order-visibility-a`, not merged)
+
+**What shipped (9 commits, `c27213e`..`84ab367` + this docs commit):** shared
+`lib/order-status.ts` (9-status enum, labels/messages, 6-step timeline
+mapping, typed over the narrowed union) and `lib/order-detail.ts`
+(normalized order view shared by portals); required recipient phone at
+checkout (web + mobile, `lib/phone.ts`, stored `+91XXXXXXXXXX`, migration
+`...26_recipient_phone.sql`; pre-migration rows hold the literal string
+`Not provided`); customer timeline now 6 steps (Placed/Accepted/Preparing/
+Ready/On the way/Delivered) with `rejected` + payment-failed banners;
+shared `OrderDetailView` + guarded `ItemThumb`; customer orders list with
+status pill/thumbnails/total; vendor orders board (New/Accepted/Preparing/
+Ready) with full order details, photos, detail dialog, 10s polling.
+
+**Live verification (local Supabase, dev servers :3000/:3001, n8n :5678):**
+- Checks: node tests 19/19 pass; `tsc --noEmit` clean (web and `mobile/`,
+  mobile type-checked only — no device/simulator run); `npm run build`
+  passes; `npm run lint` fails on 12 files with pre-existing
+  `react-hooks/set-state-in-effect` (+1 `no-unescaped-entities` in
+  `mobile/src/app/index.tsx`) — none introduced here (the one in a branch
+  file, `mobile/src/app/customer/checkout.tsx:145`, is a pre-existing line).
+- Accept -> customer sync: vendor Accept on a new COD order; customer
+  page moved to step 2 "Accepted" / "Restaurant accepted your order"
+  without reload. A psql status change reached the open customer page in
+  ~0.5s. Vendor board showed a newly placed order ~10s after checkout
+  (10s poll). Phone `98765 43210` -> `+919876543210` on customer detail
+  (tappable `tel:`), vendor card, and dialog (`tel:+919876543210`). A
+  pre-migration order shows `Not provided` as plain text. Payment-failed
+  (psql) shows the red "Payment failed..." message; vendor Reject shows
+  the red banner with refund wording and payment `refunded`. `orders.
+  delivery_address_id` and `recipient_phone` are NOT NULL, so the
+  null-address check was skipped. Review Focus 5 (line totals with
+  options) NOT testable: the local DB has no option groups and no order
+  with options.
+- Vendor board looks right at 1440px and 390px; dialog fine at 390px.
+
+**Defects / gaps found (not fixed):**
+1. `components/OrderStatusTimeline.tsx`: at 390px the 6-step `<ol>` needs
+   ~376px inside a ~295px card, so the last step ("Delivered") is clipped
+   and `main` scrolls sideways (`flex-1` steps with fixed `w-14` columns
+   can't shrink). Needs tighter columns/labels below `sm`.
+2. n8n workflow 03 as imported in the local n8n instance is STALE: it has
+   3 nodes (webhook, filter, placeholder) while
+   `n8n/workflows/03-restaurant-status-change.json` has 6 incl. the
+   "Gmail: Send Order Accepted Email" branch. Executions 287/288 ran and
+   succeeded but never reached any email node, so the accept email is NOT
+   confirmed working. Re-import workflow 03 and re-test.
+3. Minor UI: rejected order shows the same sentence twice (banner + message
+   line); vendor detail dialog stays open after Accept/Reject (it does
+   refresh live to the new status).
+4. Mobile `lib/order-status.ts` still has the 4-step mapping until
+   sub-project D.
+5. Playwright real mouse clicks did not register on the customer tab in
+   this session (DOM `.click()` worked); app behavior itself was fine.
+
+**Leftover local test data:** orders `dfed303f` (cancelled, payment set to
+`failed` by hand), `98974198` (rejected, refunded) plus earlier-task
+orders `c2f2d0cd`, `a30777de` (accepted), all Dosa Corner. Also ran a
+production `npm run build` while dev servers were running.
+
 ## External API keys in use
 
 - `PEXELS_API_KEY` — Pexels Search API, used once (not at runtime) to fetch

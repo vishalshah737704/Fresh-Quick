@@ -42,14 +42,14 @@ first (`/customer/login`, a re-skinned card — same email/password flow,
 account created locally). Checkout is a single-page, two-column layout
 (address + payment method as selectable cards on the left, a sticky
 order-summary card with the place-order button on the right). Checkout
-also collects a recipient name/email and payment-method-specific fields
+also collects a recipient name/email/phone (phone is required, stored as `+91XXXXXXXXXX`) and payment-method-specific fields
 (card number/expiry/name for card, a UPI ID for UPI; nothing extra for
 Cash on Delivery) — the Place Order button stays disabled until these
 validate. Complete checkout with any mock payment method ("Cash on
 Delivery" always succeeds; card/UPI resolve randomly ~80% success) to
-land on the order confirmation page, which now shows a 4-step status
-timeline (Placed/Preparing/On the way/Delivered) instead of a plain text
-line, plus a bordered coordinate box in place of a live map once a
+land on the order confirmation page, which now shows a 6-step status
+timeline (Placed/Accepted/Preparing/Ready/On the way/Delivered) plus the
+items, address, phone and totals instead of a plain text line, plus a bordered coordinate box in place of a live map once a
 delivery partner is assigned (no Google Maps key yet). Placing an order
 resolves its payment via a local n8n workflow if one is running
 (typically ~1-3s); if no local n8n instance is running — the default
