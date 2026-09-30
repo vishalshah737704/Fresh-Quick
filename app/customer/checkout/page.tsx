@@ -8,6 +8,7 @@ import { useSession } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
 import { useDeliveryFee } from "@/lib/use-delivery-fee";
 import { validateCardFields, validateUpiFields, validateRecipientEmail } from "@/lib/payment-fields";
+import { validateRecipientPhone } from "@/lib/phone";
 
 // Spec requires every checkout field blank on every visit — never seed the
 // form from AddressProvider's deliveryDetails, which survives client-side
@@ -39,6 +40,7 @@ export default function CheckoutPage() {
   const { deliveryFeePaise, error: feeLoadError } = useDeliveryFee(storeId);
   const [recipientName, setRecipientName] = useState("");
   const [recipientEmail, setRecipientEmail] = useState("");
+  const [recipientPhone, setRecipientPhone] = useState("");
   const [cardNumber, setCardNumber] = useState("");
   const [cardExpiry, setCardExpiry] = useState("");
   const [cardholderName, setCardholderName] = useState("");
@@ -71,6 +73,7 @@ export default function CheckoutPage() {
 
   const recipientNameError = recipientName.trim().length === 0 ? "Name is required" : null;
   const recipientEmailError = validateRecipientEmail(recipientEmail);
+  const recipientPhoneError = validateRecipientPhone(recipientPhone);
   const paymentFieldError =
     paymentMethod === "mock_card"
       ? validateCardFields({ cardNumber, expiry: cardExpiry, cardholderName })
@@ -88,6 +91,7 @@ export default function CheckoutPage() {
     total !== null &&
     !recipientNameError &&
     !recipientEmailError &&
+    !recipientPhoneError &&
     !paymentFieldError &&
     !addressFieldError;
 
@@ -131,6 +135,7 @@ export default function CheckoutPage() {
           deliveryNote: orderNote.trim() === "" ? null : orderNote,
           recipientName: recipientName.trim(),
           recipientEmail: recipientEmail.trim(),
+          recipientPhone: recipientPhone.trim(),
           cardFields: paymentMethod === "mock_card" ? { cardNumber, expiry: cardExpiry, cardholderName } : undefined,
           upiFields: paymentMethod === "mock_upi" ? { upiId } : undefined,
         }),
@@ -174,6 +179,7 @@ export default function CheckoutPage() {
     paymentMethod,
     recipientName,
     recipientEmail,
+    recipientPhone,
     cardNumber,
     cardExpiry,
     cardholderName,
@@ -251,6 +257,24 @@ export default function CheckoutPage() {
                 }`}
                 placeholder="Where should order updates go?"
               />
+            </div>
+            <div>
+              <label className="mb-1 block text-sm font-medium text-brand-ink">Phone</label>
+              <input
+                type="tel"
+                inputMode="tel"
+                value={recipientPhone}
+                onChange={(e) => setRecipientPhone(e.target.value)}
+                className={`w-full rounded border px-3 py-2 text-sm ${
+                  recipientPhone
+                    ? "border-brand-ink-muted/15"
+                    : "border-brand-primary/30 bg-brand-primary-tint"
+                }`}
+                placeholder="10-digit mobile number"
+              />
+              {recipientPhone && recipientPhoneError && (
+                <p className="mt-1 text-xs text-red-600">{recipientPhoneError}</p>
+              )}
             </div>
           </div>
         </section>

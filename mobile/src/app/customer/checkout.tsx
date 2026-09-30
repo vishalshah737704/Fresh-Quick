@@ -15,6 +15,7 @@ import { apiFetch, ApiError } from "../../../lib/api";
 import { useCart } from "../../../lib/cart-store";
 import { BRAND } from "../../../theme";
 import { useRequireSession } from "../../../lib/use-require-session";
+import { validateRecipientPhone } from "../../../lib/phone";
 
 type PaymentMethod = "mock_card" | "mock_upi" | "mock_cod";
 
@@ -96,6 +97,7 @@ export default function CheckoutScreen() {
 
   const [recipientName, setRecipientName] = useState("");
   const [recipientEmail, setRecipientEmail] = useState("");
+  const [recipientPhone, setRecipientPhone] = useState("");
   const [line1, setLine1] = useState("");
   const [line2, setLine2] = useState("");
   const [city, setCity] = useState("");
@@ -200,6 +202,7 @@ export default function CheckoutScreen() {
 
   const recipientNameError = recipientName.trim().length === 0 ? "Name is required" : null;
   const recipientEmailError = validateEmail(recipientEmail);
+  const recipientPhoneError = validateRecipientPhone(recipientPhone);
   const paymentFieldError =
     paymentMethod === "mock_card"
       ? validateCard(cardNumber, cardExpiry, cardholderName)
@@ -211,7 +214,7 @@ export default function CheckoutScreen() {
       ? "Address 1, City, State, and Pincode are required"
       : null;
   const canPlaceOrder =
-    !recipientNameError && !recipientEmailError && !paymentFieldError && !addressFieldError && !submitting;
+    !recipientNameError && !recipientEmailError && !recipientPhoneError && !paymentFieldError && !addressFieldError && !submitting;
 
   const addressSummary =
     line1.trim().length > 0
@@ -255,6 +258,7 @@ export default function CheckoutScreen() {
             deliveryNote: orderNote.trim() === "" ? null : orderNote,
             recipientName: recipientName.trim(),
             recipientEmail: recipientEmail.trim(),
+            recipientPhone: recipientPhone.trim(),
             cardFields: paymentMethod === "mock_card" ? { cardNumber, expiry: cardExpiry, cardholderName } : undefined,
             upiFields: paymentMethod === "mock_upi" ? { upiId } : undefined,
           },
@@ -292,6 +296,17 @@ export default function CheckoutScreen() {
             keyboardType="email-address"
             autoCapitalize="none"
           />
+          <Text style={styles.label}>Phone</Text>
+          <TextInput
+            style={styles.input}
+            value={recipientPhone}
+            onChangeText={setRecipientPhone}
+            keyboardType="phone-pad"
+            placeholder="10-digit mobile number"
+          />
+          {recipientPhone.length > 0 && recipientPhoneError && (
+            <Text style={styles.errorText}>{recipientPhoneError}</Text>
+          )}
         </View>
 
         <CheckoutRow

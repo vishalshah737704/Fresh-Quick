@@ -10,6 +10,7 @@ import {
   type UpiFields,
 } from "@/lib/payment-fields";
 import { applyPaymentResult } from "@/lib/mock-payment";
+import { validateRecipientPhone, normalizeIndianMobile } from "@/lib/phone";
 
 type CheckoutRequestItem = {
   productId: string;
@@ -40,6 +41,7 @@ export async function POST(request: NextRequest) {
     deliveryNote,
     recipientName,
     recipientEmail,
+    recipientPhone,
     cardFields,
     upiFields,
   }: {
@@ -60,6 +62,7 @@ export async function POST(request: NextRequest) {
     deliveryNote?: string | null;
     recipientName: string;
     recipientEmail: string;
+    recipientPhone: string;
     cardFields?: CardFields;
     upiFields?: UpiFields;
   } = body;
@@ -149,6 +152,11 @@ export async function POST(request: NextRequest) {
   if (emailError) {
     return NextResponse.json({ error: emailError }, { status: 400 });
   }
+  const phoneError = validateRecipientPhone(typeof recipientPhone === "string" ? recipientPhone : "");
+  if (phoneError) {
+    return NextResponse.json({ error: phoneError }, { status: 400 });
+  }
+  const normalizedRecipientPhone = normalizeIndianMobile(recipientPhone) as string;
 
   let paymentFieldError: string | null = null;
   if (paymentMethod === "mock_card") {
@@ -310,6 +318,7 @@ export async function POST(request: NextRequest) {
     p_customer_id: customerId,
     p_recipient_name: normalizedRecipientName,
     p_recipient_email: recipientEmail.trim(),
+    p_recipient_phone: normalizedRecipientPhone,
     p_address_label: deliveryAddress.label,
     p_address_line1: deliveryAddress.line1,
     p_address_line2: deliveryAddress.line2 ?? null,
