@@ -1,28 +1,4 @@
-type OrderStatus =
-  | "placed"
-  | "accepted"
-  | "preparing"
-  | "ready"
-  | "assigned"
-  | "picked_up"
-  | "delivered"
-  | "cancelled"
-  | "rejected";
-
-const STEPS = ["Placed", "Preparing", "On the way", "Delivered"] as const;
-
-// Total mapping across all real order statuses onto the 4 display steps.
-// Every OrderStatus value except "cancelled"/"rejected" (both early-return
-// below) appears on the right-hand side exactly once via one of these keys.
-const STEP_INDEX: Record<Exclude<OrderStatus, "cancelled" | "rejected">, number> = {
-  placed: 0,
-  accepted: 0,
-  preparing: 1,
-  ready: 1,
-  assigned: 2,
-  picked_up: 2,
-  delivered: 3,
-};
+import { TIMELINE_STEPS, TIMELINE_STEP_INDEX, type OrderStatus } from "@/lib/order-status";
 
 export function OrderStatusTimeline({ status }: { status: OrderStatus }) {
   if (status === "cancelled") {
@@ -40,16 +16,16 @@ export function OrderStatusTimeline({ status }: { status: OrderStatus }) {
     );
   }
 
-  const currentIndex = STEP_INDEX[status];
+  const currentIndex = TIMELINE_STEP_INDEX[status];
 
   return (
-    <ol className="flex items-center gap-2">
-      {STEPS.map((label, index) => {
+    <ol className="flex items-start gap-1">
+      {TIMELINE_STEPS.map((label, index) => {
         const complete = index < currentIndex;
         const active = index === currentIndex;
         return (
-          <li key={label} className="flex flex-1 items-center gap-2 last:flex-none">
-            <div className="flex flex-col items-center gap-1">
+          <li key={label} className="flex flex-1 items-start gap-1 last:flex-none">
+            <div className="flex w-14 flex-col items-center gap-1 text-center sm:w-16">
               <div
                 className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold ${
                   complete
@@ -62,16 +38,16 @@ export function OrderStatusTimeline({ status }: { status: OrderStatus }) {
                 {complete ? "✓" : index + 1}
               </div>
               <span
-                className={`text-xs ${
+                className={`text-[11px] leading-tight sm:text-xs ${
                   active ? "font-semibold text-brand-ink" : "text-brand-ink-muted"
                 }`}
               >
                 {label}
               </span>
             </div>
-            {index < STEPS.length - 1 && (
+            {index < TIMELINE_STEPS.length - 1 && (
               <div
-                className={`h-0.5 flex-1 ${
+                className={`mt-3.5 h-0.5 flex-1 ${
                   complete ? "bg-brand-accent" : "bg-brand-ink-muted/20"
                 }`}
               />
