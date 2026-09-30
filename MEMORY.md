@@ -2302,6 +2302,47 @@ branch fast-forwardable, no `origin/main` divergence):
   pushed to `origin` — push needs a separate go-ahead (or the "Commit
   Work" standing phrase) per this file's standing rule.
 
+## Manuals refreshed for the Figma-kit redesign + follow-on (2026-09-29)
+
+`docs/User_Manual.docx`/`.pdf` (v2.0, 39 pages) and
+`docs/Mobile_App_User_Manual.docx`/`.pdf` (v3.0, 18 pages) updated in
+place with python-docx (no rebuild):
+
+- **Web**: all 20 portal screenshots retaken (1280x800, production
+  build on :3000 so no Next dev badge) from one real Cash-on-Delivery
+  order driven through customer → vendor → delivery → admin; new "1.4
+  What's New" section, startup-signs-you-out note in 2.2, My Profile /
+  Reset password in the Account Menu (3.7) and the vendor/delivery/admin
+  sidebars, new Figure 3.5a (cart-conflict dialog), delivery/admin
+  section text corrected from "top bar" to the sidebar layout, admin
+  summary tiles described.
+- **Mobile**: the 5 customer wireframes (Home, Store, Cart, Checkout,
+  Tracking) replaced with real frames pulled from Vishal's screen
+  recording (`docs/ScreenRecording_09-29-2026 21-46-18_1.MP4`, 1290x2796,
+  ~7.4 min, extracted with opencv); added Login, Delivered frames; Account
+  and Delivery Partner sections still show v2.0 wireframes, labelled as
+  such, because the recording didn't cover them.
+- **Open issues found via the recording, not fixed**: mobile stack
+  headers show raw Expo Router route names (`customer/(tabs)`,
+  `customer/checkout`, `customer/orders/[id]`) instead of proper
+  titles. The recording also showed Vishal's real email/address on the
+  checkout screen — both were blurred in the mobile manual's checkout
+  frame before commit, and orphaned image parts (which python-docx
+  leaves inside the .docx zip after a drawing is removed, including the
+  unblurred frame) were dropped from both docx files' relationships.
+  Any future manual edit that swaps a screenshot must do the same
+  orphan-relationship cleanup before committing anything containing
+  personal data.
+- **Process gotchas**: `%TEMP%\claude\manual-build\build.js` (the original
+  docx-js script) has drifted from the shipped docx (extra figures, the
+  hand-made static TOC) — don't regenerate from it; edit the docx in
+  place. Both manuals' TOCs are static lists (page numbers typed by
+  hand): after any edit, convert to PDF with LibreOffice, find each
+  chapter's start page, and rewrite the numbers — some TOC lines split
+  the number across two runs, so replace everything after the tab, not
+  just the last run. `app:start` right after `app:stop` can hit a
+  Supabase health-check timeout; wait for the stop to finish first.
+
 ## External API keys in use
 
 - `PEXELS_API_KEY` — Pexels Search API, used once (not at runtime) to fetch

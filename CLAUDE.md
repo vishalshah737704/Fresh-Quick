@@ -561,6 +561,16 @@ See [MEMORY.md](MEMORY.md) for phase-by-phase progress and decisions.
   this way or programmatically resolve the field before converting to
   PDF — never ship a bare TOC field as the final PDF deliverable.
 
+- **Update `docs/User_Manual.docx` / `Mobile_App_User_Manual.docx` by
+  editing the existing file in place (python-docx), never by re-running
+  the old `build.js`** — it no longer matches the shipped docx, and both
+  manuals use hand-typed static TOCs that must be renumbered after every
+  edit (convert to PDF, read each chapter's start page, then replace the
+  whole text after the tab in each TOC line — some lines split the page
+  number across two runs). Screenshot the web app from a production
+  build (`node scripts/start.mjs --skip-mobile`), not `next dev`, so no
+  dev badge appears. See MEMORY.md's "Manuals refreshed" entry.
+
 ## Standing phrase: "Commit Work" — NON-NEGOTIABLE
 
 When Vishal says **"Commit Work"** in this project, perform these three
