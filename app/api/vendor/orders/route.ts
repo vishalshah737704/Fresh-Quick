@@ -16,6 +16,7 @@ export async function GET(request: NextRequest) {
     .from("orders")
     .select(ORDER_DETAIL_SELECT)
     .eq("store_id", resolved.storeId)
+    .in("status", ["placed", "accepted", "preparing", "ready"])
     .order("placed_at", { ascending: false });
   if (error) {
     return NextResponse.json({ error: "Failed to load orders" }, { status: 500 });

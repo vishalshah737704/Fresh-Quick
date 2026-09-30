@@ -32,6 +32,9 @@ export function VendorOrderCard({
       <div className="rounded-lg bg-brand-primary-tint p-2 text-base">
         <p className="font-semibold text-brand-ink">For: {order.recipientName}</p>
         <p className="text-brand-ink-muted">Phone: {order.recipientPhone}</p>
+        <p className="text-brand-ink-muted">
+          Payment: {order.payment ? `${order.payment.status} (${order.payment.method})` : "—"}
+        </p>
         {order.address ? (
           <p className="text-brand-ink-muted">{order.address.lines.join(", ")}</p>
         ) : (

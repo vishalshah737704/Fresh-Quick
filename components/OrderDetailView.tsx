@@ -44,8 +44,8 @@ export function OrderDetailView({
         {order.address ? (
           <div className="mt-2 text-sm">
             {order.address.label && <p className="font-medium">{order.address.label}</p>}
-            {order.address.lines.map((line) => (
-              <p key={line}>{line}</p>
+            {order.address.lines.map((line, index) => (
+              <p key={`${index}-${line}`}>{line}</p>
             ))}
           </div>
         ) : (

@@ -48,6 +48,7 @@ export default function OrderConfirmationPage() {
       }
       const detail = normalizeOrderDetail(data as unknown as RawOrderDetail);
       setOrder(detail);
+      setError(null);
 
       // Stop polling if order reached a terminal status
       if (isTerminalStatus(detail.status) && interval) clearInterval(interval);
