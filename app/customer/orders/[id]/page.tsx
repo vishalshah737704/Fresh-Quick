@@ -5,29 +5,14 @@ import { useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useRoleGuard } from "@/lib/auth";
 import { OrderStatusTimeline } from "@/components/OrderStatusTimeline";
-
-type OrderStatus =
-  | "placed"
-  | "accepted"
-  | "preparing"
-  | "ready"
-  | "assigned"
-  | "picked_up"
-  | "delivered"
-  | "cancelled"
-  | "rejected";
-
-type OrderView = {
-  id: string;
-  status: OrderStatus;
-  total: number;
-  delivery_partner_id: string | null;
-};
-
-type PaymentView = {
-  status: "pending" | "success" | "failed" | "refunded";
-  method: string;
-};
+import { OrderDetailView } from "@/components/OrderDetailView";
+import {
+  ORDER_DETAIL_SELECT,
+  normalizeOrderDetail,
+  type OrderDetail,
+  type RawOrderDetail,
+} from "@/lib/order-detail";
+import { STATUS_MESSAGE, isTerminalStatus } from "@/lib/order-status";
 
 type PartnerLocation = {
   current_lat: number | null;
@@ -35,25 +20,12 @@ type PartnerLocation = {
   last_ping_at: string | null;
 };
 
-const STATUS_LABEL: Record<OrderStatus, string> = {
-  placed: "Order placed — waiting for restaurant",
-  accepted: "Restaurant accepted your order",
-  preparing: "Restaurant is preparing your order",
-  ready: "Order ready for pickup",
-  assigned: "Delivery partner assigned",
-  picked_up: "Order picked up — on the way",
-  delivered: "Delivered",
-  cancelled: "Order cancelled",
-  rejected: "Restaurant rejected your order — payment refunded",
-};
-
-const SHOW_LOCATION_FOR: OrderStatus[] = ["assigned", "picked_up"];
+const SHOW_LOCATION_FOR = ["assigned", "picked_up"];
 
 export default function OrderConfirmationPage() {
   const params = useParams<{ id: string }>();
   const { ready } = useRoleGuard("customer", "/customer/login");
-  const [order, setOrder] = useState<OrderView | null>(null);
-  const [payment, setPayment] = useState<PaymentView | null>(null);
+  const [order, setOrder] = useState<OrderDetail | null>(null);
   const [partnerLocation, setPartnerLocation] = useState<PartnerLocation | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -63,40 +35,28 @@ export default function OrderConfirmationPage() {
     let cancelled = false;
     let interval: ReturnType<typeof setInterval> | null = null;
 
-    const TERMINAL_STATUSES: OrderStatus[] = ["delivered", "cancelled", "rejected"];
-
     async function load() {
-      const [{ data: o, error: oErr }, { data: p, error: pErr }] =
-        await Promise.all([
-          supabase
-            .from("orders")
-            .select("id, status, total, delivery_partner_id")
-            .eq("id", params.id)
-            .single(),
-          supabase
-            .from("payments")
-            .select("status, method")
-            .eq("order_id", params.id)
-            .single(),
-        ]);
+      const { data, error: loadError } = await supabase
+        .from("orders")
+        .select(ORDER_DETAIL_SELECT)
+        .eq("id", params.id)
+        .single();
       if (cancelled) return;
-      if (oErr || pErr) {
-        setError((oErr ?? pErr)?.message ?? "Failed to load order");
+      if (loadError || !data) {
+        setError(loadError?.message ?? "Failed to load order");
         return;
       }
-      setOrder(o);
-      setPayment(p);
+      const detail = normalizeOrderDetail(data as unknown as RawOrderDetail);
+      setOrder(detail);
 
       // Stop polling if order reached a terminal status
-      if (TERMINAL_STATUSES.includes(o.status)) {
-        if (interval) clearInterval(interval);
-      }
+      if (isTerminalStatus(detail.status) && interval) clearInterval(interval);
 
-      if (o.delivery_partner_id && SHOW_LOCATION_FOR.includes(o.status)) {
+      if (detail.deliveryPartnerId && SHOW_LOCATION_FOR.includes(detail.status)) {
         const { data: loc } = await supabase
           .from("delivery_partners")
           .select("current_lat, current_lng, last_ping_at")
-          .eq("user_id", o.delivery_partner_id)
+          .eq("user_id", detail.deliveryPartnerId)
           .single();
         if (!cancelled) setPartnerLocation(loc ?? null);
       } else if (!cancelled) {
@@ -120,22 +80,24 @@ export default function OrderConfirmationPage() {
     return <p className="text-red-600">Couldn&apos;t load order: {error}</p>;
   }
 
-  if (!order || !payment) {
+  if (!order) {
     return <p className="text-gray-500">Loading order…</p>;
   }
+
+  const paymentFailed = order.payment?.status === "failed";
 
   return (
     <div className="-m-4 flex flex-col gap-6 bg-brand-bg pb-6">
       <div className="flex flex-col items-center gap-2 bg-brand-ink px-6 pb-14 pt-8 text-center">
         <span className="text-3xl">
-          {payment.status === "failed" || order.status === "cancelled" || order.status === "rejected"
+          {paymentFailed || order.status === "cancelled" || order.status === "rejected"
             ? "ℹ️"
             : "✅"}
         </span>
         <h1 className="text-2xl font-bold text-white">Order #{order.id.slice(0, 8)}</h1>
       </div>
       <div className="flex flex-col gap-6 px-6">
-        {payment.status === "failed" ? (
+        {paymentFailed ? (
           <p className="text-red-600">
             Payment failed. Your order was not placed — please try checking out
             again.
@@ -144,7 +106,7 @@ export default function OrderConfirmationPage() {
           <>
             <section className="-mt-14 rounded-[var(--radius-card)] bg-brand-surface p-4 shadow-lg">
               <OrderStatusTimeline status={order.status} />
-              <p className="mt-3 text-sm text-brand-ink-muted">{STATUS_LABEL[order.status]}</p>
+              <p className="mt-3 text-sm text-brand-ink-muted">{STATUS_MESSAGE[order.status]}</p>
             </section>
 
             {partnerLocation?.current_lat != null && partnerLocation?.current_lng != null && (
@@ -164,18 +126,7 @@ export default function OrderConfirmationPage() {
               </div>
             )}
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="rounded-[var(--radius-card)] bg-brand-accent-tint p-4">
-                <p className="text-xs font-medium text-brand-accent">Total</p>
-                <p className="mt-1 text-lg font-semibold text-brand-ink">₹{order.total.toFixed(2)}</p>
-              </div>
-              <div className="rounded-[var(--radius-card)] bg-brand-primary-tint p-4">
-                <p className="text-xs font-medium text-brand-primary">Payment</p>
-                <p className="mt-1 text-lg font-semibold text-brand-ink">
-                  {payment.status} ({payment.method})
-                </p>
-              </div>
-            </div>
+            <OrderDetailView order={order} />
           </>
         )}
       </div>
