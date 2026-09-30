@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import type { OrderDetail } from "@/lib/order-detail";
 import { VendorOrderCard } from "@/components/vendor/VendorOrderCard";
@@ -42,30 +42,50 @@ export default function VendorOrdersPage() {
   const [error, setError] = useState<string | null>(null);
   const [openOrderId, setOpenOrderId] = useState<string | null>(null);
 
+  const [busyOrderIds, setBusyOrderIds] = useState<Set<string>>(new Set());
+  const inFlight = useRef<Set<string>>(new Set());
+
   const loadOrders = useCallback(async () => {
-    const res = await fetch("/api/vendor/orders", { headers: await authHeader() });
-    const body = await res.json();
-    if (res.ok) setOrders(body.orders);
+    try {
+      const res = await fetch("/api/vendor/orders", { headers: await authHeader() });
+      const body = await res.json().catch(() => null);
+      if (res.ok && body) setOrders(body.orders);
+    } catch {
+      // Background poll: a network error just means we try again on the next tick.
+    }
   }, []);
 
   useEffect(() => {
-    loadOrders();
+    const first = setTimeout(loadOrders, 0);
     const interval = setInterval(loadOrders, POLL_MS);
-    return () => clearInterval(interval);
+    return () => {
+      clearTimeout(first);
+      clearInterval(interval);
+    };
   }, [loadOrders]);
 
   async function act(orderId: string, path: "status" | "reject", failure: string) {
+    if (inFlight.current.has(orderId)) return;
+    inFlight.current.add(orderId);
+    setBusyOrderIds(new Set(inFlight.current));
     setError(null);
-    const res = await fetch(`/api/vendor/orders/${orderId}/${path}`, {
-      method: "POST",
-      headers: await authHeader(),
-    });
-    if (!res.ok) {
-      const body = await res.json().catch(() => null);
-      setError(body?.error ?? failure);
-      return;
+    try {
+      const res = await fetch(`/api/vendor/orders/${orderId}/${path}`, {
+        method: "POST",
+        headers: await authHeader(),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        setError(body?.error ?? failure);
+        return;
+      }
+      await loadOrders();
+    } catch {
+      setError(failure);
+    } finally {
+      inFlight.current.delete(orderId);
+      setBusyOrderIds(new Set(inFlight.current));
     }
-    await loadOrders();
   }
 
   const advance = (orderId: string) => act(orderId, "status", "Failed to update order status");
@@ -108,6 +128,7 @@ export default function VendorOrdersPage() {
                   <VendorOrderCard
                     key={order.id}
                     order={order}
+                    busy={busyOrderIds.has(order.id)}
                     onOpen={() => setOpenOrderId(order.id)}
                     onAdvance={() => advance(order.id)}
                     onReject={() => reject(order.id)}
@@ -121,6 +142,7 @@ export default function VendorOrdersPage() {
       {openOrder && (
         <VendorOrderModal
           order={openOrder}
+          busy={busyOrderIds.has(openOrder.id)}
           onClose={() => setOpenOrderId(null)}
           onAdvance={() => advance(openOrder.id)}
           onReject={() => reject(openOrder.id)}

@@ -12,8 +12,10 @@ export function VendorOrderCard({
   onOpen,
   onAdvance,
   onReject,
+  busy = false,
 }: {
   order: OrderDetail;
+  busy?: boolean;
   onOpen: () => void;
   onAdvance: () => void;
   onReject: () => void;
@@ -68,7 +70,8 @@ export function VendorOrderCard({
         {order.status === "placed" && (
           <button
             onClick={onReject}
-            className="rounded-full border border-red-600 px-4 py-2 text-sm font-medium text-red-600"
+            disabled={busy}
+            className="rounded-full border border-red-600 px-4 py-2 text-sm font-medium text-red-600 disabled:opacity-50"
           >
             Reject
           </button>
@@ -76,7 +79,8 @@ export function VendorOrderCard({
         {NEXT_LABEL[order.status] && (
           <button
             onClick={onAdvance}
-            className="rounded-full bg-brand-primary-text-safe px-4 py-2 text-sm font-semibold text-white"
+            disabled={busy}
+            className="rounded-full bg-brand-primary-text-safe px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
           >
             {NEXT_LABEL[order.status]}
           </button>
