@@ -106,7 +106,9 @@ export default function OrderConfirmationPage() {
           <>
             <section className="-mt-14 rounded-[var(--radius-card)] bg-brand-surface p-4 shadow-lg">
               <OrderStatusTimeline status={order.status} />
-              <p className="mt-3 text-sm text-brand-ink-muted">{STATUS_MESSAGE[order.status]}</p>
+              {order.status !== "cancelled" && order.status !== "rejected" && (
+                <p className="mt-3 text-sm text-brand-ink-muted">{STATUS_MESSAGE[order.status]}</p>
+              )}
             </section>
 
             {partnerLocation?.current_lat != null && partnerLocation?.current_lng != null && (
