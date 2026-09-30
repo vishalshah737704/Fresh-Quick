@@ -157,11 +157,13 @@ on the order summary, a read-only order-note display, and an icon+card
 payment-method picker). A fourth redesign — a full rebrand using a Figma
 community UI kit's palette (orange/navy/green, pill buttons, rounded
 cards, Poppins-700 headings) across all 6 real surfaces (web Customer/
-Vendor/Delivery/Admin, mobile Customer/Delivery) — is **complete on
-branch `figma-kit-redesign`, not yet merged to `main`** as of 2026-09-29,
-followed same-day by a color-density revision (denser colored-section
-backgrounds replacing flat white/gray, plus a checkout blank-every-
-session fix) on the same branch — also complete.
+Vendor/Delivery/Admin, mobile Customer/Delivery) — **complete and
+merged to `main`** as of 2026-09-29, followed same-day by a
+color-density revision (denser colored-section backgrounds replacing
+flat white/gray, plus a checkout blank-every-session fix) and a
+post-redesign follow-on (WCAG-safe contrast tokens, delivery-location
+persistence restored, fresh session on every startup, profile name +
+password reset in every portal's nav) — all merged to `main`.
 See [MEMORY.md](MEMORY.md) for the phase-by-phase build
 log, including every bug found and fixed along the way, and its "Known
 deferred items" section for what's still intentionally left for later.

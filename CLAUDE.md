@@ -44,32 +44,38 @@ findings, and what's still outstanding (no real device/simulator run yet;
 `Mobile_App_User_Manual.docx`/`.pdf` in `docs/` describes the
 pre-redesign flow, not yet updated for the new tab bar/bottom-sheet
 cart/row-based checkout).
-**Figma community kit redesign (complete, branch `figma-kit-redesign`,
-not yet merged to `main` as of 2026-09-29):** full rebrand of ALL 6
-surfaces (web Customer/Vendor/Delivery/Admin, mobile Customer/Delivery)
-in one pass, using a Figma community UI kit's palette/shape language
-(orange/navy/green, pill buttons, rounded-16px cards, Poppins-700
-headings) as the new single source of truth for `lib/branding.ts` /
-`app/globals.css` / `mobile/theme.ts`, replacing the Uber-Eats-era
-tokens. Built via `superpowers:subagent-driven-development`, 13 tasks,
-one final whole-branch review + fix wave. See MEMORY.md's "Figma
-community kit redesign" entry for full detail, including two
+**Figma community kit redesign (complete, merged to `main` 2026-09-29):**
+full rebrand of ALL 6 surfaces (web Customer/Vendor/Delivery/Admin,
+mobile Customer/Delivery) in one pass, using a Figma community UI kit's
+palette/shape language (orange/navy/green, pill buttons, rounded-16px
+cards, Poppins-700 headings) as the new single source of truth for
+`lib/branding.ts` / `app/globals.css` / `mobile/theme.ts`, replacing the
+Uber-Eats-era tokens. Built via `superpowers:subagent-driven-development`,
+13 tasks, one final whole-branch review + fix wave. See MEMORY.md's
+"Figma community kit redesign" entry for full detail, including two
 mid-execution corrections to this file's own prior claims (see next
-paragraph) and one open design decision (white-text-on-brand-color
-contrast) still awaiting Vishal's call.
+paragraph).
 **Color-density revision (complete, same branch, same day):** a
 same-day follow-on after Vishal reviewed the redesign live and asked
 for denser colored-section backgrounds (less flat white/gray) plus a
 real bug fix (checkout name/email/address should never persist across
-sessions). 12 more tasks + 1 final-review fix wave on the same branch —
-see MEMORY.md's "Color-density revision" entry for full detail,
-including 6 real bugs the final review caught (a mobile scroll-offset
-regression, a checkout/order page overflow, a false success checkmark
-on failed orders, unreadable checkout error text, an address-field
-session leak, missing sidebar gradients — all fixed) and one open
-question still awaiting Vishal's call: whether to restore delivery-
-location (`lat`/`lng`/`label`) persistence, which the blank-session fix
-also dropped as a side effect.
+sessions). 12 more tasks + 1 final-review fix wave — see MEMORY.md's
+"Color-density revision" entry for full detail, including 6 real bugs
+the final review caught (a mobile scroll-offset regression, a
+checkout/order page overflow, a false success checkmark on failed
+orders, unreadable checkout error text, an address-field session leak,
+missing sidebar gradients — all fixed).
+**Post-redesign follow-on (complete, merged to `main` 2026-09-29):**
+resolved the WCAG contrast decision (new `-text-safe` darker brand
+tokens, not a navy-text swap) and restored delivery-location
+persistence (separate localStorage key from checkout fields), plus two
+new asks — fresh session on every server/app startup, and a profile
+name + password-reset control in every portal's nav (web + mobile). See
+MEMORY.md's "Post-redesign follow-on" entry for full detail, including
+a hydration-mismatch bug found and fixed in the location-persistence
+code and 9 contrast misses the delegated implementer's own self-check
+didn't catch (only found by live Playwright verification across all 4
+web portals).
 **Correction to the "cart redesign (slide-out panel)" claim above
 (line ~21) and to any other reference to `CartPanel.tsx` as a
 slide-out drawer with Escape-flush/close-before-nav/open-state logic**:

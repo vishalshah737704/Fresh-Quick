@@ -2229,6 +2229,79 @@ process, 12 tasks + 1 final-review fix wave, all approved.
   folded into the same open decision rather than treated as new
   findings.
 
+## Post-redesign follow-on: Q1/Q2/Q3 resolved + fresh-session + profile/password-reset (2026-09-29)
+
+KICKOFF_16's three open items resolved, plus two new asks, all on
+`figma-kit-redesign`, then merged to `main` (commit `96b80f8` merge,
+branch fast-forwardable, no `origin/main` divergence):
+
+- **Q1 (contrast)**: took the "new darker text-safe token" option
+  (not the earlier-recommended navy-text option). Added
+  `--color-brand-primary-text-safe` (`#A85800`, 5.17:1 on white) and
+  `--color-brand-accent-text-safe` (`#187033`, 6.17:1 on white) to
+  `app/globals.css`/`lib/branding.ts`/`mobile/theme.ts`. Swapped every
+  text-bearing fill (buttons, pills, stat tiles, header/footer bands)
+  from `bg-brand-primary`/`bg-brand-accent` to the `-text-safe` variant;
+  left every decorative/non-text use (chips, borders, opacity tints,
+  icons) on the original bright colors. The delegated implementer
+  missed several spots on its own first pass — **live Playwright
+  verification (not just its own grep) caught and fixed 9 more**:
+  admin dashboard's "Active orders"/"Revenue" stat tiles, the delivery
+  dashboard's header band and online/offline toggle, `CartPanel`'s
+  basket-header and total-footer bands, and 3 React Native spots
+  (`FloatingCartPill`, `StoreCard`'s promo badge, `ItemCustomizationModal`'s
+  total pill + add button). Re-grepping `bg-brand-(primary|accent)\b`
+  across `app/`, `components/`, and `mobile/` after the fix found zero
+  remaining matches. **Lesson**: a subagent's own "grepped, all clean"
+  self-report for this exact class of bug (white text on a bright fill)
+  is not sufficient — the true count of misses was 9, not 0; live
+  screenshots across all 4 web portals plus a source grep for the raw
+  Tailwind/RN color reference (not just the implementer's own
+  self-check) is what actually found them.
+- **Q2 (location persistence)**: restored `lat`/`lng`/`label`
+  persistence in `lib/address-store.tsx` via a distinct
+  `fresh-quick-delivery-location` localStorage key, kept fully separate
+  from the intentionally-removed checkout field persistence. The
+  implementer's first version read `localStorage` directly inside the
+  initial `useState()` call, which differs between server (no
+  `localStorage`) and client on first paint — a live browser check
+  caught a React hydration-mismatch error on every page load. Fixed by
+  keeping the initial state at the SSR-safe default and moving the
+  `localStorage` read into a mount-only `useEffect` instead. **Any
+  future localStorage-seeded context/state in this app must follow
+  this same pattern** — seed after mount, never in the initial
+  `useState`/`useReducer` call, or it reintroduces this hydration bug.
+- **Fresh session on every startup** (new ask, not in KICKOFF_16): web
+  uses a server-start epoch (`lib/server-epoch.ts` sets `Date.now()`
+  once at module load, exposed via `app/api/auth/server-epoch/route.ts`)
+  compared against a client-stored epoch by `components/
+  SessionEpochGuard.tsx` (mounted in `app/layout.tsx`); a mismatch
+  (including first-ever visit) signs the browser out. Verified live:
+  tampering the stored epoch and reloading correctly signed the session
+  out and showed Sign In/Sign Up; a normal reload with a matching epoch
+  stayed logged in. **Limitation**: only correct for this project's
+  single-Node-process self-hosted setup — would give false positives
+  behind a multi-instance load balancer. Mobile: `mobile/src/app/
+  _layout.tsx` signs out unconditionally on every cold launch (root
+  layout only mounts once per app launch, not on background/foreground).
+- **Profile name + password reset** (new ask): `components/
+  MyProfileSection.tsx` (name + "Reset password" via
+  `supabase.auth.resetPasswordForEmail`) wired into Vendor/Delivery/
+  Admin shells; customer web got an inline equivalent added to the
+  existing `AccountMenu.tsx` dropdown instead (no separate "MY PROFILE"
+  section existed there to hang a shared component on). Verified live
+  end-to-end as `customer@foodhub.local` — reset flow returned "Reset
+  email sent" against local Supabase Auth. Mobile: added to the
+  customer account tab and to the delivery dashboard's header row (no
+  delivery-portal account screen existed at all; grepped `mobile/`
+  first to confirm before adding UI, per this file's existing "grep
+  before creating a new screen" pattern). Mobile UI not live-tested (no
+  simulator available in this session) — code-reviewed only.
+- Branch `figma-kit-redesign` merged into `main` (`--no-ff`, all 4 web
+  portals + mobile customer/delivery, per Vishal's Q3 answer). Not yet
+  pushed to `origin` — push needs a separate go-ahead (or the "Commit
+  Work" standing phrase) per this file's standing rule.
+
 ## External API keys in use
 
 - `PEXELS_API_KEY` — Pexels Search API, used once (not at runtime) to fetch
