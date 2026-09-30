@@ -2345,7 +2345,8 @@ place with python-docx (no rebuild):
 
 ## Order visibility — sub-project A (2026-09-30, branch `order-visibility-a`, not merged)
 
-**What shipped (9 commits, `c27213e`..`84ab367` + this docs commit):** shared
+**What shipped (13 code/fix commits `d074cbe`..`b5f8ce5`, plus the docs
+commits recording them):** shared
 `lib/order-status.ts` (9-status enum, labels/messages, 6-step timeline
 mapping, typed over the narrowed union) and `lib/order-detail.ts`
 (normalized order view shared by portals); required recipient phone at
@@ -2379,20 +2380,35 @@ Ready) with full order details, photos, detail dialog, 10s polling.
   with options.
 - Vendor board looks right at 1440px and 390px; dialog fine at 390px.
 
-**Defects / gaps found (not fixed):**
-1. `components/OrderStatusTimeline.tsx`: at 390px the 6-step `<ol>` needs
-   ~376px inside a ~295px card, so the last step ("Delivered") is clipped
-   and `main` scrolls sideways (`flex-1` steps with fixed `w-14` columns
-   can't shrink). Needs tighter columns/labels below `sm`.
+**Final-review fixes (commit `b5f8ce5`):** vendor card now shows a Payment
+line (spec requirement); `/api/vendor/orders` limited to active statuses
+(placed/accepted/preparing/ready) so the 10s poll no longer re-sends all
+history + PII; address-line React keys made collision-proof; customer order
+page clears `error` after a successful poll so one failed 3s poll no longer
+replaces the page forever.
+
+**Deferred to later sub-projects:** store address + status colors + extra
+timestamps get added to the shared foundation at the start of sub-project B;
+poll failures are silent on the vendor board; vendor dialog stays open after
+Accept/Reject; pending timeline circle is translucent (cosmetic); payment is
+shown as raw enum strings (e.g. `success (mock_cod)`).
+
+**Defects / gaps found:**
+1. FIXED — `components/OrderStatusTimeline.tsx` overflow at 390px (last step
+   clipped, sideways scroll) and the duplicated rejection sentence: commit
+   `b537840`. Connectors then fixed in `98499cc` (connectors join circles; 6
+   equal grid columns; per-step labels only from the `sm` breakpoint up,
+   "Step N of 6 · Label" caption below it, because per-step labels cannot
+   fit legibly at 320px).
 2. n8n workflow 03 as imported in the local n8n instance is STALE: it has
    3 nodes (webhook, filter, placeholder) while
    `n8n/workflows/03-restaurant-status-change.json` has 6 incl. the
    "Gmail: Send Order Accepted Email" branch. Executions 287/288 ran and
    succeeded but never reached any email node, so the accept email is NOT
    confirmed working. Re-import workflow 03 and re-test.
-3. Minor UI: rejected order shows the same sentence twice (banner + message
-   line); vendor detail dialog stays open after Accept/Reject (it does
-   refresh live to the new status).
+3. Minor UI: duplicated rejection sentence FIXED (`b537840`); vendor detail
+   dialog stays open after Accept/Reject (it does refresh live to the new
+   status) — deferred.
 4. Mobile `lib/order-status.ts` still has the 4-step mapping until
    sub-project D.
 5. Playwright real mouse clicks did not register on the customer tab in
