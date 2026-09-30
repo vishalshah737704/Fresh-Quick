@@ -1,53 +1,36 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
-
-type OrderItem = {
-  id: string;
-  quantity: number;
-  unit_price: number;
-  special_instructions: string | null;
-  products: { name: string } | null;
-  order_item_options: { id: string; group_name: string; option_name: string }[];
-};
-type Order = {
-  id: string;
-  status: string;
-  total: number;
-  placed_at: string;
-  delivery_note: string | null;
-  order_items: OrderItem[];
-};
+import type { OrderDetail } from "@/lib/order-detail";
+import { VendorOrderCard } from "@/components/vendor/VendorOrderCard";
+import { VendorOrderModal } from "@/components/vendor/VendorOrderModal";
 
 const KANBAN_STATUSES = ["placed", "accepted", "preparing", "ready"] as const;
+type KanbanStatus = (typeof KANBAN_STATUSES)[number];
 
-const COLUMN_LABEL: Record<(typeof KANBAN_STATUSES)[number], string> = {
-  placed: "Placed",
+const COLUMN_LABEL: Record<KanbanStatus, string> = {
+  placed: "New",
   accepted: "Accepted",
   preparing: "Preparing",
   ready: "Ready",
 };
 
-const COLUMN_HEADER_CLASS: Record<(typeof KANBAN_STATUSES)[number], string> = {
+const COLUMN_HEADER_CLASS: Record<KanbanStatus, string> = {
   placed: "bg-brand-primary-text-safe text-white",
   accepted: "bg-brand-ink text-white",
   preparing: "bg-brand-accent-text-safe text-white",
   ready: "bg-gray-500 text-white",
 };
 
-const COLUMN_BODY_CLASS: Record<(typeof KANBAN_STATUSES)[number], string> = {
+const COLUMN_BODY_CLASS: Record<KanbanStatus, string> = {
   placed: "bg-brand-primary-tint",
   accepted: "bg-brand-ink-tint",
   preparing: "bg-brand-accent-tint",
   ready: "bg-gray-100",
 };
 
-const NEXT_LABEL: Record<string, string> = {
-  placed: "Accept",
-  accepted: "Start preparing",
-  preparing: "Mark ready",
-};
+const POLL_MS = 10000;
 
 async function authHeader() {
   const { data } = await supabase.auth.getSession();
@@ -55,61 +38,55 @@ async function authHeader() {
 }
 
 export default function VendorOrdersPage() {
-  const [orders, setOrders] = useState<Order[]>([]);
+  const [orders, setOrders] = useState<OrderDetail[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [openOrderId, setOpenOrderId] = useState<string | null>(null);
 
-  async function loadOrders() {
+  const loadOrders = useCallback(async () => {
     const res = await fetch("/api/vendor/orders", { headers: await authHeader() });
     const body = await res.json();
     if (res.ok) setOrders(body.orders);
-  }
+  }, []);
 
   useEffect(() => {
     loadOrders();
-  }, []);
+    const interval = setInterval(loadOrders, POLL_MS);
+    return () => clearInterval(interval);
+  }, [loadOrders]);
 
-  async function advance(orderId: string) {
+  async function act(orderId: string, path: "status" | "reject", failure: string) {
     setError(null);
-    const res = await fetch(`/api/vendor/orders/${orderId}/status`, {
+    const res = await fetch(`/api/vendor/orders/${orderId}/${path}`, {
       method: "POST",
       headers: await authHeader(),
     });
     if (!res.ok) {
       const body = await res.json().catch(() => null);
-      setError(body?.error ?? "Failed to update order status");
+      setError(body?.error ?? failure);
       return;
     }
     await loadOrders();
   }
 
-  async function reject(orderId: string) {
-    setError(null);
-    const res = await fetch(`/api/vendor/orders/${orderId}/reject`, {
-      method: "POST",
-      headers: await authHeader(),
-    });
-    if (!res.ok) {
-      const body = await res.json().catch(() => null);
-      setError(body?.error ?? "Failed to reject order");
-      return;
-    }
-    await loadOrders();
-  }
+  const advance = (orderId: string) => act(orderId, "status", "Failed to update order status");
+  const reject = (orderId: string) => act(orderId, "reject", "Failed to reject order");
 
-  function ordersForColumn(status: (typeof KANBAN_STATUSES)[number]) {
+  function ordersForColumn(status: KanbanStatus) {
     return orders
       .filter((order) => order.status === status)
-      .sort((a, b) => new Date(b.placed_at).getTime() - new Date(a.placed_at).getTime());
+      .sort((a, b) => new Date(b.placedAt).getTime() - new Date(a.placedAt).getTime());
   }
+
+  const openOrder = orders.find((order) => order.id === openOrderId) ?? null;
 
   return (
     <div>
-      <h1 className="mb-4 font-heading text-2xl text-brand-ink">Orders</h1>
-      {error && <p className="mb-2 text-sm text-red-600">{error}</p>}
+      <h1 className="mb-4 font-heading text-3xl text-brand-ink">Orders</h1>
+      {error && <p className="mb-3 text-base text-red-600">{error}</p>}
       {orders.length === 0 ? (
-        <p className="text-sm text-brand-ink-muted">No orders yet.</p>
+        <p className="text-base text-brand-ink-muted">No orders yet.</p>
       ) : (
-        <div className="grid gap-4 md:grid-cols-4">
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           {KANBAN_STATUSES.map((status) => {
             const columnOrders = ordersForColumn(status);
             return (
@@ -118,69 +95,36 @@ export default function VendorOrdersPage() {
                 className={`flex flex-col gap-3 rounded-[var(--radius-card)] p-3 ${COLUMN_BODY_CLASS[status]}`}
               >
                 <h2
-                  className={`rounded-[var(--radius-pill)] px-3 py-1 text-center text-sm font-medium ${COLUMN_HEADER_CLASS[status]}`}
+                  className={`rounded-[var(--radius-pill)] px-3 py-2 text-center text-base font-semibold ${COLUMN_HEADER_CLASS[status]}`}
                 >
                   {COLUMN_LABEL[status]} ({columnOrders.length})
                 </h2>
                 {columnOrders.length === 0 && (
-                  <p className="text-sm text-brand-ink-muted">No orders.</p>
+                  <p className="rounded-lg border border-dashed border-brand-ink-muted/30 p-4 text-center text-base text-brand-ink-muted">
+                    Nothing here yet
+                  </p>
                 )}
                 {columnOrders.map((order) => (
-                  <div
+                  <VendorOrderCard
                     key={order.id}
-                    className="rounded-[var(--radius-card)] border border-brand-ink-muted/10 bg-white p-3"
-                  >
-                    <p className="mb-2 font-medium text-brand-ink">
-                      #{order.id.slice(0, 8)}
-                    </p>
-                    <ul className="mb-2 text-sm text-brand-ink-muted">
-                      {order.order_items.map((item) => (
-                        <li key={item.id}>
-                          {item.quantity}× {item.products?.name ?? "Item"}
-                          {item.order_item_options.length > 0 && (
-                            <span>
-                              {" "}
-                              — {item.order_item_options.map((o) => o.option_name).join(", ")}
-                            </span>
-                          )}
-                          {item.special_instructions && (
-                            <span> — &quot;{item.special_instructions}&quot;</span>
-                          )}
-                        </li>
-                      ))}
-                    </ul>
-                    {order.delivery_note && (
-                      <p className="mb-2 text-sm text-brand-ink-muted">
-                        Note: &quot;{order.delivery_note}&quot;
-                      </p>
-                    )}
-                    <p className="mb-2 text-sm font-medium text-brand-ink">
-                      ₹{order.total.toFixed(2)}
-                    </p>
-                    <div className="flex gap-2">
-                      {order.status === "placed" && (
-                        <button
-                          onClick={() => reject(order.id)}
-                          className="rounded-full border border-red-600 px-2 py-1 text-xs text-red-600"
-                        >
-                          Reject
-                        </button>
-                      )}
-                      {NEXT_LABEL[order.status] && (
-                        <button
-                          onClick={() => advance(order.id)}
-                          className="rounded-full bg-brand-primary-text-safe px-2 py-1 text-xs text-white"
-                        >
-                          {NEXT_LABEL[order.status]}
-                        </button>
-                      )}
-                    </div>
-                  </div>
+                    order={order}
+                    onOpen={() => setOpenOrderId(order.id)}
+                    onAdvance={() => advance(order.id)}
+                    onReject={() => reject(order.id)}
+                  />
                 ))}
               </div>
             );
           })}
         </div>
+      )}
+      {openOrder && (
+        <VendorOrderModal
+          order={openOrder}
+          onClose={() => setOpenOrderId(null)}
+          onAdvance={() => advance(openOrder.id)}
+          onReject={() => reject(openOrder.id)}
+        />
       )}
     </div>
   );

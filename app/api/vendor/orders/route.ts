@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase-server";
 import { resolveVendorStore, tokenFromRequest } from "@/lib/vendor-auth";
+import {
+  ORDER_DETAIL_SELECT,
+  normalizeOrderDetail,
+  type RawOrderDetail,
+} from "@/lib/order-detail";
 
 export async function GET(request: NextRequest) {
   const resolved = await resolveVendorStore(tokenFromRequest(request));
@@ -9,13 +14,12 @@ export async function GET(request: NextRequest) {
   }
   const { data, error } = await supabaseServer
     .from("orders")
-    .select(
-      "id, status, subtotal, delivery_fee, total, placed_at, delivery_note, order_items(id, quantity, unit_price, special_instructions, products(name), order_item_options(id, group_name, option_name))"
-    )
+    .select(ORDER_DETAIL_SELECT)
     .eq("store_id", resolved.storeId)
     .order("placed_at", { ascending: false });
   if (error) {
     return NextResponse.json({ error: "Failed to load orders" }, { status: 500 });
   }
-  return NextResponse.json({ orders: data });
+  const orders = (data as unknown as RawOrderDetail[]).map(normalizeOrderDetail);
+  return NextResponse.json({ orders });
 }
