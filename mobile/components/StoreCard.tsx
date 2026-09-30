@@ -44,7 +44,7 @@ export function StoreCard({ store, onPress }: { store: StoreCardData; onPress: (
           <Ionicons
             name={favorited ? "heart" : "heart-outline"}
             size={16}
-            color={favorited ? "#e0245e" : BRAND.colors.ink}
+            color={favorited ? BRAND.colors.danger : BRAND.colors.ink}
           />
         </Pressable>
         {store.promo_text && (
@@ -107,7 +107,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     left: 8,
     bottom: 8,
-    backgroundColor: BRAND.colors.primary,
+    backgroundColor: BRAND.colors.primaryTextSafe,
     borderRadius: 999,
     paddingHorizontal: 10,
     paddingVertical: 4,

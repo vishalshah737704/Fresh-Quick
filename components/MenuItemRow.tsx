@@ -45,7 +45,7 @@ export function MenuItemRow({
   const canAdd = !disabled && item.is_available;
 
   return (
-    <div className="flex items-start justify-between gap-4 rounded-lg border border-brand-ink-muted/10 bg-brand-surface p-3">
+    <div className="flex items-start justify-between gap-4 rounded-[var(--radius-card)] border border-brand-ink-muted/10 bg-brand-surface p-3">
       <div className="min-w-0 flex-1">
         <p className="font-semibold text-brand-ink">
           {item.product_attributes?.is_veg ? "🟢" : "🔴"} {item.name}
@@ -53,7 +53,9 @@ export function MenuItemRow({
         {item.description && (
           <p className="mt-0.5 line-clamp-2 text-sm text-brand-ink-muted">{item.description}</p>
         )}
-        <p className="mt-1 text-sm font-semibold text-brand-ink">₹{item.price.toFixed(2)}</p>
+        <p className="mt-1 inline-block rounded-[var(--radius-pill)] bg-brand-accent-text-safe px-2 py-0.5 text-sm font-semibold text-white">
+          ₹{item.price.toFixed(2)}
+        </p>
         {!canAdd && (
           <p className="mt-1 text-xs text-brand-ink-muted">
             {disabled ? "Restaurant unavailable" : "Currently unavailable"}
@@ -67,10 +69,10 @@ export function MenuItemRow({
             alt={item.name}
             width={88}
             height={88}
-            className="h-[88px] w-[88px] rounded-lg object-cover"
+            className="h-[88px] w-[88px] rounded-[var(--radius-card)] object-cover"
           />
         ) : (
-          <div className="h-[88px] w-[88px] rounded-lg bg-brand-accent/10" />
+          <div className="h-[88px] w-[88px] rounded-[var(--radius-card)] bg-brand-accent/10" />
         )}
         <button
           disabled={!canAdd}

@@ -44,7 +44,7 @@ export function FeaturedItemCard({
   const canAdd = !disabled && item.is_available;
 
   return (
-    <div className="w-40 shrink-0 snap-start overflow-hidden rounded-lg border border-brand-ink-muted/10 bg-brand-surface">
+    <div className="w-40 shrink-0 snap-start overflow-hidden rounded-[var(--radius-card)] border border-brand-ink-muted/10 bg-brand-surface">
       <div className="relative h-28 w-full bg-brand-accent/10">
         {item.image_url ? (
           <Image src={item.image_url} alt={item.name} fill sizes="160px" className="object-cover" />
@@ -64,7 +64,9 @@ export function FeaturedItemCard({
         <p className="line-clamp-1 text-sm font-semibold text-brand-ink">
           {item.product_attributes?.is_veg ? "🟢" : "🔴"} {item.name}
         </p>
-        <p className="mt-0.5 text-xs font-semibold text-brand-ink-muted">₹{item.price.toFixed(2)}</p>
+        <p className="mt-1 inline-block rounded-[var(--radius-pill)] bg-brand-accent-text-safe px-2 py-0.5 text-xs font-semibold text-white">
+          ₹{item.price.toFixed(2)}
+        </p>
       </div>
       {modalOpen && (
         <ItemCustomizationModal

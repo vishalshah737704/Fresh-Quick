@@ -29,6 +29,20 @@ const COLUMN_LABEL: Record<(typeof KANBAN_STATUSES)[number], string> = {
   ready: "Ready",
 };
 
+const COLUMN_HEADER_CLASS: Record<(typeof KANBAN_STATUSES)[number], string> = {
+  placed: "bg-brand-primary-text-safe text-white",
+  accepted: "bg-brand-ink text-white",
+  preparing: "bg-brand-accent-text-safe text-white",
+  ready: "bg-gray-500 text-white",
+};
+
+const COLUMN_BODY_CLASS: Record<(typeof KANBAN_STATUSES)[number], string> = {
+  placed: "bg-brand-primary-tint",
+  accepted: "bg-brand-ink-tint",
+  preparing: "bg-brand-accent-tint",
+  ready: "bg-gray-100",
+};
+
 const NEXT_LABEL: Record<string, string> = {
   placed: "Accept",
   accepted: "Start preparing",
@@ -99,8 +113,13 @@ export default function VendorOrdersPage() {
           {KANBAN_STATUSES.map((status) => {
             const columnOrders = ordersForColumn(status);
             return (
-              <div key={status} className="flex flex-col gap-3">
-                <h2 className="text-sm font-medium text-brand-ink-muted">
+              <div
+                key={status}
+                className={`flex flex-col gap-3 rounded-[var(--radius-card)] p-3 ${COLUMN_BODY_CLASS[status]}`}
+              >
+                <h2
+                  className={`rounded-[var(--radius-pill)] px-3 py-1 text-center text-sm font-medium ${COLUMN_HEADER_CLASS[status]}`}
+                >
                   {COLUMN_LABEL[status]} ({columnOrders.length})
                 </h2>
                 {columnOrders.length === 0 && (
@@ -109,7 +128,7 @@ export default function VendorOrdersPage() {
                 {columnOrders.map((order) => (
                   <div
                     key={order.id}
-                    className="rounded-lg border border-brand-ink-muted/10 bg-brand-surface p-3"
+                    className="rounded-[var(--radius-card)] border border-brand-ink-muted/10 bg-white p-3"
                   >
                     <p className="mb-2 font-medium text-brand-ink">
                       #{order.id.slice(0, 8)}
@@ -150,7 +169,7 @@ export default function VendorOrdersPage() {
                       {NEXT_LABEL[order.status] && (
                         <button
                           onClick={() => advance(order.id)}
-                          className="rounded-full bg-brand-primary px-2 py-1 text-xs text-white"
+                          className="rounded-full bg-brand-primary-text-safe px-2 py-1 text-xs text-white"
                         >
                           {NEXT_LABEL[order.status]}
                         </button>

@@ -24,7 +24,7 @@ export function CuisineCarouselRow({
 
   return (
     <section>
-      <h2 className="mb-2 text-lg font-bold text-brand-ink">{label}</h2>
+      <h2 className="mb-2 font-heading text-lg text-brand-ink">{label}</h2>
       <ScrollArrowRow>
         {restaurants.map(({ restaurant, distanceKm }) => (
           <div key={restaurant.id} className="w-56 shrink-0 snap-start">

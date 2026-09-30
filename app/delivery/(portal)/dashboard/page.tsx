@@ -146,13 +146,15 @@ export default function DeliveryDashboardPage() {
 
   return (
     <div>
-      <h1 className="mb-4 font-heading text-2xl text-brand-ink">Dashboard</h1>
+      <div className="mb-4 rounded-[var(--radius-card)] bg-brand-primary-text-safe px-4 py-3">
+        <h1 className="font-heading text-2xl text-white">Dashboard</h1>
+      </div>
       {error && <p className="mb-2 text-sm text-red-600">{error}</p>}
-      <div className="mb-4 flex flex-wrap items-center gap-3 rounded-lg border border-brand-ink-muted/10 bg-brand-surface p-3">
+      <div className="mb-4 flex flex-wrap items-center gap-3 rounded-[var(--radius-card)] bg-brand-ink p-3">
         <button
           onClick={toggleOnline}
-          className={`rounded-full px-4 py-2 text-sm text-white ${
-            isOnline ? "bg-green-600" : "bg-brand-ink-muted/40"
+          className={`rounded-[var(--radius-pill)] px-4 py-2 text-sm text-white ${
+            isOnline ? "bg-brand-accent-text-safe" : "bg-white/20"
           }`}
         >
           {isOnline ? "Online" : "Offline"} — tap to toggle
@@ -160,12 +162,12 @@ export default function DeliveryDashboardPage() {
         {isOnline && (
           <div className="flex gap-2 text-xs">
             <input
-              className="w-24 rounded-lg border border-brand-ink-muted/20 px-2 py-1"
+              className="w-24 rounded-lg border border-white/20 bg-white/10 px-2 py-1 text-white"
               value={lat}
               onChange={(e) => setLat(e.target.value)}
             />
             <input
-              className="w-24 rounded-lg border border-brand-ink-muted/20 px-2 py-1"
+              className="w-24 rounded-lg border border-white/20 bg-white/10 px-2 py-1 text-white"
               value={lng}
               onChange={(e) => setLng(e.target.value)}
             />
@@ -180,16 +182,16 @@ export default function DeliveryDashboardPage() {
             {available.map((o) => (
               <li
                 key={o.id}
-                className="flex items-center justify-between rounded-lg border border-brand-ink-muted/10 bg-brand-surface p-3"
+                className="flex items-center justify-between rounded-[var(--radius-card)] border-l-4 border-brand-primary bg-brand-surface p-3"
               >
                 <span>
                   #{o.id.slice(0, 8)} · {o.stores?.name ?? "Restaurant"} · ₹{o.total.toFixed(2)}
                 </span>
                 <button
                   onClick={() => claim(o.id)}
-                  className="rounded-full bg-brand-primary px-3 py-1 text-xs text-white"
+                  className="rounded-[var(--radius-pill)] bg-brand-accent-text-safe px-3 py-1 text-xs text-white"
                 >
-                  Claim
+                  Accept
                 </button>
               </li>
             ))}
@@ -205,7 +207,7 @@ export default function DeliveryDashboardPage() {
             {mine.map((o) => (
               <li
                 key={o.id}
-                className="flex flex-col gap-1 rounded-lg border border-brand-ink-muted/10 bg-brand-surface p-3"
+                className="flex flex-col gap-1 rounded-[var(--radius-card)] border-l-4 border-brand-primary bg-brand-surface p-3"
               >
                 <div className="flex items-center justify-between">
                   <span>
@@ -215,7 +217,7 @@ export default function DeliveryDashboardPage() {
                     {(o.status === "assigned" || o.status === "picked_up") && (
                       <button
                         onClick={() => viewAddress(o.id)}
-                        className="rounded-full border border-brand-ink-muted/20 px-3 py-1 text-xs"
+                        className="rounded-[var(--radius-pill)] border border-brand-ink-muted/20 px-3 py-1 text-xs"
                       >
                         View address
                       </button>
@@ -223,7 +225,7 @@ export default function DeliveryDashboardPage() {
                     {NEXT_LABEL[o.status] && (
                       <button
                         onClick={() => advance(o.id)}
-                        className="rounded-full bg-brand-primary px-3 py-1 text-xs text-white"
+                        className="rounded-[var(--radius-pill)] bg-brand-primary-text-safe px-3 py-1 text-xs text-white"
                       >
                         {NEXT_LABEL[o.status]}
                       </button>

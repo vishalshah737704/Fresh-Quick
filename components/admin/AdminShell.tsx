@@ -1,13 +1,18 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useAdminSession } from "@/components/admin/useAdminSession";
 import { AdminSessionContext } from "@/components/admin/AdminSessionContext";
+import { useProfile } from "@/lib/use-profile";
+import { MyProfileSection } from "@/components/MyProfileSection";
 
 export default function AdminShell({ children }: { children: React.ReactNode }) {
   const { loading, adminId } = useAdminSession();
+  const profile = useProfile(adminId);
   const router = useRouter();
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   async function signOut() {
     await supabase.auth.signOut();
@@ -18,17 +23,42 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
 
   return (
     <AdminSessionContext.Provider value={{ loading, adminId }}>
-      <div className="flex min-h-screen flex-col">
-        <div className="flex items-center justify-between border-b border-brand-ink-muted/10 bg-brand-surface p-3">
+      <div className="flex min-h-screen flex-col md:flex-row">
+        <div className="flex items-center justify-between bg-brand-surface p-3 text-brand-ink md:hidden">
           <span className="font-heading text-lg text-brand-ink">Admin</span>
           <button
+            onClick={() => setDrawerOpen(!drawerOpen)}
+            className="rounded-[var(--radius-pill)] border border-brand-ink-muted/20 px-3 py-1 text-sm text-brand-ink"
+          >
+            Menu
+          </button>
+        </div>
+        <aside
+          className={`${drawerOpen ? "flex" : "hidden"} w-full flex-col gap-2 p-4 text-white md:flex md:w-56 md:min-h-screen`}
+          style={{ background: "linear-gradient(180deg, var(--color-brand-ink) 0%, #132849 100%)" }}
+        >
+          <span className="mb-2 hidden font-heading text-lg text-white md:block">Admin</span>
+          <span className="rounded-[var(--radius-pill)] bg-brand-primary-text-safe px-3 py-2 text-sm text-white">
+            Dashboard
+          </span>
+          <div className="mt-auto border-t border-white/10 pt-3">
+            <MyProfileSection profile={profile} variant="dark" />
+          </div>
+          <button
             onClick={signOut}
-            className="rounded-full px-3 py-1 text-sm text-brand-ink-muted hover:bg-brand-accent/10"
+            className="rounded-[var(--radius-pill)] px-3 py-2 text-left text-sm text-white/70 hover:bg-white/10"
           >
             Sign out
           </button>
-        </div>
-        <main className="flex-1 p-4">{children}</main>
+        </aside>
+        <main
+          className="flex-1 p-4"
+          style={{
+            background: "linear-gradient(180deg, var(--color-brand-ink-tint) 0%, #fff 200px)",
+          }}
+        >
+          {children}
+        </main>
       </div>
     </AdminSessionContext.Provider>
   );

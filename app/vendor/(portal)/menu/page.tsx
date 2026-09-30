@@ -284,7 +284,7 @@ export default function VendorMenuPage() {
         {error && <p className="text-sm text-red-600">{error}</p>}
         <button
           onClick={addItem}
-          className="rounded-full bg-brand-primary px-3 py-2 text-sm text-white"
+          className="rounded-full bg-brand-primary-text-safe px-3 py-2 text-sm text-white"
         >
           Add item
         </button>
@@ -397,7 +397,7 @@ export default function VendorMenuPage() {
                 {editError && <p className="text-sm text-red-600">{editError}</p>}
                 <button
                   onClick={() => saveEdit(item)}
-                  className="rounded-full bg-brand-primary px-3 py-2 text-sm text-white"
+                  className="rounded-full bg-brand-primary-text-safe px-3 py-2 text-sm text-white"
                 >
                   Save
                 </button>
@@ -432,7 +432,7 @@ export default function VendorMenuPage() {
                   </div>
                   <button
                     onClick={() => addGroup(item.id)}
-                    className="mt-1 self-start rounded-full bg-brand-primary px-3 py-1 text-xs text-white"
+                    className="mt-1 self-start rounded-full bg-brand-primary-text-safe px-3 py-1 text-xs text-white"
                   >
                     Add group
                   </button>
@@ -494,7 +494,7 @@ export default function VendorMenuPage() {
                       />
                       <button
                         onClick={() => addOption(item.id, group.id)}
-                        className="rounded-full bg-brand-primary px-3 py-1 text-xs text-white"
+                        className="rounded-full bg-brand-primary-text-safe px-3 py-1 text-xs text-white"
                       >
                         Add
                       </button>

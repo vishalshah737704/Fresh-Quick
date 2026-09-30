@@ -77,15 +77,15 @@ export default function VendorDashboardPage() {
     <div className="mx-auto max-w-3xl">
       <h1 className="mb-4 font-heading text-2xl text-brand-ink">Dashboard</h1>
       <div className="mb-4 grid gap-4 sm:grid-cols-2">
-        <div className="flex flex-col justify-between rounded-lg border border-brand-ink-muted/10 bg-brand-surface p-4">
-          <p className="text-sm text-brand-ink-muted">Restaurant status</p>
-          <p className="mb-3 text-lg font-medium text-brand-ink">
+        <div className="flex flex-col justify-between rounded-lg bg-brand-primary-text-safe p-4 text-white">
+          <p className="text-sm text-white/80">Restaurant status</p>
+          <p className="mb-3 text-lg font-medium text-white">
             {isOpen ? "Open" : "Closed"}
           </p>
           <button
             onClick={toggleOpen}
             disabled={isOpen === null}
-            className="self-start rounded-full bg-brand-primary px-4 py-2 text-sm text-white disabled:opacity-50"
+            className="self-start rounded-full bg-white px-4 py-2 text-sm text-brand-primary disabled:opacity-50"
           >
             {isOpen ? "Close restaurant" : "Open restaurant"}
           </button>
@@ -109,7 +109,7 @@ export default function VendorDashboardPage() {
         />
         <button
           onClick={saveFeeAndPromo}
-          className="self-start rounded-full bg-brand-primary px-4 py-2 text-sm text-white"
+          className="self-start rounded-full bg-brand-primary-text-safe px-4 py-2 text-sm text-white"
         >
           Save
         </button>

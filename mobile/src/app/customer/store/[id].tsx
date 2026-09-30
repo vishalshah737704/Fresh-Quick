@@ -101,6 +101,11 @@ export default function StoreDetailScreen() {
   const [isFavorite, setIsFavorite] = useState(false); // local UI-only toggle, no backend
   const scrollRef = useRef<ScrollView>(null);
   const sectionOffsets = useRef<Record<string, number>>({});
+  // onLayout's y is relative to the IMMEDIATE PARENT, not the ScrollView's
+  // content view — since group offsets are captured inside menuListContainer
+  // (added for the background tint), this offset must be added back on to
+  // make sectionOffsets values ScrollView-content-relative again.
+  const menuListContainerOffset = useRef(0);
   const [activeGroupKey, setActiveGroupKey] = useState<string | null>(null);
 
   useEffect(() => {
@@ -187,7 +192,8 @@ export default function StoreDetailScreen() {
     setActiveGroupKey(key);
     const y = sectionOffsets.current[key];
     if (y !== undefined) {
-      scrollRef.current?.scrollTo({ y: Math.max(0, y - 8), animated: true });
+      const absoluteY = y + menuListContainerOffset.current;
+      scrollRef.current?.scrollTo({ y: Math.max(0, absoluteY - 8), animated: true });
     }
   }
 
@@ -253,55 +259,62 @@ export default function StoreDetailScreen() {
         {menuItems.length === 0 ? (
           <Text style={[styles.mutedText, { paddingHorizontal: 16 }]}>{store.name} has no menu items yet.</Text>
         ) : (
-          groups.map((group) => (
-            <View
-              key={group.key}
-              style={styles.group}
-              onLayout={(e) => {
-                sectionOffsets.current[group.key] = e.nativeEvent.layout.y;
-              }}
-            >
-              <Text style={styles.groupTitle}>{group.label}</Text>
-              {group.items.map((item) => {
-                const canAdd = !isUnavailable && item.is_available;
-                return (
-                  <Pressable
-                    key={item.id}
-                    disabled={!canAdd}
-                    onPress={() => handleItemPress(item)}
-                    style={[styles.item, !canAdd && styles.itemDisabled]}
-                  >
-                    <View style={styles.itemBody}>
-                      <Text style={styles.itemName}>
-                        {item.product_attributes?.is_veg ? "🟢" : "🔴"} {item.name}
-                      </Text>
-                      {item.description && (
-                        <Text style={styles.itemDescription} numberOfLines={2}>
-                          {item.description}
+          <View
+            style={styles.menuListContainer}
+            onLayout={(e) => {
+              menuListContainerOffset.current = e.nativeEvent.layout.y;
+            }}
+          >
+            {groups.map((group) => (
+              <View
+                key={group.key}
+                style={styles.group}
+                onLayout={(e) => {
+                  sectionOffsets.current[group.key] = e.nativeEvent.layout.y;
+                }}
+              >
+                <Text style={styles.groupTitle}>{group.label}</Text>
+                {group.items.map((item) => {
+                  const canAdd = !isUnavailable && item.is_available;
+                  return (
+                    <Pressable
+                      key={item.id}
+                      disabled={!canAdd}
+                      onPress={() => handleItemPress(item)}
+                      style={[styles.item, !canAdd && styles.itemDisabled]}
+                    >
+                      <View style={styles.itemBody}>
+                        <Text style={styles.itemName}>
+                          {item.product_attributes?.is_veg ? "🟢" : "🔴"} {item.name}
                         </Text>
-                      )}
-                      <Text style={styles.itemPrice}>₹{item.price.toFixed(2)}</Text>
-                      {!canAdd && (
-                        <Text style={styles.itemUnavailable}>
-                          {isUnavailable ? "Restaurant unavailable" : "Currently unavailable"}
-                        </Text>
-                      )}
-                    </View>
-                    <View style={styles.itemImageWrap}>
-                      {item.image_url ? (
-                        <Image source={{ uri: item.image_url }} style={styles.itemImage} />
-                      ) : (
-                        <View style={[styles.itemImage, styles.itemImageFallback]} />
-                      )}
-                      <View style={[styles.addBadge, !canAdd && styles.addBadgeDisabled]}>
-                        <Text style={styles.addBadgeText}>+</Text>
+                        {item.description && (
+                          <Text style={styles.itemDescription} numberOfLines={2}>
+                            {item.description}
+                          </Text>
+                        )}
+                        <Text style={styles.itemPrice}>₹{item.price.toFixed(2)}</Text>
+                        {!canAdd && (
+                          <Text style={styles.itemUnavailable}>
+                            {isUnavailable ? "Restaurant unavailable" : "Currently unavailable"}
+                          </Text>
+                        )}
                       </View>
-                    </View>
-                  </Pressable>
-                );
-              })}
-            </View>
-          ))
+                      <View style={styles.itemImageWrap}>
+                        {item.image_url ? (
+                          <Image source={{ uri: item.image_url }} style={styles.itemImage} />
+                        ) : (
+                          <View style={[styles.itemImage, styles.itemImageFallback]} />
+                        )}
+                        <View style={[styles.addBadge, !canAdd && styles.addBadgeDisabled]}>
+                          <Text style={styles.addBadgeText}>+</Text>
+                        </View>
+                      </View>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            ))}
+          </View>
         )}
       </ScrollView>
 
@@ -334,7 +347,7 @@ const styles = StyleSheet.create({
   },
   errorText: {
     fontFamily: BRAND.fonts.body,
-    color: "#c0392b",
+    color: BRAND.colors.danger,
     textAlign: "center",
   },
   mutedText: {
@@ -348,7 +361,7 @@ const styles = StyleSheet.create({
   banner: {
     height: 200,
     borderRadius: BRAND.radius,
-    backgroundColor: BRAND.colors.accent + "20",
+    backgroundColor: BRAND.colors.ink,
     alignItems: "center",
     justifyContent: "center",
     overflow: "hidden",
@@ -400,7 +413,7 @@ const styles = StyleSheet.create({
     backgroundColor: BRAND.colors.surface,
   },
   pillActive: {
-    backgroundColor: BRAND.colors.primary,
+    backgroundColor: BRAND.colors.primaryTextSafe,
     borderColor: BRAND.colors.primary,
   },
   pillText: {
@@ -424,9 +437,9 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   unavailableBanner: {
-    backgroundColor: "#fdecea",
+    backgroundColor: BRAND.colors.danger + "18",
     borderWidth: 1,
-    borderColor: "#f5c2c0",
+    borderColor: BRAND.colors.danger + "40",
     borderRadius: BRAND.radius,
     padding: 10,
     marginBottom: 12,
@@ -434,7 +447,13 @@ const styles = StyleSheet.create({
   unavailableText: {
     fontFamily: BRAND.fonts.body,
     fontSize: 13,
-    color: "#c0392b",
+    color: BRAND.colors.danger,
+  },
+  menuListContainer: {
+    backgroundColor: BRAND.colors.accentTint,
+    marginHorizontal: -16,
+    paddingHorizontal: 16,
+    paddingTop: 12,
   },
   group: {
     marginBottom: 16,
@@ -452,7 +471,7 @@ const styles = StyleSheet.create({
     backgroundColor: BRAND.colors.surface,
     borderWidth: 1,
     borderColor: BRAND.colors.inkMuted + "15",
-    borderRadius: BRAND.radius,
+    borderRadius: 16,
     padding: 12,
     marginBottom: 8,
   },
@@ -493,7 +512,7 @@ const styles = StyleSheet.create({
   itemImage: {
     width: 76,
     height: 76,
-    borderRadius: BRAND.radius,
+    borderRadius: 12,
   },
   itemImageFallback: {
     backgroundColor: BRAND.colors.accent + "20",
@@ -505,7 +524,7 @@ const styles = StyleSheet.create({
     width: 26,
     height: 26,
     borderRadius: 13,
-    backgroundColor: BRAND.colors.accent,
+    backgroundColor: BRAND.colors.accentTextSafe,
     alignItems: "center",
     justifyContent: "center",
   },

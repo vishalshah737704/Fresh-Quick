@@ -73,7 +73,7 @@ function AdminLoginForm() {
         <button
           disabled={submitting}
           onClick={handleLogin}
-          className="w-full rounded-full bg-brand-primary px-4 py-2 text-white disabled:opacity-50"
+          className="w-full rounded-full bg-brand-primary-text-safe px-4 py-2 text-white disabled:opacity-50"
         >
           {submitting ? "Please wait…" : "Log in"}
         </button>

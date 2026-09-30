@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Poppins } from "next/font/google";
 import { BRAND } from "@/lib/branding";
+import { SessionEpochGuard } from "@/components/SessionEpochGuard";
 import "./globals.css";
 
 const inter = Inter({
@@ -10,7 +11,7 @@ const inter = Inter({
 
 const poppins = Poppins({
   variable: "--font-poppins",
-  weight: ["300"],
+  weight: ["700"],
   subsets: ["latin"],
 });
 
@@ -25,7 +26,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       lang="en"
       className={`${inter.variable} ${poppins.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <SessionEpochGuard />
+        {children}
+      </body>
     </html>
   );
 }

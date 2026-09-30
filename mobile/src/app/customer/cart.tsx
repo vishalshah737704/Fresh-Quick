@@ -103,7 +103,10 @@ export default function CartScreen() {
       <View style={styles.sheetHeader}>
         <View style={styles.dragHandle} />
         <View style={styles.sheetTitleRow}>
-          <Text style={styles.storeName}>{storeName}</Text>
+          <View>
+            <Text style={styles.basketTitle}>My Basket</Text>
+            <Text style={styles.storeName}>{storeName}</Text>
+          </View>
           <Pressable onPress={() => router.back()} hitSlop={12}>
             <Text style={styles.closeIcon}>✕</Text>
           </Pressable>
@@ -113,6 +116,7 @@ export default function CartScreen() {
         data={items}
         keyExtractor={(i) => i.lineId}
         renderItem={renderItem}
+        style={styles.itemsScrollArea}
         contentContainerStyle={styles.listContent}
         ListFooterComponent={
           <View style={styles.orderNoteWrap}>
@@ -173,9 +177,8 @@ export default function CartScreen() {
           </Text>
         </View>
         {totalPaise !== null && (
-          <View style={styles.summaryRow}>
-            <Text style={styles.totalLabel}>Total</Text>
-            <Text style={styles.totalValue}>₹{(totalPaise / 100).toFixed(2)}</Text>
+          <View style={styles.totalPill}>
+            <Text style={styles.totalPillText}>Total: ₹{(totalPaise / 100).toFixed(2)}</Text>
           </View>
         )}
         <Pressable
@@ -198,15 +201,16 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   sheetHeader: {
-    backgroundColor: BRAND.colors.background,
+    backgroundColor: BRAND.colors.accentTextSafe,
     paddingTop: 8,
+    paddingBottom: 14,
   },
   dragHandle: {
     alignSelf: "center",
     width: 40,
     height: 4,
     borderRadius: 2,
-    backgroundColor: BRAND.colors.inkMuted + "40",
+    backgroundColor: BRAND.colors.surface + "60",
     marginBottom: 8,
   },
   sheetTitleRow: {
@@ -215,9 +219,14 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: 16,
   },
+  basketTitle: {
+    fontFamily: BRAND.fonts.heading,
+    fontSize: 16,
+    color: BRAND.colors.surface,
+  },
   closeIcon: {
     fontSize: 18,
-    color: BRAND.colors.inkMuted,
+    color: BRAND.colors.surface,
   },
   tipWrap: {
     marginTop: 14,
@@ -235,7 +244,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   tipButtonActive: {
-    backgroundColor: BRAND.colors.accent,
+    backgroundColor: BRAND.colors.accentTextSafe,
     borderColor: BRAND.colors.accent,
   },
   tipButtonText: {
@@ -275,9 +284,13 @@ const styles = StyleSheet.create({
     color: BRAND.colors.ink,
   },
   storeName: {
-    fontFamily: BRAND.fonts.heading,
-    fontSize: 18,
-    color: BRAND.colors.ink,
+    fontFamily: BRAND.fonts.body,
+    fontSize: 13,
+    color: BRAND.colors.surface + "d9",
+    marginTop: 2,
+  },
+  itemsScrollArea: {
+    backgroundColor: BRAND.colors.accentTint,
   },
   listContent: {
     padding: 16,
@@ -341,7 +354,7 @@ const styles = StyleSheet.create({
   removeText: {
     fontFamily: BRAND.fonts.body,
     fontSize: 12,
-    color: "#c0392b",
+    color: BRAND.colors.danger,
   },
   noteInput: {
     marginTop: 6,
@@ -402,18 +415,21 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: BRAND.colors.inkMuted,
   },
-  totalLabel: {
-    fontFamily: BRAND.fonts.bodySemiBold,
-    fontSize: 14,
-    color: BRAND.colors.ink,
+  totalPill: {
+    alignSelf: "flex-start",
+    backgroundColor: BRAND.colors.primaryTextSafe,
+    borderRadius: BRAND.radiusPill,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    marginTop: 4,
   },
-  totalValue: {
+  totalPillText: {
     fontFamily: BRAND.fonts.bodySemiBold,
     fontSize: 14,
-    color: BRAND.colors.ink,
+    color: BRAND.colors.surface,
   },
   checkoutButton: {
-    backgroundColor: BRAND.colors.primary,
+    backgroundColor: BRAND.colors.primaryTextSafe,
     borderRadius: 999,
     paddingVertical: 14,
     alignItems: "center",

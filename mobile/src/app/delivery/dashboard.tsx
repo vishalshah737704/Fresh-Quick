@@ -46,6 +46,23 @@ export default function DeliveryDashboardScreen() {
   const [error, setError] = useState<string | null>(null);
   const [addresses, setAddresses] = useState<Record<string, string>>({});
   const [busyOrderId, setBusyOrderId] = useState<string | null>(null);
+  const [profileName, setProfileName] = useState<string | null>(null);
+  const [resetStatus, setResetStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadProfile() {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const userId = sessionData.session?.user.id;
+      if (!userId) return;
+      const { data } = await supabase.from("users").select("full_name").eq("id", userId).single();
+      if (!cancelled) setProfileName(data?.full_name ?? null);
+    }
+    loadProfile();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // Latest lat/lng from the device, used by the ping interval. A ref (not
   // state) so the 15s interval closure always reads the current value
@@ -199,19 +216,45 @@ export default function DeliveryDashboardScreen() {
     router.replace("/");
   }
 
+  async function handleResetPassword() {
+    setResetStatus("sending");
+    const { data: userData } = await supabase.auth.getUser();
+    const email = userData?.user?.email;
+    if (!email) {
+      setResetStatus("error");
+      return;
+    }
+    const { error: resetError } = await supabase.auth.resetPasswordForEmail(email);
+    setResetStatus(resetError ? "error" : "sent");
+  }
+
   return (
     <View style={styles.container}>
       <View style={styles.headerRow}>
-        <Text style={styles.heading}>Dashboard</Text>
-        <Pressable onPress={handleSignOut}>
-          <Text style={styles.signOut}>Sign out</Text>
-        </Pressable>
+        <View>
+          <Text style={styles.heading}>Dashboard</Text>
+          {profileName ? <Text style={styles.profileName}>{profileName}</Text> : null}
+        </View>
+        <View style={{ alignItems: "flex-end" }}>
+          <Pressable onPress={handleSignOut}>
+            <Text style={styles.signOut}>Sign out</Text>
+          </Pressable>
+          <Pressable onPress={handleResetPassword} disabled={resetStatus === "sending"}>
+            <Text style={styles.resetPasswordLink}>
+              {resetStatus === "sent"
+                ? "Reset email sent"
+                : resetStatus === "error"
+                  ? "Couldn't send"
+                  : "Reset password"}
+            </Text>
+          </Pressable>
+        </View>
       </View>
 
       {error && <Text style={styles.errorText}>{error}</Text>}
 
       <Pressable
-        style={[styles.toggle, isOnline ? styles.toggleOn : styles.toggleOff]}
+        style={styles.earningsBar}
         onPress={toggleOnline}
         disabled={toggling}
       >
@@ -243,14 +286,14 @@ export default function DeliveryDashboardScreen() {
                       {Number(o.total).toFixed(2)}
                     </Text>
                     <Pressable
-                      style={styles.smallButton}
+                      style={styles.acceptButton}
                       onPress={() => claim(o.id)}
                       disabled={busyOrderId === o.id}
                     >
                       {busyOrderId === o.id ? (
                         <ActivityIndicator color={BRAND.colors.surface} size="small" />
                       ) : (
-                        <Text style={styles.smallButtonText}>Claim</Text>
+                        <Text style={styles.smallButtonText}>Accept</Text>
                       )}
                     </Pressable>
                   </View>
@@ -306,7 +349,7 @@ export default function DeliveryDashboardScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16, gap: 16, backgroundColor: BRAND.colors.background },
+  container: { flex: 1, padding: 16, gap: 16, backgroundColor: BRAND.colors.primaryTint },
   headerRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -314,16 +357,23 @@ const styles = StyleSheet.create({
   },
   heading: { fontFamily: BRAND.fonts.heading, fontSize: 24, color: BRAND.colors.ink },
   signOut: { fontFamily: BRAND.fonts.bodyMedium, color: BRAND.colors.inkMuted },
+  profileName: { fontFamily: BRAND.fonts.body, fontSize: 13, color: BRAND.colors.inkMuted },
+  resetPasswordLink: {
+    marginTop: 4,
+    fontFamily: BRAND.fonts.body,
+    fontSize: 12,
+    color: BRAND.colors.accentTextSafe,
+    textDecorationLine: "underline",
+  },
   centered: { alignItems: "center", paddingVertical: 24 },
   mutedText: { fontFamily: BRAND.fonts.body, color: BRAND.colors.inkMuted, fontSize: 13 },
-  errorText: { fontFamily: BRAND.fonts.body, color: "#dc2626" },
-  toggle: {
-    borderRadius: 999,
+  errorText: { fontFamily: BRAND.fonts.body, color: BRAND.colors.danger },
+  earningsBar: {
+    borderRadius: BRAND.radiusPill,
     paddingVertical: 14,
     alignItems: "center",
+    backgroundColor: BRAND.colors.ink,
   },
-  toggleOn: { backgroundColor: "#16a34a" },
-  toggleOff: { backgroundColor: BRAND.colors.inkMuted },
   toggleText: {
     fontFamily: BRAND.fonts.bodySemiBold,
     color: BRAND.colors.surface,
@@ -342,7 +392,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: BRAND.colors.inkMuted + "22",
     backgroundColor: BRAND.colors.surface,
-    borderRadius: BRAND.radius,
+    borderRadius: 16,
     padding: 12,
     gap: 8,
   },
@@ -350,7 +400,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: BRAND.colors.inkMuted + "22",
     backgroundColor: BRAND.colors.surface,
-    borderRadius: BRAND.radius,
+    borderRadius: 16,
     padding: 12,
     gap: 6,
   },
@@ -369,8 +419,17 @@ const styles = StyleSheet.create({
   },
   actionRow: { flexDirection: "row", gap: 8 },
   smallButton: {
-    backgroundColor: BRAND.colors.primary,
-    borderRadius: 999,
+    backgroundColor: BRAND.colors.primaryTextSafe,
+    borderRadius: BRAND.radiusPill,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    minWidth: 32,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  acceptButton: {
+    backgroundColor: BRAND.colors.accentTextSafe,
+    borderRadius: BRAND.radiusPill,
     paddingHorizontal: 12,
     paddingVertical: 6,
     minWidth: 32,

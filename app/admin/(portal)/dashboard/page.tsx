@@ -91,9 +91,74 @@ export default function AdminDashboardPage() {
     { key: "partners", label: "Delivery partners", count: partners.length },
   ];
 
+  const activeOrdersCount = orders.filter((o) => !["delivered", "cancelled"].includes(o.status)).length;
+  const revenueCents = orders
+    .filter((o) => o.status !== "cancelled")
+    .reduce((sum, o) => sum + Math.round(o.total * 100), 0);
+  const revenue = revenueCents / 100;
+
+  function vendorStatus(r: RestaurantRow): { label: string; className: string } {
+    if (r.is_suspended) return { label: "Paused", className: "bg-brand-primary-text-safe text-white" };
+    if (r.is_open) return { label: "Active", className: "bg-brand-accent-text-safe text-white" };
+    return { label: "Pending", className: "bg-gray-400 text-white" };
+  }
+
   return (
     <div>
-      <h1 className="mb-4 font-heading text-2xl text-brand-ink">Dashboard</h1>
+      <div className="mb-4 rounded-[var(--radius-card)] bg-brand-ink px-4 py-3">
+        <h1 className="font-heading text-2xl text-white">Dashboard</h1>
+      </div>
+
+      <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <div className="rounded-[var(--radius-card)] bg-brand-primary-text-safe p-4">
+          <p className="text-sm text-white/80">Active orders</p>
+          <p className="font-heading text-3xl text-white">{activeOrdersCount}</p>
+        </div>
+        <div className="rounded-[var(--radius-card)] bg-brand-ink p-4">
+          <p className="text-sm text-white/80">Vendors</p>
+          <p className="font-heading text-3xl text-white">{restaurants.length}</p>
+        </div>
+        <div className="rounded-[var(--radius-card)] bg-brand-accent-text-safe p-4">
+          <p className="text-sm text-white/80">Revenue</p>
+          <p className="font-heading text-3xl text-white">₹{revenue.toFixed(2)}</p>
+        </div>
+      </div>
+
+      <div className="mb-6 overflow-x-auto rounded-[var(--radius-card)] border border-brand-ink-muted/10">
+        <table className="w-full text-left text-sm">
+          <thead className="bg-brand-ink text-white">
+            <tr>
+              <th className="p-2">Vendor</th>
+              <th className="p-2">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {restaurants.map((r) => {
+              const status = vendorStatus(r);
+              return (
+                <tr key={r.id} className="border-t border-brand-ink-muted/10">
+                  <td className="p-2">{r.name}</td>
+                  <td className="p-2">
+                    <span
+                      className={`inline-flex items-center rounded-[var(--radius-pill)] px-3 py-1 text-xs font-medium ${status.className}`}
+                    >
+                      {status.label}
+                    </span>
+                  </td>
+                </tr>
+              );
+            })}
+            {restaurants.length === 0 && (
+              <tr>
+                <td colSpan={2} className="p-4 text-center text-brand-ink-muted">
+                  No vendors yet.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+
       <div className="mb-4 flex gap-2 border-b border-brand-ink-muted/10">
         {TABS.map((tab) => (
           <button
@@ -101,7 +166,7 @@ export default function AdminDashboardPage() {
             onClick={() => setActiveTab(tab.key)}
             className={`rounded-full px-4 py-2 text-sm ${
               activeTab === tab.key
-                ? "bg-brand-primary text-white"
+                ? "bg-brand-primary-text-safe text-white"
                 : "text-brand-ink hover:bg-brand-accent/10"
             }`}
           >
@@ -150,7 +215,7 @@ export default function AdminDashboardPage() {
                         <button
                           onClick={() => reassign(o.id)}
                           disabled={!reassignSelections[o.id]}
-                          className="rounded-full bg-brand-primary px-3 py-1 text-xs text-white disabled:opacity-50"
+                          className="rounded-full bg-brand-primary-text-safe px-3 py-1 text-xs text-white disabled:opacity-50"
                         >
                           Reassign
                         </button>

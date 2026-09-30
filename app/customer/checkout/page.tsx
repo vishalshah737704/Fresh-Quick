@@ -9,6 +9,17 @@ import { supabase } from "@/lib/supabase";
 import { useDeliveryFee } from "@/lib/use-delivery-fee";
 import { validateCardFields, validateUpiFields, validateRecipientEmail } from "@/lib/payment-fields";
 
+// Spec requires every checkout field blank on every visit — never seed the
+// form from AddressProvider's deliveryDetails, which survives client-side
+// navigation within a session (see Finding 5).
+const EMPTY_DELIVERY_DETAILS: DeliveryDetails = {
+  line1: "",
+  line2: "",
+  city: "",
+  state: "",
+  pincode: "",
+};
+
 const PAYMENT_METHODS = [
   { value: "mock_card", label: "Mock Card", icon: "💳" },
   { value: "mock_upi", label: "Mock UPI", icon: "📱" },
@@ -18,7 +29,7 @@ const PAYMENT_METHODS = [
 export default function CheckoutPage() {
   const router = useRouter();
   const { storeId, items, subtotal, orderNote, clearCart, setCheckoutHandler } = useCart();
-  const { lat, lng, label, deliveryDetails, setDeliveryDetails } = useAddress();
+  const { lat, lng, label, setDeliveryDetails } = useAddress();
   const { userId, loading: sessionLoading } = useSession();
 
   const [paymentMethod, setPaymentMethod] =
@@ -32,7 +43,7 @@ export default function CheckoutPage() {
   const [cardExpiry, setCardExpiry] = useState("");
   const [cardholderName, setCardholderName] = useState("");
   const [upiId, setUpiId] = useState("");
-  const [address, setAddress] = useState<DeliveryDetails>(deliveryDetails);
+  const [address, setAddress] = useState<DeliveryDetails>(EMPTY_DELIVERY_DETAILS);
 
   function updateAddressField(field: keyof DeliveryDetails, value: string) {
     setAddress((prev) => ({ ...prev, [field]: value }));
@@ -46,26 +57,15 @@ export default function CheckoutPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [address]);
 
+  // Redirect to login as an effect, never inside the render body — calling
+  // router.push() during render triggers "Cannot update a component
+  // (Router) while rendering a different component" because it updates the
+  // Next.js router's own state synchronously mid-render.
   useEffect(() => {
-    if (!userId) return;
-    let cancelled = false;
-    async function loadProfile() {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const email = sessionData.session?.user.email ?? "";
-      const { data: profile } = await supabase
-        .from("users")
-        .select("full_name")
-        .eq("id", userId)
-        .single();
-      if (cancelled) return;
-      setRecipientEmail(email);
-      setRecipientName(profile?.full_name ?? "");
+    if (!sessionLoading && !userId) {
+      router.push("/customer/login?redirectTo=/customer/checkout");
     }
-    loadProfile();
-    return () => {
-      cancelled = true;
-    };
-  }, [userId]);
+  }, [sessionLoading, userId, router]);
 
   const total = deliveryFeePaise !== null ? (Math.round(subtotal * 100) + deliveryFeePaise) / 100 : null;
 
@@ -186,32 +186,43 @@ export default function CheckoutPage() {
   ]);
 
   if (sessionLoading) {
-    return <p className="text-gray-500">Loading…</p>;
+    return <p className="text-brand-ink-muted">Loading…</p>;
   }
 
   if (!userId) {
-    router.push("/customer/login?redirectTo=/customer/checkout");
     return null;
   }
 
   if (items.length === 0 || !storeId) {
-    return <p className="text-gray-500">Your cart is empty.</p>;
+    return <p className="text-brand-ink-muted">Your cart is empty.</p>;
   }
 
   if (feeLoadError) {
-    return <p className="text-red-600">Couldn&apos;t load delivery fee: {feeLoadError}</p>;
+    return (
+      <p className="rounded-[var(--radius-card)] bg-brand-danger px-4 py-3 text-white">
+        Couldn&apos;t load delivery fee: {feeLoadError}
+      </p>
+    );
   }
 
   if (deliveryFeePaise === null) {
-    return <p className="text-gray-500">Loading…</p>;
+    return <p className="text-brand-ink-muted">Loading…</p>;
   }
 
   return (
-    <div>
-      <h1 className="mb-6 text-2xl font-bold text-brand-ink">Checkout</h1>
+    <div
+      className="-m-4 p-4"
+      style={{
+        background:
+          "linear-gradient(180deg, var(--color-brand-primary-tint) 0%, var(--color-brand-bg) 260px)",
+      }}
+    >
+      <div className="-mx-4 -mt-4 mb-6 bg-brand-ink px-6 py-4">
+        <h1 className="text-2xl font-bold text-white">Checkout</h1>
+      </div>
       <div className="flex max-w-2xl flex-col gap-6">
-        <section className="rounded-lg border border-brand-ink-muted/10 bg-brand-surface p-4">
-          <h2 className="mb-3 font-semibold text-brand-ink">Contact details</h2>
+        <section className="rounded-[var(--radius-card)] border-t-4 border-brand-primary bg-brand-surface p-4 shadow-sm">
+          <h2 className="mb-3 font-semibold text-brand-primary">Contact details</h2>
           <div className="flex flex-col gap-3">
             <div>
               <label className="mb-1 block text-sm font-medium text-brand-ink">Name</label>
@@ -219,7 +230,11 @@ export default function CheckoutPage() {
                 type="text"
                 value={recipientName}
                 onChange={(e) => setRecipientName(e.target.value)}
-                className="w-full rounded border border-brand-ink-muted/15 px-3 py-2 text-sm"
+                className={`w-full rounded border px-3 py-2 text-sm ${
+                  recipientName
+                    ? "border-brand-ink-muted/15"
+                    : "border-brand-primary/30 bg-brand-primary-tint"
+                }`}
                 placeholder="Who's this order for?"
               />
             </div>
@@ -229,15 +244,19 @@ export default function CheckoutPage() {
                 type="email"
                 value={recipientEmail}
                 onChange={(e) => setRecipientEmail(e.target.value)}
-                className="w-full rounded border border-brand-ink-muted/15 px-3 py-2 text-sm"
+                className={`w-full rounded border px-3 py-2 text-sm ${
+                  recipientEmail
+                    ? "border-brand-ink-muted/15"
+                    : "border-brand-primary/30 bg-brand-primary-tint"
+                }`}
                 placeholder="Where should order updates go?"
               />
             </div>
           </div>
         </section>
 
-        <section className="rounded-lg border border-brand-ink-muted/10 bg-brand-surface p-4">
-          <h2 className="mb-3 font-semibold text-brand-ink">Delivery address</h2>
+        <section className="rounded-[var(--radius-card)] border-t-4 border-brand-accent bg-brand-surface p-4 shadow-sm">
+          <h2 className="mb-3 font-semibold text-brand-accent">Delivery address</h2>
           <div className="flex flex-col gap-3">
             <div>
               <label className="mb-1 block text-sm font-medium text-brand-ink">Address 1</label>
@@ -245,7 +264,11 @@ export default function CheckoutPage() {
                 type="text"
                 value={address.line1}
                 onChange={(e) => updateAddressField("line1", e.target.value)}
-                className="w-full rounded border border-brand-ink-muted/15 px-3 py-2 text-sm"
+                className={`w-full rounded border px-3 py-2 text-sm ${
+                  address.line1
+                    ? "border-brand-ink-muted/15"
+                    : "border-brand-accent/30 bg-brand-accent-tint"
+                }`}
                 placeholder="House/flat no., building, street"
               />
             </div>
@@ -255,7 +278,11 @@ export default function CheckoutPage() {
                 type="text"
                 value={address.line2}
                 onChange={(e) => updateAddressField("line2", e.target.value)}
-                className="w-full rounded border border-brand-ink-muted/15 px-3 py-2 text-sm"
+                className={`w-full rounded border px-3 py-2 text-sm ${
+                  address.line2
+                    ? "border-brand-ink-muted/15"
+                    : "border-brand-accent/30 bg-brand-accent-tint"
+                }`}
                 placeholder="Landmark, area (optional)"
               />
             </div>
@@ -266,7 +293,11 @@ export default function CheckoutPage() {
                   type="text"
                   value={address.city}
                   onChange={(e) => updateAddressField("city", e.target.value)}
-                  className="w-full rounded border border-brand-ink-muted/15 px-3 py-2 text-sm"
+                  className={`w-full rounded border px-3 py-2 text-sm ${
+                    address.city
+                      ? "border-brand-ink-muted/15"
+                      : "border-brand-accent/30 bg-brand-accent-tint"
+                  }`}
                 />
               </div>
               <div>
@@ -275,7 +306,11 @@ export default function CheckoutPage() {
                   type="text"
                   value={address.state}
                   onChange={(e) => updateAddressField("state", e.target.value)}
-                  className="w-full rounded border border-brand-ink-muted/15 px-3 py-2 text-sm"
+                  className={`w-full rounded border px-3 py-2 text-sm ${
+                    address.state
+                      ? "border-brand-ink-muted/15"
+                      : "border-brand-accent/30 bg-brand-accent-tint"
+                  }`}
                 />
               </div>
             </div>
@@ -285,13 +320,17 @@ export default function CheckoutPage() {
                 type="text"
                 value={address.pincode}
                 onChange={(e) => updateAddressField("pincode", e.target.value)}
-                className="w-full max-w-[160px] rounded border border-brand-ink-muted/15 px-3 py-2 text-sm"
+                className={`w-full max-w-[160px] rounded border px-3 py-2 text-sm ${
+                  address.pincode
+                    ? "border-brand-ink-muted/15"
+                    : "border-brand-accent/30 bg-brand-accent-tint"
+                }`}
               />
             </div>
           </div>
         </section>
 
-        <section className="rounded-lg border border-brand-ink-muted/10 bg-brand-surface p-4">
+        <section className="rounded-[var(--radius-card)] border-t-4 border-brand-ink bg-brand-surface p-4 shadow-sm">
           <h2 className="mb-3 font-semibold text-brand-ink">Payment method</h2>
           <div className="flex flex-col gap-2">
             {PAYMENT_METHODS.map((m) => (
@@ -320,7 +359,11 @@ export default function CheckoutPage() {
                       value={cardNumber}
                       onChange={(e) => setCardNumber(e.target.value)}
                       placeholder="Card number (16 digits)"
-                      className="w-full rounded border border-brand-ink-muted/15 px-3 py-2 text-sm"
+                      className={`w-full rounded border px-3 py-2 text-sm ${
+                        cardNumber
+                          ? "border-brand-ink-muted/15"
+                          : "border-brand-ink/30 bg-brand-ink-tint"
+                      }`}
                     />
                     <div className="flex gap-2">
                       <input
@@ -328,14 +371,22 @@ export default function CheckoutPage() {
                         value={cardExpiry}
                         onChange={(e) => setCardExpiry(e.target.value)}
                         placeholder="MM/YY"
-                        className="w-24 rounded border border-brand-ink-muted/15 px-3 py-2 text-sm"
+                        className={`w-24 rounded border px-3 py-2 text-sm ${
+                          cardExpiry
+                            ? "border-brand-ink-muted/15"
+                            : "border-brand-ink/30 bg-brand-ink-tint"
+                        }`}
                       />
                       <input
                         type="text"
                         value={cardholderName}
                         onChange={(e) => setCardholderName(e.target.value)}
                         placeholder="Cardholder name"
-                        className="flex-1 rounded border border-brand-ink-muted/15 px-3 py-2 text-sm"
+                        className={`flex-1 rounded border px-3 py-2 text-sm ${
+                          cardholderName
+                            ? "border-brand-ink-muted/15"
+                            : "border-brand-ink/30 bg-brand-ink-tint"
+                        }`}
                       />
                     </div>
                   </div>
@@ -347,7 +398,11 @@ export default function CheckoutPage() {
                       value={upiId}
                       onChange={(e) => setUpiId(e.target.value)}
                       placeholder="UPI ID, e.g. name@bank"
-                      className="w-full rounded border border-brand-ink-muted/15 px-3 py-2 text-sm"
+                      className={`w-full rounded border px-3 py-2 text-sm ${
+                        upiId
+                          ? "border-brand-ink-muted/15"
+                          : "border-brand-ink/30 bg-brand-ink-tint"
+                      }`}
                     />
                   </div>
                 )}
