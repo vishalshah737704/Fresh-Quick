@@ -27,7 +27,16 @@ Give every actor (customer, vendor, delivery partner, admin) a complete, readabl
 - Shared server helper returning the full order: recipient name/email, delivery address (all columns), store name + address, items (qty, unit price, options, notes, `products.image_url`), subtotal, delivery fee, total, payment, timestamps. Each role's route wraps it with its own auth (`resolveVendor`, `resolveDelivery`, `resolveAdmin`, customer session token). Money stays integer paise.
 - `OrderDetailView` component (web) rendering the full order with item thumbnails; role-specific action slots.
 - Verify RLS: customer can read own `order_items` / related `products`; delivery address visible to partner only while `assigned`/`picked_up` (existing policy). Per CLAUDE.md, list existing policies before adding any; no new write policies.
-- No schema change expected.
+- One schema change: `orders.recipient_phone` (see Customer phone number). Nothing else.
+
+## Customer phone number (added 2026-09-30)
+
+- Captured at checkout alongside name and email, on web and mobile (mobile checkout gets the field in sub-project A so it never breaks against the new API).
+- Required; Indian 10-digit mobile, optional `+91`/`91`/`0` prefix, starts 6-9; stored normalized as `+91XXXXXXXXXX` in `orders.recipient_phone text not null`. Validation is server-side in `POST /api/cart/checkout` and client-side in both checkouts; web and mobile validators are byte-identical (sync-tested).
+- Existing orders are backfilled with the literal `Not provided` (user's choice); the UI shows any value not starting with `+` as plain text. No DB CHECK constraint.
+- Not prefilled (checkout fields must never persist across sessions).
+- Available everywhere the recipient appears: customer order detail, vendor card + dialog, delivery dashboard/history and admin order detail (via the shared `OrderDetail`), mobile customer and delivery order views (D), and n8n (`notification-details` returns it; the delivered email includes it in the order details) (C). The phone is also in the database as above.
+- `checkout_place_order` RPC gains `p_recipient_phone` (old signature dropped, per the project's RPC-signature rule).
 
 ## Customer (web + mobile)
 
@@ -57,16 +66,26 @@ Give every actor (customer, vendor, delivery partner, admin) a complete, readabl
 
 ## n8n delivered email
 
-- Extend `app/api/internal/orders/[id]/notification-details/route.ts` with items (name, qty, price, image URL), totals, address, and use `recipient_email`.
+- Extend `app/api/internal/orders/[id]/notification-details/route.ts` with items (name, qty, price, image URL), totals, address, `recipient_phone`, and use `recipient_email`.
 - Workflow 05: on `delivered`, GET details, send Gmail node: "Thank you for your order. Your order has been successfully delivered. Please let us know your experience." plus HTML item table with images and totals.
 - Verify the webhook payload is populated (n8n_notify lesson), then run the workflow live against local n8n.
 
 ## Sub-projects (each: plan -> build -> live verify -> merge to main)
 
-- A: shared foundation + web Customer + web Vendor.
+- A: shared foundation + customer phone (DB, API, web + mobile checkout) + web Customer + web Vendor.
 - B: web Delivery + web Admin.
 - C: n8n delivered email.
 - D: Mobile Customer + Delivery, then both manuals (web + mobile, docx + pdf) updated in place with python-docx, static TOCs renumbered, screenshots from a production build.
+
+## Web/mobile status parity (requirement from the user)
+
+After sub-project D the mobile status mapping must match the web mapping exactly: `mobile/lib/order-status.ts` is updated to the same 6 steps and index map as `lib/order-status.ts`, and D adds a node test that reads both files and asserts the status list, timeline labels and index map are identical (mobile cannot import the web module, so a sync test is the guard). Until D merges, mobile keeps the old 4-step mapping; that interim gap is known and accepted.
+
+## Execution decisions
+
+- Branch per sub-project in the main checkout (a worktree would need `npm ci`, which needs approval). Tasks executed via subagent-driven development with per-task review and a final whole-branch review.
+- Tasks 7 and 8 of sub-project A (vendor API + vendor page) are committed together.
+- No test framework yet (POC): pure-logic tests use `node --test`; a proper framework is a later decision.
 
 ## Verification
 
