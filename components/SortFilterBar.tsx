@@ -28,7 +28,7 @@ export function SortFilterBar({
         onClick={() => toggleSort("rating")}
         className={`rounded-[var(--radius-pill)] border px-4 py-2 text-sm font-medium transition-colors ${
           sortBy === "rating"
-            ? "border-brand-primary bg-brand-primary text-white"
+            ? "border-brand-primary bg-brand-primary-text-safe text-white"
             : "border-brand-ink-muted/20 bg-brand-surface text-brand-ink hover:border-brand-primary"
         }`}
       >
@@ -38,7 +38,7 @@ export function SortFilterBar({
         onClick={() => toggleSort("deliveryFee")}
         className={`rounded-[var(--radius-pill)] border px-4 py-2 text-sm font-medium transition-colors ${
           sortBy === "deliveryFee"
-            ? "border-brand-primary bg-brand-primary text-white"
+            ? "border-brand-primary bg-brand-primary-text-safe text-white"
             : "border-brand-ink-muted/20 bg-brand-surface text-brand-ink hover:border-brand-primary"
         }`}
       >
@@ -48,7 +48,7 @@ export function SortFilterBar({
         onClick={() => onUnder30Toggle(!under30)}
         className={`rounded-[var(--radius-pill)] border px-4 py-2 text-sm font-medium transition-colors ${
           under30
-            ? "border-brand-primary bg-brand-primary text-white"
+            ? "border-brand-primary bg-brand-primary-text-safe text-white"
             : "border-brand-ink-muted/20 bg-brand-surface text-brand-ink hover:border-brand-primary"
         }`}
       >

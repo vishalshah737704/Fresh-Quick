@@ -115,7 +115,7 @@ function DeliveryLoginForm() {
         <button
           disabled={submitting}
           onClick={mode === "login" ? handleLogin : handleSignup}
-          className="w-full rounded-full bg-brand-primary px-4 py-2 text-white disabled:opacity-50"
+          className="w-full rounded-full bg-brand-primary-text-safe px-4 py-2 text-white disabled:opacity-50"
         >
           {submitting ? "Please wait…" : mode === "login" ? "Log in" : "Sign up"}
         </button>

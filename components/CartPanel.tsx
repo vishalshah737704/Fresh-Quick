@@ -39,7 +39,7 @@ export function CartPanel() {
 
   return (
     <aside className="hidden h-full w-96 shrink-0 flex-col overflow-y-auto rounded-[var(--radius-card)] border border-brand-ink-muted/10 bg-brand-surface [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden lg:flex">
-      <div className="rounded-t-[var(--radius-card)] bg-brand-accent px-4 py-3">
+      <div className="rounded-t-[var(--radius-card)] bg-brand-accent-text-safe px-4 py-3">
         <h2 className="text-lg font-bold text-white">My Basket</h2>
         <p className="text-sm text-white/85">{storeName}</p>
       </div>
@@ -106,7 +106,7 @@ export function CartPanel() {
         ))}
       </div>
 
-      <div className="border-t border-brand-ink-muted/10 bg-brand-primary px-4 py-3">
+      <div className="border-t border-brand-ink-muted/10 bg-brand-primary-text-safe px-4 py-3">
         <div className="flex flex-col gap-1 text-sm text-white/85">
           <p>Subtotal: ₹{subtotal.toFixed(2)}</p>
           {feeLoading ? (
@@ -124,7 +124,7 @@ export function CartPanel() {
         {!isOnCheckoutPage && (
           <Link
             href="/customer/checkout"
-            className="mt-2 block rounded-[var(--radius-pill)] bg-brand-accent px-3 py-2 text-center text-sm font-semibold text-white"
+            className="mt-2 block rounded-[var(--radius-pill)] bg-brand-accent-text-safe px-3 py-2 text-center text-sm font-semibold text-white"
           >
             Checkout
           </Link>
@@ -139,7 +139,7 @@ export function CartPanel() {
             <button
               disabled={checkoutHandler.submitting || !checkoutHandler.canPlaceOrder}
               onClick={checkoutHandler.onPlaceOrder}
-              className="mt-2 block w-full rounded-[var(--radius-pill)] bg-brand-accent px-3 py-2 text-center text-sm font-semibold text-white disabled:opacity-50"
+              className="mt-2 block w-full rounded-[var(--radius-pill)] bg-brand-accent-text-safe px-3 py-2 text-center text-sm font-semibold text-white disabled:opacity-50"
             >
               {checkoutHandler.submitting ? "Placing order…" : "Place order"}
             </button>

@@ -12,6 +12,12 @@
   /* Keep in sync with lib/branding.ts's BRAND.theme values. */
   --color-brand-primary: #F5821F;
   --color-brand-accent: #1E8A3E;
+  /* Darkened variants for white text on a solid fill (WCAG AA, >=4.5:1).
+     #F5821F/#1E8A3E themselves only hit ~2.6:1/~4.4:1 with white text —
+     use these on any text-bearing button/pill/badge; keep the originals
+     for decorative fills, borders, and chips with dark text. */
+  --color-brand-primary-text-safe: #A85800;
+  --color-brand-accent-text-safe: #187033;
   --color-brand-bg: #F4F4F4;
   --color-brand-surface: #FFFFFF;
   --color-brand-ink: #0B1D3A;

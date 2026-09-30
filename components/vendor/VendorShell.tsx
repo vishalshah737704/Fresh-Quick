@@ -6,6 +6,8 @@ import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useVendorSession } from "@/components/vendor/useVendorSession";
 import { VendorSessionContext } from "@/components/vendor/VendorSessionContext";
+import { useProfile } from "@/lib/use-profile";
+import { MyProfileSection } from "@/components/MyProfileSection";
 
 const NAV_LINKS = [
   { href: "/vendor/dashboard", label: "Dashboard" },
@@ -14,7 +16,8 @@ const NAV_LINKS = [
 ];
 
 export default function VendorShell({ children }: { children: React.ReactNode }) {
-  const { loading, storeId } = useVendorSession();
+  const { loading, storeId, vendorId } = useVendorSession();
+  const profile = useProfile(vendorId);
   const pathname = usePathname();
   const router = useRouter();
   const [isOpen, setIsOpen] = useState<boolean | null>(null);
@@ -72,16 +75,19 @@ export default function VendorShell({ children }: { children: React.ReactNode })
               onClick={() => setDrawerOpen(false)}
               className={`rounded-[var(--radius-pill)] px-3 py-2 text-sm ${
                 pathname === link.href
-                  ? "bg-brand-primary text-white"
+                  ? "bg-brand-primary-text-safe text-white"
                   : "text-white/80 hover:bg-white/10"
               }`}
             >
               {link.label}
             </Link>
           ))}
+          <div className="mt-auto border-t border-white/10 pt-3">
+            <MyProfileSection profile={profile} variant="dark" />
+          </div>
           <button
             onClick={signOut}
-            className="mt-auto rounded-[var(--radius-pill)] px-3 py-2 text-left text-sm text-white/70 hover:bg-white/10"
+            className="rounded-[var(--radius-pill)] px-3 py-2 text-left text-sm text-white/70 hover:bg-white/10"
           >
             Sign out
           </button>

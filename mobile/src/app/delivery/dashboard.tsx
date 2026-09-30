@@ -46,6 +46,23 @@ export default function DeliveryDashboardScreen() {
   const [error, setError] = useState<string | null>(null);
   const [addresses, setAddresses] = useState<Record<string, string>>({});
   const [busyOrderId, setBusyOrderId] = useState<string | null>(null);
+  const [profileName, setProfileName] = useState<string | null>(null);
+  const [resetStatus, setResetStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadProfile() {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const userId = sessionData.session?.user.id;
+      if (!userId) return;
+      const { data } = await supabase.from("users").select("full_name").eq("id", userId).single();
+      if (!cancelled) setProfileName(data?.full_name ?? null);
+    }
+    loadProfile();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // Latest lat/lng from the device, used by the ping interval. A ref (not
   // state) so the 15s interval closure always reads the current value
@@ -199,13 +216,39 @@ export default function DeliveryDashboardScreen() {
     router.replace("/");
   }
 
+  async function handleResetPassword() {
+    setResetStatus("sending");
+    const { data: userData } = await supabase.auth.getUser();
+    const email = userData?.user?.email;
+    if (!email) {
+      setResetStatus("error");
+      return;
+    }
+    const { error: resetError } = await supabase.auth.resetPasswordForEmail(email);
+    setResetStatus(resetError ? "error" : "sent");
+  }
+
   return (
     <View style={styles.container}>
       <View style={styles.headerRow}>
-        <Text style={styles.heading}>Dashboard</Text>
-        <Pressable onPress={handleSignOut}>
-          <Text style={styles.signOut}>Sign out</Text>
-        </Pressable>
+        <View>
+          <Text style={styles.heading}>Dashboard</Text>
+          {profileName ? <Text style={styles.profileName}>{profileName}</Text> : null}
+        </View>
+        <View style={{ alignItems: "flex-end" }}>
+          <Pressable onPress={handleSignOut}>
+            <Text style={styles.signOut}>Sign out</Text>
+          </Pressable>
+          <Pressable onPress={handleResetPassword} disabled={resetStatus === "sending"}>
+            <Text style={styles.resetPasswordLink}>
+              {resetStatus === "sent"
+                ? "Reset email sent"
+                : resetStatus === "error"
+                  ? "Couldn't send"
+                  : "Reset password"}
+            </Text>
+          </Pressable>
+        </View>
       </View>
 
       {error && <Text style={styles.errorText}>{error}</Text>}
@@ -314,6 +357,14 @@ const styles = StyleSheet.create({
   },
   heading: { fontFamily: BRAND.fonts.heading, fontSize: 24, color: BRAND.colors.ink },
   signOut: { fontFamily: BRAND.fonts.bodyMedium, color: BRAND.colors.inkMuted },
+  profileName: { fontFamily: BRAND.fonts.body, fontSize: 13, color: BRAND.colors.inkMuted },
+  resetPasswordLink: {
+    marginTop: 4,
+    fontFamily: BRAND.fonts.body,
+    fontSize: 12,
+    color: BRAND.colors.accentTextSafe,
+    textDecorationLine: "underline",
+  },
   centered: { alignItems: "center", paddingVertical: 24 },
   mutedText: { fontFamily: BRAND.fonts.body, color: BRAND.colors.inkMuted, fontSize: 13 },
   errorText: { fontFamily: BRAND.fonts.body, color: BRAND.colors.danger },
@@ -368,7 +419,7 @@ const styles = StyleSheet.create({
   },
   actionRow: { flexDirection: "row", gap: 8 },
   smallButton: {
-    backgroundColor: BRAND.colors.primary,
+    backgroundColor: BRAND.colors.primaryTextSafe,
     borderRadius: BRAND.radiusPill,
     paddingHorizontal: 12,
     paddingVertical: 6,
@@ -377,7 +428,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   acceptButton: {
-    backgroundColor: BRAND.colors.accent,
+    backgroundColor: BRAND.colors.accentTextSafe,
     borderRadius: BRAND.radiusPill,
     paddingHorizontal: 12,
     paddingVertical: 6,

@@ -84,7 +84,7 @@ export function SidebarNav() {
           </Link>
           <Link
             href="/customer/login"
-            className="flex items-center justify-center rounded-full bg-brand-primary px-4 py-3 text-base font-medium text-white"
+            className="flex items-center justify-center rounded-full bg-brand-primary-text-safe px-4 py-3 text-base font-medium text-white"
           >
             Sign Up
           </Link>

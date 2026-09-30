@@ -107,7 +107,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     left: 8,
     bottom: 8,
-    backgroundColor: BRAND.colors.primary,
+    backgroundColor: BRAND.colors.primaryTextSafe,
     borderRadius: 999,
     paddingHorizontal: 10,
     paddingVertical: 4,

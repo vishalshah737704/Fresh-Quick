@@ -59,7 +59,7 @@ export function AddressPicker() {
           />
           <button
             onClick={handleSave}
-            className="rounded bg-brand-primary px-3 py-1 text-sm text-white"
+            className="rounded bg-brand-primary-text-safe px-3 py-1 text-sm text-white"
           >
             Save location
           </button>

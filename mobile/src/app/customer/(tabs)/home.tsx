@@ -447,7 +447,7 @@ const styles = StyleSheet.create({
     borderColor: BRAND.colors.inkMuted + "20",
   },
   chipCircleActive: {
-    backgroundColor: BRAND.colors.primary,
+    backgroundColor: BRAND.colors.primaryTextSafe,
     borderColor: BRAND.colors.primary,
   },
   chipLabel: {

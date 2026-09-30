@@ -146,7 +146,7 @@ export default function DeliveryDashboardPage() {
 
   return (
     <div>
-      <div className="mb-4 rounded-[var(--radius-card)] bg-brand-primary px-4 py-3">
+      <div className="mb-4 rounded-[var(--radius-card)] bg-brand-primary-text-safe px-4 py-3">
         <h1 className="font-heading text-2xl text-white">Dashboard</h1>
       </div>
       {error && <p className="mb-2 text-sm text-red-600">{error}</p>}
@@ -154,7 +154,7 @@ export default function DeliveryDashboardPage() {
         <button
           onClick={toggleOnline}
           className={`rounded-[var(--radius-pill)] px-4 py-2 text-sm text-white ${
-            isOnline ? "bg-brand-accent" : "bg-white/20"
+            isOnline ? "bg-brand-accent-text-safe" : "bg-white/20"
           }`}
         >
           {isOnline ? "Online" : "Offline"} — tap to toggle
@@ -189,7 +189,7 @@ export default function DeliveryDashboardPage() {
                 </span>
                 <button
                   onClick={() => claim(o.id)}
-                  className="rounded-[var(--radius-pill)] bg-brand-accent px-3 py-1 text-xs text-white"
+                  className="rounded-[var(--radius-pill)] bg-brand-accent-text-safe px-3 py-1 text-xs text-white"
                 >
                   Accept
                 </button>
@@ -225,7 +225,7 @@ export default function DeliveryDashboardPage() {
                     {NEXT_LABEL[o.status] && (
                       <button
                         onClick={() => advance(o.id)}
-                        className="rounded-[var(--radius-pill)] bg-brand-primary px-3 py-1 text-xs text-white"
+                        className="rounded-[var(--radius-pill)] bg-brand-primary-text-safe px-3 py-1 text-xs text-white"
                       >
                         {NEXT_LABEL[o.status]}
                       </button>

@@ -98,8 +98,8 @@ export default function AdminDashboardPage() {
   const revenue = revenueCents / 100;
 
   function vendorStatus(r: RestaurantRow): { label: string; className: string } {
-    if (r.is_suspended) return { label: "Paused", className: "bg-brand-primary text-white" };
-    if (r.is_open) return { label: "Active", className: "bg-brand-accent text-white" };
+    if (r.is_suspended) return { label: "Paused", className: "bg-brand-primary-text-safe text-white" };
+    if (r.is_open) return { label: "Active", className: "bg-brand-accent-text-safe text-white" };
     return { label: "Pending", className: "bg-gray-400 text-white" };
   }
 
@@ -110,7 +110,7 @@ export default function AdminDashboardPage() {
       </div>
 
       <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <div className="rounded-[var(--radius-card)] bg-brand-primary p-4">
+        <div className="rounded-[var(--radius-card)] bg-brand-primary-text-safe p-4">
           <p className="text-sm text-white/80">Active orders</p>
           <p className="font-heading text-3xl text-white">{activeOrdersCount}</p>
         </div>
@@ -118,7 +118,7 @@ export default function AdminDashboardPage() {
           <p className="text-sm text-white/80">Vendors</p>
           <p className="font-heading text-3xl text-white">{restaurants.length}</p>
         </div>
-        <div className="rounded-[var(--radius-card)] bg-brand-accent p-4">
+        <div className="rounded-[var(--radius-card)] bg-brand-accent-text-safe p-4">
           <p className="text-sm text-white/80">Revenue</p>
           <p className="font-heading text-3xl text-white">₹{revenue.toFixed(2)}</p>
         </div>
@@ -166,7 +166,7 @@ export default function AdminDashboardPage() {
             onClick={() => setActiveTab(tab.key)}
             className={`rounded-full px-4 py-2 text-sm ${
               activeTab === tab.key
-                ? "bg-brand-primary text-white"
+                ? "bg-brand-primary-text-safe text-white"
                 : "text-brand-ink hover:bg-brand-accent/10"
             }`}
           >
@@ -215,7 +215,7 @@ export default function AdminDashboardPage() {
                         <button
                           onClick={() => reassign(o.id)}
                           disabled={!reassignSelections[o.id]}
-                          className="rounded-full bg-brand-primary px-3 py-1 text-xs text-white disabled:opacity-50"
+                          className="rounded-full bg-brand-primary-text-safe px-3 py-1 text-xs text-white disabled:opacity-50"
                         >
                           Reassign
                         </button>

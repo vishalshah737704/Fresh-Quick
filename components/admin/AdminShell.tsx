@@ -5,9 +5,12 @@ import { useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useAdminSession } from "@/components/admin/useAdminSession";
 import { AdminSessionContext } from "@/components/admin/AdminSessionContext";
+import { useProfile } from "@/lib/use-profile";
+import { MyProfileSection } from "@/components/MyProfileSection";
 
 export default function AdminShell({ children }: { children: React.ReactNode }) {
   const { loading, adminId } = useAdminSession();
+  const profile = useProfile(adminId);
   const router = useRouter();
   const [drawerOpen, setDrawerOpen] = useState(false);
 
@@ -35,12 +38,15 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
           style={{ background: "linear-gradient(180deg, var(--color-brand-ink) 0%, #132849 100%)" }}
         >
           <span className="mb-2 hidden font-heading text-lg text-white md:block">Admin</span>
-          <span className="rounded-[var(--radius-pill)] bg-brand-primary px-3 py-2 text-sm text-white">
+          <span className="rounded-[var(--radius-pill)] bg-brand-primary-text-safe px-3 py-2 text-sm text-white">
             Dashboard
           </span>
+          <div className="mt-auto border-t border-white/10 pt-3">
+            <MyProfileSection profile={profile} variant="dark" />
+          </div>
           <button
             onClick={signOut}
-            className="mt-auto rounded-[var(--radius-pill)] px-3 py-2 text-left text-sm text-white/70 hover:bg-white/10"
+            className="rounded-[var(--radius-pill)] px-3 py-2 text-left text-sm text-white/70 hover:bg-white/10"
           >
             Sign out
           </button>

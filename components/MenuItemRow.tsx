@@ -53,7 +53,7 @@ export function MenuItemRow({
         {item.description && (
           <p className="mt-0.5 line-clamp-2 text-sm text-brand-ink-muted">{item.description}</p>
         )}
-        <p className="mt-1 inline-block rounded-[var(--radius-pill)] bg-brand-accent px-2 py-0.5 text-sm font-semibold text-white">
+        <p className="mt-1 inline-block rounded-[var(--radius-pill)] bg-brand-accent-text-safe px-2 py-0.5 text-sm font-semibold text-white">
           ₹{item.price.toFixed(2)}
         </p>
         {!canAdd && (

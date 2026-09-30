@@ -11,6 +11,7 @@ export function AccountMenu() {
   const { userId } = useSession();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
+  const [resetStatus, setResetStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -28,6 +29,20 @@ export function AccountMenu() {
       cancelled = true;
     };
   }, [userId]);
+
+  async function handleResetPassword() {
+    setResetStatus("sending");
+    const { data: userData } = await supabase.auth.getUser();
+    const email = userData?.user?.email;
+    if (!email) {
+      setResetStatus("error");
+      return;
+    }
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    setResetStatus(error ? "error" : "sent");
+  }
 
   useEffect(() => {
     if (!open) return;
@@ -62,9 +77,23 @@ export function AccountMenu() {
       {open && (
         <div className="absolute right-0 top-11 z-20 w-56 rounded-lg border border-brand-ink-muted/10 bg-brand-surface py-2 shadow-lg">
           {name && (
-            <p className="border-b border-brand-ink-muted/10 px-4 pb-2 font-semibold text-brand-ink">
-              {name}
-            </p>
+            <div className="border-b border-brand-ink-muted/10 px-4 pb-2">
+              <p className="font-semibold text-brand-ink">{name}</p>
+              <button
+                type="button"
+                onClick={handleResetPassword}
+                disabled={resetStatus === "sending"}
+                className="mt-1 text-left text-xs text-brand-accent-text-safe underline hover:opacity-80 disabled:opacity-50"
+              >
+                {resetStatus === "sent"
+                  ? "Reset email sent"
+                  : resetStatus === "error"
+                    ? "Couldn't send — try again"
+                    : resetStatus === "sending"
+                      ? "Sending…"
+                      : "Reset password"}
+              </button>
+            </div>
           )}
           <Link
             href="/customer/orders"

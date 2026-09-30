@@ -55,7 +55,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   primaryButton: {
-    backgroundColor: BRAND.colors.primary,
+    backgroundColor: BRAND.colors.primaryTextSafe,
   },
   primaryButtonText: {
     color: BRAND.colors.surface,

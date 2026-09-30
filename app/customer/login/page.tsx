@@ -89,7 +89,7 @@ function LoginForm() {
         <button
           disabled={submitting}
           onClick={mode === "login" ? handleLogin : handleSignup}
-          className="rounded-full bg-brand-primary px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
+          className="rounded-full bg-brand-primary-text-safe px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
         >
           {submitting ? "Please wait…" : mode === "login" ? "Log in" : "Sign up"}
         </button>

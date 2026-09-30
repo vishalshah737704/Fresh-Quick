@@ -188,13 +188,13 @@ export function ItemCustomizationModal({
           </div>
         </div>
         <div className="fixed inset-x-0 bottom-0 z-10 mx-auto flex max-w-md items-center justify-between gap-3 border-t border-brand-ink-muted/15 bg-brand-surface px-4 py-3 sm:static sm:mx-0 sm:border-0 sm:px-4 sm:pt-0">
-          <span className="rounded-[var(--radius-pill)] bg-brand-primary px-4 py-2 text-sm font-semibold text-white">
+          <span className="rounded-[var(--radius-pill)] bg-brand-primary-text-safe px-4 py-2 text-sm font-semibold text-white">
             ₹{(totalPaise / 100).toFixed(2)}
           </span>
           <button
             disabled={!allGroupsValid}
             onClick={handleAdd}
-            className="flex-1 rounded-[var(--radius-pill)] bg-brand-accent px-4 py-2 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex-1 rounded-[var(--radius-pill)] bg-brand-accent-text-safe px-4 py-2 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
           >
             Add {quantity} to cart
           </button>

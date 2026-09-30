@@ -53,9 +53,9 @@ export function OrderStatusTimeline({ status }: { status: OrderStatus }) {
               <div
                 className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold ${
                   complete
-                    ? "bg-brand-accent text-white"
+                    ? "bg-brand-accent-text-safe text-white"
                     : active
-                    ? "bg-brand-primary text-white"
+                    ? "bg-brand-primary-text-safe text-white"
                     : "bg-brand-ink-muted/20 text-brand-ink-muted"
                 }`}
               >

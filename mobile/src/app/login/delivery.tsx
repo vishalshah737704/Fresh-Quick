@@ -108,7 +108,7 @@ const styles = StyleSheet.create({
     fontFamily: BRAND.fonts.body,
   },
   button: {
-    backgroundColor: BRAND.colors.primary,
+    backgroundColor: BRAND.colors.primaryTextSafe,
     borderRadius: 999,
     paddingVertical: 14,
     alignItems: "center",

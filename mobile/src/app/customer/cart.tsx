@@ -201,7 +201,7 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   sheetHeader: {
-    backgroundColor: BRAND.colors.accent,
+    backgroundColor: BRAND.colors.accentTextSafe,
     paddingTop: 8,
     paddingBottom: 14,
   },
@@ -244,7 +244,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   tipButtonActive: {
-    backgroundColor: BRAND.colors.accent,
+    backgroundColor: BRAND.colors.accentTextSafe,
     borderColor: BRAND.colors.accent,
   },
   tipButtonText: {
@@ -417,7 +417,7 @@ const styles = StyleSheet.create({
   },
   totalPill: {
     alignSelf: "flex-start",
-    backgroundColor: BRAND.colors.primary,
+    backgroundColor: BRAND.colors.primaryTextSafe,
     borderRadius: BRAND.radiusPill,
     paddingHorizontal: 12,
     paddingVertical: 6,
@@ -429,7 +429,7 @@ const styles = StyleSheet.create({
     color: BRAND.colors.surface,
   },
   checkoutButton: {
-    backgroundColor: BRAND.colors.primary,
+    backgroundColor: BRAND.colors.primaryTextSafe,
     borderRadius: 999,
     paddingVertical: 14,
     alignItems: "center",

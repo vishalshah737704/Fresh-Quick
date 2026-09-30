@@ -23,7 +23,7 @@ export function CartConflictDialog() {
           </button>
           <button
             onClick={confirmClearAndAdd}
-            className="rounded-[var(--radius-pill)] bg-brand-accent px-3 py-1 text-sm text-white"
+            className="rounded-[var(--radius-pill)] bg-brand-accent-text-safe px-3 py-1 text-sm text-white"
           >
             Clear cart and add
           </button>

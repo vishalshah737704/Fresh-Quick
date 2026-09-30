@@ -29,7 +29,7 @@ const styles = StyleSheet.create({
     left: 16,
     right: 16,
     bottom: 12,
-    backgroundColor: BRAND.colors.primary,
+    backgroundColor: BRAND.colors.primaryTextSafe,
     borderRadius: 999,
     paddingHorizontal: 16,
     paddingVertical: 14,

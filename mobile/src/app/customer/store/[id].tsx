@@ -413,7 +413,7 @@ const styles = StyleSheet.create({
     backgroundColor: BRAND.colors.surface,
   },
   pillActive: {
-    backgroundColor: BRAND.colors.primary,
+    backgroundColor: BRAND.colors.primaryTextSafe,
     borderColor: BRAND.colors.primary,
   },
   pillText: {
@@ -524,7 +524,7 @@ const styles = StyleSheet.create({
     width: 26,
     height: 26,
     borderRadius: 13,
-    backgroundColor: BRAND.colors.accent,
+    backgroundColor: BRAND.colors.accentTextSafe,
     alignItems: "center",
     justifyContent: "center",
   },

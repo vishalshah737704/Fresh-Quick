@@ -5,9 +5,12 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useDeliverySession } from "@/components/delivery/useDeliverySession";
 import { DeliverySessionContext } from "@/components/delivery/DeliverySessionContext";
+import { useProfile } from "@/lib/use-profile";
+import { MyProfileSection } from "@/components/MyProfileSection";
 
 export default function DeliveryShell({ children }: { children: React.ReactNode }) {
   const { loading, partnerId, isOnline: initialOnline } = useDeliverySession();
+  const profile = useProfile(partnerId);
   const router = useRouter();
   const [isOnline, setIsOnline] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -43,12 +46,15 @@ export default function DeliveryShell({ children }: { children: React.ReactNode 
           <span className="mb-2 inline-flex w-fit items-center rounded-[var(--radius-pill)] bg-brand-accent/20 px-3 py-1 text-xs font-medium text-white">
             {isOnline ? "Online" : "Offline"}
           </span>
-          <span className="rounded-[var(--radius-pill)] bg-brand-primary px-3 py-2 text-sm text-white">
+          <span className="rounded-[var(--radius-pill)] bg-brand-primary-text-safe px-3 py-2 text-sm text-white">
             Dashboard
           </span>
+          <div className="mt-auto border-t border-white/10 pt-3">
+            <MyProfileSection profile={profile} variant="dark" />
+          </div>
           <button
             onClick={signOut}
-            className="mt-auto rounded-[var(--radius-pill)] px-3 py-2 text-left text-sm text-white/70 hover:bg-white/10"
+            className="rounded-[var(--radius-pill)] px-3 py-2 text-left text-sm text-white/70 hover:bg-white/10"
           >
             Sign out
           </button>

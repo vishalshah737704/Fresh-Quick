@@ -64,7 +64,7 @@ export function FeaturedItemCard({
         <p className="line-clamp-1 text-sm font-semibold text-brand-ink">
           {item.product_attributes?.is_veg ? "🟢" : "🔴"} {item.name}
         </p>
-        <p className="mt-1 inline-block rounded-[var(--radius-pill)] bg-brand-accent px-2 py-0.5 text-xs font-semibold text-white">
+        <p className="mt-1 inline-block rounded-[var(--radius-pill)] bg-brand-accent-text-safe px-2 py-0.5 text-xs font-semibold text-white">
           ₹{item.price.toFixed(2)}
         </p>
       </div>

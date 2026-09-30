@@ -30,9 +30,9 @@ const COLUMN_LABEL: Record<(typeof KANBAN_STATUSES)[number], string> = {
 };
 
 const COLUMN_HEADER_CLASS: Record<(typeof KANBAN_STATUSES)[number], string> = {
-  placed: "bg-brand-primary text-white",
+  placed: "bg-brand-primary-text-safe text-white",
   accepted: "bg-brand-ink text-white",
-  preparing: "bg-brand-accent text-white",
+  preparing: "bg-brand-accent-text-safe text-white",
   ready: "bg-gray-500 text-white",
 };
 
@@ -169,7 +169,7 @@ export default function VendorOrdersPage() {
                       {NEXT_LABEL[order.status] && (
                         <button
                           onClick={() => advance(order.id)}
-                          className="rounded-full bg-brand-primary px-2 py-1 text-xs text-white"
+                          className="rounded-full bg-brand-primary-text-safe px-2 py-1 text-xs text-white"
                         >
                           {NEXT_LABEL[order.status]}
                         </button>

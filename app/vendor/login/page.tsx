@@ -124,7 +124,7 @@ function VendorLoginForm() {
                   onClick={() => toggleTag(c.slug)}
                   className={`rounded-full px-2 py-1 text-xs ${
                     selectedTags.includes(c.slug)
-                      ? "bg-brand-primary text-white"
+                      ? "bg-brand-primary-text-safe text-white"
                       : "bg-brand-accent/10 text-brand-ink"
                   }`}
                 >
@@ -166,7 +166,7 @@ function VendorLoginForm() {
         <button
           disabled={submitting}
           onClick={mode === "login" ? handleLogin : handleSignup}
-          className="w-full rounded-full bg-brand-primary px-4 py-2 text-white disabled:opacity-50"
+          className="w-full rounded-full bg-brand-primary-text-safe px-4 py-2 text-white disabled:opacity-50"
         >
           {submitting ? "Please wait…" : mode === "login" ? "Log in" : "Sign up"}
         </button>

@@ -338,7 +338,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   totalPill: {
-    backgroundColor: BRAND.colors.primary,
+    backgroundColor: BRAND.colors.primaryTextSafe,
     borderRadius: BRAND.radiusPill,
     paddingHorizontal: 16,
     paddingVertical: 14,
@@ -350,7 +350,7 @@ const styles = StyleSheet.create({
   },
   addButton: {
     flex: 1,
-    backgroundColor: BRAND.colors.accent,
+    backgroundColor: BRAND.colors.accentTextSafe,
     borderRadius: BRAND.radiusPill,
     paddingVertical: 14,
     alignItems: "center",

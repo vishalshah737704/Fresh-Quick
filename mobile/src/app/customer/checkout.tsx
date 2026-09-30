@@ -480,7 +480,7 @@ const styles = StyleSheet.create({
     borderTopColor: BRAND.colors.inkMuted + "22",
   },
   placeOrderButton: {
-    backgroundColor: BRAND.colors.accent,
+    backgroundColor: BRAND.colors.accentTextSafe,
     borderRadius: 999,
     paddingVertical: 14,
     alignItems: "center",
