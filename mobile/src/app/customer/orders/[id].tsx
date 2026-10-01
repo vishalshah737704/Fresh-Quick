@@ -219,7 +219,11 @@ export default function OrderDetailScreen() {
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Items</Text>
-        <OrderItemsList items={order.items} />
+        {order.items.length === 0 ? (
+          <Text style={styles.mutedText}>No items</Text>
+        ) : (
+          <OrderItemsList items={order.items} />
+        )}
       </View>
 
       <View style={styles.section}>
@@ -248,7 +252,7 @@ const styles = StyleSheet.create({
   mutedText: { fontFamily: BRAND.fonts.body, color: BRAND.colors.inkMuted },
   mutedTextSmall: { fontFamily: BRAND.fonts.body, fontSize: 11, color: BRAND.colors.inkMuted },
   valueText: { fontFamily: BRAND.fonts.bodyMedium, color: BRAND.colors.ink },
-  linkText: { fontFamily: BRAND.fonts.bodyMedium, color: BRAND.colors.primary },
+  linkText: { fontFamily: BRAND.fonts.bodyMedium, color: BRAND.colors.primaryTextSafe },
   errorText: { fontFamily: BRAND.fonts.body, color: "#dc2626" },
   addressBlock: { marginTop: 4, gap: 2 },
   totalsRow: { flexDirection: "row", justifyContent: "space-between", gap: 8 },

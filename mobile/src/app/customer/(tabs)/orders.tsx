@@ -90,7 +90,7 @@ export default function CustomerOrdersScreen() {
                     <ItemThumb key={line.id} url={line.imageUrl} name={line.name} size={40} />
                   ))}
                   {extra > 0 && <Text style={styles.mutedText}>+{extra}</Text>}
-                  <Text style={styles.mutedText}>{item.itemCount} items</Text>
+                  <Text style={styles.mutedText}>{item.itemCount} {item.itemCount === 1 ? "item" : "items"}</Text>
                 </View>
                 <Text style={styles.total}>{formatPaise(Math.round(item.total * 100))}</Text>
               </View>
