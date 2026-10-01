@@ -2555,8 +2555,11 @@ the IF filter bug. Also 01 = 317, 02 = 316, 04 = 320.
 - Duplicate-email caveat: a second `delivered` webhook (manual SQL, pg_net
   retry, n8n replay) sends a second email; the app cannot write `delivered`
   twice (compare-and-set).
-- Leftover inactive duplicate "02 - Payment Mock Confirmation" (8 nodes, id
-  `Cw6OdUDW...`) in Vishal's n8n — not touched.
+- Leftover duplicate "02 - Payment Mock Confirmation" (archived, inactive, 8
+  nodes, id `Cw6OdUDW...`, last touched 2026-09-25) in Vishal's n8n — removed
+  by Vishal himself after sub-project C; the live 02 is `9da02a46...` (4 nodes,
+  matches the repo). Archived workflows are hidden from n8n's list unless
+  "Show archived" is ticked in the filter.
 - Playwright native clicks silently failed on some customer-page controls
   during live runs (DOM click worked) — harness oddity, still unexplained.
 - Test orders in the dev DB: `d75ad597`, `d2a941c8`. Mobile untouched.
