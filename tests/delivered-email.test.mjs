@@ -115,3 +115,20 @@ test("an order with zero items still renders greeting and totals", () => {
   assert.ok(html.includes(DELIVERED_GREETING));
   assert.ok(html.includes("₹280.00"));
 });
+
+test("phone line is labelled", () => {
+  const { html } = buildDeliveredEmail(order, allow);
+  assert.ok(html.includes("Phone: +919876543210"));
+});
+
+test("subject has CR/LF stripped from the store name", () => {
+  const { subject } = buildDeliveredEmail({ ...order, storeName: "Dosa\r\nBcc: x@evil.com" }, allow);
+  assert.ok(!/[\r\n]/.test(subject));
+  assert.equal(subject, "Your order from Dosa Bcc: x@evil.com has been delivered");
+});
+
+test("text cells wrap long unbroken names", () => {
+  const { html } = buildDeliveredEmail(order, allow);
+  assert.ok(html.includes("word-break:break-word;"));
+  assert.ok(html.includes("overflow-wrap:anywhere;"));
+});
