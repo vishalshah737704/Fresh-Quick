@@ -36,7 +36,7 @@ Give every actor (customer, vendor, delivery partner, admin) a complete, readabl
 - Required; Indian 10-digit mobile, optional `+91`/`91`/`0` prefix, starts 6-9; stored normalized as `+91XXXXXXXXXX` in `orders.recipient_phone text not null`. Validation is server-side in `POST /api/cart/checkout` and client-side in both checkouts; web and mobile validators are byte-identical (sync-tested).
 - Existing orders are backfilled with the literal `Not provided` (user's choice); the UI shows any value not starting with `+` as plain text. No DB CHECK constraint.
 - Not prefilled (checkout fields must never persist across sessions).
-- Available everywhere the recipient appears: customer order detail, vendor card + dialog, delivery dashboard/history and admin order detail (via the shared `OrderDetail`), mobile customer and delivery order views (D), and n8n (`notification-details` returns it; the delivered email includes it in the order details) (C). The phone is also in the database as above.
+- Available everywhere the recipient appears: customer order detail, vendor card + dialog, delivery dashboard (only for orders the partner has accepted, i.e. assigned/picked_up — never on available cards or in History, matching the address-access window; ruling made in sub-project B's final review, flip it in `lib/delivery-order-view.ts` if the phone is wanted in History) and admin order detail (via the shared `OrderDetail`), mobile customer and delivery order views (D), and n8n (`notification-details` returns it; the delivered email includes it in the order details) (C). The phone is also in the database as above.
 - `checkout_place_order` RPC gains `p_recipient_phone` (old signature dropped, per the project's RPC-signature rule).
 
 ## Customer (web + mobile)

@@ -72,7 +72,9 @@ and advance it through accepted → preparing → ready.
 
 Sign up at `/delivery/login` (toggle to "New partner? Sign up") — collects
 email/password, full name, and vehicle type. Toggle online on the
-dashboard (`/delivery/dashboard`); a `ready` order with no partner
+dashboard (`/delivery/dashboard`, which shows only active orders: available
+ones plus your own; finished orders are under History in the sidebar,
+`/delivery/history`); a `ready` order with no partner
 assigned yet will appear under "Available orders" for any online partner
 to claim (no admin-assignment step — see MEMORY.md's Phase 5 entry for
 why). After claiming, advance the order picked_up → delivered from the
@@ -88,12 +90,14 @@ delivery card shows the customer's delivery address.
 
 Log in at `/admin/login` with the seeded demo account —
 `admin@foodhub.local` / `admin-demo-password` (no signup; admin accounts
-are seeded, not self-service). The dashboard (`/admin/dashboard`) shows
-every order, restaurant, and delivery partner. Suspend/unsuspend a
-restaurant to see it disappear from/reappear on `/customer` browse. For
-an order in `assigned` or `picked_up` status, use the reassign dropdown
-(lists currently-online delivery partners) to move it to a different
-partner.
+are seeded, not self-service). The sidebar has Overview
+(`/admin/dashboard`, KPI tiles only), Orders (a table; click a row for the
+order detail at `/admin/orders/[id]`), Vendors, and Delivery Partners. On
+an order in `assigned` or `picked_up` status, use the reassign dropdown on
+its detail page (lists currently-online delivery partners). Suspend/
+unsuspend a restaurant on the Vendors page to see it disappear from/
+reappear on `/customer` browse. "Add vendor" / "Add partner" create an
+account with an admin-typed temporary password (minimum 6 characters).
 
 ## n8n automation (verified end-to-end 2026-09-25)
 

@@ -2419,6 +2419,90 @@ shown as raw enum strings (e.g. `success (mock_cod)`).
 orders `c2f2d0cd`, `a30777de` (accepted), all Dosa Corner. Also ran a
 production `npm run build` while dev servers were running.
 
+## Order visibility — sub-project B (2026-09-30, branch `order-visibility-b`, not yet merged/pushed)
+
+**What shipped (17 commits, `507813a..d4b9851`):**
+- Migration 27 `00000000000027_order_status_timestamps.sql`: nullable
+  `accepted_at`/`picked_up_at`/`delivered_at` on `orders` + a BEFORE UPDATE
+  OF status trigger `orders_stamp_status_times` (stamps only when null;
+  skipped statuses stay null; old orders stay null). A trigger rather than
+  route edits because it covers all 7 status writers at once. Apply with
+  `npx supabase migration up`, never `db reset`.
+- Shared foundation: `STATUS_COLOR`, store pickup address embed
+  (`stores(name, store_address:addresses!address_id(...))`), `formatPayment`
+  ("Paid · Card"), timestamps on `OrderDetail`. Customers get a null store
+  address under RLS (only owner/assigned-partner policies), so the pickup
+  line shows only for vendor/delivery/admin; a store with no address shows
+  "Address not on file". `assigned`/`picked_up` labels are now "Partner
+  assigned"/"On the way" with distinct colours.
+- Delivery: new `/api/delivery/active` (`{available, mine}`) and
+  `/api/delivery/history`; `lib/delivery-order-view.ts` `redactForDelivery`
+  (email never; available = no recipient data; active = name/phone/address/
+  note; history = name only). Sidebar Dashboard (active only) / History,
+  `DeliveryOrderCard`, History page. LEGACY `/api/delivery/orders` and
+  `/available-orders` intentionally untouched (mobile still calls them).
+- Admin: `AdminShell` NAV_LINKS Overview (`/admin/dashboard`)/Orders/Vendors/
+  Delivery Partners; Overview is KPI-only (rejected now excluded from revenue
+  and treated as finished — fixes old behaviour); Orders table +
+  `/admin/orders/[id]` (has `loading.tsx`; reassign moved here); Vendors/
+  Partners pages with Add forms; `POST /api/admin/vendors` and
+  `/api/admin/delivery-partners` (resolveAdmin, validation, rollback via
+  `auth.admin.deleteUser`, `is_open: true`, `email_confirm: true`, 6-char
+  password minimum); `lib/admin-order-view.ts` (`ADMIN_ORDER_SELECT`,
+  `normalizeAdminOrderRow`, `overviewStats`).
+
+**Ruling recorded:** recipient PHONE is hidden in delivery History and on
+available cards (spec line 39 amended to match). One-line flip in
+`lib/delivery-order-view.ts` if Vishal wants it back.
+
+**Verification:** `npx tsc --noEmit` clean; `node --no-warnings --test
+tests/*.test.mjs` 33/33; `npm run build` passes; live Playwright pass across
+all 4 web logins at 320/390px (Task 7 and Task 12 reports).
+
+**Defects / lessons found (review + live testing, all FIXED unless noted):**
+1. Delivery cards overflowed at 320px with long unbroken text — fixed with
+   `min-w-0 [overflow-wrap:anywhere]`.
+2. Admin-created vendor/partner accounts accepted a 1-character password:
+   GoTrue's admin `createUser` skips the minimum. Found live in Task 12;
+   6-char check added to both new routes.
+3. `assigned` and `picked_up` shared one label/colour ("Out for delivery")
+   — split (final review).
+4. Admin order detail hid the assigned partner on finished orders — fixed.
+5. Unhandled rejection in the delivery dashboard's 10s poll on network
+   failure — wrapped in try/catch.
+6. Vendor Add form's Cancel kept the typed temp password in state — fixed.
+7. White text on a gray-400 status pill failed contrast — darker shade, and
+   the colour test now enforces allowed shades.
+8. Test-setup gotcha: n8n auto-assigns a `ready` order to any ONLINE
+   partner, so the test agent had to toggle `delivery@foodhub.local`
+   offline to exercise the "available" list.
+
+**OPEN / follow-ups:**
+- (a) PRE-EXISTING, untouched: the PUBLIC vendor-signup and delivery-signup
+  routes accept a 1-character password (same GoTrue bypass). Needs Vishal's
+  decision; fix = shared `MIN_PASSWORD_LENGTH` in `lib/signup-validation.ts`.
+- (b) Deferred minors: free-text `specialInstructions` still in redacted
+  available/history JSON; History sorts by `placed_at` not `delivered_at`;
+  admin tables use small type; no row limit on `/api/admin/orders`; null JSON
+  body gives 500 in admin POST routes (`validateSignupFields` unguarded);
+  non-uuid id / bad `?status` give 500; reassign dropdown lists the order's
+  current partner; validation errors show raw field names.
+- (c) "Address not on file" verified from code only (all 77 seeded stores
+  have an address); rejected/cancelled history for an assigned partner is
+  not reachable live.
+- (d) Local test data in the dev DB: vendor `admin-test-bistro@foodhub.local`
+  (password `1` — reset/delete with Vishal's OK), `partner-admin-b@foodhub.local`,
+  `partner-b1@foodhub.local`, order `254ab79c` reassigned to partner-b1;
+  `delivery@foodhub.local` left OFFLINE.
+- (e) Playwright real-mouse clicks stopped working on the customer Account
+  menu during Task 12 (`AccountMenu.tsx` unchanged on this branch; likely a
+  harness artifact) — Vishal should click it once by hand.
+- (f) Mobile still not run on a device. Sub-project D must: migrate mobile
+  to `/api/delivery/active` + `/history` then delete the two legacy routes;
+  mirror `STATUS_LABEL`/`STATUS_COLOR`/`formatPayment`/redaction
+  expectations (`mobile/lib/order-status.ts` still says "Out for delivery"
+  for both assigned and picked_up); add the web/mobile status sync test.
+
 ## External API keys in use
 
 - `PEXELS_API_KEY` — Pexels Search API, used once (not at runtime) to fetch
