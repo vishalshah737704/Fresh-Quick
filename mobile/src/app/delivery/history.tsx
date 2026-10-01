@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { View, Text, ScrollView, Pressable, ActivityIndicator, StyleSheet } from "react-native";
 import { useRouter, useFocusEffect } from "expo-router";
 import { apiFetch, ApiError } from "../../../lib/api";
@@ -15,15 +15,20 @@ export default function DeliveryHistoryScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const loadSeq = useRef(0);
+
   async function load() {
+    const seq = ++loadSeq.current;
     try {
       const body = await apiFetch<{ orders: OrderDetail[] }>("/api/delivery/history");
+      if (seq !== loadSeq.current) return;
       setOrders(body.orders);
       setError(null);
     } catch (err) {
+      if (seq !== loadSeq.current) return;
       setError(err instanceof ApiError && err.message ? err.message : "Failed to load history");
     } finally {
-      setLoading(false);
+      if (seq === loadSeq.current) setLoading(false);
     }
   }
 
@@ -57,7 +62,9 @@ export default function DeliveryHistoryScreen() {
           {orders.map((order) => (
             <DeliveryOrderCard key={order.id} order={order} scope="history" />
           ))}
-          <Pressable onPress={() => router.replace("/delivery/dashboard")}>
+          <Pressable onPress={() =>
+            router.canGoBack() ? router.back() : router.replace("/delivery/dashboard")
+          }>
             <Text style={styles.backLink}>Back to dashboard</Text>
           </Pressable>
         </ScrollView>

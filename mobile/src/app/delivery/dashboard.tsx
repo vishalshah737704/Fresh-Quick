@@ -58,19 +58,24 @@ export default function DeliveryDashboardScreen() {
   // without needing to be torn down/recreated on every location update.
   const coordsRef = useRef<{ lat: number; lng: number } | null>(null);
 
+  const loadSeq = useRef(0);
+
   async function loadOrders() {
+    const seq = ++loadSeq.current;
     try {
       const body = await apiFetch<{ available: OrderDetail[]; mine: OrderDetail[] }>(
         "/api/delivery/active"
       );
+      if (seq !== loadSeq.current) return;
       setAvailable(body.available);
       setMine(body.mine);
       setError(null);
     } catch (err) {
+      if (seq !== loadSeq.current) return;
       // Keep the previous lists; a failed refresh must not blank the screen.
       setError(err instanceof ApiError && err.message ? err.message : "Failed to refresh orders");
     } finally {
-      setLoading(false);
+      if (seq === loadSeq.current) setLoading(false);
     }
   }
 

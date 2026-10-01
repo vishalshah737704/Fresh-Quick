@@ -60,7 +60,7 @@ export function DeliveryOrderCard({
           ) : null}
           {phone ? (
             phone.startsWith("+") ? (
-              <Pressable onPress={() => void Linking.openURL(`tel:${phone}`)}>
+              <Pressable onPress={() => Linking.openURL(`tel:${phone}`).catch(() => {})}>
                 <Text style={styles.phoneLink}>{phone}</Text>
               </Pressable>
             ) : (
