@@ -1,6 +1,7 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useDeliverySession } from "@/components/delivery/useDeliverySession";
@@ -8,9 +9,15 @@ import { DeliverySessionContext } from "@/components/delivery/DeliverySessionCon
 import { useProfile } from "@/lib/use-profile";
 import { MyProfileSection } from "@/components/MyProfileSection";
 
+const NAV_LINKS = [
+  { href: "/delivery/dashboard", label: "Dashboard" },
+  { href: "/delivery/history", label: "History" },
+];
+
 export default function DeliveryShell({ children }: { children: React.ReactNode }) {
   const { loading, partnerId, isOnline: initialOnline } = useDeliverySession();
   const profile = useProfile(partnerId);
+  const pathname = usePathname();
   const router = useRouter();
   const [isOnline, setIsOnline] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -46,9 +53,20 @@ export default function DeliveryShell({ children }: { children: React.ReactNode 
           <span className="mb-2 inline-flex w-fit items-center rounded-[var(--radius-pill)] bg-brand-accent/20 px-3 py-1 text-xs font-medium text-white">
             {isOnline ? "Online" : "Offline"}
           </span>
-          <span className="rounded-[var(--radius-pill)] bg-brand-primary-text-safe px-3 py-2 text-sm text-white">
-            Dashboard
-          </span>
+          {NAV_LINKS.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              onClick={() => setDrawerOpen(false)}
+              className={`rounded-[var(--radius-pill)] px-3 py-2 text-sm ${
+                pathname === link.href
+                  ? "bg-brand-primary-text-safe text-white"
+                  : "text-white/80 hover:bg-white/10"
+              }`}
+            >
+              {link.label}
+            </Link>
+          ))}
           <div className="mt-auto border-t border-white/10 pt-3">
             <MyProfileSection profile={profile} variant="dark" />
           </div>

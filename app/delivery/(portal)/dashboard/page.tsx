@@ -3,18 +3,8 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useDeliverySessionContext } from "@/components/delivery/DeliverySessionContext";
-
-type OrderRow = {
-  id: string;
-  status: string;
-  total: number;
-  stores: { name: string } | null;
-};
-
-const NEXT_LABEL: Record<string, string> = {
-  assigned: "Mark picked up",
-  picked_up: "Mark delivered",
-};
+import { DeliveryOrderCard } from "@/components/delivery/DeliveryOrderCard";
+import type { OrderDetail } from "@/lib/order-detail";
 
 async function authHeader() {
   const { data } = await supabase.auth.getSession();
@@ -23,42 +13,29 @@ async function authHeader() {
 
 export default function DeliveryDashboardPage() {
   const { isOnline, setIsOnline } = useDeliverySessionContext();
-  const [available, setAvailable] = useState<OrderRow[]>([]);
-  const [mine, setMine] = useState<OrderRow[]>([]);
+  const [available, setAvailable] = useState<OrderDetail[]>([]);
+  const [mine, setMine] = useState<OrderDetail[]>([]);
   const [lat, setLat] = useState("12.9716");
   const [lng, setLng] = useState("77.5946");
   const [error, setError] = useState<string | null>(null);
-  const [addresses, setAddresses] = useState<Record<string, string>>({});
+  const [busyId, setBusyId] = useState<string | null>(null);
 
   async function loadOrders() {
-    const headers = await authHeader();
-    const [availRes, mineRes] = await Promise.all([
-      fetch("/api/delivery/available-orders", { headers }),
-      fetch("/api/delivery/orders", { headers }),
-    ]);
-    const availBody = await availRes.json();
-    const mineBody = await mineRes.json();
-    if (availRes.ok) setAvailable(availBody.orders);
-    if (mineRes.ok) {
-      const mineOrders: OrderRow[] = mineBody.orders;
-      setMine(mineOrders);
-      const activeIds = new Set(
-        mineOrders
-          .filter((o) => o.status === "assigned" || o.status === "picked_up")
-          .map((o) => o.id)
-      );
-      setAddresses((prev) => {
-        const next: Record<string, string> = {};
-        for (const [id, addr] of Object.entries(prev)) {
-          if (activeIds.has(id)) next[id] = addr;
-        }
-        return next;
-      });
+    const res = await fetch("/api/delivery/active", { headers: await authHeader() });
+    const body = await res.json().catch(() => null);
+    if (!res.ok) {
+      setError(body?.error ?? "Failed to refresh orders");
+      return;
     }
+    setError(null);
+    setAvailable(body.available);
+    setMine(body.mine);
   }
 
   useEffect(() => {
-    loadOrders();
+    void (async () => {
+      await loadOrders();
+    })();
   }, []);
 
   useEffect(() => {
@@ -104,6 +81,26 @@ export default function DeliveryDashboardPage() {
   }
 
   async function claim(orderId: string) {
+    if (busyId) return;
+    setBusyId(orderId);
+    try {
+      await claimOrder(orderId);
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function advance(orderId: string) {
+    if (busyId) return;
+    setBusyId(orderId);
+    try {
+      await advanceOrder(orderId);
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function claimOrder(orderId: string) {
     setError(null);
     const res = await fetch(`/api/delivery/orders/${orderId}/claim`, {
       method: "POST",
@@ -117,7 +114,7 @@ export default function DeliveryDashboardPage() {
     await loadOrders();
   }
 
-  async function advance(orderId: string) {
+  async function advanceOrder(orderId: string) {
     setError(null);
     const res = await fetch(`/api/delivery/orders/${orderId}/status`, {
       method: "POST",
@@ -129,19 +126,6 @@ export default function DeliveryDashboardPage() {
       return;
     }
     await loadOrders();
-  }
-
-  async function viewAddress(orderId: string) {
-    setError(null);
-    const res = await fetch(`/api/delivery/orders/${orderId}/address`, {
-      headers: await authHeader(),
-    });
-    const body = await res.json().catch(() => null);
-    if (!res.ok) {
-      setError(body?.error ?? "Failed to load address");
-      return;
-    }
-    setAddresses((prev) => ({ ...prev, [orderId]: body.address.line1 }));
   }
 
   return (
@@ -175,74 +159,43 @@ export default function DeliveryDashboardPage() {
         )}
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
-        <div>
-          <h2 className="mb-2 font-semibold text-brand-ink">Available orders</h2>
-          <ul className="flex flex-col gap-2">
-            {available.map((o) => (
-              <li
-                key={o.id}
-                className="flex items-center justify-between rounded-[var(--radius-card)] border-l-4 border-brand-primary bg-brand-surface p-3"
-              >
-                <span>
-                  #{o.id.slice(0, 8)} · {o.stores?.name ?? "Restaurant"} · ₹{o.total.toFixed(2)}
-                </span>
-                <button
-                  onClick={() => claim(o.id)}
-                  className="rounded-[var(--radius-pill)] bg-brand-accent-text-safe px-3 py-1 text-xs text-white"
-                >
-                  Accept
-                </button>
-              </li>
-            ))}
-            {available.length === 0 && (
-              <p className="text-sm text-brand-ink-muted">None right now.</p>
-            )}
-          </ul>
+      <section className="mb-6">
+        <h2 className="mb-2 text-lg font-semibold text-brand-ink">Your active deliveries</h2>
+        <div className="grid gap-4 md:grid-cols-2">
+          {mine.map((order) => (
+            <DeliveryOrderCard
+              key={order.id}
+              order={order}
+              scope="active"
+              busy={busyId === order.id}
+              onAdvance={() => advance(order.id)}
+            />
+          ))}
         </div>
+        {mine.length === 0 && (
+          <p className="text-base text-brand-ink-muted">No active deliveries.</p>
+        )}
+      </section>
 
-        <div>
-          <h2 className="mb-2 font-semibold text-brand-ink">Your deliveries</h2>
-          <ul className="flex flex-col gap-2">
-            {mine.map((o) => (
-              <li
-                key={o.id}
-                className="flex flex-col gap-1 rounded-[var(--radius-card)] border-l-4 border-brand-primary bg-brand-surface p-3"
-              >
-                <div className="flex items-center justify-between">
-                  <span>
-                    #{o.id.slice(0, 8)} · {o.status} · ₹{o.total.toFixed(2)}
-                  </span>
-                  <div className="flex gap-2">
-                    {(o.status === "assigned" || o.status === "picked_up") && (
-                      <button
-                        onClick={() => viewAddress(o.id)}
-                        className="rounded-[var(--radius-pill)] border border-brand-ink-muted/20 px-3 py-1 text-xs"
-                      >
-                        View address
-                      </button>
-                    )}
-                    {NEXT_LABEL[o.status] && (
-                      <button
-                        onClick={() => advance(o.id)}
-                        className="rounded-[var(--radius-pill)] bg-brand-primary-text-safe px-3 py-1 text-xs text-white"
-                      >
-                        {NEXT_LABEL[o.status]}
-                      </button>
-                    )}
-                  </div>
-                </div>
-                {addresses[o.id] && (
-                  <p className="text-xs text-brand-ink-muted">{addresses[o.id]}</p>
-                )}
-              </li>
-            ))}
-            {mine.length === 0 && (
-              <p className="text-sm text-brand-ink-muted">No deliveries yet.</p>
-            )}
-          </ul>
+      <section>
+        <h2 className="mb-2 text-lg font-semibold text-brand-ink">Available orders</h2>
+        <div className="grid gap-4 md:grid-cols-2">
+          {available.map((order) => (
+            <DeliveryOrderCard
+              key={order.id}
+              order={order}
+              scope="available"
+              busy={busyId === order.id}
+              onClaim={() => claim(order.id)}
+            />
+          ))}
         </div>
-      </div>
+        {available.length === 0 && (
+          <p className="text-base text-brand-ink-muted">
+            {isOnline ? "None right now." : "Go online to see available orders."}
+          </p>
+        )}
+      </section>
     </div>
   );
 }
