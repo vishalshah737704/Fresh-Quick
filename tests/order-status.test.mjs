@@ -74,3 +74,10 @@ test("cancelled and rejected share the failure colour; delivered differs from th
   assert.equal(STATUS_COLOR.cancelled, STATUS_COLOR.rejected);
   assert.notEqual(STATUS_COLOR.delivered, STATUS_COLOR.cancelled);
 });
+
+test("assigned and picked_up are distinguishable by label and colour", () => {
+  assert.notEqual(STATUS_LABEL.assigned, STATUS_LABEL.picked_up);
+  assert.notEqual(STATUS_COLOR.assigned, STATUS_COLOR.picked_up);
+  const labels = ORDER_STATUSES.map((s) => STATUS_LABEL[s]);
+  assert.equal(new Set(labels).size, ORDER_STATUSES.length);
+});
