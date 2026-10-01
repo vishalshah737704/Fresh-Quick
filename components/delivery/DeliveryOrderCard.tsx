@@ -25,7 +25,7 @@ export function DeliveryOrderCard({
   const historyWhen = order.deliveredAt ?? order.placedAt;
 
   return (
-    <div className="flex flex-col gap-3 rounded-[var(--radius-card)] border border-brand-ink-muted/10 bg-white p-4 shadow-sm">
+    <div className="flex min-w-0 flex-col gap-3 [overflow-wrap:anywhere] rounded-[var(--radius-card)] border border-brand-ink-muted/10 bg-white p-4 shadow-sm">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <p className="text-lg font-bold text-brand-ink">#{order.id.slice(0, 8)}</p>
