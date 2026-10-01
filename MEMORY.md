@@ -2596,22 +2596,26 @@ credential being selected on the 05 Gmail node in each n8n instance.
   mobile sign-up (cost if wrong: revert `979aa07`).
 - Migration 28 (see "Customer accounts dropped" above).
 - Manuals: web `User_Manual` v3.0 (44 pp, `ce57b86`); `Mobile_App_User_Manual`
-  **v4.0, 25 pp** (2026-10-01): Customer figures (sign-up, Orders tab, order
+  **v4.0, 26 pp** (2026-10-01): Customer figures (sign-up, Orders tab, order
   detail Placed / Partner assigned / Delivered, scrolled totals + timeline,
   Account) are frames from Vishal's phone recording
   (`docs/ScreenRecording_10-01-2026 01-32-01_1.MP4`, git-untracked), real
-  name/email/phone/address blurred; the 3 Delivery figures (Available card,
-  Active card, History) are **drawn wireframes with demo data, labeled as
-  such** (Vishal chose this when the recording turned out to be Customer-only
-  — re-capture on a device later if wanted). Also blurred an email + address
+  name/email/phone/address blurred; the Delivery figures (Active card "Partner
+  assigned", the same card "On the way", History) come from a SECOND phone
+  recording (`docs/ScreenRecording_10-01-2026 02-08-03_1.MP4`, git-untracked;
+  recipient name/phone blurred) — the first recording was Customer-only. Only
+  the Available-order card stays a labeled wireframe, because n8n auto-assigns a
+  ready order within seconds so it can never be photographed in that list
+  (§4.3 and the Appendix 'ready' row now say so). Also blurred an email + address
   that were visible in an older embedded checkout screenshot, removed the
   stale v2.0 delivery wireframe, added sign-up text (§2.2, 1.1, FAQ), fixed
   1.1/1.3 "figure pending" wording, renumbered the static TOC from the PDF
-  (3/5/8/19/23/25), no orphaned image parts. Note: older commits of the PDFs
+  (3/5/8/19/24/26), no orphaned image parts. Note: older commits of the PDFs
   still contain that personal data in git history (not rewritten).
 - Gates at the end: web + mobile `tsc` clean, 66/66 node tests, `npm run
   build` passes. Mobile code itself is still only type-checked + reviewed;
-  the Customer flow was exercised on a real phone for the manual's recording.
+  the Customer and Delivery flows were exercised on a real iPhone for the
+  manual's two recordings (both worked end to end).
 
 **Evidence from the recording (Customer on a real iPhone):** sign-up →
 checkout (phone required, address, Cash on Delivery) → Order #1a5906ab placed
@@ -2630,7 +2634,10 @@ Orders tab, Account tab and Sign out worked.
    `customer/checkout`, `customer/(tabs)`) — the already-known deferred item.
 4. Partner assigned and On the way both show "Step 5 of 6 · On the way"
    (documented, as designed).
-5. Delivery screens were not in the recording → never seen on a device.
+5. Delivery screens (second recording, 2026-10-01 02:08) ran correctly on
+   the phone: login → Online → active card Partner assigned → Mark picked up →
+   On the way → Mark delivered → History. Cosmetic: the stack header shows
+   'Dashboard' directly above the page's own 'Dashboard' heading.
 
 **Bug investigated 2026-10-01 ("vendor marks Ready, delivery partner never
 gets the order"):** NOT a mobile/API bug. Order `66d2f735` (Juice Junction,
@@ -2649,8 +2656,8 @@ T4 Back uses `router.back()`/`replace` fallback instead of the plan's replace
 (none); T4 fix round 1 = I1+I2+Linking catch only (minor stale-poll left);
 D assets git-ignored, no PNG commit (none); Task 7 fix: remove partner-b1
 from the manual and regenerate diagrams (cosmetic); final fix wave scope
-(cosmetic); sign-up route validation bundled (revert `979aa07`); Delivery
-figures as wireframes (replace with real captures later).
+(cosmetic); sign-up route validation bundled (revert `979aa07`); Available-order
+figure stays a wireframe (cannot be captured).
 
 **OPEN:** deferred minors from the ledger (stepper no clamp; no test pins
 mobile hex values; ItemThumb no onError fallback; raw `.single()` error text;

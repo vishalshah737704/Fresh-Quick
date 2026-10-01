@@ -41,8 +41,8 @@ tab nav, UberEats-style Home/store/cart/checkout/tracking, new
 reorder row, floating cart pill). See MEMORY.md's "Mobile app" and
 "Mobile app — UberEats-style redesign" entries for build history, review
 findings, and what's still outstanding (the Customer App has now been run
-on Vishal's phone once — a 2026-10-01 screen recording — but the Delivery
-screens never have; `Mobile_App_User_Manual.docx`/`.pdf` in `docs/` was
+on Vishal's phone, and so has Delivery (two 2026-10-01 screen
+recordings); `Mobile_App_User_Manual.docx`/`.pdf` in `docs/` was
 refreshed to v4.0 on 2026-10-01, see the sub-project D paragraph below).
 **Figma community kit redesign (complete, merged to `main` 2026-09-29):**
 full rebrand of ALL 6 surfaces (web Customer/Vendor/Delivery/Admin,
@@ -107,8 +107,9 @@ customer sign-up on mobile (and the web signup route now validates fields +
 6-char password), migration 28 (orders outlive deleted customers; all customer
 accounts were dropped 2026-10-01 — `customer@foodhub.local` no longer exists,
 sign up a fresh one). Both manuals refreshed (web v3.0, mobile v4.0 — Customer
-figures from Vishal's real phone recording with personal data blurred; the 3
-Delivery figures are labeled wireframes because Delivery was never recorded).
+and Delivery figures from Vishal's real phone recordings with personal data
+blurred; only the Available-order card is a labeled wireframe, since n8n
+auto-assigns before it can be photographed).
 **Gotcha for demos/tests:** workflow 04 auto-assigns a `ready` order within
 ~10 s to the NEAREST ONLINE partner by stored lat/lng, so it never reaches the
 "Available" list while any online partner has coordinates — a leftover online
