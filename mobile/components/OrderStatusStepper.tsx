@@ -3,13 +3,14 @@ import { Ionicons } from "@expo/vector-icons";
 import { BRAND } from "../theme";
 import { TIMELINE_STEPS } from "../lib/order-status";
 
-// Segmented horizontal progress bar/stepper, UberEats-style: filled/checked
+// Six dots joined by lines plus one caption line (six labels can't fit a phone width), UberEats-style: filled/checked
 // segments in brand accent, connecting line fills progressively as the
 // order advances. Pure presentation — all status mapping logic (which step
 // is "current") stays in lib/order-status.ts's TIMELINE_STEP_INDEX so this
 // component and web's OrderStatusTimeline never disagree on semantics.
 export function OrderStatusStepper({ currentIndex }: { currentIndex: number }) {
   return (
+    <View>
     <View style={styles.row}>
       {TIMELINE_STEPS.map((label, index) => {
         const complete = index < currentIndex;
@@ -29,10 +30,13 @@ export function OrderStatusStepper({ currentIndex }: { currentIndex: number }) {
                 <View style={[styles.line, lineFilled && styles.lineFilled]} />
               )}
             </View>
-            <Text style={[styles.label, active && styles.labelActive]}>{label}</Text>
           </View>
         );
       })}
+    </View>
+    <Text style={styles.caption}>
+      Step {currentIndex + 1} of {TIMELINE_STEPS.length} · <Text style={styles.captionLabel}>{TIMELINE_STEPS[currentIndex]}</Text>
+    </Text>
     </View>
   );
 }
@@ -54,6 +58,6 @@ const styles = StyleSheet.create({
   dotTextActive: { color: BRAND.colors.primary },
   line: { flex: 1, height: 3, backgroundColor: BRAND.colors.inkMuted + "22", marginHorizontal: 2 },
   lineFilled: { backgroundColor: BRAND.colors.accent },
-  label: { fontFamily: BRAND.fonts.body, fontSize: 10, color: BRAND.colors.inkMuted, marginTop: 6 },
-  labelActive: { fontFamily: BRAND.fonts.bodySemiBold, color: BRAND.colors.ink },
+  caption: { fontFamily: BRAND.fonts.body, fontSize: 13, color: BRAND.colors.inkMuted, marginTop: 8 },
+  captionLabel: { fontFamily: BRAND.fonts.bodySemiBold, color: BRAND.colors.ink },
 });

@@ -2,7 +2,7 @@ import { useCallback, useState } from "react";
 import { View, Text, FlatList, Pressable, ActivityIndicator, StyleSheet } from "react-native";
 import { useRouter, useFocusEffect } from "expo-router";
 import { supabase } from "../../../../lib/supabase";
-import { ORDERS_LIST_STATUS_LABEL } from "../../../../lib/order-status";
+import { STATUS_LABEL, type OrderStatus } from "../../../../lib/order-status";
 import { BRAND } from "../../../../theme";
 import { useRequireSession } from "../../../../lib/use-require-session";
 
@@ -77,7 +77,7 @@ export default function CustomerOrdersScreen() {
               <Text style={styles.storeName}>{item.stores?.name ?? "Unknown store"}</Text>
               <Text style={styles.mutedText}>
                 {new Date(item.placed_at).toLocaleString()} ·{" "}
-                {ORDERS_LIST_STATUS_LABEL[item.status] ?? item.status}
+                {STATUS_LABEL[item.status as OrderStatus] ?? item.status}
               </Text>
             </View>
             <Text style={styles.total}>₹{Number(item.total).toFixed(2)}</Text>

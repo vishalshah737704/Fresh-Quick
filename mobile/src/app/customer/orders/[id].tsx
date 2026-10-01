@@ -5,7 +5,7 @@ import { useCallback } from "react";
 import { useLocalSearchParams } from "expo-router";
 import { supabase } from "../../../../lib/supabase";
 import {
-  ORDER_DETAIL_STATUS_LABEL,
+  STATUS_MESSAGE,
   TIMELINE_STEP_INDEX,
   SHOW_LOCATION_FOR_STATUS,
   TERMINAL_STATUSES,
@@ -140,7 +140,7 @@ export default function OrderDetailScreen() {
         </Text>
       ) : (
         <>
-          <Text style={styles.etaText}>{ORDER_DETAIL_STATUS_LABEL[order.status]}</Text>
+          <Text style={styles.etaText}>{STATUS_MESSAGE[order.status]}</Text>
 
           <View style={styles.section}>
             <OrderTimeline status={order.status} />
