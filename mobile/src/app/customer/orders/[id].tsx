@@ -1,32 +1,28 @@
-import { useState } from "react";
-import { View, Text, StyleSheet } from "react-native";
-import { useFocusEffect } from "expo-router";
-import { useCallback } from "react";
-import { useLocalSearchParams } from "expo-router";
+import { useState, useCallback } from "react";
+import { View, Text, ScrollView, Pressable, Linking, StyleSheet } from "react-native";
+import { useFocusEffect, useLocalSearchParams } from "expo-router";
 import { supabase } from "../../../../lib/supabase";
 import {
   STATUS_MESSAGE,
   TIMELINE_STEP_INDEX,
   SHOW_LOCATION_FOR_STATUS,
-  TERMINAL_STATUSES,
+  isTerminalStatus,
   type OrderStatus,
 } from "../../../../lib/order-status";
+import {
+  ORDER_DETAIL_SELECT,
+  normalizeOrderDetail,
+  formatPaise,
+  formatPayment,
+  type RawOrderDetail,
+  type OrderDetail,
+} from "../../../../lib/order-detail";
 import { BRAND } from "../../../../theme";
 import { useRequireSession } from "../../../../lib/use-require-session";
 import { OrderStatusStepper } from "../../../../components/OrderStatusStepper";
+import { OrderStatusPill } from "../../../../components/OrderStatusPill";
+import { OrderItemsList } from "../../../../components/OrderItemsList";
 import { CourierCard } from "../../../../components/CourierCard";
-
-type OrderView = {
-  id: string;
-  status: OrderStatus;
-  total: number;
-  delivery_partner_id: string | null;
-};
-
-type PaymentView = {
-  status: "pending" | "success" | "failed" | "refunded";
-  method: string;
-};
 
 type PartnerLocation = {
   current_lat: number | null;
@@ -55,11 +51,29 @@ function OrderTimeline({ status }: { status: OrderStatus }) {
   return <OrderStatusStepper currentIndex={TIMELINE_STEP_INDEX[status]} />;
 }
 
+function TotalsRow({ label, value, bold }: { label: string; value: string; bold?: boolean }) {
+  return (
+    <View style={styles.totalsRow}>
+      <Text style={bold ? styles.totalLabelBold : styles.mutedText}>{label}</Text>
+      <Text style={bold ? styles.totalLabelBold : styles.valueText}>{value}</Text>
+    </View>
+  );
+}
+
+function TimeRow({ label, value }: { label: string; value: string | null }) {
+  if (!value) return null;
+  return (
+    <View style={styles.totalsRow}>
+      <Text style={styles.mutedText}>{label}</Text>
+      <Text style={styles.valueText}>{new Date(value).toLocaleString()}</Text>
+    </View>
+  );
+}
+
 export default function OrderDetailScreen() {
   useRequireSession("/login/customer");
   const { id } = useLocalSearchParams<{ id: string }>();
-  const [order, setOrder] = useState<OrderView | null>(null);
-  const [payment, setPayment] = useState<PaymentView | null>(null);
+  const [order, setOrder] = useState<OrderDetail | null>(null);
   const [partnerLocation, setPartnerLocation] = useState<PartnerLocation | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -72,35 +86,38 @@ export default function OrderDetailScreen() {
       let interval: ReturnType<typeof setInterval> | null = null;
 
       async function load() {
-        const [{ data: o, error: oErr }, { data: p, error: pErr }] = await Promise.all([
-          supabase
+        try {
+          const { data, error: fetchError } = await supabase
             .from("orders")
-            .select("id, status, total, delivery_partner_id")
+            .select(ORDER_DETAIL_SELECT)
             .eq("id", id)
-            .single(),
-          supabase.from("payments").select("status, method").eq("order_id", id).single(),
-        ]);
-        if (cancelled) return;
-        if (oErr || pErr) {
-          setError((oErr ?? pErr)?.message ?? "Failed to load order");
-          return;
-        }
-        setOrder(o as OrderView);
-        setPayment(p as PaymentView);
-
-        if (TERMINAL_STATUSES.includes((o as OrderView).status)) {
-          if (interval) clearInterval(interval);
-        }
-
-        if ((o as OrderView).delivery_partner_id && SHOW_LOCATION_FOR_STATUS.includes((o as OrderView).status)) {
-          const { data: loc } = await supabase
-            .from("delivery_partners")
-            .select("current_lat, current_lng, last_ping_at")
-            .eq("user_id", (o as OrderView).delivery_partner_id as string)
             .single();
-          if (!cancelled) setPartnerLocation(loc ?? null);
-        } else if (!cancelled) {
-          setPartnerLocation(null);
+          if (cancelled) return;
+          if (fetchError || !data) {
+            setError(fetchError?.message ?? "Failed to load order");
+            return;
+          }
+          const next = normalizeOrderDetail(data as unknown as RawOrderDetail);
+          setOrder(next);
+          setError(null);
+
+          if (isTerminalStatus(next.status) && interval) {
+            clearInterval(interval);
+            interval = null;
+          }
+
+          if (next.deliveryPartnerId && SHOW_LOCATION_FOR_STATUS.includes(next.status)) {
+            const { data: loc } = await supabase
+              .from("delivery_partners")
+              .select("current_lat, current_lng, last_ping_at")
+              .eq("user_id", next.deliveryPartnerId)
+              .single();
+            if (!cancelled) setPartnerLocation(loc ?? null);
+          } else if (!cancelled) {
+            setPartnerLocation(null);
+          }
+        } catch (thrown) {
+          if (!cancelled) setError(thrown instanceof Error ? thrown.message : "Failed to load order");
         }
       }
 
@@ -113,28 +130,34 @@ export default function OrderDetailScreen() {
     }, [id])
   );
 
-  if (error) {
+  if (!order) {
     return (
       <View style={styles.container}>
-        <Text style={styles.errorText}>Couldn&apos;t load order: {error}</Text>
+        {error ? (
+          <Text style={styles.errorText}>Couldn&apos;t load order: {error}</Text>
+        ) : (
+          <Text style={styles.mutedText}>Loading order…</Text>
+        )}
       </View>
     );
   }
 
-  if (!order || !payment) {
-    return (
-      <View style={styles.container}>
-        <Text style={styles.mutedText}>Loading order…</Text>
-      </View>
-    );
-  }
-
-  const courierAssigned = order.delivery_partner_id != null && (order.status === "assigned" || order.status === "picked_up");
+  const courierAssigned =
+    order.deliveryPartnerId != null && (order.status === "assigned" || order.status === "picked_up");
+  const phoneIsDialable = order.recipientPhone.startsWith("+");
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.heading}>Order #{order.id.slice(0, 8)}</Text>
-      {payment.status === "failed" ? (
+    <ScrollView style={styles.scroll} contentContainerStyle={styles.container}>
+      {error && <Text style={styles.errorText}>Couldn&apos;t refresh order: {error}</Text>}
+      <View style={styles.headerRow}>
+        <Text style={styles.heading}>Order #{order.id.slice(0, 8)}</Text>
+        <OrderStatusPill status={order.status} />
+      </View>
+      <Text style={styles.mutedText}>
+        {order.storeName} · {new Date(order.placedAt).toLocaleString()}
+      </Text>
+
+      {order.payment?.status === "failed" ? (
         <Text style={styles.errorText}>
           Payment failed. Your order was not placed — please try checking out again.
         </Text>
@@ -162,25 +185,71 @@ export default function OrderDetailScreen() {
               <Text style={styles.mutedTextSmall}>Live map coming soon — showing raw coordinates for now.</Text>
             </View>
           )}
-
-          <View style={styles.section}>
-            <Text style={styles.mutedText}>Total: ₹{order.total.toFixed(2)}</Text>
-            <Text style={styles.mutedText}>
-              Payment: {payment.status} ({payment.method})
-            </Text>
-          </View>
         </>
       )}
-    </View>
+
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Deliver to</Text>
+        <Text style={styles.valueText}>{order.recipientName}</Text>
+        <Text style={styles.mutedText}>{order.recipientEmail}</Text>
+        {phoneIsDialable ? (
+          <Pressable onPress={() => Linking.openURL(`tel:${order.recipientPhone}`).catch(() => {})}>
+            <Text style={styles.linkText}>{order.recipientPhone}</Text>
+          </Pressable>
+        ) : (
+          <Text style={styles.mutedText}>{order.recipientPhone}</Text>
+        )}
+        {order.address ? (
+          <View style={styles.addressBlock}>
+            {order.address.label && <Text style={styles.valueText}>{order.address.label}</Text>}
+            {order.address.lines.map((line, index) => (
+              <Text key={`${index}-${line}`} style={styles.mutedText}>
+                {line}
+              </Text>
+            ))}
+          </View>
+        ) : (
+          <Text style={styles.mutedText}>No delivery address on file</Text>
+        )}
+        {order.deliveryNote && <Text style={styles.mutedText}>Note: {order.deliveryNote}</Text>}
+      </View>
+
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Items</Text>
+        <OrderItemsList items={order.items} />
+      </View>
+
+      <View style={styles.section}>
+        <TotalsRow label="Subtotal" value={formatPaise(Math.round(order.subtotal * 100))} />
+        <TotalsRow label="Delivery fee" value={formatPaise(Math.round(order.deliveryFee * 100))} />
+        <TotalsRow label="Total" value={formatPaise(Math.round(order.total * 100))} bold />
+        <TotalsRow label="Payment" value={formatPayment(order.payment)} />
+      </View>
+
+      <View style={styles.section}>
+        <TimeRow label="Placed" value={order.placedAt} />
+        <TimeRow label="Accepted" value={order.acceptedAt} />
+        <TimeRow label="Picked up" value={order.pickedUpAt} />
+        <TimeRow label="Delivered" value={order.deliveredAt} />
+      </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16, gap: 16, backgroundColor: BRAND.colors.background },
-  heading: { fontFamily: BRAND.fonts.heading, fontSize: 22, color: BRAND.colors.ink },
+  scroll: { flex: 1, backgroundColor: BRAND.colors.background },
+  container: { padding: 16, gap: 16, backgroundColor: BRAND.colors.background },
+  headerRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8 },
+  heading: { fontFamily: BRAND.fonts.heading, fontSize: 22, color: BRAND.colors.ink, flexShrink: 1 },
+  sectionTitle: { fontFamily: BRAND.fonts.bodySemiBold, fontSize: 16, color: BRAND.colors.ink, marginBottom: 4 },
   mutedText: { fontFamily: BRAND.fonts.body, color: BRAND.colors.inkMuted },
   mutedTextSmall: { fontFamily: BRAND.fonts.body, fontSize: 11, color: BRAND.colors.inkMuted },
+  valueText: { fontFamily: BRAND.fonts.bodyMedium, color: BRAND.colors.ink },
+  linkText: { fontFamily: BRAND.fonts.bodyMedium, color: BRAND.colors.primary },
   errorText: { fontFamily: BRAND.fonts.body, color: "#dc2626" },
+  addressBlock: { marginTop: 4, gap: 2 },
+  totalsRow: { flexDirection: "row", justifyContent: "space-between", gap: 8 },
+  totalLabelBold: { fontFamily: BRAND.fonts.bodySemiBold, color: BRAND.colors.ink },
   section: {
     borderWidth: 1,
     borderColor: BRAND.colors.inkMuted + "22",

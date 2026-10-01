@@ -2,22 +2,24 @@ import { useCallback, useState } from "react";
 import { View, Text, FlatList, Pressable, ActivityIndicator, StyleSheet } from "react-native";
 import { useRouter, useFocusEffect } from "expo-router";
 import { supabase } from "../../../../lib/supabase";
-import { STATUS_LABEL, type OrderStatus } from "../../../../lib/order-status";
+import {
+  ORDER_LIST_SELECT,
+  normalizeOrderListRow,
+  formatPaise,
+  type RawOrderListRow,
+  type OrderListRow,
+} from "../../../../lib/order-detail";
 import { BRAND } from "../../../../theme";
 import { useRequireSession } from "../../../../lib/use-require-session";
+import { OrderStatusPill } from "../../../../components/OrderStatusPill";
+import { ItemThumb } from "../../../../components/ItemThumb";
 
-type OrderRow = {
-  id: string;
-  status: string;
-  total: number;
-  placed_at: string;
-  stores: { name: string } | null;
-};
+const MAX_THUMBS = 3;
 
 export default function CustomerOrdersScreen() {
   useRequireSession("/login/customer");
   const router = useRouter();
-  const [orders, setOrders] = useState<OrderRow[] | null>(null);
+  const [orders, setOrders] = useState<OrderListRow[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   // Refetch every time this tab/screen regains focus, not just on first
@@ -27,23 +29,28 @@ export default function CustomerOrdersScreen() {
     useCallback(() => {
       let cancelled = false;
       async function load() {
-        const { data: sessionData } = await supabase.auth.getSession();
-        const userId = sessionData.session?.user.id;
-        if (!userId) {
-          if (!cancelled) setError("Not signed in");
-          return;
+        try {
+          const { data: sessionData } = await supabase.auth.getSession();
+          const userId = sessionData.session?.user.id;
+          if (!userId) {
+            if (!cancelled) setError("Not signed in");
+            return;
+          }
+          const { data, error: fetchError } = await supabase
+            .from("orders")
+            .select(ORDER_LIST_SELECT)
+            .eq("customer_id", userId)
+            .order("placed_at", { ascending: false });
+          if (cancelled) return;
+          if (fetchError) {
+            setError("Couldn't load your orders.");
+            return;
+          }
+          setError(null);
+          setOrders(((data as unknown as RawOrderListRow[]) ?? []).map(normalizeOrderListRow));
+        } catch {
+          if (!cancelled) setError("Couldn't load your orders.");
         }
-        const { data, error: fetchError } = await supabase
-          .from("orders")
-          .select("id, status, total, placed_at, stores(name)")
-          .eq("customer_id", userId)
-          .order("placed_at", { ascending: false });
-        if (cancelled) return;
-        if (fetchError) {
-          setError("Couldn't load your orders.");
-          return;
-        }
-        setOrders((data as unknown as OrderRow[]) ?? []);
       }
       load();
       return () => {
@@ -61,28 +68,35 @@ export default function CustomerOrdersScreen() {
           <ActivityIndicator color={BRAND.colors.primary} />
         </View>
       )}
-      {orders !== null && orders.length === 0 && (
-        <Text style={styles.mutedText}>You haven&apos;t placed any orders yet.</Text>
-      )}
+      {orders !== null && orders.length === 0 && <Text style={styles.mutedText}>No orders yet.</Text>}
       <FlatList
         data={orders ?? []}
         keyExtractor={(item) => item.id}
         contentContainerStyle={{ gap: 12 }}
-        renderItem={({ item }) => (
-          <Pressable
-            style={styles.card}
-            onPress={() => router.push(`/customer/orders/${item.id}` as never)}
-          >
-            <View>
-              <Text style={styles.storeName}>{item.stores?.name ?? "Unknown store"}</Text>
-              <Text style={styles.mutedText}>
-                {new Date(item.placed_at).toLocaleString()} ·{" "}
-                {STATUS_LABEL[item.status as OrderStatus] ?? item.status}
-              </Text>
-            </View>
-            <Text style={styles.total}>₹{Number(item.total).toFixed(2)}</Text>
-          </Pressable>
-        )}
+        renderItem={({ item }) => {
+          const extra = item.items.length - MAX_THUMBS;
+          return (
+            <Pressable style={styles.card} onPress={() => router.push(`/customer/orders/${item.id}` as never)}>
+              <View style={styles.topRow}>
+                <View style={styles.titleColumn}>
+                  <Text style={styles.storeName}>{item.storeName}</Text>
+                  <Text style={styles.mutedText}>{new Date(item.placedAt).toLocaleString()}</Text>
+                </View>
+                <OrderStatusPill status={item.status} />
+              </View>
+              <View style={styles.bottomRow}>
+                <View style={styles.thumbs}>
+                  {item.items.slice(0, MAX_THUMBS).map((line) => (
+                    <ItemThumb key={line.id} url={line.imageUrl} name={line.name} size={40} />
+                  ))}
+                  {extra > 0 && <Text style={styles.mutedText}>+{extra}</Text>}
+                  <Text style={styles.mutedText}>{item.itemCount} items</Text>
+                </View>
+                <Text style={styles.total}>{formatPaise(Math.round(item.total * 100))}</Text>
+              </View>
+            </Pressable>
+          );
+        }}
       />
     </View>
   );
@@ -95,15 +109,17 @@ const styles = StyleSheet.create({
   mutedText: { fontFamily: BRAND.fonts.body, color: BRAND.colors.inkMuted },
   errorText: { fontFamily: BRAND.fonts.body, color: "#dc2626" },
   card: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+    gap: 12,
     borderWidth: 1,
     borderColor: BRAND.colors.inkMuted + "22",
     backgroundColor: BRAND.colors.surface,
     borderRadius: BRAND.radius,
     padding: 16,
   },
-  storeName: { fontFamily: BRAND.fonts.bodyMedium, color: BRAND.colors.ink, marginBottom: 2 },
+  topRow: { flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between", gap: 8 },
+  titleColumn: { flex: 1, gap: 2 },
+  bottomRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8 },
+  thumbs: { flexDirection: "row", alignItems: "center", gap: 8, flexShrink: 1 },
+  storeName: { fontFamily: BRAND.fonts.bodySemiBold, color: BRAND.colors.ink },
   total: { fontFamily: BRAND.fonts.bodySemiBold, color: BRAND.colors.ink },
 });
