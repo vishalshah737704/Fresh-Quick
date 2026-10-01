@@ -123,11 +123,11 @@ export default function AdminOrderDetailPage() {
     <div className="min-w-0">
       {backLink}
       <OrderDetailView order={order} />
+      <p className="mt-6 break-words text-sm text-brand-ink">
+        Delivery partner: {partnerName ?? "Unassigned"}
+      </p>
       {REASSIGNABLE_STATUSES.includes(order.status) && (
-        <section className="mt-6 min-w-0 rounded-[var(--radius-card)] border border-brand-ink-muted/10 p-4">
-          <p className="mb-3 break-words text-sm text-brand-ink">
-            Delivery partner: {partnerName ?? "Unassigned"}
-          </p>
+        <section className="mt-3 min-w-0 rounded-[var(--radius-card)] border border-brand-ink-muted/10 p-4">
           <div className="flex flex-wrap items-center gap-2">
             <select
               aria-label="Select delivery partner"
