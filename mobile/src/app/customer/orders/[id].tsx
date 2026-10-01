@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { View, Text, ScrollView, Pressable, Linking, StyleSheet } from "react-native";
 import { useFocusEffect, useLocalSearchParams } from "expo-router";
 import { supabase } from "../../../../lib/supabase";
@@ -77,6 +77,8 @@ export default function OrderDetailScreen() {
   const [partnerLocation, setPartnerLocation] = useState<PartnerLocation | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  const loadSeq = useRef(0);
+
   // 3-second poll while this screen is focused, matching the web order
   // detail page — stops polling once the order reaches a terminal status,
   // and stops entirely (interval cleared) when the screen loses focus.
@@ -86,13 +88,14 @@ export default function OrderDetailScreen() {
       let interval: ReturnType<typeof setInterval> | null = null;
 
       async function load() {
+        const seq = ++loadSeq.current;
         try {
           const { data, error: fetchError } = await supabase
             .from("orders")
             .select(ORDER_DETAIL_SELECT)
             .eq("id", id)
             .single();
-          if (cancelled) return;
+          if (cancelled || seq !== loadSeq.current) return;
           if (fetchError || !data) {
             setError(fetchError?.message ?? "Failed to load order");
             return;
@@ -112,12 +115,12 @@ export default function OrderDetailScreen() {
               .select("current_lat, current_lng, last_ping_at")
               .eq("user_id", next.deliveryPartnerId)
               .single();
-            if (!cancelled) setPartnerLocation(loc ?? null);
-          } else if (!cancelled) {
+            if (!cancelled && seq === loadSeq.current) setPartnerLocation(loc ?? null);
+          } else if (!cancelled && seq === loadSeq.current) {
             setPartnerLocation(null);
           }
         } catch (thrown) {
-          if (!cancelled) setError(thrown instanceof Error ? thrown.message : "Failed to load order");
+          if (!cancelled && seq === loadSeq.current) setError(thrown instanceof Error ? thrown.message : "Failed to load order");
         }
       }
 
