@@ -2574,3 +2574,29 @@ credential being selected on the 05 Gmail node in each n8n instance.
 - `PEXELS_API_KEY` — Pexels Search API, used once (not at runtime) to fetch
   menu item photo URLs baked into `supabase/seed.sql`. Key lives in
   `.env.local` only.
+
+## Customer accounts dropped + migration 28 (2026-10-01, branch `order-visibility-d`)
+
+At Vishal's request all 5 registered customer accounts were deleted from the
+local dev DB (`customer@foodhub.local`, the three personal accounts, and
+`review-test-customer@foodhub.local`) while keeping every order and its data.
+`orders.customer_id` was NOT NULL with a NO ACTION FK and `addresses.user_id`
+was NOT NULL with ON DELETE CASCADE, so no customer who had ordered could be
+deleted. **Migration `00000000000028_orders_outlive_customers.sql`** makes both
+columns nullable with `ON DELETE SET NULL` (no RLS/policy change; a NULL never
+matches `auth.uid()`), applied with `npx supabase migration up`. A full
+`pg_dump` backup was taken first (kept outside the repo in the session
+scratchpad, not committed). Deletion ran in one transaction with a guard that
+rolled back if any order/order-item/payment/address count changed: customers
+5 -> 0; 29 orders, 43 order items, 29 payments, 106 addresses all preserved; 28
+orders and 28 addresses now have a NULL owner (the 29th order was placed by the
+vendor demo account). Orders keep their recipient name/email/phone snapshot, so
+the vendor/delivery/admin views and the delivered email still work (verified on
+an unlinked order via `notification-details`).
+**Consequences:** `customer@foodhub.local` / `demo1234` no longer exists in the
+local DB — demo flows, the manuals' customer logins and any test that signs in as
+it need a new customer (sign up on web or the new mobile sign-up) or a
+`supabase db reset` (never without asking). Those 28 orders no longer appear in
+any customer's Orders list (nobody owns them); admin/vendor/delivery still see
+them. The order rows still hold the real recipient name/email/phone/address that
+were typed at checkout — that was the requested "keep order information".
