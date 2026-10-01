@@ -2,8 +2,8 @@ import type { OrderStatus } from "./order-status";
 
 // `addresses!delivery_address_id` pins the embed to the orders->addresses FK.
 export const ORDER_DETAIL_SELECT =
-  "id, status, subtotal, delivery_fee, total, placed_at, delivery_note, recipient_name, recipient_email, recipient_phone, delivery_partner_id, " +
-  "stores(name), " +
+  "id, status, subtotal, delivery_fee, total, placed_at, accepted_at, picked_up_at, delivered_at, delivery_note, recipient_name, recipient_email, recipient_phone, delivery_partner_id, " +
+  "stores(name, store_address:addresses!address_id(label, line1, line2, city, state, pincode)), " +
   "address:addresses!delivery_address_id(label, line1, line2, city, state, pincode), " +
   "payments(status, method), " +
   "order_items(id, quantity, unit_price, special_instructions, products(name, image_url), order_item_options(id, group_name, option_name))";
@@ -29,12 +29,15 @@ export type RawOrderDetail = {
   delivery_fee: number | string;
   total: number | string;
   placed_at: string;
+  accepted_at?: string | null;
+  picked_up_at?: string | null;
+  delivered_at?: string | null;
   delivery_note: string | null;
   recipient_name: string;
   recipient_email: string;
   recipient_phone: string;
   delivery_partner_id: string | null;
-  stores: OneOrMany<{ name: string }>;
+  stores: OneOrMany<{ name: string; store_address?: OneOrMany<RawAddress> }>;
   address: OneOrMany<RawAddress>;
   payments: OneOrMany<{ status: string; method: string }>;
   order_items: {
@@ -82,6 +85,10 @@ export type OrderDetail = {
   recipientEmail: string;
   recipientPhone: string;
   storeName: string;
+  storeAddress: { label: string | null; lines: string[] } | null;
+  acceptedAt: string | null;
+  pickedUpAt: string | null;
+  deliveredAt: string | null;
   deliveryPartnerId: string | null;
   address: { label: string | null; lines: string[] } | null;
   payment: { status: string; method: string } | null;
@@ -130,9 +137,30 @@ function formatAddress(raw: RawAddress): { label: string | null; lines: string[]
   return { label: cleanText(raw.label), lines };
 }
 
+const PAYMENT_STATUS_LABEL: Record<string, string> = {
+  success: "Paid",
+  pending: "Pending",
+  failed: "Failed",
+  refunded: "Refunded",
+};
+const PAYMENT_METHOD_LABEL: Record<string, string> = {
+  mock_card: "Card",
+  mock_upi: "UPI",
+  mock_cod: "Cash on delivery",
+};
+
+export function formatPayment(payment: { status: string; method: string } | null): string {
+  if (!payment) return "—";
+  const status = PAYMENT_STATUS_LABEL[payment.status] ?? payment.status;
+  const method = PAYMENT_METHOD_LABEL[payment.method] ?? payment.method;
+  return `${status} · ${method}`;
+}
+
 export function normalizeOrderDetail(raw: RawOrderDetail): OrderDetail {
   const address = first(raw.address);
   const payment = first(raw.payments);
+  const store = first(raw.stores);
+  const storeAddress = first(store?.store_address);
   return {
     id: raw.id,
     status: raw.status,
@@ -144,7 +172,11 @@ export function normalizeOrderDetail(raw: RawOrderDetail): OrderDetail {
     recipientName: raw.recipient_name,
     recipientEmail: raw.recipient_email,
     recipientPhone: cleanText(raw.recipient_phone) ?? "Not provided",
-    storeName: first(raw.stores)?.name ?? "Unknown store",
+    storeName: store?.name ?? "Unknown store",
+    storeAddress: storeAddress ? formatAddress(storeAddress) : null,
+    acceptedAt: raw.accepted_at ?? null,
+    pickedUpAt: raw.picked_up_at ?? null,
+    deliveredAt: raw.delivered_at ?? null,
     deliveryPartnerId: raw.delivery_partner_id,
     address: address ? formatAddress(address) : null,
     payment: payment ? { status: payment.status, method: payment.method } : null,

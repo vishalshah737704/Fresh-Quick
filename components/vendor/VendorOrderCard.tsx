@@ -1,5 +1,5 @@
 import { ItemThumb } from "@/components/ItemThumb";
-import { formatPaise, type OrderDetail } from "@/lib/order-detail";
+import { formatPaise, formatPayment, type OrderDetail } from "@/lib/order-detail";
 
 export const NEXT_LABEL: Record<string, string> = {
   placed: "Accept order",
@@ -33,7 +33,7 @@ export function VendorOrderCard({
         <p className="font-semibold text-brand-ink">For: {order.recipientName}</p>
         <p className="text-brand-ink-muted">Phone: {order.recipientPhone}</p>
         <p className="text-brand-ink-muted">
-          Payment: {order.payment ? `${order.payment.status} (${order.payment.method})` : "—"}
+          Payment: {formatPayment(order.payment)}
         </p>
         {order.address ? (
           <p className="text-brand-ink-muted">{order.address.lines.join(", ")}</p>

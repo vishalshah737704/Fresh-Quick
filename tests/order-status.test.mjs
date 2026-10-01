@@ -8,6 +8,7 @@ import {
   TIMELINE_STEPS,
   TIMELINE_STEP_INDEX,
   isTerminalStatus,
+  STATUS_COLOR,
 } from "../lib/order-status.ts";
 
 test("timeline has the 6 agreed steps in order", () => {
@@ -59,4 +60,17 @@ test("labels and messages exist for every status", () => {
     assert.ok(STATUS_LABEL[status], `label ${status}`);
     assert.ok(STATUS_MESSAGE[status], `message ${status}`);
   }
+});
+
+test("every status has a colour class with white text", () => {
+  for (const status of ORDER_STATUSES) {
+    const cls = STATUS_COLOR[status];
+    assert.ok(typeof cls === "string" && cls.includes("text-white"), status);
+    assert.ok(/\bbg-[a-z-]+(-700|-800|-900)?\b/.test(cls) || cls.includes("bg-brand-"), status);
+  }
+});
+
+test("cancelled and rejected share the failure colour; delivered differs from them", () => {
+  assert.equal(STATUS_COLOR.cancelled, STATUS_COLOR.rejected);
+  assert.notEqual(STATUS_COLOR.delivered, STATUS_COLOR.cancelled);
 });

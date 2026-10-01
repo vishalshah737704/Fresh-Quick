@@ -73,3 +73,17 @@ export const TIMELINE_STEP_INDEX: Record<TimelineStatus, number> = {
   picked_up: 4,
   delivered: 5,
 };
+
+// White text on every pill: all backgrounds are -700 shades (or the darkened
+// brand "-text-safe" tokens) so contrast stays >= 4.5:1.
+export const STATUS_COLOR: Record<OrderStatus, string> = {
+  placed: "bg-slate-700 text-white",
+  accepted: "bg-blue-700 text-white",
+  preparing: "bg-amber-700 text-white",
+  ready: "bg-teal-700 text-white",
+  assigned: "bg-brand-primary-text-safe text-white",
+  picked_up: "bg-brand-primary-text-safe text-white",
+  delivered: "bg-green-700 text-white",
+  cancelled: "bg-red-700 text-white",
+  rejected: "bg-red-700 text-white",
+};

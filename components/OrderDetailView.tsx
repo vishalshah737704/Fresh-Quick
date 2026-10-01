@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { ItemThumb } from "@/components/ItemThumb";
-import { formatPaise, lineTotalPaise, type OrderDetail } from "@/lib/order-detail";
-import { STATUS_LABEL } from "@/lib/order-status";
+import { formatPaise, formatPayment, lineTotalPaise, type OrderDetail } from "@/lib/order-detail";
+import { STATUS_COLOR, STATUS_LABEL } from "@/lib/order-status";
 
 function rupees(amount: number): string {
   return formatPaise(Math.round(amount * 100));
@@ -22,8 +22,13 @@ export function OrderDetailView({
           <p className="text-sm text-brand-ink-muted">
             Order #{order.id.slice(0, 8)} · {new Date(order.placedAt).toLocaleString()}
           </p>
+          {order.storeAddress && (
+            <p className="text-sm text-brand-ink-muted">
+              Pickup: {order.storeAddress.lines.join(", ")}
+            </p>
+          )}
         </div>
-        <span className="rounded-[var(--radius-pill)] bg-brand-ink px-3 py-1 text-sm font-medium text-white">
+        <span className={`rounded-[var(--radius-pill)] px-3 py-1 text-sm font-medium ${STATUS_COLOR[order.status]}`}>
           {STATUS_LABEL[order.status]}
         </span>
       </div>
@@ -105,9 +110,29 @@ export function OrderDetailView({
         <div className="rounded-[var(--radius-card)] bg-brand-primary-tint p-3">
           <p className="text-xs font-medium text-brand-primary-text-safe">Payment</p>
           <p className="text-base font-semibold">
-            {order.payment ? `${order.payment.status} (${order.payment.method})` : "—"}
+            {formatPayment(order.payment)}
           </p>
         </div>
+      </section>
+
+      <section className="rounded-[var(--radius-card)] border border-brand-ink-muted/10 bg-brand-surface p-4">
+        <h3 className="mb-2 text-sm font-semibold text-brand-ink-muted">Timeline</h3>
+        <ul className="flex flex-col gap-1 text-sm">
+          {[
+            { label: "Placed", at: order.placedAt },
+            { label: "Accepted", at: order.acceptedAt },
+            { label: "Picked up", at: order.pickedUpAt },
+            { label: "Delivered", at: order.deliveredAt },
+          ].map(
+            (entry) =>
+              entry.at && (
+                <li key={entry.label} className="flex justify-between gap-3">
+                  <span className="font-medium">{entry.label}</span>
+                  <span className="text-brand-ink-muted">{new Date(entry.at).toLocaleString()}</span>
+                </li>
+              )
+          )}
+        </ul>
       </section>
 
       {children && <div className="flex flex-wrap gap-2">{children}</div>}

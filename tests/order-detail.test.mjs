@@ -4,6 +4,7 @@ import {
   ORDER_DETAIL_SELECT,
   cleanText,
   formatPaise,
+  formatPayment,
   lineTotalPaise,
   normalizeOrderDetail,
   normalizeOrderListRow,
@@ -45,7 +46,7 @@ const baseRaw = {
 };
 
 test("select string embeds the relations the UI needs", () => {
-  for (const part of ["stores(name)", "addresses!delivery_address_id", "payments(", "order_items(", "order_item_options("]) {
+  for (const part of ["stores(name,", "addresses!delivery_address_id", "payments(", "order_items(", "order_item_options("]) {
     assert.ok(ORDER_DETAIL_SELECT.includes(part), part);
   }
 });
@@ -136,4 +137,46 @@ test("image host guard rejects unknown hosts and http (Review Focus 2)", () => {
   assert.equal(isAllowedImageUrl("https://evil.example.com/a.jpg"), false);
   assert.equal(isAllowedImageUrl("http://images.pexels.com/a.jpg"), false);
   assert.equal(isAllowedImageUrl("not a url"), false);
+});
+
+test("select string asks for store address and the three timestamps", () => {
+  assert.match(ORDER_DETAIL_SELECT, /accepted_at/);
+  assert.match(ORDER_DETAIL_SELECT, /picked_up_at/);
+  assert.match(ORDER_DETAIL_SELECT, /delivered_at/);
+  assert.match(ORDER_DETAIL_SELECT, /store_address:addresses!address_id/);
+});
+
+test("store address normalizes from object or array embed; null when absent", () => {
+  const addr = { label: null, line1: "12 MG Road", line2: null, city: "Bengaluru", state: "KA", pincode: "560001" };
+  const withObj = normalizeOrderDetail({ ...baseRaw, stores: { name: "S", store_address: addr } });
+  assert.deepEqual(withObj.storeAddress, { label: null, lines: ["12 MG Road", "Bengaluru, KA 560001"] });
+  const withArr = normalizeOrderDetail({ ...baseRaw, stores: [{ name: "S", store_address: [addr] }] });
+  assert.deepEqual(withArr.storeAddress, withObj.storeAddress);
+  const none = normalizeOrderDetail({ ...baseRaw, stores: { name: "S", store_address: null } });
+  assert.equal(none.storeAddress, null);
+});
+
+test("timestamps pass through and default to null", () => {
+  const stamped = normalizeOrderDetail({
+    ...baseRaw,
+    accepted_at: "2026-09-30T10:05:00Z",
+    picked_up_at: "2026-09-30T10:30:00Z",
+    delivered_at: "2026-09-30T10:50:00Z",
+  });
+  assert.equal(stamped.acceptedAt, "2026-09-30T10:05:00Z");
+  assert.equal(stamped.pickedUpAt, "2026-09-30T10:30:00Z");
+  assert.equal(stamped.deliveredAt, "2026-09-30T10:50:00Z");
+  const old = normalizeOrderDetail(baseRaw);
+  assert.equal(old.acceptedAt, null);
+  assert.equal(old.pickedUpAt, null);
+  assert.equal(old.deliveredAt, null);
+});
+
+test("formatPayment gives readable labels for every DB value", () => {
+  assert.equal(formatPayment(null), "—");
+  assert.equal(formatPayment({ status: "success", method: "mock_card" }), "Paid · Card");
+  assert.equal(formatPayment({ status: "pending", method: "mock_cod" }), "Pending · Cash on delivery");
+  assert.equal(formatPayment({ status: "failed", method: "mock_upi" }), "Failed · UPI");
+  assert.equal(formatPayment({ status: "refunded", method: "mock_card" }), "Refunded · Card");
+  assert.equal(formatPayment({ status: "weird", method: "other" }), "weird · other");
 });
