@@ -83,8 +83,14 @@ from the browser's own geolocation when permission is granted, falling
 back to manual entry); the customer's order-confirmation page shows that
 location as a plain coordinate readout once the order reaches `assigned`
 (access expires once the order is `delivered`). Once an order is
-`assigned` or `picked_up`, the "View address" action on the partner's own
-delivery card shows the customer's delivery address.
+`assigned` or `picked_up`, the partner's own active card shows the
+customer's name, phone and delivery address directly (there is no separate
+"View address" action any more). Note that n8n workflow 04 auto-assigns a
+`ready` order to the nearest online partner (by stored lat/lng) within ~10
+seconds, so an order only stays in "Available orders" when no online partner
+has a location — set any stray test partners offline when demoing the claim
+flow. The mobile app (`mobile/`, Customer + Delivery Partner, Expo) mirrors
+these screens, including a customer sign-up on its login screen.
 
 ## Trying the admin flow
 

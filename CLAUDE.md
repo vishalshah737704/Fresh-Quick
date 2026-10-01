@@ -40,10 +40,10 @@ backend code. See `md_version/MOBILE_APP_SPEC.md` for v1 architecture and
 tab nav, UberEats-style Home/store/cart/checkout/tracking, new
 reorder row, floating cart pill). See MEMORY.md's "Mobile app" and
 "Mobile app — UberEats-style redesign" entries for build history, review
-findings, and what's still outstanding (no real device/simulator run yet;
-`Mobile_App_User_Manual.docx`/`.pdf` in `docs/` describes the
-pre-redesign flow, not yet updated for the new tab bar/bottom-sheet
-cart/row-based checkout).
+findings, and what's still outstanding (the Customer App has now been run
+on Vishal's phone once — a 2026-10-01 screen recording — but the Delivery
+screens never have; `Mobile_App_User_Manual.docx`/`.pdf` in `docs/` was
+refreshed to v4.0 on 2026-10-01, see the sub-project D paragraph below).
 **Figma community kit redesign (complete, merged to `main` 2026-09-29):**
 full rebrand of ALL 6 surfaces (web Customer/Vendor/Delivery/Admin,
 mobile Customer/Delivery) in one pass, using a Figma community UI kit's
@@ -82,9 +82,10 @@ shared order-detail model and 6-step timeline; B added order status
 timestamps (migration 27 trigger), a redacted delivery-partner view
 (Dashboard active-only + History, `lib/delivery-order-view.ts`), and an
 admin sidebar with KPI-only Overview, Orders table + order detail
-(reassign), and Vendors/Partners pages with Add forms. Legacy
-`/api/delivery/orders` and `/available-orders` stay until mobile
-(sub-project D) migrates. The public-signup 1-char password gap was fixed
+(reassign), and Vendors/Partners pages with Add forms. The legacy
+`/api/delivery/orders` and `/available-orders` routes were deleted in
+sub-project D once mobile moved to `/api/delivery/active` + `/history`.
+The public-signup 1-char password gap was fixed
 afterwards (shared `MIN_PASSWORD_LENGTH` in `lib/signup-validation.ts`).
 Open items (deferred minors, leftover test partners in the dev DB) are in MEMORY.md's
 "Order visibility — sub-project B" entry.
@@ -96,6 +97,23 @@ branch emails the customer via Gmail (verified live 2026-09-30, with 03's
 accepted email). n8n 2.40.7 IF nodes need `String(...)` around `.includes()`;
 never commit a real n8n credential id (a test guards it). See MEMORY.md's
 "Order visibility — sub-project C" entry and `docs/n8n-webhook-setup.md`.
+**Order visibility — sub-project D (mobile Customer + Delivery, branch
+`order-visibility-d`, merged to `main` and pushed 2026-10-01):** mobile status
+labels/colors/steps are byte-identical copies of the web ones
+(`mobile/lib/order-status.ts`, `order-detail.ts`; `tests/mobile-parity.test.mjs`
+guards drift); Customer Orders list + full Order detail (6-step tracker, 3 s
+poll), Delivery Active dashboard on `/api/delivery/active` + History screen,
+customer sign-up on mobile (and the web signup route now validates fields +
+6-char password), migration 28 (orders outlive deleted customers; all customer
+accounts were dropped 2026-10-01 — `customer@foodhub.local` no longer exists,
+sign up a fresh one). Both manuals refreshed (web v3.0, mobile v4.0 — Customer
+figures from Vishal's real phone recording with personal data blurred; the 3
+Delivery figures are labeled wireframes because Delivery was never recorded).
+**Gotcha for demos/tests:** workflow 04 auto-assigns a `ready` order within
+~10 s to the NEAREST ONLINE partner by stored lat/lng, so it never reaches the
+"Available" list while any online partner has coordinates — a leftover online
+test partner (`partner-b1@foodhub.local`, Bangalore coords) silently took
+orders meant for `delivery@foodhub.local`. Set stray partners offline first.
 **Correction to the "cart redesign (slide-out panel)" claim above
 (line ~21) and to any other reference to `CartPanel.tsx` as a
 slide-out drawer with Escape-flush/close-before-nav/open-state logic**:

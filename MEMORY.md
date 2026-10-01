@@ -2440,7 +2440,8 @@ production `npm run build` while dev servers were running.
   (email never; available = no recipient data; active = name/phone/address/
   note; history = name only). Sidebar Dashboard (active only) / History,
   `DeliveryOrderCard`, History page. LEGACY `/api/delivery/orders` and
-  `/available-orders` intentionally untouched (mobile still calls them).
+  `/available-orders` were left untouched in B because mobile still called
+  them — **deleted in sub-project D (`c5397b4`) after mobile migrated.**
 - Admin: `AdminShell` NAV_LINKS Overview (`/admin/dashboard`)/Orders/Vendors/
   Delivery Partners; Overview is KPI-only (rejected now excluded from revenue
   and treated as finished — fixes old behaviour); Orders table +
@@ -2500,7 +2501,8 @@ all 4 web logins at 320/390px (Task 7 and Task 12 reports).
 - (e) Playwright real-mouse clicks stopped working on the customer Account
   menu during Task 12 (`AccountMenu.tsx` unchanged on this branch; likely a
   harness artifact) — Vishal should click it once by hand.
-- (f) Mobile still not run on a device. Sub-project D must: migrate mobile
+- (f) [DONE in sub-project D, except the device run for Delivery] Mobile
+  still not run on a device. Sub-project D must: migrate mobile
   to `/api/delivery/active` + `/history` then delete the two legacy routes;
   mirror `STATUS_LABEL`/`STATUS_COLOR`/`formatPayment`/redaction
   expectations (`mobile/lib/order-status.ts` still says "Out for delivery"
@@ -2568,6 +2570,93 @@ the IF filter bug. Also 01 = 317, 02 = 316, 04 = 320.
 concerns; `notification-details` now carries full order data for n8n only
 (internal-secret route); the delivered email depends on the Gmail
 credential being selected on the 05 Gmail node in each n8n instance.
+
+## Order visibility — sub-project D (2026-09-30 → 2026-10-01, branch `order-visibility-d`, merged to `main` and pushed 2026-10-01)
+
+**What shipped (mobile Customer + Delivery, both manuals, mobile sign-up):**
+- Mobile status mapping = web: 6 steps, labels, `STATUS_COLOR` hex.
+  `mobile/lib/order-status.ts`, `order-detail.ts`, `image-url.ts` are
+  byte-identical copies of the web `lib/` files and
+  `tests/mobile-parity.test.mjs` fails on any drift (Expo can't import
+  outside `mobile/`, so copies + a guard instead of a shared package).
+- Components `OrderStatusPill`, `ItemThumb`, `OrderItemsList`; Customer Orders
+  list + full Order detail (6-step tracker "Step N of 6", Deliver-to card,
+  items with photos, totals, payment, timeline times, 3 s poll with a stale-
+  response guard); Delivery: Active dashboard on `/api/delivery/active`
+  (available vs mine, redacted by scope), History screen on
+  `/api/delivery/history`, real partner online state read on mount.
+- Legacy `app/api/delivery/orders/route.ts` and `available-orders/route.ts`
+  deleted (`c5397b4`).
+- **Mobile customer sign-up** (`0394b2b`; added mid-D at Vishal's request):
+  login screen Log in / Sign up toggle → public `POST /api/auth/signup`
+  (`apiPostPublic`) → sign in. `979aa07`: the web signup route now validates
+  with `validateSignupFields` (6-char password minimum, ≤200 chars, bad/null
+  JSON → 400) — same GoTrue `createUser` bypass already fixed for vendor/
+  delivery/admin. Done in the same change although Vishal asked only for
+  mobile sign-up (cost if wrong: revert `979aa07`).
+- Migration 28 (see "Customer accounts dropped" above).
+- Manuals: web `User_Manual` v3.0 (44 pp, `ce57b86`); `Mobile_App_User_Manual`
+  **v4.0, 25 pp** (2026-10-01): Customer figures (sign-up, Orders tab, order
+  detail Placed / Partner assigned / Delivered, scrolled totals + timeline,
+  Account) are frames from Vishal's phone recording
+  (`docs/ScreenRecording_10-01-2026 01-32-01_1.MP4`, git-untracked), real
+  name/email/phone/address blurred; the 3 Delivery figures (Available card,
+  Active card, History) are **drawn wireframes with demo data, labeled as
+  such** (Vishal chose this when the recording turned out to be Customer-only
+  — re-capture on a device later if wanted). Also blurred an email + address
+  that were visible in an older embedded checkout screenshot, removed the
+  stale v2.0 delivery wireframe, added sign-up text (§2.2, 1.1, FAQ), fixed
+  1.1/1.3 "figure pending" wording, renumbered the static TOC from the PDF
+  (3/5/8/19/23/25), no orphaned image parts. Note: older commits of the PDFs
+  still contain that personal data in git history (not rewritten).
+- Gates at the end: web + mobile `tsc` clean, 66/66 node tests, `npm run
+  build` passes. Mobile code itself is still only type-checked + reviewed;
+  the Customer flow was exercised on a real phone for the manual's recording.
+
+**Evidence from the recording (Customer on a real iPhone):** sign-up →
+checkout (phone required, address, Cash on Delivery) → Order #1a5906ab placed
+→ accepted → preparing → partner assigned (Step 5/6, courier card + coords
+40.4733, -74.3295) → delivered (Step 6/6) with the delivered Gmail arriving;
+Orders tab, Account tab and Sign out worked.
+
+**Defects / oddities triaged from the recording (NOT fixed — report only):**
+1. Tab screens (Orders, Account) draw their big title under the iPhone status
+   bar/clock ("Your orders" overlapped by "1:36"): missing safe-area top
+   padding on the tab screens.
+2. The Orders row's status pill ("Delivered") is partly covered at top-right
+   by the round blue gear — that is Expo's developer-menu button in the test
+   build, not app UI, but it hides the pill in that screenshot.
+3. Stack headers still show raw Expo route names (`customer/orders/[id]`,
+   `customer/checkout`, `customer/(tabs)`) — the already-known deferred item.
+4. Partner assigned and On the way both show "Step 5 of 6 · On the way"
+   (documented, as designed).
+5. Delivery screens were not in the recording → never seen on a device.
+
+**Bug investigated 2026-10-01 ("vendor marks Ready, delivery partner never
+gets the order"):** NOT a mobile/API bug. Order `66d2f735` (Juice Junction,
+Mumbai) was auto-assigned within seconds to `partner-b1@foodhub.local`
+(leftover online test partner, stored location Bangalore) by n8n workflow 04,
+which asks `/api/internal/orders/[id]/assign` for online partners ranked by
+Haversine distance and assigns the NEAREST; `delivery@foodhub.local` (online,
+stored location New Jersey) lost. An `assigned` order is not in anyone else's
+"Available" list; it showed only on partner-b1's active list. Same for
+`94f610e3`. Fix is data/process: `partner-b1` was set OFFLINE in the dev DB on
+2026-10-01 (Vishal OK'd); or change the assignment design (e.g. no auto-assign, or a
+location-less partner pool) if self-claim is the intended demo.
+
+**Rulings I made (cost if wrong):** see the D ledger — T4 grep scope (none);
+T4 Back uses `router.back()`/`replace` fallback instead of the plan's replace
+(none); T4 fix round 1 = I1+I2+Linking catch only (minor stale-poll left);
+D assets git-ignored, no PNG commit (none); Task 7 fix: remove partner-b1
+from the manual and regenerate diagrams (cosmetic); final fix wave scope
+(cosmetic); sign-up route validation bundled (revert `979aa07`); Delivery
+figures as wireframes (replace with real captures later).
+
+**OPEN:** deferred minors from the ledger (stepper no clamp; no test pins
+mobile hex values; ItemThumb no onError fallback; raw `.single()` error text;
+History "Cancelled · placed time"; toggle-before-profile-read window; brief
+Offline flash; sign-up-then-sign-in failure hint; accessibilityRole);
+defects 1–3 above; web manual p14 half blank / Figure 5.1 grey (v2 leftovers).
 
 ## External API keys in use
 
