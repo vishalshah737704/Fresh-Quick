@@ -84,8 +84,9 @@ timestamps (migration 27 trigger), a redacted delivery-partner view
 admin sidebar with KPI-only Overview, Orders table + order detail
 (reassign), and Vendors/Partners pages with Add forms. Legacy
 `/api/delivery/orders` and `/available-orders` stay until mobile
-(sub-project D) migrates. Open items (public-signup 1-char password,
-deferred minors, test data left in the dev DB) are in MEMORY.md's
+(sub-project D) migrates. The public-signup 1-char password gap was fixed
+afterwards (shared `MIN_PASSWORD_LENGTH` in `lib/signup-validation.ts`).
+Open items (deferred minors, leftover test partners in the dev DB) are in MEMORY.md's
 "Order visibility — sub-project B" entry.
 **Correction to the "cart redesign (slide-out panel)" claim above
 (line ~21) and to any other reference to `CartPanel.tsx` as a

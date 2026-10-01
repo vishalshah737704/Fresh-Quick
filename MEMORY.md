@@ -2478,9 +2478,12 @@ all 4 web logins at 320/390px (Task 7 and Task 12 reports).
    offline to exercise the "available" list.
 
 **OPEN / follow-ups:**
-- (a) PRE-EXISTING, untouched: the PUBLIC vendor-signup and delivery-signup
-  routes accept a 1-character password (same GoTrue bypass). Needs Vishal's
-  decision; fix = shared `MIN_PASSWORD_LENGTH` in `lib/signup-validation.ts`.
+- (a) FIXED after B's merge (commit 955e608, reviewed): the PUBLIC
+  vendor-signup/delivery-signup routes had the same 1-character-password
+  GoTrue bypass. `MIN_PASSWORD_LENGTH = 6` now lives in
+  `lib/signup-validation.ts` and `validateSignupFields` enforces it for all
+  four create routes (the two hardcoded admin guards were removed);
+  `tests/signup-validation.test.mjs` covers it (39/39 suite).
 - (b) Deferred minors: free-text `specialInstructions` still in redacted
   available/history JSON; History sorts by `placed_at` not `delivered_at`;
   admin tables use small type; no row limit on `/api/admin/orders`; null JSON
@@ -2490,10 +2493,10 @@ all 4 web logins at 320/390px (Task 7 and Task 12 reports).
 - (c) "Address not on file" verified from code only (all 77 seeded stores
   have an address); rejected/cancelled history for an assigned partner is
   not reachable live.
-- (d) Local test data in the dev DB: vendor `admin-test-bistro@foodhub.local`
-  (password `1` — reset/delete with Vishal's OK), `partner-admin-b@foodhub.local`,
-  `partner-b1@foodhub.local`, order `254ab79c` reassigned to partner-b1;
-  `delivery@foodhub.local` left OFFLINE.
+- (d) Local test data in the dev DB: `partner-admin-b@foodhub.local` and
+  `partner-b1@foodhub.local` test partners, order `254ab79c` reassigned to
+  partner-b1. Cleaned up with Vishal's OK: vendor `admin-test-bistro` deleted;
+  `delivery@foodhub.local` set back ONLINE.
 - (e) Playwright real-mouse clicks stopped working on the customer Account
   menu during Task 12 (`AccountMenu.tsx` unchanged on this branch; likely a
   harness artifact) — Vishal should click it once by hand.
