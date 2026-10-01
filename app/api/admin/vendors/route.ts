@@ -25,6 +25,10 @@ export async function POST(request: NextRequest) {
   if (validationError) {
     return NextResponse.json({ error: validationError }, { status: 400 });
   }
+  // GoTrue's admin createUser skips the minimum_password_length check that signUp enforces.
+  if (body.password.length < 6) {
+    return NextResponse.json({ error: "password must be at least 6 characters" }, { status: 400 });
+  }
   if (
     typeof lat !== "number" || !Number.isFinite(lat) ||
     typeof lng !== "number" || !Number.isFinite(lng)
