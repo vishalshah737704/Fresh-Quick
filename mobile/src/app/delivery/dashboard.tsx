@@ -46,6 +46,13 @@ export default function DeliveryDashboardScreen() {
       if (!userId) return;
       const { data } = await supabase.from("users").select("full_name").eq("id", userId).single();
       if (!cancelled) setProfileName(data?.full_name ?? null);
+      // Sync the real online state so a partner who is already online isn't shown as offline.
+      const { data: partner } = await supabase
+        .from("delivery_partners")
+        .select("is_online")
+        .eq("user_id", userId)
+        .single();
+      if (!cancelled) setIsOnline(partner?.is_online ?? false);
     }
     loadProfile();
     return () => {
