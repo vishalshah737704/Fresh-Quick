@@ -21,15 +21,19 @@ export default function DeliveryDashboardPage() {
   const [busyId, setBusyId] = useState<string | null>(null);
 
   async function loadOrders() {
-    const res = await fetch("/api/delivery/active", { headers: await authHeader() });
-    const body = await res.json().catch(() => null);
-    if (!res.ok) {
-      setError(body?.error ?? "Failed to refresh orders");
-      return;
+    try {
+      const res = await fetch("/api/delivery/active", { headers: await authHeader() });
+      const body = await res.json().catch(() => null);
+      if (!res.ok) {
+        setError(body?.error ?? "Failed to refresh orders");
+        return;
+      }
+      setError(null);
+      setAvailable(body.available);
+      setMine(body.mine);
+    } catch {
+      setError("Failed to refresh orders");
     }
-    setError(null);
-    setAvailable(body.available);
-    setMine(body.mine);
   }
 
   useEffect(() => {
