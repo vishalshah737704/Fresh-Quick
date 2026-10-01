@@ -66,7 +66,7 @@ test("every status has a colour class with white text", () => {
   for (const status of ORDER_STATUSES) {
     const cls = STATUS_COLOR[status];
     assert.ok(typeof cls === "string" && cls.includes("text-white"), status);
-    assert.ok(/\bbg-[a-z-]+(-700|-800|-900)?\b/.test(cls) || cls.includes("bg-brand-"), status);
+    assert.ok(/\bbg-(?:[a-z]+-(?:700|800|900)|brand-[a-z-]*text-safe)\b/.test(cls), status);
   }
 });
 
