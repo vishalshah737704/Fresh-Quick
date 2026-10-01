@@ -132,6 +132,6 @@
   },
   "active": false,
   "settings": {},
-  "_untested_reference_only": true,
-  "_note": "Hand-authored to n8n's export JSON shape; never imported into or run against a real n8n instance. See docs/superpowers/specs/2026-09-25-phase7-n8n-automation-design.md."
+  "_untested_reference_only": false,
+  "_note": "Imported into n8n 2.40.7 and run live on 2026-09-30 (executions 322/323): the delivered branch fetched notification-details and sent the delivered email. Gmail credential is a placeholder -- select your Gmail OAuth2 credential on the Gmail node after importing, save, then Publish. IF filters wrap includes() in String() because n8n 2.40.7 does not coerce a boolean to the string \"true\"."
 }

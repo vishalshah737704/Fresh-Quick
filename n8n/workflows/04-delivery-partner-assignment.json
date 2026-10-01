@@ -138,6 +138,6 @@
   },
   "active": false,
   "settings": {},
-  "_untested_reference_only": true,
-  "_note": "Hand-authored to n8n's export JSON shape; never imported into or run against a real n8n instance. See docs/superpowers/specs/2026-09-25-phase7-n8n-automation-design.md. Phase 5's self-claim model is the tested, working assignment path today -- this workflow is additive."
+  "_untested_reference_only": false,
+  "_note": "Re-imported into n8n 2.40.7 and executed successfully on 2026-09-30 (execution 320). See docs/superpowers/specs/2026-09-25-phase7-n8n-automation-design.md. Phase 5's self-claim model is the tested, working assignment path today -- this workflow is additive."
 }
