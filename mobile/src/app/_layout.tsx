@@ -61,6 +61,7 @@ export default function RootLayout() {
         <Stack.Screen name="customer/store/[id]" options={{ title: "Menu" }} />
         <Stack.Screen name="customer/cart" options={{ title: "Cart" }} />
         <Stack.Screen name="delivery/dashboard" options={{ title: "Dashboard", headerBackVisible: false }} />
+        <Stack.Screen name="delivery/history" options={{ title: "History" }} />
       </Stack>
     </CartProvider>
   );

@@ -43,7 +43,7 @@ export function DeliveryOrderCard({
 
       <View style={styles.pickupBlock}>
         <Text style={styles.blockTitle}>Pickup — {order.storeName}</Text>
-        <Text style={styles.muted}>
+        <Text style={styles.addressText}>
           {order.storeAddress ? order.storeAddress.lines.join(", ") : "Address not on file"}
         </Text>
       </View>
@@ -70,10 +70,10 @@ export function DeliveryOrderCard({
           {order.address ? (
             <>
               {order.address.label ? <Text style={styles.addressLabel}>{order.address.label}</Text> : null}
-              <Text style={styles.muted}>{order.address.lines.join(", ")}</Text>
+              <Text style={styles.addressText}>{order.address.lines.join(", ")}</Text>
             </>
           ) : (
-            <Text style={styles.muted}>No delivery address on file</Text>
+            <Text style={styles.addressText}>No delivery address on file</Text>
           )}
           {order.deliveryNote ? <Text style={styles.muted}>Note: “{order.deliveryNote}”</Text> : null}
         </View>
@@ -165,6 +165,7 @@ const styles = StyleSheet.create({
     textDecorationLine: "underline",
   },
   muted: { fontFamily: BRAND.fonts.body, fontSize: 14, color: BRAND.colors.inkMuted, flexShrink: 1 },
+  addressText: { fontFamily: BRAND.fonts.body, fontSize: 14, color: BRAND.colors.ink, flexShrink: 1 },
   itemsSummary: { fontFamily: BRAND.fonts.body, fontSize: 14, color: BRAND.colors.ink },
   acceptButton: {
     alignSelf: "flex-start",
