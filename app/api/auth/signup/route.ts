@@ -1,15 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase-server";
+import { validateSignupFields } from "@/lib/signup-validation";
 
 export async function POST(request: NextRequest) {
-  const { email, password, fullName } = await request.json();
-
-  if (!email || !password || !fullName) {
-    return NextResponse.json(
-      { error: "email, password, and fullName are required" },
-      { status: 400 }
-    );
+  let body: Record<string, unknown>;
+  try {
+    body = (await request.json()) ?? {};
+  } catch {
+    return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
   }
+
+  const validationError = validateSignupFields(body, ["email", "password", "fullName"]);
+  if (validationError) {
+    return NextResponse.json({ error: validationError }, { status: 400 });
+  }
+  const { email, password, fullName } = body as {
+    email: string;
+    password: string;
+    fullName: string;
+  };
 
   const { data: created, error: createError } =
     await supabaseServer.auth.admin.createUser({
