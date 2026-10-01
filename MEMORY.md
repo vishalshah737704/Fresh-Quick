@@ -2506,6 +2506,66 @@ all 4 web logins at 320/390px (Task 7 and Task 12 reports).
   expectations (`mobile/lib/order-status.ts` still says "Out for delivery"
   for both assigned and picked_up); add the web/mobile status sync test.
 
+## Order visibility — sub-project C (2026-09-30, branch `order-visibility-c`, not yet merged/pushed)
+
+**What shipped:**
+- `lib/delivered-email.ts`: `buildDeliveredEmail` + `escapeHtml` — table-based
+  HTML email (greeting, items with images, totals, address, labelled phone,
+  note). Every dynamic value is escaped; images only if https and allowed;
+  CR/LF stripped from the subject; long names wrap (`word-break`).
+- `GET /api/internal/orders/:id/notification-details` extended: returns the
+  checkout email (`recipient_email`), items with images, totals, address,
+  phone, and ready `emailSubject`/`deliveredEmailHtml`.
+- Workflow 05: delivered branch = GET notification-details -> Gmail (HTML).
+  Workflows 03 and 05: IF filters now wrap `.includes()` in `String(...)`.
+- Tests: `tests/delivered-email.test.mjs`, `tests/n8n-workflows.test.mjs`
+  (structure, IF-filter shape, delivered/accepted Gmail wiring, and a guard
+  that every committed credential id starts with `PLACEHOLDER_`). Workflow
+  `_note`s now reflect live verification.
+
+**Decisions:** HTML is built in the app route (testable, escaped in one
+place) rather than in n8n expressions. The checkout email
+(`recipient_email`) is used, not the account email. Workflows were
+imported by CLI (`docker cp` + `n8n import:workflow`, existing id injected)
+and published in the UI; see `docs/n8n-webhook-setup.md` "Re-importing
+workflows".
+
+**Live evidence:** order `d2a941c8-1d95-4d74-9f00-2ecc39acf24d`; executions
+318 (accepted email, 03) and 323 (delivered email, 05); Vishal confirmed
+both emails arrived and look right. Run 1 (executions 310/322 era) exposed
+the IF filter bug. Also 01 = 317, 02 = 316, 04 = 320.
+
+**Defects / lessons:**
+1. n8n 2.40.7 IF node: boolean expression vs "true" string is false — wrap
+   in `String()`.
+2. `n8n publish:workflow` only updates the DB; restart is needed — publish in
+   the UI (unpublish then publish re-registers the webhook).
+3. Windows Git Bash rewrites `/tmp/...` paths: set `MSYS_NO_PATHCONV=1`.
+4. A placeholder Gmail credential id can survive a UI save when n8n only
+   pre-selects the credential; attach the real id via CLI import of an
+   edited copy. Never commit a real id (test guards it).
+5. CLI import overwrites only if the existing workflow `id` is injected;
+   otherwise it duplicates.
+
+**OPEN / follow-ups:**
+- Legacy pre-migration-23 orders have `recipient_email` 'unknown@foodhub.local'.
+- Outlook desktop ignores `max-width` (email may render wide there).
+- Test gaps: `javascript:`/`data:` image URLs and address-line escaping.
+- Blank-recipient 404 verified by code only.
+- Duplicate-email caveat: a second `delivered` webhook (manual SQL, pg_net
+  retry, n8n replay) sends a second email; the app cannot write `delivered`
+  twice (compare-and-set).
+- Leftover inactive duplicate "02 - Payment Mock Confirmation" (8 nodes, id
+  `Cw6OdUDW...`) in Vishal's n8n — not touched.
+- Playwright native clicks silently failed on some customer-page controls
+  during live runs (DOM click worked) — harness oddity, still unexplained.
+- Test orders in the dev DB: `d75ad597`, `d2a941c8`. Mobile untouched.
+
+**What D must know:** mobile is unchanged and has no delivered-email
+concerns; `notification-details` now carries full order data for n8n only
+(internal-secret route); the delivered email depends on the Gmail
+credential being selected on the 05 Gmail node in each n8n instance.
+
 ## External API keys in use
 
 - `PEXELS_API_KEY` — Pexels Search API, used once (not at runtime) to fetch

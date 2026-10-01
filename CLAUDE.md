@@ -88,6 +88,14 @@ admin sidebar with KPI-only Overview, Orders table + order detail
 afterwards (shared `MIN_PASSWORD_LENGTH` in `lib/signup-validation.ts`).
 Open items (deferred minors, leftover test partners in the dev DB) are in MEMORY.md's
 "Order visibility — sub-project B" entry.
+**Order visibility — sub-project C (n8n delivered email, branch
+`order-visibility-c`, not yet merged/pushed):** `lib/delivered-email.ts`
+builds the escaped HTML; `notification-details` returns the checkout email
+plus ready `emailSubject`/`deliveredEmailHtml`; workflow 05's delivered
+branch emails the customer via Gmail (verified live 2026-09-30, with 03's
+accepted email). n8n 2.40.7 IF nodes need `String(...)` around `.includes()`;
+never commit a real n8n credential id (a test guards it). See MEMORY.md's
+"Order visibility — sub-project C" entry and `docs/n8n-webhook-setup.md`.
 **Correction to the "cart redesign (slide-out panel)" claim above
 (line ~21) and to any other reference to `CartPanel.tsx` as a
 slide-out drawer with Escape-flush/close-before-nav/open-state logic**:

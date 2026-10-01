@@ -275,12 +275,18 @@ undefined `deliveryPartnerId`.
 **05 — Delivery Status Propagation.** As the delivery partner, advance an
 order through `/delivery/dashboard` (picked up → delivered). Expect: the
 webhook fires on each `orders` UPDATE, the filter passes for
-`picked_up`/`delivered`, the placeholder notification executes, and on
-`delivered` specifically the second filter also passes to the "Finalize
-Payment + Prompt Review" placeholder (still a no-op — see that node's own
-`notes` field for the unresolved design question around what "finalize"
-should actually do, since Phase 3's payment already resolves at checkout
-time, not delivery time).
+`picked_up`/`delivered`, and the placeholder notification executes. On
+`delivered` specifically, two branches run: the "Finalize Payment +
+Prompt Review" placeholder (still a no-op — see that node's own `notes`
+field for the unresolved design question around what "finalize" should
+actually do, since Phase 3's payment already resolves at checkout time,
+not delivery time), and the delivered-email branch:
+`GET /api/internal/orders/:id/notification-details` followed by a Gmail
+node (HTML) that emails the customer. `notification-details` returns the
+checkout email (`recipient_email`), the items with images, totals,
+address and phone, plus a ready, HTML-escaped `emailSubject` and
+`deliveredEmailHtml` built by `lib/delivered-email.ts`. Like 03's accepted
+branch, this needs a Gmail credential selected on the Gmail node.
 
 ## 6. Verified 2026-09-25 (actual results, not just expected)
 
@@ -316,13 +322,49 @@ this pass and are now fixed in the confirmed-working run command above —
 neither was visible from the original hand-review of the JSON, since both
 only manifest once a node actually executes against a live n8n instance.
 
-**Not yet verified against a live instance**: workflow 03's new
-`accepted`-branch (notification-details fetch + Gmail send) and the
-vendor reject/refund route. Both were added after this 2026-09-25
-verification pass — re-import workflow 03's updated JSON into n8n,
-connect a real Gmail credential, and re-run the `03` test above before
-trusting this branch the way the rest of this section's results are
-trusted.
+### Re-verified 2026-09-30
+
+Workflows 01–05 were re-imported into n8n 2.40.7 and run live. The
+accepted email (03, execution 318) and the delivered email (05,
+execution 323) were both sent and received. The webhook payload is
+populated (every `net._http_response` was 200). Other executions: 01 =
+317, 02 = 316, 04 = 320.
+
+### Re-importing workflows
+
+- **UI import works** (Workflows → Import from file). Imported workflows
+  start inactive.
+- **CLI alternative:** `docker cp` the JSON into the container, with the
+  existing workflow `id` injected into the file so the import overwrites
+  rather than duplicates, then run
+  `n8n import:workflow --separate --input=<dir>` inside the container.
+  It imports as inactive.
+- On Windows Git Bash set `MSYS_NO_PATHCONV=1`, or `/tmp/...` paths get
+  rewritten to Windows paths.
+- `n8n publish:workflow` only updates the database; n8n must be restarted
+  for it to take effect. Publish in the UI instead: unpublish, then
+  publish, which re-registers the webhook. Check with a GET on
+  `/webhook/foodhub/<path>`: "not registered for GET requests" means a
+  POST listener exists; "is not registered" means the workflow is
+  inactive.
+- **Gmail credential:** select it on the Gmail nodes of 03 and 05, and
+  make sure the credential id is stored in n8n's copy. A placeholder can
+  survive a UI save if n8n only pre-selects the credential without
+  marking the workflow changed; importing an edited copy via the CLI with
+  the real credential id attached fixes it. Never commit a real
+  credential id (`tests/n8n-workflows.test.mjs` fails if one is
+  committed).
+- **IF-node gotcha (n8n 2.40.7):** a boolean expression compared to the
+  string "true" is false. Wrap `.includes()` expressions in `String(...)`
+  (done in 03 and 05; a test enforces it). The first live run of 05
+  failed exactly this way.
+
+### Duplicate-email caveat
+
+A second `delivered` webhook for the same order (a manual SQL update, a
+pg_net retry, or an n8n execution replay) would send a second delivered
+email. The app itself cannot write `delivered` twice: the delivery status
+route uses a compare-and-set.
 
 ## 7. Once verified, activate
 
