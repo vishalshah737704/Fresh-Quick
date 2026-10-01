@@ -1,6 +1,7 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useAdminSession } from "@/components/admin/useAdminSession";
@@ -8,9 +9,17 @@ import { AdminSessionContext } from "@/components/admin/AdminSessionContext";
 import { useProfile } from "@/lib/use-profile";
 import { MyProfileSection } from "@/components/MyProfileSection";
 
+const NAV_LINKS = [
+  { href: "/admin/dashboard", label: "Overview" },
+  { href: "/admin/orders", label: "Orders" },
+  { href: "/admin/vendors", label: "Vendors" },
+  { href: "/admin/delivery-partners", label: "Delivery Partners" },
+];
+
 export default function AdminShell({ children }: { children: React.ReactNode }) {
   const { loading, adminId } = useAdminSession();
   const profile = useProfile(adminId);
+  const pathname = usePathname();
   const router = useRouter();
   const [drawerOpen, setDrawerOpen] = useState(false);
 
@@ -38,9 +47,21 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
           style={{ background: "linear-gradient(180deg, var(--color-brand-ink) 0%, #132849 100%)" }}
         >
           <span className="mb-2 hidden font-heading text-lg text-white md:block">Admin</span>
-          <span className="rounded-[var(--radius-pill)] bg-brand-primary-text-safe px-3 py-2 text-sm text-white">
-            Dashboard
-          </span>
+          {NAV_LINKS.map((link) => {
+            const active = pathname === link.href || pathname.startsWith(link.href + "/");
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                onClick={() => setDrawerOpen(false)}
+                className={`rounded-[var(--radius-pill)] px-3 py-2 text-sm ${
+                  active ? "bg-brand-primary-text-safe text-white" : "text-white/80 hover:bg-white/10"
+                }`}
+              >
+                {link.label}
+              </Link>
+            );
+          })}
           <div className="mt-auto border-t border-white/10 pt-3">
             <MyProfileSection profile={profile} variant="dark" />
           </div>
