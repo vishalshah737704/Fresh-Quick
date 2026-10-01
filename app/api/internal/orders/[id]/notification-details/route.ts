@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase-server";
 import { verifyInternalSecret } from "@/lib/internal-auth";
+import { ORDER_DETAIL_SELECT, normalizeOrderDetail, type RawOrderDetail } from "@/lib/order-detail";
+import { isAllowedImageUrl } from "@/lib/image-url";
+import { buildDeliveredEmail } from "@/lib/delivered-email";
 
-// Called by n8n's "Restaurant Status Change" workflow (workflow 03) when
-// an order is accepted, to get the data an order-confirmation email needs.
-// public.users has no email column (it lives on auth.users), so this is
-// the one place that joins across to auth.admin to read it.
+// Called by n8n workflow 03 (order accepted) and workflow 05 (order
+// delivered) to get the data their emails need. It deliberately has no
+// status check: both workflows call it at different order statuses.
+// `customerEmail` is the order's recipient_email (the email typed at
+// checkout), NOT the account's auth email.
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -15,32 +19,43 @@ export async function GET(
   }
   const { id } = await params;
 
-  const { data: order, error: orderError } = await supabaseServer
+  const { data, error } = await supabaseServer
     .from("orders")
-    .select(
-      "id, customer_id, total, status, addresses:delivery_address_id(label, line1), stores:store_id(name)"
-    )
+    .select(ORDER_DETAIL_SELECT)
     .eq("id", id)
-    .single();
-  if (orderError || !order) {
+    .maybeSingle();
+  if (error || !data) {
     return NextResponse.json({ error: "Order not found" }, { status: 404 });
   }
 
-  const { data: userResult, error: userError } = await supabaseServer.auth.admin.getUserById(
-    order.customer_id
-  );
-  if (userError || !userResult.user?.email) {
-    return NextResponse.json({ error: "Customer email not found" }, { status: 404 });
+  const order = normalizeOrderDetail(data as unknown as RawOrderDetail);
+  if (!order.recipientEmail.trim()) {
+    return NextResponse.json({ error: "Recipient email not found" }, { status: 404 });
   }
 
-  const address = Array.isArray(order.addresses) ? order.addresses[0] : order.addresses;
-  const restaurant = Array.isArray(order.stores) ? order.stores[0] : order.stores;
+  const { subject, html } = buildDeliveredEmail(order, isAllowedImageUrl);
 
   return NextResponse.json({
     orderId: order.id,
-    customerEmail: userResult.user.email,
-    restaurantName: restaurant?.name ?? "the restaurant",
+    customerEmail: order.recipientEmail,
+    restaurantName: order.storeName,
     total: order.total,
-    deliveryAddress: address?.label || address?.line1 || "your saved address",
+    deliveryAddress: order.address?.label || order.address?.lines[0] || "your saved address",
+    status: order.status,
+    recipientName: order.recipientName,
+    recipientPhone: order.recipientPhone,
+    subtotal: order.subtotal,
+    deliveryFee: order.deliveryFee,
+    address: order.address,
+    items: order.items.map((item) => ({
+      name: item.name,
+      quantity: item.quantity,
+      unitPrice: item.unitPrice,
+      imageUrl: item.imageUrl,
+      options: item.options.map((option) => option.optionName),
+      specialInstructions: item.specialInstructions,
+    })),
+    emailSubject: subject,
+    deliveredEmailHtml: html,
   });
 }
