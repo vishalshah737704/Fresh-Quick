@@ -13,38 +13,27 @@ import { supabase } from "../../../lib/supabase";
 import { apiFetch, ApiError } from "../../../lib/api";
 import { BRAND } from "../../../theme";
 import { useRequireSession } from "../../../lib/use-require-session";
+import type { OrderDetail } from "../../../lib/order-detail";
+import { DeliveryOrderCard } from "../../../components/DeliveryOrderCard";
 
 // Mirrors app/delivery/(portal)/dashboard/page.tsx on the web: online/
-// offline toggle, available-orders self-claim list, "mine" list with the
-// correct next-status action per status, address reveal for the active
-// order, a 15s location ping and a 10s list refresh while online.
+// offline toggle, available-order self-claim list, "mine" list with the
+// correct next-status action per status, redacted-by-scope order cards
+// (recipient details only after claiming), a 15s location ping and a 10s list refresh while online.
 //
 // Scope limitation: foreground location only (expo-location's
 // getCurrentPositionAsync while the app is open) — no background location
 // permission/task, matching what this pass was asked to build.
-
-type OrderRow = {
-  id: string;
-  status: string;
-  total: number;
-  stores: { name: string } | null;
-};
-
-const NEXT_LABEL: Record<string, string> = {
-  assigned: "Mark picked up",
-  picked_up: "Mark delivered",
-};
 
 export default function DeliveryDashboardScreen() {
   useRequireSession("/login/delivery");
   const router = useRouter();
   const [isOnline, setIsOnline] = useState(false);
   const [toggling, setToggling] = useState(false);
-  const [available, setAvailable] = useState<OrderRow[]>([]);
-  const [mine, setMine] = useState<OrderRow[]>([]);
+  const [available, setAvailable] = useState<OrderDetail[]>([]);
+  const [mine, setMine] = useState<OrderDetail[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [addresses, setAddresses] = useState<Record<string, string>>({});
   const [busyOrderId, setBusyOrderId] = useState<string | null>(null);
   const [profileName, setProfileName] = useState<string | null>(null);
   const [resetStatus, setResetStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
@@ -71,26 +60,15 @@ export default function DeliveryDashboardScreen() {
 
   async function loadOrders() {
     try {
-      const [availBody, mineBody] = await Promise.all([
-        apiFetch<{ orders: OrderRow[] }>("/api/delivery/available-orders"),
-        apiFetch<{ orders: OrderRow[] }>("/api/delivery/orders"),
-      ]);
-      setAvailable(availBody.orders);
-      setMine(mineBody.orders);
-      const activeIds = new Set(
-        mineBody.orders
-          .filter((o) => o.status === "assigned" || o.status === "picked_up")
-          .map((o) => o.id)
+      const body = await apiFetch<{ available: OrderDetail[]; mine: OrderDetail[] }>(
+        "/api/delivery/active"
       );
-      setAddresses((prev) => {
-        const next: Record<string, string> = {};
-        for (const [id, addr] of Object.entries(prev)) {
-          if (activeIds.has(id)) next[id] = addr;
-        }
-        return next;
-      });
+      setAvailable(body.available);
+      setMine(body.mine);
+      setError(null);
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Failed to load orders");
+      // Keep the previous lists; a failed refresh must not blank the screen.
+      setError(err instanceof ApiError && err.message ? err.message : "Failed to refresh orders");
     } finally {
       setLoading(false);
     }
@@ -199,18 +177,6 @@ export default function DeliveryDashboardScreen() {
     }
   }
 
-  async function viewAddress(orderId: string) {
-    setError(null);
-    try {
-      const body = await apiFetch<{ address: { line1: string } }>(
-        `/api/delivery/orders/${orderId}/address`
-      );
-      setAddresses((prev) => ({ ...prev, [orderId]: body.address.line1 }));
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Failed to load address");
-    }
-  }
-
   async function handleSignOut() {
     await supabase.auth.signOut();
     router.replace("/");
@@ -232,7 +198,12 @@ export default function DeliveryDashboardScreen() {
     <View style={styles.container}>
       <View style={styles.headerRow}>
         <View>
-          <Text style={styles.heading}>Dashboard</Text>
+          <View style={styles.titleRow}>
+            <Text style={styles.heading}>Dashboard</Text>
+            <Pressable onPress={() => router.push("/delivery/history")}>
+              <Text style={styles.historyLink}>History</Text>
+            </Pressable>
+          </View>
           {profileName ? <Text style={styles.profileName}>{profileName}</Text> : null}
         </View>
         <View style={{ alignItems: "flex-end" }}>
@@ -275,71 +246,38 @@ export default function DeliveryDashboardScreen() {
         <ScrollView contentContainerStyle={{ gap: 20 }}>
           <View style={{ gap: 20 }}>
               <View style={styles.section}>
-                <Text style={styles.sectionHeading}>Available orders</Text>
-                {available.length === 0 && (
-                  <Text style={styles.mutedText}>None right now.</Text>
+                <Text style={styles.sectionHeading}>Your active deliveries</Text>
+                {mine.length === 0 && (
+                  <Text style={styles.mutedText}>No active deliveries.</Text>
                 )}
-                {available.map((o) => (
-                  <View key={o.id} style={styles.card}>
-                    <Text style={styles.cardText}>
-                      #{o.id.slice(0, 8)} · {o.stores?.name ?? "Restaurant"} · ₹
-                      {Number(o.total).toFixed(2)}
-                    </Text>
-                    <Pressable
-                      style={styles.acceptButton}
-                      onPress={() => claim(o.id)}
-                      disabled={busyOrderId === o.id}
-                    >
-                      {busyOrderId === o.id ? (
-                        <ActivityIndicator color={BRAND.colors.surface} size="small" />
-                      ) : (
-                        <Text style={styles.smallButtonText}>Accept</Text>
-                      )}
-                    </Pressable>
-                  </View>
+                {mine.map((o) => (
+                  <DeliveryOrderCard
+                    key={o.id}
+                    order={o}
+                    scope="active"
+                    busy={busyOrderId === o.id}
+                    onAdvance={() => advance(o.id)}
+                  />
                 ))}
               </View>
 
               <View style={styles.section}>
-                <Text style={styles.sectionHeading}>Your deliveries</Text>
-                {mine.length === 0 && (
-                  <Text style={styles.mutedText}>No deliveries yet.</Text>
+                <Text style={styles.sectionHeading}>Available orders</Text>
+                {!isOnline ? (
+                  <Text style={styles.mutedText}>Go online to see available orders.</Text>
+                ) : available.length === 0 ? (
+                  <Text style={styles.mutedText}>None right now.</Text>
+                ) : (
+                  available.map((o) => (
+                    <DeliveryOrderCard
+                      key={o.id}
+                      order={o}
+                      scope="available"
+                      busy={busyOrderId === o.id}
+                      onClaim={() => claim(o.id)}
+                    />
+                  ))
                 )}
-                {mine.map((o) => (
-                  <View key={o.id} style={styles.mineCard}>
-                    <View style={styles.mineCardRow}>
-                      <Text style={styles.cardText}>
-                        #{o.id.slice(0, 8)} · {o.status} · ₹{Number(o.total).toFixed(2)}
-                      </Text>
-                      <View style={styles.actionRow}>
-                        {(o.status === "assigned" || o.status === "picked_up") && (
-                          <Pressable
-                            style={styles.outlineButton}
-                            onPress={() => viewAddress(o.id)}
-                          >
-                            <Text style={styles.outlineButtonText}>View address</Text>
-                          </Pressable>
-                        )}
-                        {NEXT_LABEL[o.status] && (
-                          <Pressable
-                            style={styles.smallButton}
-                            onPress={() => advance(o.id)}
-                            disabled={busyOrderId === o.id}
-                          >
-                            {busyOrderId === o.id ? (
-                              <ActivityIndicator color={BRAND.colors.surface} size="small" />
-                            ) : (
-                              <Text style={styles.smallButtonText}>{NEXT_LABEL[o.status]}</Text>
-                            )}
-                          </Pressable>
-                        )}
-                      </View>
-                    </View>
-                    {addresses[o.id] && (
-                      <Text style={styles.mutedText}>{addresses[o.id]}</Text>
-                    )}
-                  </View>
-                ))}
               </View>
           </View>
         </ScrollView>
@@ -354,6 +292,13 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+  },
+  titleRow: { flexDirection: "row", alignItems: "center", gap: 12 },
+  historyLink: {
+    fontFamily: BRAND.fonts.bodyMedium,
+    fontSize: 14,
+    color: BRAND.colors.primaryTextSafe,
+    textDecorationLine: "underline",
   },
   heading: { fontFamily: BRAND.fonts.heading, fontSize: 24, color: BRAND.colors.ink },
   signOut: { fontFamily: BRAND.fonts.bodyMedium, color: BRAND.colors.inkMuted },
@@ -384,73 +329,5 @@ const styles = StyleSheet.create({
     fontFamily: BRAND.fonts.bodySemiBold,
     color: BRAND.colors.ink,
     fontSize: 16,
-  },
-  card: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    borderWidth: 1,
-    borderColor: BRAND.colors.inkMuted + "22",
-    backgroundColor: BRAND.colors.surface,
-    borderRadius: 16,
-    padding: 12,
-    gap: 8,
-  },
-  mineCard: {
-    borderWidth: 1,
-    borderColor: BRAND.colors.inkMuted + "22",
-    backgroundColor: BRAND.colors.surface,
-    borderRadius: 16,
-    padding: 12,
-    gap: 6,
-  },
-  mineCardRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 8,
-    flexWrap: "wrap",
-  },
-  cardText: {
-    fontFamily: BRAND.fonts.body,
-    color: BRAND.colors.ink,
-    fontSize: 13,
-    flexShrink: 1,
-  },
-  actionRow: { flexDirection: "row", gap: 8 },
-  smallButton: {
-    backgroundColor: BRAND.colors.primaryTextSafe,
-    borderRadius: BRAND.radiusPill,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    minWidth: 32,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  acceptButton: {
-    backgroundColor: BRAND.colors.accentTextSafe,
-    borderRadius: BRAND.radiusPill,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    minWidth: 32,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  smallButtonText: {
-    fontFamily: BRAND.fonts.bodySemiBold,
-    color: BRAND.colors.surface,
-    fontSize: 12,
-  },
-  outlineButton: {
-    borderWidth: 1,
-    borderColor: BRAND.colors.inkMuted + "40",
-    borderRadius: 999,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-  },
-  outlineButtonText: {
-    fontFamily: BRAND.fonts.bodyMedium,
-    color: BRAND.colors.ink,
-    fontSize: 12,
   },
 });
