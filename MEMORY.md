@@ -2343,9 +2343,9 @@ place with python-docx (no rebuild):
   just the last run. `app:start` right after `app:stop` can hit a
   Supabase health-check timeout; wait for the stop to finish first.
 
-## Order visibility — sub-project A (2026-09-30, branch `order-visibility-a`, not merged)
+## Order visibility — sub-project A (2026-09-30, branch `order-visibility-a`, merged to `main`)
 
-**What shipped (13 code/fix commits `d074cbe`..`b5f8ce5`, plus the docs
+**What shipped (12 code/fix commits after `d074cbe`, up to `b5f8ce5`, plus the docs
 commits recording them):** shared
 `lib/order-status.ts` (9-status enum, labels/messages, 6-step timeline
 mapping, typed over the narrowed union) and `lib/order-detail.ts`
@@ -2390,7 +2390,7 @@ replaces the page forever.
 **Deferred to later sub-projects:** store address + status colors + extra
 timestamps get added to the shared foundation at the start of sub-project B;
 poll failures are silent on the vendor board; vendor dialog stays open after
-Accept/Reject; pending timeline circle is translucent (cosmetic); payment is
+Accept (after Reject it closes, since rejected orders leave the board); pending timeline circle is translucent (cosmetic); payment is
 shown as raw enum strings (e.g. `success (mock_cod)`).
 
 **Defects / gaps found:**
@@ -2407,8 +2407,8 @@ shown as raw enum strings (e.g. `success (mock_cod)`).
    succeeded but never reached any email node, so the accept email is NOT
    confirmed working. Re-import workflow 03 and re-test.
 3. Minor UI: duplicated rejection sentence FIXED (`b537840`); vendor detail
-   dialog stays open after Accept/Reject (it does refresh live to the new
-   status) — deferred.
+   dialog stays open after Accept (it does refresh live to the new status;
+   after Reject it closes because rejected orders leave the board) — deferred.
 4. Mobile `lib/order-status.ts` still has the 4-step mapping until
    sub-project D.
 5. Playwright real mouse clicks did not register on the customer tab in
