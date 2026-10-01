@@ -58,3 +58,26 @@ export async function apiFetch<T>(
   }
   return json as T;
 }
+
+// For public endpoints that need no session (e.g. /api/auth/signup).
+export async function apiPostPublic<T>(path: string, body: unknown): Promise<T> {
+  const res = await fetch(`${API_BASE_URL}${path}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  let json: unknown = null;
+  try {
+    json = await res.json();
+  } catch {
+    // Non-JSON response body — fall through to status handling below.
+  }
+  if (!res.ok) {
+    const message =
+      json && typeof json === "object" && "error" in json && typeof (json as { error?: unknown }).error === "string"
+        ? (json as { error: string }).error
+        : `Request failed (${res.status})`;
+    throw new ApiError(message, res.status);
+  }
+  return json as T;
+}
