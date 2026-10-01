@@ -2419,7 +2419,7 @@ shown as raw enum strings (e.g. `success (mock_cod)`).
 orders `c2f2d0cd`, `a30777de` (accepted), all Dosa Corner. Also ran a
 production `npm run build` while dev servers were running.
 
-## Order visibility — sub-project B (2026-09-30, branch `order-visibility-b`, not yet merged/pushed)
+## Order visibility — sub-project B (2026-09-30, branch `order-visibility-b`, merged to `main` and pushed 2026-09-30)
 
 **What shipped (17 commits, `507813a..d4b9851`):**
 - Migration 27 `00000000000027_order_status_timestamps.sql`: nullable
@@ -2506,7 +2506,7 @@ all 4 web logins at 320/390px (Task 7 and Task 12 reports).
   expectations (`mobile/lib/order-status.ts` still says "Out for delivery"
   for both assigned and picked_up); add the web/mobile status sync test.
 
-## Order visibility — sub-project C (2026-09-30, branch `order-visibility-c`, not yet merged/pushed)
+## Order visibility — sub-project C (2026-09-30, branch `order-visibility-c`, merged to `main` and pushed 2026-09-30)
 
 **What shipped:**
 - `lib/delivered-email.ts`: `buildDeliveredEmail` + `escapeHtml` — table-based

@@ -77,7 +77,7 @@ code and 9 contrast misses the delegated implementer's own self-check
 didn't catch (only found by live Playwright verification across all 4
 web portals).
 **Order visibility, sub-projects A + B (A merged to `main`; B on branch
-`order-visibility-b`, not yet merged/pushed):** A gave customer/vendor a
+`order-visibility-b`, merged to `main` and pushed 2026-09-30):** A gave customer/vendor a
 shared order-detail model and 6-step timeline; B added order status
 timestamps (migration 27 trigger), a redacted delivery-partner view
 (Dashboard active-only + History, `lib/delivery-order-view.ts`), and an
@@ -89,7 +89,7 @@ afterwards (shared `MIN_PASSWORD_LENGTH` in `lib/signup-validation.ts`).
 Open items (deferred minors, leftover test partners in the dev DB) are in MEMORY.md's
 "Order visibility — sub-project B" entry.
 **Order visibility — sub-project C (n8n delivered email, branch
-`order-visibility-c`, not yet merged/pushed):** `lib/delivered-email.ts`
+`order-visibility-c`, merged to `main` and pushed 2026-09-30):** `lib/delivered-email.ts`
 builds the escaped HTML; `notification-details` returns the checkout email
 plus ready `emailSubject`/`deliveredEmailHtml`; workflow 05's delivered
 branch emails the customer via Gmail (verified live 2026-09-30, with 03's
