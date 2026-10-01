@@ -27,7 +27,8 @@ Give every actor (customer, vendor, delivery partner, admin) a complete, readabl
 - Shared server helper returning the full order: recipient name/email, delivery address (all columns), store name + address, items (qty, unit price, options, notes, `products.image_url`), subtotal, delivery fee, total, payment, timestamps. Each role's route wraps it with its own auth (`resolveVendor`, `resolveDelivery`, `resolveAdmin`, customer session token). Money stays integer paise.
 - `OrderDetailView` component (web) rendering the full order with item thumbnails; role-specific action slots.
 - Verify RLS: customer can read own `order_items` / related `products`; delivery address visible to partner only while `assigned`/`picked_up` (existing policy). Per CLAUDE.md, list existing policies before adding any; no new write policies.
-- One schema change: `orders.recipient_phone` (see Customer phone number). Nothing else.
+- Schema changes: `orders.recipient_phone` (see Customer phone number, sub-project A) and, added at the start of sub-project B (2026-09-30, Vishal's choice), nullable `orders.accepted_at` / `picked_up_at` / `delivered_at`, stamped by a single `BEFORE UPDATE` trigger on `orders` when `status` changes (covers every status writer; old orders stay null). Nothing else.
+- Store (pickup) address comes from the existing `stores.address_id` via an `addresses!address_id` embed — no schema change; stores without an address show "Address not on file".
 
 ## Customer phone number (added 2026-09-30)
 
