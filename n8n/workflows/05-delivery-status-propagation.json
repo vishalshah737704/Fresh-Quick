@@ -25,7 +25,7 @@
         "conditions": {
           "string": [
             {
-              "value1": "={{['picked_up','delivered'].includes($json[\"body\"][\"record\"][\"status\"])}}",
+              "value1": "={{String(['picked_up','delivered'].includes($json[\"body\"][\"record\"][\"status\"]))}}",
               "value2": "true"
             }
           ]

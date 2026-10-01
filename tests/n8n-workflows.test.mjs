@@ -54,3 +54,31 @@ test("workflow 03 accepted email still sends to customerEmail", () => {
   const gmail = wf.nodes.find((n) => n.name === "Gmail: Send Order Accepted Email");
   assert.equal(gmail.parameters.sendTo, '={{$json["customerEmail"]}}');
 });
+
+test("IF filters using .includes() compare a String(...) result to the string \"true\"", () => {
+  let checked = 0;
+  for (const f of files) {
+    for (const node of load(f).nodes) {
+      if (node.type !== "n8n-nodes-base.if") continue;
+      for (const cond of node.parameters?.conditions?.string ?? []) {
+        if (!String(cond.value1).includes(".includes(")) continue;
+        checked++;
+        assert.match(cond.value1, /^=\{\{String\(.+\)\}\}$/, `${f} / ${node.name}`);
+        assert.equal(cond.value2, "true", `${f} / ${node.name} value2`);
+      }
+    }
+  }
+  assert.ok(checked >= 2);
+});
+
+test("status filters in workflows 03 and 05 list the intended statuses", () => {
+  const arrayOf = (f, name) => {
+    const node = load(f).nodes.find((n) => n.name === name);
+    const m = node.parameters.conditions.string[0].value1.match(/\[([^\]]*)\]\.includes/);
+    return m[1].split(",").map((s) => s.trim().replace(/^'|'$/g, ""));
+  };
+  const w5 = arrayOf("05-delivery-status-propagation.json", "Filter: status in (picked_up, delivered)");
+  assert.ok(w5.includes("picked_up") && w5.includes("delivered"));
+  const w3 = arrayOf("03-restaurant-status-change.json", "Filter: status in (accepted, preparing, ready)");
+  for (const s of ["accepted", "preparing", "ready"]) assert.ok(w3.includes(s), s);
+});
