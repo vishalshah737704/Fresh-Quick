@@ -61,6 +61,47 @@
       "typeVersion": 1,
       "position": [900, 380],
       "notes": "Phase 3's payment already resolves at checkout time (success/failed), not at delivery time, so 'finalize' here means marking it settled for accounting purposes -- no payments.status transition is defined for this in the current schema. Needs a design decision before implementing for real: either add a payments.status='settled' state or treat 'success' as already final and skip this step. Review-prompt (reviews table) has no write path built yet -- see MEMORY.md's reviews-table stub-policy deferred item."
+    },
+    {
+      "id": "get-notification-details-delivered",
+      "name": "GET /api/internal/orders/:id/notification-details",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [900, 540],
+      "parameters": {
+        "method": "GET",
+        "url": "={{$env.APP_BASE_URL}}/api/internal/orders/{{$json[\"body\"][\"record\"][\"id\"]}}/notification-details",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "X-Internal-Secret", "value": "={{$env.N8N_INTERNAL_SECRET}}" }
+          ]
+        }
+      },
+      "notes": "Fetches the delivered email content (customerEmail, emailSubject, deliveredEmailHtml) server-side, since the webhook payload has no email address or order details."
+    },
+    {
+      "id": "send-order-delivered-email",
+      "name": "Gmail: Send Order Delivered Email",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2,
+      "position": [1120, 540],
+      "parameters": {
+        "resource": "message",
+        "operation": "send",
+        "sendTo": "={{$json[\"customerEmail\"]}}",
+        "subject": "={{$json[\"emailSubject\"]}}",
+        "emailType": "html",
+        "message": "={{$json[\"deliveredEmailHtml\"]}}",
+        "options": {}
+      },
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "PLACEHOLDER_CONNECT_YOUR_GMAIL_CREDENTIAL",
+          "name": "Gmail account (connect in n8n UI)"
+        }
+      },
+      "notes": "Credential intentionally left as a placeholder -- after importing, select your own Gmail OAuth2 credential in this node's Credential dropdown before activating this workflow."
     }
   ],
   "connections": {
@@ -77,7 +118,16 @@
       "main": [[{ "node": "Filter: status = delivered", "type": "main", "index": 0 }]]
     },
     "Filter: status = delivered": {
-      "main": [[{ "node": "Finalize Payment + Prompt Review (placeholder)", "type": "main", "index": 0 }], []]
+      "main": [
+        [
+          { "node": "Finalize Payment + Prompt Review (placeholder)", "type": "main", "index": 0 },
+          { "node": "GET /api/internal/orders/:id/notification-details", "type": "main", "index": 0 }
+        ],
+        []
+      ]
+    },
+    "GET /api/internal/orders/:id/notification-details": {
+      "main": [[{ "node": "Gmail: Send Order Delivered Email", "type": "main", "index": 0 }]]
     }
   },
   "active": false,
