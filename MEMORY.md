@@ -2624,14 +2624,18 @@ checkout (phone required, address, Cash on Delivery) → Order #1a5906ab placed
 Orders tab, Account tab and Sign out worked.
 
 **Defects / oddities triaged from the recording (NOT fixed — report only):**
-1. Tab screens (Orders, Account) draw their big title under the iPhone status
-   bar/clock ("Your orders" overlapped by "1:36"): missing safe-area top
-   padding on the tab screens.
+1. [FIXED 2026-10-01, confirmed on Vishal's iPhone after an app reload] Tab screens (Home,
+   Orders, Account) drew their content under the iPhone status bar/clock
+   ("Your orders" overlapped by "1:36") because the tabs hide the native
+   header and nothing added a top inset. Fix: `sceneStyle: { paddingTop:
+   insets.top }` in `mobile/src/app/customer/(tabs)/_layout.tsx`.
 2. The Orders row's status pill ("Delivered") is partly covered at top-right
    by the round blue gear — that is Expo's developer-menu button in the test
    build, not app UI, but it hides the pill in that screenshot.
-3. Stack headers still show raw Expo route names (`customer/orders/[id]`,
-   `customer/checkout`, `customer/(tabs)`) — the already-known deferred item.
+3. [FIXED 2026-10-01, confirmed on Vishal's iPhone after an app reload] Stack headers showed
+   raw Expo route names (`customer/orders/[id]`, `customer/checkout`,
+   `customer/(tabs)` as a back label). Fix: titles Order / Checkout / Help /
+   Wallet and `title: "Home"` on the tabs screen in `mobile/src/app/_layout.tsx`.
 4. Partner assigned and On the way both show "Step 5 of 6 · On the way"
    (documented, as designed).
 5. Delivery screens (second recording, 2026-10-01 02:08) ran correctly on
@@ -2648,8 +2652,10 @@ Haversine distance and assigns the NEAREST; `delivery@foodhub.local` (online,
 stored location New Jersey) lost. An `assigned` order is not in anyone else's
 "Available" list; it showed only on partner-b1's active list. Same for
 `94f610e3`. Fix is data/process: `partner-b1` was set OFFLINE in the dev DB on
-2026-10-01 (Vishal OK'd); or change the assignment design (e.g. no auto-assign, or a
-location-less partner pool) if self-claim is the intended demo.
+2026-10-01 (Vishal OK'd). **Decision (Vishal, 2026-10-01): KEEP n8n
+auto-assign as is** — no workflow/route change; the Available list therefore
+normally stays empty while an online partner has coordinates, and the manual
+(§4.3, Appendix) says so.
 
 **Rulings I made (cost if wrong):** see the D ledger — T4 grep scope (none);
 T4 Back uses `router.back()`/`replace` fallback instead of the plan's replace

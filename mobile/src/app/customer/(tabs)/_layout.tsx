@@ -1,14 +1,20 @@
 import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { BRAND } from "../../../../theme";
 
 // Bottom tab bar: Home / Orders / Account. Store detail, cart, checkout, and
 // order detail stay as stack screens pushed from the root Stack in
 // _layout.tsx — they are NOT tabs (mobile UberEats redesign spec, Phase 1).
 export default function CustomerTabsLayout() {
+  // The tabs hide their native header, so nothing else pushes content below
+  // the status bar / Dynamic Island — without this inset the screen titles
+  // render underneath the iPhone clock.
+  const insets = useSafeAreaInsets();
   return (
     <Tabs
       screenOptions={{
+        sceneStyle: { paddingTop: insets.top },
         headerStyle: { backgroundColor: BRAND.colors.surface },
         headerTintColor: BRAND.colors.ink,
         headerTitleStyle: { fontFamily: BRAND.fonts.bodySemiBold },
