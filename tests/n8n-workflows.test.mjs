@@ -6,9 +6,30 @@ const dir = new URL("../n8n/workflows/", import.meta.url);
 const files = readdirSync(dir).filter((f) => f.endsWith(".json")).sort();
 const load = (f) => JSON.parse(readFileSync(new URL(f, dir), "utf8"));
 
-test("there are five workflow files and each parses", () => {
-  assert.equal(files.length, 5);
+test("the five expected workflow files are present and each parses", () => {
+  const expected = [
+    "01-order-placed",
+    "02-payment-mock-confirmation",
+    "03-restaurant-status-change",
+    "04-delivery-partner-assignment",
+    "05-delivery-status-propagation",
+  ];
+  for (const name of expected) assert.ok(files.includes(`${name}.json`), `missing ${name}.json`);
+  assert.ok(files.length >= 5);
   for (const f of files) assert.ok(load(f).nodes.length > 0, f);
+});
+
+test("committed workflows only carry PLACEHOLDER_ credential ids", () => {
+  for (const f of files) {
+    for (const node of load(f).nodes) {
+      for (const [type, cred] of Object.entries(node.credentials ?? {})) {
+        assert.ok(
+          String(cred.id).startsWith("PLACEHOLDER_"),
+          `${f} / ${node.name} / ${type}: credential id "${cred.id}" is not a PLACEHOLDER_ value. Real n8n credential ids must never be committed.`
+        );
+      }
+    }
+  }
 });
 
 test("every connection source and target is a real node name", () => {
