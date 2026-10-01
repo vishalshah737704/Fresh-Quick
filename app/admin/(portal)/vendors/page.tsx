@@ -23,7 +23,7 @@ async function authHeader() {
 function vendorStatus(r: RestaurantRow): { label: string; className: string } {
   if (r.is_suspended) return { label: "Paused", className: "bg-brand-primary-text-safe text-white" };
   if (r.is_open) return { label: "Active", className: "bg-brand-accent-text-safe text-white" };
-  return { label: "Pending", className: "bg-gray-400 text-white" };
+  return { label: "Pending", className: "bg-gray-700 text-white" };
 }
 
 const inputClass =
@@ -88,12 +88,33 @@ export default function AdminVendorsPage() {
     }
   }
 
+  function resetForm() {
+    setStoreName("");
+    setFullName("");
+    setEmail("");
+    setPassword("");
+    setLat(DEFAULT_LAT);
+    setLng(DEFAULT_LNG);
+    setFormError(null);
+    setFormOpen(false);
+  }
+
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     if (submitting) return;
+    setSuccess(null);
+    const latNum = Number(lat);
+    const lngNum = Number(lng);
+    if (lat.trim() === "" || !Number.isFinite(latNum) || latNum < -90 || latNum > 90) {
+      setFormError("Enter a valid latitude");
+      return;
+    }
+    if (lng.trim() === "" || !Number.isFinite(lngNum) || lngNum < -180 || lngNum > 180) {
+      setFormError("Enter a valid longitude");
+      return;
+    }
     setSubmitting(true);
     setFormError(null);
-    setSuccess(null);
     try {
       const res = await fetch("/api/admin/vendors", {
         method: "POST",
@@ -103,21 +124,15 @@ export default function AdminVendorsPage() {
           password,
           fullName,
           storeName,
-          lat: Number(lat),
-          lng: Number(lng),
+          lat: latNum,
+          lng: lngNum,
         }),
       });
       const body = await res.json().catch(() => ({}));
       if (!res.ok) {
         setFormError(body.error ?? "Failed to create vendor");
       } else {
-        setStoreName("");
-        setFullName("");
-        setEmail("");
-        setPassword("");
-        setLat(DEFAULT_LAT);
-        setLng(DEFAULT_LNG);
-        setFormOpen(false);
+        resetForm();
         setSuccess("Vendor created");
         setReloadKey((k) => k + 1);
       }
@@ -134,8 +149,8 @@ export default function AdminVendorsPage() {
         <button
           type="button"
           onClick={() => {
-            setFormOpen((o) => !o);
-            setFormError(null);
+            if (formOpen) resetForm();
+            else setFormOpen(true);
           }}
           className="rounded-full bg-brand-primary-text-safe px-4 py-1.5 text-sm text-white"
         >
@@ -186,6 +201,7 @@ export default function AdminVendorsPage() {
               id="vendor-email"
               type="email"
               required
+              autoComplete="off"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className={inputClass}
@@ -199,7 +215,7 @@ export default function AdminVendorsPage() {
               id="vendor-password"
               type="text"
               required
-              autoComplete="off"
+              autoComplete="new-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className={inputClass}

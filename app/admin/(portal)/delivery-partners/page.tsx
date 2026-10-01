@@ -59,6 +59,15 @@ export default function AdminDeliveryPartnersPage() {
     };
   }, [reloadKey]);
 
+  function resetForm() {
+    setFullName("");
+    setEmail("");
+    setPassword("");
+    setVehicleType("bike");
+    setFormError(null);
+    setFormOpen(false);
+  }
+
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     if (submitting) return;
@@ -75,11 +84,7 @@ export default function AdminDeliveryPartnersPage() {
       if (!res.ok) {
         setFormError(body.error ?? "Failed to create delivery partner");
       } else {
-        setFullName("");
-        setEmail("");
-        setPassword("");
-        setVehicleType("bike");
-        setFormOpen(false);
+        resetForm();
         setSuccess("Delivery partner created");
         setReloadKey((k) => k + 1);
       }
@@ -96,8 +101,8 @@ export default function AdminDeliveryPartnersPage() {
         <button
           type="button"
           onClick={() => {
-            setFormOpen((o) => !o);
-            setFormError(null);
+            if (formOpen) resetForm();
+            else setFormOpen(true);
           }}
           className="rounded-full bg-brand-primary-text-safe px-4 py-1.5 text-sm text-white"
         >
@@ -136,6 +141,7 @@ export default function AdminDeliveryPartnersPage() {
               id="partner-email"
               type="email"
               required
+              autoComplete="off"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className={inputClass}
@@ -149,7 +155,7 @@ export default function AdminDeliveryPartnersPage() {
               id="partner-password"
               type="text"
               required
-              autoComplete="off"
+              autoComplete="new-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className={inputClass}
@@ -212,7 +218,7 @@ export default function AdminDeliveryPartnersPage() {
                 <td className="p-2">
                   <span
                     className={`inline-flex items-center whitespace-nowrap rounded-[var(--radius-pill)] px-3 py-1 text-xs font-medium ${
-                      p.is_online ? "bg-brand-accent-text-safe text-white" : "bg-gray-400 text-white"
+                      p.is_online ? "bg-brand-accent-text-safe text-white" : "bg-gray-700 text-white"
                     }`}
                   >
                     {p.is_online ? "Online" : "Offline"}
