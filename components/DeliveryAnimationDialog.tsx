@@ -155,6 +155,11 @@ export function DeliveryAnimationDialog({
   const postRef = useRef(post);
   const onDeliveredRef = useRef(onDelivered);
   const closeRef = useRef<HTMLButtonElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    dialogRef.current?.focus();
+  }, []);
 
   useEffect(() => {
     postRef.current = post;
@@ -203,10 +208,12 @@ export function DeliveryAnimationDialog({
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-brand-ink/60 p-4">
       <div
+        ref={dialogRef}
+        tabIndex={-1}
         role="dialog"
         aria-modal="true"
         aria-labelledby="delivery-anim-title"
-        className="w-full max-w-xl overflow-hidden rounded-3xl bg-brand-surface shadow-2xl"
+        className="w-full max-w-xl overflow-hidden rounded-3xl bg-brand-surface shadow-2xl outline-none"
       >
         <div className="px-5 pb-2 pt-4">
           <h2 id="delivery-anim-title" className="font-heading text-xl text-brand-ink">
@@ -247,7 +254,7 @@ export function DeliveryAnimationDialog({
               <stop offset="0" stopColor="#FFFFFF" /><stop offset="1" stopColor="#C9D2DE" />
             </linearGradient>
             <linearGradient id="fq-box" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0" stopColor="#FF9238" /><stop offset=".55" stopColor="#F5821F" /><stop offset="1" stopColor="#C95F08" />
+              <stop offset="0" stopColor="#FF9238" /><stop offset=".55" stopColor={BRAND.theme.primary} /><stop offset="1" stopColor="#C95F08" />
             </linearGradient>
             <radialGradient id="fq-sun" cx=".5" cy=".5" r=".5">
               <stop offset="0" stopColor="#FFF6DC" stopOpacity=".95" /><stop offset="1" stopColor="#FFE0A8" stopOpacity="0" />

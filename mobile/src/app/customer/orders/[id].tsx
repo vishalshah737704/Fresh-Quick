@@ -80,6 +80,7 @@ export default function OrderDetailScreen() {
   const [error, setError] = useState<string | null>(null);
   const [celebrating, setCelebrating] = useState(false);
   const [dismissed, setDismissed] = useState(false);
+  const [sawPickedUp, setSawPickedUp] = useState(false);
 
   const postComplete = useCallback(async (): Promise<number> => {
     try {
@@ -115,6 +116,7 @@ export default function OrderDetailScreen() {
           }
           const next = normalizeOrderDetail(data as unknown as RawOrderDetail);
           setOrder(next);
+          if (next.status === "picked_up") setSawPickedUp(true);
           setError(null);
 
           if (isTerminalStatus(next.status) && interval) {
@@ -158,7 +160,9 @@ export default function OrderDetailScreen() {
     );
   }
 
-  const showAnimation = !dismissed && (order.status === "picked_up" || celebrating);
+  const showAnimation =
+    !dismissed &&
+    (order.status === "picked_up" || (sawPickedUp && order.status === "delivered") || celebrating);
   const courierAssigned =
     order.deliveryPartnerId != null && (order.status === "assigned" || order.status === "picked_up");
   const phoneIsDialable = order.recipientPhone.startsWith("+");

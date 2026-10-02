@@ -31,6 +31,7 @@ export default function OrderConfirmationPage() {
   const [error, setError] = useState<string | null>(null);
   const [celebrating, setCelebrating] = useState(false);
   const [dismissed, setDismissed] = useState(false);
+  const [sawPickedUp, setSawPickedUp] = useState(false);
 
   const postComplete = useCallback(async (): Promise<number> => {
     try {
@@ -64,6 +65,7 @@ export default function OrderConfirmationPage() {
       }
       const detail = normalizeOrderDetail(data as unknown as RawOrderDetail);
       setOrder(detail);
+      if (detail.status === "picked_up") setSawPickedUp(true);
       setError(null);
 
       // Stop polling if order reached a terminal status
@@ -102,7 +104,9 @@ export default function OrderConfirmationPage() {
   }
 
   const paymentFailed = order.payment?.status === "failed";
-  const showAnimation = !dismissed && (order.status === "picked_up" || celebrating);
+  const showAnimation =
+    !dismissed &&
+    (order.status === "picked_up" || (sawPickedUp && order.status === "delivered") || celebrating);
 
   return (
     <div className="-m-4 flex flex-col gap-6 bg-brand-bg pb-6">

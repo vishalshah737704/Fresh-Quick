@@ -207,7 +207,7 @@ export function DeliveryAnimation({
                 <Line x1={149} y1={38} x2={164} y2={38} />
               </G>
 
-              <Rect x={20} y={8} width={70} height={58} rx={7} fill="#F5821F" />
+              <Rect x={20} y={8} width={70} height={58} rx={7} fill={BRAND.colors.primary} />
               <Rect x={20} y={8} width={70} height={10} rx={5} fill="#FFB267" />
               <G translate="24, 22" scale={0.325}>
                 <Circle cx={LOGO_PATHS.disc.cx} cy={LOGO_PATHS.disc.cy} r={LOGO_PATHS.disc.r} fill={LOGO_COLORS.disc} />
@@ -220,12 +220,12 @@ export function DeliveryAnimation({
                 </SvgText>
               ))}
 
-              <Limb p={[pose.hip[0] + 1, pose.hip[1] - 4]} q={pose.torsoTop} w1={22} w2={20} fill="#F5821F" />
+              <Limb p={[pose.hip[0] + 1, pose.hip[1] - 4]} q={pose.torsoTop} w1={22} w2={20} fill={BRAND.colors.primary} />
               <Limb p={pose.hip} q={pose.legNear.knee} w1={17} w2={13} fill="#0F2244" />
               <Limb p={pose.legNear.knee} q={pose.legNear.foot} w1={11} w2={7} fill="#D9A57B" />
               <Rect x={pose.legNear.foot[0] - 8} y={pose.legNear.foot[1] - 5} width={21} height={8} rx={3} fill="#F2F4F8" stroke="#0B1D3A" strokeWidth={1.2} />
               <Rect x={pose.legFar.foot[0] - 8} y={pose.legFar.foot[1] - 5} width={21} height={8} rx={3} fill="#F2F4F8" stroke="#0B1D3A" strokeWidth={1.2} />
-              <Limb p={pose.shoulder} q={pose.armNear.elbow} w1={12} w2={9} fill="#F5821F" />
+              <Limb p={pose.shoulder} q={pose.armNear.elbow} w1={12} w2={9} fill={BRAND.colors.primary} />
               <Limb p={pose.armNear.elbow} q={pose.armNear.hand} w1={8} w2={6} fill="#D9A57B" />
               <Circle cx={pose.armNear.hand[0]} cy={pose.armNear.hand[1]} r={4.5} fill="#1A1A1A" />
               <G translate={`${(pose.lean * 0.6).toFixed(2)}, 0`}>
