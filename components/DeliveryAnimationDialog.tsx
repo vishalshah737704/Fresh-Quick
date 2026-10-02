@@ -11,7 +11,9 @@ import {
   SCENE_HEIGHT,
   SCENE_WIDTH,
   SCROLL_SPAN,
-  animationOffsetMs,
+  animationElapsedMs,
+  clearAnimationStart,
+  getAnimationStart,
   limbPolygon,
   riderPose,
   runCompletion,
@@ -20,6 +22,9 @@ import {
 } from "@/lib/delivery-animation";
 
 type Phase = "playing" | "finishing" | "delivered" | "failed";
+
+// Start time per order for this app session, so reopening mid-animation resumes.
+const animationStarts = new Map<string, number>();
 
 const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
@@ -136,17 +141,17 @@ function Shoe({ foot, pedalAngleHint }: { foot: Pt; pedalAngleHint: number }) {
 }
 
 export function DeliveryAnimationDialog({
-  pickedUpAt,
+  orderId,
   post,
   onDelivered,
   onClose,
 }: {
-  pickedUpAt: string | null;
+  orderId: string;
   post: () => Promise<number>;
   onDelivered: () => void;
   onClose: () => void;
 }) {
-  const [ms, setMs] = useState(() => animationOffsetMs(pickedUpAt, Date.now()));
+  const [ms, setMs] = useState(() => animationElapsedMs(getAnimationStart(animationStarts, orderId, Date.now()), Date.now()));
   const [phase, setPhase] = useState<Phase>("playing");
   // Dialog only mounts client-side after the order loads, so reading window here is hydration-safe.
   const [reduced] = useState(
@@ -167,7 +172,8 @@ export function DeliveryAnimationDialog({
   });
 
   useEffect(() => {
-    const t0 = performance.now() - animationOffsetMs(pickedUpAt, Date.now());
+    const startedAt = getAnimationStart(animationStarts, orderId, Date.now());
+    const t0 = performance.now() - animationElapsedMs(startedAt, Date.now());
     let raf = 0;
     let cancelled = false;
     const tick = (now: number) => {
@@ -181,6 +187,7 @@ export function DeliveryAnimationDialog({
       runCompletion(() => postRef.current(), sleep).then((result) => {
         if (cancelled) return;
         if (result === "delivered") {
+          clearAnimationStart(animationStarts, orderId);
           setPhase("delivered");
           onDeliveredRef.current();
         } else {
@@ -193,7 +200,7 @@ export function DeliveryAnimationDialog({
       cancelled = true;
       cancelAnimationFrame(raf);
     };
-  }, [pickedUpAt]);
+  }, [orderId]);
 
   useEffect(() => {
     if (phase === "delivered" || phase === "failed") closeRef.current?.focus();

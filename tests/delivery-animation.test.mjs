@@ -4,7 +4,9 @@ import {
   DELIVERY_ANIMATION_MS,
   RETRY_AFTER_EARLY_MS,
   SCROLL_SPAN,
-  animationOffsetMs,
+  animationElapsedMs,
+  clearAnimationStart,
+  getAnimationStart,
   limbPolygon,
   riderPose,
   runCompletion,
@@ -18,21 +20,43 @@ test("animation is 15 seconds", () => {
   assert.equal(DELIVERY_ANIMATION_MS, 15000);
 });
 
-test("animationOffsetMs: null/invalid start -> 0", () => {
-  assert.equal(animationOffsetMs(null, 1_000_000), 0);
-  assert.equal(animationOffsetMs("not-a-date", 1_000_000), 0);
+test("animationElapsedMs: null/NaN start -> 0", () => {
+  assert.equal(animationElapsedMs(null, 1_000_000), 0);
+  assert.equal(animationElapsedMs(NaN, 1_000_000), 0);
 });
 
-test("animationOffsetMs: elapsed time, clamped to [0, 15000]", () => {
-  const start = Date.parse("2026-10-02T10:00:00.000Z");
-  assert.equal(animationOffsetMs("2026-10-02T10:00:00.000Z", start + 4000), 4000);
-  assert.equal(animationOffsetMs("2026-10-02T10:00:00.000Z", start + 15000), 15000);
-  assert.equal(animationOffsetMs("2026-10-02T10:00:00.000Z", start + 99999), 15000);
+test("animationElapsedMs: elapsed time within range", () => {
+  assert.equal(animationElapsedMs(1000, 5000), 4000);
+  assert.equal(animationElapsedMs(1000, 1000), 0);
 });
 
-test("animationOffsetMs: picked_up_at in the future (clock skew) -> 0", () => {
-  const start = Date.parse("2026-10-02T10:00:00.000Z");
-  assert.equal(animationOffsetMs("2026-10-02T10:00:00.000Z", start - 5000), 0);
+test("animationElapsedMs: clamps at 15000", () => {
+  assert.equal(animationElapsedMs(0, 15000), 15000);
+  assert.equal(animationElapsedMs(0, 99999), 15000);
+});
+
+test("animationElapsedMs: now before start -> 0", () => {
+  assert.equal(animationElapsedMs(10_000, 5000), 0);
+});
+
+test("getAnimationStart: first call stores and returns now; later calls return the stored start", () => {
+  const starts = new Map();
+  assert.equal(getAnimationStart(starts, "a", 1000), 1000);
+  assert.equal(getAnimationStart(starts, "a", 9000), 1000);
+});
+
+test("getAnimationStart: order ids are independent", () => {
+  const starts = new Map();
+  getAnimationStart(starts, "a", 1000);
+  assert.equal(getAnimationStart(starts, "b", 2000), 2000);
+  assert.equal(getAnimationStart(starts, "a", 3000), 1000);
+});
+
+test("clearAnimationStart: clearing makes the next call store anew", () => {
+  const starts = new Map();
+  getAnimationStart(starts, "a", 1000);
+  clearAnimationStart(starts, "a");
+  assert.equal(getAnimationStart(starts, "a", 7000), 7000);
 });
 
 test("riderPose: leg segments keep constant length (valid IK)", () => {

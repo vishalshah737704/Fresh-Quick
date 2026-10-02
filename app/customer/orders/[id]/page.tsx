@@ -112,7 +112,7 @@ export default function OrderConfirmationPage() {
     <div className="-m-4 flex flex-col gap-6 bg-brand-bg pb-6">
       {showAnimation && (
         <DeliveryAnimationDialog
-          pickedUpAt={order.pickedUpAt}
+          orderId={order.id}
           post={postComplete}
           onDelivered={() => setCelebrating(true)}
           onClose={() => setDismissed(true)}

@@ -16,13 +16,28 @@ export const SCENE_HEIGHT = 300;
 export const SCROLL_SPAN = 560;
 export const RIDER_TRANSFORM = { x: 130, y: 112, scale: 1.28 } as const;
 
-// How far into the 15 s animation we are, given when the partner picked up.
-// Reopening mid-animation resumes here; a future/invalid timestamp starts at 0.
-export function animationOffsetMs(pickedUpAt: string | null, nowMs: number): number {
-  if (!pickedUpAt) return 0;
-  const started = Date.parse(pickedUpAt);
-  if (Number.isNaN(started)) return 0;
-  return Math.min(Math.max(nowMs - started, 0), DELIVERY_ANIMATION_MS);
+// The animation always plays a FULL 15 s from the moment the dialog first appears.
+// Progress is measured only on the client's own clock (start and now are both
+// Date.now() on the same device), so it is immune to client/server clock skew and
+// independent of picked_up_at. The server's 14 s rule (EARLY_TOLERANCE_MS) still
+// holds because the dialog can only appear after the pickup, so it can never
+// finish earlier than pickup + 15 s.
+export function animationElapsedMs(startedAtMs: number | null, nowMs: number): number {
+  if (startedAtMs === null || Number.isNaN(startedAtMs)) return 0;
+  return Math.min(Math.max(nowMs - startedAtMs, 0), DELIVERY_ANIMATION_MS);
+}
+
+// Per-order start times kept in memory so closing and reopening the dialog
+// mid-animation resumes instead of restarting.
+export function getAnimationStart(starts: Map<string, number>, orderId: string, nowMs: number): number {
+  const existing = starts.get(orderId);
+  if (existing !== undefined) return existing;
+  starts.set(orderId, nowMs);
+  return nowMs;
+}
+
+export function clearAnimationStart(starts: Map<string, number>, orderId: string): void {
+  starts.delete(orderId);
 }
 
 // ---- rider geometry (bike-local coordinates; origin placed by RIDER_TRANSFORM) ----

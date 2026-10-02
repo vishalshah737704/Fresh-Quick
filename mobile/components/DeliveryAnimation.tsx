@@ -11,7 +11,9 @@ import {
   SCENE_HEIGHT,
   SCENE_WIDTH,
   SCROLL_SPAN,
-  animationOffsetMs,
+  animationElapsedMs,
+  clearAnimationStart,
+  getAnimationStart,
   limbPolygon,
   riderPose,
   runCompletion,
@@ -20,6 +22,9 @@ import {
 } from "../lib/delivery-animation";
 
 type Phase = "playing" | "finishing" | "delivered" | "failed";
+
+// Start time per order for this app session, so reopening mid-animation resumes.
+const animationStarts = new Map<string, number>();
 
 const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 const FAR = skyline(5, 60, 130, FAR_COLORS.length, SCENE_WIDTH, false);
@@ -89,19 +94,19 @@ function Layer({ offset, children }: { offset: number; children: React.ReactNode
 
 export function DeliveryAnimation({
   visible,
-  pickedUpAt,
+  orderId,
   post,
   onDelivered,
   onClose,
 }: {
   visible: boolean;
-  pickedUpAt: string | null;
+  orderId: string;
   post: () => Promise<number>;
   onDelivered: () => void;
   onClose: () => void;
 }) {
   const { width } = useWindowDimensions();
-  const [ms, setMs] = useState(() => animationOffsetMs(pickedUpAt, Date.now()));
+  const [ms, setMs] = useState(0);
   const [phase, setPhase] = useState<Phase>("playing");
   const [reduced, setReduced] = useState(false);
   const postRef = useRef(post);
@@ -118,7 +123,9 @@ export function DeliveryAnimation({
 
   useEffect(() => {
     if (!visible) return;
-    const t0 = Date.now() - animationOffsetMs(pickedUpAt, Date.now());
+    // Only start the clock once visible: this component stays mounted while hidden.
+    const startedAt = getAnimationStart(animationStarts, orderId, Date.now());
+    const t0 = Date.now() - animationElapsedMs(startedAt, Date.now());
     let cancelled = false;
     let finished = false;
     const timer = setInterval(() => {
@@ -131,6 +138,7 @@ export function DeliveryAnimation({
       runCompletion(() => postRef.current(), sleep).then((result) => {
         if (cancelled) return;
         if (result === "delivered") {
+          clearAnimationStart(animationStarts, orderId);
           setPhase("delivered");
           onDeliveredRef.current();
         } else {
@@ -142,7 +150,7 @@ export function DeliveryAnimation({
       cancelled = true;
       clearInterval(timer);
     };
-  }, [visible, pickedUpAt]);
+  }, [visible, orderId]);
 
   const pose = riderPose(reduced ? 0 : ms);
   const secondsLeft = Math.max(0, Math.ceil((DELIVERY_ANIMATION_MS - ms) / 1000));

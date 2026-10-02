@@ -171,7 +171,7 @@ export default function OrderDetailScreen() {
     <ScrollView style={styles.scroll} contentContainerStyle={styles.container}>
       <DeliveryAnimation
         visible={showAnimation}
-        pickedUpAt={order.pickedUpAt}
+        orderId={order.id}
         post={postComplete}
         onDelivered={() => setCelebrating(true)}
         onClose={() => setDismissed(true)}
