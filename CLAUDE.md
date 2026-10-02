@@ -110,8 +110,8 @@ sign up a fresh one). Both manuals refreshed (web v3.0, mobile v4.0 — Customer
 and Delivery figures from Vishal's real phone recordings with personal data
 blurred; only the Available-order card is a labeled wireframe, since n8n
 auto-assigns before it can be photographed).
-**Delivery animation (branch `worktree-delivery-animation`, 2026-10-02; pushed to
-`origin`, fast-forward merged into LOCAL `main` only):** partners only mark
+**Delivery animation (2026-10-02, merged to `main` and pushed; the worktree and
+branch `worktree-delivery-animation` were removed):** partners only mark
 `picked_up`; the customer's order page (web `DeliveryAnimationDialog`, mobile
 `DeliveryAnimation` modal) plays a full 15 s animation from the moment it appears
 (not anchored to `picked_up_at` — that cut it short on a phone), then calls
@@ -119,10 +119,12 @@ auto-assigns before it can be photographed).
 `lib/complete-delivery.ts`; 425 if too early). If the customer never opens the
 order, n8n workflow 05 completes it after 5 minutes (one delivered email either
 way). Run on Vishal's phone 2026-10-02: only issue was the animation length
-(fixed in `65ee6d0`; web live re-check passed 2026-10-02, phone re-test pending). Main's `mobile/`
-was reset to Expo SDK 57 (his Expo Go is SDK 57). Both manuals' partner sections
-still say "Mark delivered". See MEMORY.md's "Delivery animation", "Test emails"
-and "Animation length follow-up" entries.
+(fixed in `65ee6d0`; web live re-check passed and the phone re-test was approved
+by Vishal 2026-10-02). Main's `mobile/` was reset to Expo SDK 57 (his Expo Go is
+SDK 57). Both manuals were refreshed 2026-10-02 (web v3.1, mobile v4.1); the
+mobile manual's partner screenshot (p21-22) still shows the old "Mark delivered"
+button and needs a new phone capture. See MEMORY.md's "Delivery animation",
+"Test emails", "Animation length follow-up" and "Session close-out 2026-10-02" entries.
 **Gotcha for demos/tests:** workflow 04 auto-assigns a `ready` order within
 ~10 s to the NEAREST ONLINE partner by stored lat/lng, so it never reaches the
 "Available" list while any online partner has coordinates — a leftover online
@@ -629,11 +631,19 @@ See [MEMORY.md](MEMORY.md) for phase-by-phase progress and decisions.
   message from Vishal's connected Gmail account to the order's `recipient_email`;
   a fake address such as `demo@example.com` still sends and the bounce notices land
   in HIS inbox (2026-10-02: ~24 test emails + his own phone-testing emails = nearly
-  10 "delivered" emails he complained about). The Gmail send nodes of workflows 03
-  and 05 are switched off in the local n8n (`"disabled": true`, n8n copy only);
-  don't re-enable them for tests — verify from n8n's execution record instead, and
-  re-enable only when Vishal wants a real email (one order at a time). A fresh n8n
-  imported from the repo JSON has them on again.
+  10 "delivered" emails he complained about). Vishal had the Gmail send nodes of
+  workflows 03 and 05 re-enabled and published in the local n8n on 2026-10-02, so
+  they are LIVE again: every order emails its `recipient_email`. For tests use only
+  an address Vishal owns, one order at a time, and ask first — or switch the two
+  nodes off again (n8n UI: select node, press `D`, Publish) and verify from n8n's
+  execution record instead. A fresh n8n imported from the repo JSON has them on.
+
+## Standing phrases: "start-all-roles.ps1" / "stop-all-roles.ps1"
+
+When Vishal says **"start-all-roles.ps1"** run `npm run app:start:all-roles`;
+when he says **"stop-all-roles.ps1"** run `npm run app:stop -- --all-roles`
+(stops everything, not just the web servers). `scripts/start-all-roles.ps1` and
+`scripts/stop-all-roles.ps1` are thin wrappers that run exactly those commands.
 
 ## Standing phrase: "Commit Work" — NON-NEGOTIABLE
 

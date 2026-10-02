@@ -2855,3 +2855,24 @@ was fast-forward merged into LOCAL `main` (85b6941, not pushed), and `npm instal
 Note: a plain `npm install --no-save react-native-svg` against the old tree would have
 removed 6 Metro/Babel packages — check `npm install --dry-run` before installing into an
 unfamiliar `node_modules`.
+
+## Session close-out 2026-10-02 (delivery animation merged, manuals, fresh DB)
+- Web live re-check of the 15 s animation passed; Vishal approved the phone re-test.
+  `worktree-delivery-animation` was fast-forward merged into `main`, pushed, then the
+  worktree and the branch (local and origin) were removed (the worktree's `node_modules`
+  junction was removed with `rmdir` first so main's `node_modules` stayed intact).
+- Manuals refreshed in place: web `User_Manual` v3.1 (new 3.5.1 courier-animation section,
+  partner chapter says only "Mark picked up"), mobile v4.1 (new 3.6.1, FAQ row, status table).
+  TOCs renumbered, PDFs re-exported. Still wrong: the mobile partner screenshot (p21-22) shows
+  the old dimmed "Mark delivered" button; no animation figures exist yet. Needs a phone
+  recording. Mobile 3.6.1 text is from source, not from a device check.
+- Gmail send nodes of n8n workflows 03 and 05 re-enabled and published by Vishal's request
+  (done through the n8n UI while signed in). Real emails are live again.
+- Fresh system: after a pg_dump backup (session scratchpad, not in git) all 51 orders (with
+  items, payments, notifications), the 4 customer accounts (public.users + auth.users), and
+  50 customer/orphan addresses were deleted. Vendors (77), delivery partners (4), admin (1)
+  and menus kept. There is no wallet table (the Wallet page is a placeholder); payments are
+  in `payments`. Sign up a fresh customer to test. n8n execution history clearing was left
+  to Vishal and is reported done by him.
+- `scripts/start-all-roles.ps1` now runs `npm run app:start:all-roles`; `scripts/stop-all-roles.ps1`
+  runs `npm run app:stop -- --all-roles` (stops everything). The old `-SkipN8n`/`-All` switches are gone.
