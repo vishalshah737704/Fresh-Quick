@@ -16,12 +16,7 @@ export function DeliveryOrderCard({
   onAdvance?: () => void;
 }) {
   const totalQty = order.items.reduce((sum, item) => sum + item.quantity, 0);
-  const advanceLabel =
-    order.status === "assigned"
-      ? "Mark picked up"
-      : order.status === "picked_up"
-        ? "Mark delivered"
-        : null;
+  const advanceLabel = order.status === "assigned" ? "Mark picked up" : null;
   const historyWhen = order.deliveredAt ?? order.placedAt;
 
   return (
@@ -141,6 +136,12 @@ export function DeliveryOrderCard({
             {advanceLabel}
           </button>
         </div>
+      )}
+
+      {scope === "active" && order.status === "picked_up" && (
+        <p className="rounded-lg bg-brand-accent-tint p-2 text-base font-medium text-brand-ink">
+          Customer is receiving the order…
+        </p>
       )}
     </div>
   );

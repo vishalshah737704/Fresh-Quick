@@ -14,8 +14,9 @@ export const VENDOR_STATUS_TRANSITIONS: Record<string, string> = {
 // Phase 5: delivery-partner-drivable status chain. "assigned" is entered
 // via the claim endpoint, not this map (claim is a special first
 // transition guarded by its own ready+unassigned check, not a simple
-// status->status lookup).
+// status->status lookup). `picked_up -> delivered` is deliberately NOT here:
+// the customer's app completes delivery after the 15 s animation (or n8n's
+// 5-minute fallback does) -- see docs/superpowers/specs/2026-10-02-delivery-animation-design.md.
 export const DELIVERY_STATUS_TRANSITIONS: Record<string, string> = {
   assigned: "picked_up",
-  picked_up: "delivered",
 };

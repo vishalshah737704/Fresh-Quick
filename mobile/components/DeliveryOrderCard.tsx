@@ -22,12 +22,7 @@ export function DeliveryOrderCard({
   onAdvance?: () => void;
 }) {
   const totalQty = order.items.reduce((sum, item) => sum + item.quantity, 0);
-  const advanceLabel =
-    order.status === "assigned"
-      ? "Mark picked up"
-      : order.status === "picked_up"
-        ? "Mark delivered"
-        : null;
+  const advanceLabel = order.status === "assigned" ? "Mark picked up" : null;
   const historyWhen = order.deliveredAt ?? order.placedAt;
   const phone = order.recipientPhone.trim();
 
@@ -115,6 +110,10 @@ export function DeliveryOrderCard({
         >
           <Text style={styles.buttonText}>{advanceLabel}</Text>
         </Pressable>
+      )}
+
+      {scope === "active" && order.status === "picked_up" && (
+        <Text style={styles.muted}>Customer is receiving the order…</Text>
       )}
     </View>
   );
