@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useRoleGuard } from "@/lib/auth";
 import { OrderStatusTimeline } from "@/components/OrderStatusTimeline";
 import { OrderDetailView } from "@/components/OrderDetailView";
+import { DeliveryAnimationDialog } from "@/components/DeliveryAnimationDialog";
 import {
   ORDER_DETAIL_SELECT,
   normalizeOrderDetail,
@@ -28,6 +29,21 @@ export default function OrderConfirmationPage() {
   const [order, setOrder] = useState<OrderDetail | null>(null);
   const [partnerLocation, setPartnerLocation] = useState<PartnerLocation | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [celebrating, setCelebrating] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
+
+  const postComplete = useCallback(async (): Promise<number> => {
+    try {
+      const { data } = await supabase.auth.getSession();
+      const res = await fetch(`/api/customer/orders/${params.id}/complete-delivery`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${data.session?.access_token ?? ""}` },
+      });
+      return res.status;
+    } catch {
+      return 0;
+    }
+  }, [params.id]);
 
   useEffect(() => {
     if (!ready) return;
@@ -86,9 +102,18 @@ export default function OrderConfirmationPage() {
   }
 
   const paymentFailed = order.payment?.status === "failed";
+  const showAnimation = !dismissed && (order.status === "picked_up" || celebrating);
 
   return (
     <div className="-m-4 flex flex-col gap-6 bg-brand-bg pb-6">
+      {showAnimation && (
+        <DeliveryAnimationDialog
+          pickedUpAt={order.pickedUpAt}
+          post={postComplete}
+          onDelivered={() => setCelebrating(true)}
+          onClose={() => setDismissed(true)}
+        />
+      )}
       <div className="flex flex-col items-center gap-2 bg-brand-ink px-6 pb-14 pt-8 text-center">
         <span className="text-3xl">
           {paymentFailed || order.status === "cancelled" || order.status === "rejected"
