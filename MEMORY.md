@@ -2918,4 +2918,4 @@ unfamiliar `node_modules`.
 - `scripts/start.mjs` now starts Metro with `expo start -c` (clears the stale cache).
 - Manuals: web v3.3, mobile v4.4 (Done button and 5-minute text replaced, older overlapping
   partner screenshot removed). History recording deliberately not added.
-- Live end-to-end check of the 20 s fallback and the auto-close not yet run (stack was down).
+- Live n8n Wait node set to 20 s and published, live run of the 20 s fallback and 3 s auto-close, and manual page check: all confirmed done by Vishal 2026-10-02 (reported by him, not re-verified by Claude).
