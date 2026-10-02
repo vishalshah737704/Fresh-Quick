@@ -2707,7 +2707,7 @@ were typed at checkout — that was the requested "keep order information".
 
 **What shipped:** delivery partners no longer mark an order delivered. After
 the partner marks `picked_up`, the CUSTOMER's order page plays a ~15 s courier
-animation tied to `picked_up_at` (web `components/DeliveryAnimationDialog.tsx`;
+animation (first version tied to `picked_up_at`; changed the same day to a full 15 s from when it appears — see "Animation length follow-up" below) (web `components/DeliveryAnimationDialog.tsx`;
 mobile `mobile/components/DeliveryAnimation.tsx`, a modal using
 `react-native-svg` 15.15.4) and then calls
 `POST /api/customer/orders/[id]/complete-delivery` with the customer's bearer
@@ -2793,3 +2793,59 @@ the dev DB: `8d62f82e` (A), `7e8df03a`, `ac58e026`, `7c12c407`, `6ade0ce8`,
 `PLACEHOLDER_*` ids) and publish it; run `npm install` in `mobile/` in the main
 checkout (`react-native-svg` added, lockfile changed); refresh both manuals'
 partner sections; do the on-device mobile animation check.
+
+## Test emails: never let test orders send Gmail (2026-10-02)
+
+n8n workflows 03 (accepted) and 05 (delivered) send a REAL Gmail message through
+Vishal's connected Gmail account to the order's `recipient_email` for every order.
+Test orders that use a fake address such as `demo@example.com` are NOT harmless:
+the message is still sent from his account and the failure ("delivery status
+notification") bounces come back to HIS inbox. During the delivery-animation
+verification (2026-10-02) the test agents created ~24 accepted/delivered emails to
+`demo@example.com` (n8n's execution record counts 43 Gmail sends in total, 24 of them
+"delivered"), plus the genuine one-per-order emails from Vishal's own phone testing,
+and he received nearly 10 delivered emails and complained. An earlier statement that
+test emails "don't reach anyone's inbox" was wrong.
+**Fix / rule:** in the local n8n the Gmail send nodes of workflows 03 and 05 are
+switched OFF (`"disabled": true` on the node, in n8n's copy only — the repo JSON files are
+unchanged; a status update, auto-assign and the 5-minute fallback still work, only the
+email is skipped). Loaded with the one-off-container import while n8n was stopped
+(see docs/n8n-webhook-setup.md). Test agents must NOT re-enable them; verify email
+behaviour from n8n's execution record instead (Gmail node ran = would have sent) and
+re-enable the nodes only when Vishal wants a real email, one order at a time. Any new
+n8n created from the repo JSON has the Gmail nodes ON again.
+
+## Animation length follow-up + mobile setup (2026-10-02)
+
+**Animation length.** On Vishal's phone the courier animation ended before 15 s
+(he estimated ~10–13 s). Cause: progress was `client clock − picked_up_at`, so it
+started 0–3 s in (the customer only learns of the pickup on a 3 s poll) and was
+also exposed to phone-vs-server clock skew. Decision (Vishal approved): the dialog
+plays a FULL 15 s from the moment it first appears, independent of `picked_up_at`
+and of the device clock. Commit `65ee6d0`: `lib/delivery-animation.ts` (byte-identical
+`mobile/lib/` copy) drops `animationOffsetMs` and adds `animationElapsedMs`,
+`getAnimationStart`, `clearAnimationStart`; both dialogs take an `orderId` prop
+instead of `pickedUpAt` and keep a module-level in-memory `Map<orderId, startMs>`
+for the app session (closing and reopening mid-animation resumes; the start is cleared
+when completion returns delivered; on a failed completion it is kept so a reopen
+retries). A customer opening the order long after pickup now sees a normal full 15 s
+animation (the earlier "goes straight to Delivered!" behaviour is intentionally gone).
+The server's 14 s rule and the n8n 5-minute fallback are unchanged and still hold
+(the animation can never finish before pickup + 15 s). Checks: `node --test` 96/96,
+root and mobile `tsc` clean, eslint clean on the web dialog and page.
+**NOT yet verified live:** the web re-check was stopped when the test-email problem
+(previous section) surfaced; mobile is type-checked only. To verify: re-run one order
+(Gmail nodes are disabled, so no emails) and confirm the dialog starts at "Arriving in
+15s", runs ~15 s, completes (picked_up→delivered gap ≥ 15 s), and a late opener also gets a
+full 15 s; Vishal re-tests on the phone after `npx expo start -c` in `mobile/`.
+**Mobile setup in the main checkout (found 2026-10-02):** `mobile/package.json` had an
+UNCOMMITTED edit pinning `expo ^44.0.6` / `expo-router ^5.1.11` (and `node_modules` held that
+mismatched Expo 44 + React Native 0.86.3 tree) — wrong for Vishal's phone, whose Expo Go
+is Client 57.0.9 / SDK 57. With his OK it was reverted to the committed `expo ~57.0.25`
+/ `expo-router ~57.0.23` (backup of the edited files kept in the session scratchpad
+folder `mobile-uncommitted-backup`, not in git), branch `worktree-delivery-animation`
+was fast-forward merged into LOCAL `main` (85b6941, not pushed), and `npm install` in
+`mobile/` rebuilt a consistent SDK 57 tree including `react-native-svg` 15.15.4.
+Note: a plain `npm install --no-save react-native-svg` against the old tree would have
+removed 6 Metro/Babel packages — check `npm install --dry-run` before installing into an
+unfamiliar `node_modules`.

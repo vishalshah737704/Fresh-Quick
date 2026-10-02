@@ -366,6 +366,15 @@ populated (every `net._http_response` was 200). Other executions: 01 =
   (done in 03 and 05; a test enforces it). The first live run of 05
   failed exactly this way.
 
+
+**Silencing the emails for testing.** The Gmail send nodes of workflows 03 and 05 send
+real mail through the connected Gmail account (a fake recipient such as
+`demo@example.com` still sends, and the bounce notices go to that account's inbox).
+To test without emails, add `"disabled": true` to those two Gmail nodes in the JSON
+copies you import (use the one-off-container procedure above, or toggle the node off
+in the UI); the status update, auto-assign and the 5-minute fallback keep working, only
+the email is skipped. Keep the repo JSON files as they are (nodes enabled).
+
 ### Duplicate-email caveat
 
 A second `delivered` webhook for the same order (a manual SQL update, a
