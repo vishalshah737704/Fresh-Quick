@@ -77,8 +77,11 @@ ones plus your own; finished orders are under History in the sidebar,
 `/delivery/history`); a `ready` order with no partner
 assigned yet will appear under "Available orders" for any online partner
 to claim (no admin-assignment step — see MEMORY.md's Phase 5 entry for
-why). After claiming, advance the order picked_up → delivered from the
-same dashboard. While online, the dashboard pings a lat/lng every 15 seconds (prefilled
+why). After claiming, mark the order picked_up from the same dashboard;
+partners no longer mark it delivered — the customer's order page plays a ~15 s
+courier animation and then completes delivery itself (if the customer never
+opens the order, n8n workflow 05 completes it after 5 minutes). The partner's
+card shows "Customer is receiving the order…" meanwhile. While online, the dashboard pings a lat/lng every 15 seconds (prefilled
 from the browser's own geolocation when permission is granted, falling
 back to manual entry); the customer's order-confirmation page shows that
 location as a plain coordinate readout once the order reaches `assigned`
@@ -120,7 +123,10 @@ working docker run command (two env-var gotchas fixed there:
 `N8N_BLOCK_ENV_ACCESS_IN_NODE=false` is required). Everything else in
 this README (checkout, vendor, delivery, admin flows) still works today
 without n8n running — those synchronous paths stay as the tested demo
-behavior regardless of whether n8n is connected.
+behavior regardless of whether n8n is connected. (Exception: the 5-minute
+delivery-completion fallback in workflow 05 only exists while n8n is running
+with 05 active; see `docs/n8n-webhook-setup.md` for recovering a stuck
+`picked_up` order.)
 
 ## Usage guide
 
@@ -177,6 +183,18 @@ password reset in every portal's nav) — all merged to `main`.
 See [MEMORY.md](MEMORY.md) for the phase-by-phase build
 log, including every bug found and fixed along the way, and its "Known
 deferred items" section for what's still intentionally left for later.
+
+## Troubleshooting: Supabase will not start on Windows
+
+If `npx supabase start` fails with "bind: An attempt was made to access a
+socket in a way forbidden by its access permissions" (e.g. on 54322) while
+nothing is listening, Windows has reserved that port range (Hyper-V/WinNAT) —
+this is not a busy port. Check with
+`netsh interface ipv4 show excludedportrange protocol=tcp`; a port really held
+by another process shows up in `netstat -ano` instead. Fix, from an
+Administrator PowerShell: `net stop winnat`, then
+`netsh int ipv4 add excludedportrange protocol=tcp startport=54320 numberofports=10`,
+then `net start winnat` (persistently reserves 54320-54329 for Supabase).
 
 ## Local service URLs
 - App: http://localhost:3000

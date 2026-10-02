@@ -2702,3 +2702,94 @@ it need a new customer (sign up on web or the new mobile sign-up) or a
 any customer's Orders list (nobody owns them); admin/vendor/delivery still see
 them. The order rows still hold the real recipient name/email/phone/address that
 were typed at checkout — that was the requested "keep order information".
+
+## Delivery animation — customer completes delivery (2026-10-02, branch `worktree-delivery-animation`, not yet merged/pushed)
+
+**What shipped:** delivery partners no longer mark an order delivered. After
+the partner marks `picked_up`, the CUSTOMER's order page plays a ~15 s courier
+animation tied to `picked_up_at` (web `components/DeliveryAnimationDialog.tsx`;
+mobile `mobile/components/DeliveryAnimation.tsx`, a modal using
+`react-native-svg` 15.15.4) and then calls
+`POST /api/customer/orders/[id]/complete-delivery` with the customer's bearer
+token; the order becomes `delivered`. Shared animation module
+`lib/delivery-animation.ts` with a byte-identical copy in `mobile/lib/`
+(tested). `DELIVERY_STATUS_TRANSITIONS` no longer maps `picked_up`;
+`POST /api/delivery/orders/[id]/status` returns 400 for `picked_up`; partner
+dashboards (web + mobile) show a "Customer is receiving the order…" box for
+`picked_up` and no Mark delivered button.
+
+**Decisions:** (1) the 15 s rule is server-enforced, not trusted from the
+client — pure decision in `lib/complete-delivery.ts` (DB wrapper
+`lib/complete-delivery-server.ts`): too early (< 14 s after `picked_up_at`,
+i.e. 15 s minus a 1 s tolerance) -> 425 with `retryAfterMs`; already delivered
+-> idempotent 200; wrong status -> 409; no/invalid token -> 401; another
+customer's order -> 404. (2) n8n fallback: if the customer never opens the
+order, workflow 05 (on the `picked_up` webhook) waits 5 minutes, then calls the
+internal `POST /api/internal/orders/[id]/complete-delivery` (secret header,
+`neverError`), then the delivered branch (notification-details + Gmail) sends
+the delivered email — exactly one email per order. (3) Partner "Mark delivered"
+removed rather than kept as an override. (4) Web and mobile share byte-identical
+logic modules, guarded by tests, like the status labels.
+
+**Verification:** final gate `node --test` 92/92, root and mobile `tsc` clean,
+`eslint` 19 pre-existing problems unchanged, `npx next build --webpack` clean.
+Live (2026-10-02, local stack from the worktree, production build), all PASS:
+dialog appears ~2.6 s after pickup and counts down to `picked_up_at`; partner
+dashboard shows "Customer is receiving the order…" and no Mark delivered;
+too-early completion 425 (`retryAfterMs` ~5.8 s), after ~15 s 200, repeat 200
+(idempotent), no/garbage token 401, other customer 404; the fallback completed
+an untouched order exactly 5:00.09 after pickup with exactly one delivered email
+execution; the 5-minute wait for customer-completed orders fires as a harmless
+no-op ("already delivered", no second email); opening the order page 25 s after
+pickup goes straight to "Delivered!". Ordering proof (run A): `picked_up_at`
+02:49:42.339, `delivered_at` 02:49:57.409 (gap 15.07 s), delivered-branch n8n
+execution started 02:49:57.443 (34 ms after `delivered_at`). Test orders left in
+the dev DB: `8d62f82e` (A), `7e8df03a`, `ac58e026`, `7c12c407`, `6ade0ce8`,
+`653d5cb6` (B); fake customers `anim-demo@example.com`,
+`anim-demo2@example.com` (password demo1234) remain.
+
+**Open / deferred (none blocking):**
+1. The partner UI can show "Customer is receiving…" a moment before the server
+   stamps `picked_up_at`; a customer-side completion fired in that gap gets 409
+   "cannot be completed" (server correct, UI early).
+2. The 425 response has `retryAfterMs` in the body but no `Retry-After` header.
+3. In one run the web dialog closed itself ~3.5 s after "Delivered!" without a
+   click (not reproduced in 3 later runs; the code only closes on Done) —
+   unexplained, low severity.
+4. The order timeline behind the open "Delivered!" dialog can read "On the way"
+   for up to the 3 s poll.
+5. n8n's stored execution data shows the internal-secret header in plain text
+   (local dev value) — avoid sharing n8n DB copies/screenshots.
+6. The mobile on-device check of the animation modal has NOT been done (needs
+   Vishal's phone); mobile is only type-checked + reviewed.
+7. The partner-facing sections of BOTH user manuals (web v3.0, mobile v4.0)
+   still say partners "Mark delivered" — need a follow-up refresh.
+8. Older review minors are in the branch ledger
+   (`.superpowers/sdd/2026-10-02-delivery-animation/progress.md`, git-ignored):
+   mobile scene parity gaps (no clouds/lane lines), dialog focus trap, 409 copy.
+
+**Environment lessons:**
+- *Windows reserved TCP port ranges.* After the 2026-10-01 reboot
+  `npx supabase start` failed with "bind: An attempt was made to access a socket
+  in a way forbidden by its access permissions" on 54322 although nothing
+  listened — a Hyper-V/WinNAT reserved range, NOT a busy port
+  (`netsh interface ipv4 show excludedportrange protocol=tcp` showed
+  54289-54388). Fix applied 2026-10-02 from an Administrator PowerShell:
+  `net stop winnat`, `netsh int ipv4 add excludedportrange protocol=tcp
+  startport=54320 numberofports=10`, `net start winnat` — a persistent
+  administered reservation of 54320-54329 for Supabase. See README
+  troubleshooting.
+- *Loading n8n workflows without the UI or a container restart:* while the n8n
+  container is NOT running, import + publish in a one-off container on the same
+  volume (command in `docs/n8n-webhook-setup.md`, "Re-importing workflows"); the
+  published state takes effect when the real container starts.
+- `node scripts/start.mjs --skip-mobile` (production) creates the n8n container
+  from `.env.local` itself. In a git worktree `node_modules` is a junction, so
+  `npm run build` (Turbopack) fails with "Symlink out of filesystem root" — use
+  `npx next build --webpack` there (not a code defect).
+
+**What the merge needs:** re-import workflow 05 into the running n8n (repo JSON
+= 10 nodes; attach the Gmail credential in n8n only — the repo keeps
+`PLACEHOLDER_*` ids) and publish it; run `npm install` in `mobile/` in the main
+checkout (`react-native-svg` added, lockfile changed); refresh both manuals'
+partner sections; do the on-device mobile animation check.

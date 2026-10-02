@@ -272,8 +272,9 @@ partners online, and confirm the workflow's execution log shows the
 "No candidates available (no-op)" branch instead of a POST with an
 undefined `deliveryPartnerId`.
 
-**05 — Delivery Status Propagation.** As the delivery partner, advance an
-order through `/delivery/dashboard` (picked up → delivered). Expect: the
+**05 — Delivery Status Propagation.** As the delivery partner, mark an
+order picked up in `/delivery/dashboard`; the customer's order page then
+completes it (delivered) after its ~15 s animation — see the fallback section at the end. Expect: the
 webhook fires on each `orders` UPDATE, the filter passes for
 `picked_up`/`delivered`, and the placeholder notification executes. On
 `delivered` specifically, two branches run: the "Finalize Payment +
@@ -339,6 +340,12 @@ populated (every `net._http_response` was 200). Other executions: 01 =
   rather than duplicates, then run
   `n8n import:workflow --separate --input=<dir>` inside the container.
   It imports as inactive.
+- **No UI, no restart:** while the n8n container is NOT running, import and
+  publish in a one-off container against the same volume (host dir with the JSON
+  files, workflow `id` injected so it overwrites, Gmail credential id attached
+  only in this copy):
+  `docker run --rm -v n8n_data:/home/node/.n8n -v <host dir>:/in:ro --entrypoint sh n8nio/n8n -c "n8n import:workflow --separate --input=/in/; n8n publish:workflow --id=<id>"`.
+  The published state takes effect when the real container starts.
 - On Windows Git Bash set `MSYS_NO_PATHCONV=1`, or `/tmp/...` paths get
   rewritten to Windows paths.
 - `n8n publish:workflow` only updates the database; n8n must be restarted
@@ -384,7 +391,11 @@ Fallback: when workflow 05 sees `picked_up` it waits 5 minutes, then calls
 `POST /api/internal/orders/:id/complete-delivery` (X-Internal-Secret). That call
 is a no-op (200) if the customer already finished and 409 for cancelled orders.
 The workflow must be **active** for the Wait node to resume. Re-import the JSON
-into n8n and Publish it after pulling this change.
+into n8n and Publish it after pulling this change (repo JSON = 10 nodes; the
+Gmail credential is attached in n8n only). Live-verified 2026-10-02: an untouched
+order was completed exactly 5:00.09 after pickup with exactly one delivered email
+execution; for customer-completed orders the 5-minute wait fires as a harmless
+no-op ("already delivered", no second email).
 
 ### If an order is stuck in picked_up
 

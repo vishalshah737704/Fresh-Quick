@@ -110,6 +110,16 @@ sign up a fresh one). Both manuals refreshed (web v3.0, mobile v4.0 — Customer
 and Delivery figures from Vishal's real phone recordings with personal data
 blurred; only the Available-order card is a labeled wireframe, since n8n
 auto-assigns before it can be photographed).
+**Delivery animation (branch `worktree-delivery-animation`, 2026-10-02, not yet
+merged/pushed):** partners only mark `picked_up`; the customer's order page
+(web `DeliveryAnimationDialog`, mobile `DeliveryAnimation` modal) plays a ~15 s
+animation then calls `POST /api/customer/orders/[id]/complete-delivery`
+(server-enforced 15 s rule in `lib/complete-delivery.ts`; 425 if too early). If
+the customer never opens the order, n8n workflow 05 completes it after 5 minutes
+(one delivered email either way). Merge needs workflow 05 re-imported + Gmail
+credential in n8n and `npm install` in `mobile/`; both manuals' partner
+sections still say "Mark delivered", and the mobile modal is unchecked on a
+device. See MEMORY.md's "Delivery animation" entry.
 **Gotcha for demos/tests:** workflow 04 auto-assigns a `ready` order within
 ~10 s to the NEAREST ONLINE partner by stored lat/lng, so it never reaches the
 "Available" list while any online partner has coordinates — a leftover online
