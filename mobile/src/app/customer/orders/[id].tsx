@@ -2,6 +2,8 @@ import { useState, useCallback, useRef } from "react";
 import { View, Text, ScrollView, Pressable, Linking, StyleSheet } from "react-native";
 import { useFocusEffect, useLocalSearchParams } from "expo-router";
 import { supabase } from "../../../../lib/supabase";
+import { apiFetch, ApiError } from "../../../../lib/api";
+import { DeliveryAnimation } from "../../../../components/DeliveryAnimation";
 import {
   STATUS_MESSAGE,
   TIMELINE_STEP_INDEX,
@@ -76,6 +78,17 @@ export default function OrderDetailScreen() {
   const [order, setOrder] = useState<OrderDetail | null>(null);
   const [partnerLocation, setPartnerLocation] = useState<PartnerLocation | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [celebrating, setCelebrating] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
+
+  const postComplete = useCallback(async (): Promise<number> => {
+    try {
+      await apiFetch(`/api/customer/orders/${id}/complete-delivery`, { method: "POST" });
+      return 200;
+    } catch (thrown) {
+      return thrown instanceof ApiError ? thrown.status : 0;
+    }
+  }, [id]);
 
   const loadSeq = useRef(0);
 
@@ -145,12 +158,20 @@ export default function OrderDetailScreen() {
     );
   }
 
+  const showAnimation = !dismissed && (order.status === "picked_up" || celebrating);
   const courierAssigned =
     order.deliveryPartnerId != null && (order.status === "assigned" || order.status === "picked_up");
   const phoneIsDialable = order.recipientPhone.startsWith("+");
 
   return (
     <ScrollView style={styles.scroll} contentContainerStyle={styles.container}>
+      <DeliveryAnimation
+        visible={showAnimation}
+        pickedUpAt={order.pickedUpAt}
+        post={postComplete}
+        onDelivered={() => setCelebrating(true)}
+        onClose={() => setDismissed(true)}
+      />
       {error && <Text style={styles.errorText}>Couldn&apos;t refresh order: {error}</Text>}
       <View style={styles.headerRow}>
         <Text style={styles.heading}>Order #{order.id.slice(0, 8)}</Text>
