@@ -2833,11 +2833,17 @@ animation (the earlier "goes straight to Delivered!" behaviour is intentionally 
 The server's 14 s rule and the n8n 5-minute fallback are unchanged and still hold
 (the animation can never finish before pickup + 15 s). Checks: `node --test` 96/96,
 root and mobile `tsc` clean, eslint clean on the web dialog and page.
-**NOT yet verified live:** the web re-check was stopped when the test-email problem
-(previous section) surfaced; mobile is type-checked only. To verify: re-run one order
-(Gmail nodes are disabled, so no emails) and confirm the dialog starts at "Arriving in
-15s", runs ~15 s, completes (picked_up→delivered gap ≥ 15 s), and a late opener also gets a
-full 15 s; Vishal re-tests on the phone after `npx expo start -c` in `mobile/`.
+**Web live re-check PASSED (2026-10-02, Playwright, fake accounts, no emails):** run on a
+production build of the worktree (port 3100) because the app on :3000 was a `next dev`
+from the main checkout still carrying the OLD code (it reproduced the bug: "Arriving in
+12s" at first sight; a 25 s-late opener saw "Arriving in 0s" then Delivered). On the fixed
+build: A (customer on page) dialog appeared at "Arriving in 15s", counted 15→1 over 15.0 s,
+delivered_at − picked_up_at = 16.47 s; B (opened 25 s after pickup) got a full 15 s
+(gap 40.2 s); C (navigate away at 7.9 s and back) resumed at "Arriving in 7s" (gap
+17.6 s). 0 console errors. The dialog has no close button while playing, so "close and
+reopen" is only testable via navigation. A partner session 401'd once on the stale :3000
+dev server (cause unknown). **Mobile still type-checked only** — Vishal has not yet
+re-tested on the phone (`npx expo start -c` in `mobile/`).
 **Mobile setup in the main checkout (found 2026-10-02):** `mobile/package.json` had an
 UNCOMMITTED edit pinning `expo ^44.0.6` / `expo-router ^5.1.11` (and `node_modules` held that
 mismatched Expo 44 + React Native 0.86.3 tree) — wrong for Vishal's phone, whose Expo Go

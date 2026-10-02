@@ -119,7 +119,7 @@ auto-assigns before it can be photographed).
 `lib/complete-delivery.ts`; 425 if too early). If the customer never opens the
 order, n8n workflow 05 completes it after 5 minutes (one delivered email either
 way). Run on Vishal's phone 2026-10-02: only issue was the animation length
-(fixed in `65ee6d0`, live re-check + phone re-test pending). Main's `mobile/`
+(fixed in `65ee6d0`; web live re-check passed 2026-10-02, phone re-test pending). Main's `mobile/`
 was reset to Expo SDK 57 (his Expo Go is SDK 57). Both manuals' partner sections
 still say "Mark delivered". See MEMORY.md's "Delivery animation", "Test emails"
 and "Animation length follow-up" entries.
