@@ -385,3 +385,24 @@ Fallback: when workflow 05 sees `picked_up` it waits 5 minutes, then calls
 is a no-op (200) if the customer already finished and 409 for cancelled orders.
 The workflow must be **active** for the Wait node to resume. Re-import the JSON
 into n8n and Publish it after pulling this change.
+
+### If an order is stuck in picked_up
+
+The fallback only exists if n8n was up and workflow 05 was active when the
+pickup webhook fired (the DB trigger posts once, with a short timeout). If not,
+and the customer never reopens the order, it stays `picked_up` and the partner
+keeps seeing "Customer is receiving the order…".
+
+Recovery: (a) the customer opening the order page completes it immediately, or
+(b) call the internal endpoint:
+
+```bash
+curl -X POST -H "X-Internal-Secret: $N8N_INTERNAL_SECRET" "$APP_BASE_URL/api/internal/orders/<order-id>/complete-delivery"
+```
+
+To list stale ones (psql against the local Supabase):
+
+```sql
+select id, picked_up_at from public.orders
+where status = 'picked_up' and picked_up_at < now() - interval '10 minutes';
+```

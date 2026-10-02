@@ -22,6 +22,13 @@ test("customer, exactly at the 14 s tolerance boundary -> deliver", () => {
   );
 });
 
+test("customer, 1 ms short of the 14 s tolerance boundary -> 425 with retryAfterMs 1", () => {
+  const d = decideCompletion({ ...base, nowMs: Date.parse("2026-10-02T10:00:00.000Z") + 13_999 });
+  assert.equal(d.kind, "reject");
+  assert.equal(d.httpStatus, 425);
+  assert.equal(d.retryAfterMs, 1);
+});
+
 test("customer, too early -> 425 with retryAfterMs", () => {
   const d = decideCompletion({ ...base, nowMs: Date.parse("2026-10-02T10:00:05.000Z") });
   assert.equal(d.kind, "reject");

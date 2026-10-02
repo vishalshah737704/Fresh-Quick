@@ -117,6 +117,11 @@ test("workflow 05: picked_up branch waits 5 min then calls the internal complete
   assert.equal(wait.parameters.unit, "minutes");
   assert.equal(post.parameters.method, "POST");
   assert.ok(post.parameters.url.includes("/complete-delivery"));
+  assert.equal(post.parameters.options.response.response.neverError, true);
+  assert.ok(post.parameters.url.includes("$env.APP_BASE_URL"));
+  assert.ok(post.parameters.url.includes('$json["body"]["record"]["id"]'));
+  assert.ok(post.parameters.url.endsWith("/complete-delivery"));
+  assert.ok(JSON.stringify(post.parameters.headerParameters).includes("={{$env.N8N_INTERNAL_SECRET}}"));
   assert.ok(JSON.stringify(post.parameters.headerParameters).includes("X-Internal-Secret"));
   const fromNotify = wf.connections["Push Realtime Notification (placeholder)"].main[0].map((t) => t.node);
   assert.ok(fromNotify.includes("Filter: status = delivered"));
