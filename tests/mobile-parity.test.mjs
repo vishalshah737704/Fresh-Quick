@@ -49,6 +49,8 @@ test("mobile colours are 6-digit hex with white text", () => {
 test("shared modules are byte-identical copies of the web files", () => {
   assert.equal(read("../mobile/lib/order-detail.ts"), read("../lib/order-detail.ts"));
   assert.equal(read("../mobile/lib/image-url.ts"), read("../lib/image-url.ts"));
+  assert.equal(read("../mobile/lib/delivery-animation.ts"), read("../lib/delivery-animation.ts"));
+  assert.equal(read("../mobile/lib/brand-logo.ts"), read("../lib/brand-logo.ts"));
 });
 
 test("legacy mobile label exports are gone", () => {
