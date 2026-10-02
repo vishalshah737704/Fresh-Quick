@@ -17,8 +17,11 @@ export async function completeDelivery(
     .select("id, status, picked_up_at, customer_id")
     .eq("id", orderId)
     .maybeSingle();
+  if (error) {
+    return { httpStatus: 500, body: { error: "Failed to load order" } };
+  }
   // Someone else's order looks exactly like a missing one (no id probing).
-  if (error || !order || (mode === "customer" && order.customer_id !== customerId)) {
+  if (!order || (mode === "customer" && order.customer_id !== customerId)) {
     return { httpStatus: 404, body: { error: "Order not found" } };
   }
 
@@ -41,21 +44,27 @@ export async function completeDelivery(
     };
   }
 
-  const { data: updated } = await supabaseServer
+  const { data: updated, error: updateError } = await supabaseServer
     .from("orders")
     .update({ status: "delivered" })
     .eq("id", orderId)
     .eq("status", "picked_up")
     .select("id, status")
     .maybeSingle();
+  if (updateError) {
+    return { httpStatus: 500, body: { error: "Failed to update order" } };
+  }
   if (updated) return { httpStatus: 200, body: { order: updated } };
 
   // Lost a race (other tab / the n8n fallback / admin). Delivered is success.
-  const { data: again } = await supabaseServer
+  const { data: again, error: againError } = await supabaseServer
     .from("orders")
     .select("id, status")
     .eq("id", orderId)
     .maybeSingle();
+  if (againError) {
+    return { httpStatus: 500, body: { error: "Failed to load order" } };
+  }
   if (again?.status === "delivered") return { httpStatus: 200, body: { order: again } };
   return { httpStatus: 409, body: { error: "Order status changed, please refresh" } };
 }
