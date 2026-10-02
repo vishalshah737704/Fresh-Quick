@@ -372,7 +372,7 @@ real mail through the connected Gmail account (a fake recipient such as
 `demo@example.com` still sends, and the bounce notices go to that account's inbox).
 To test without emails, add `"disabled": true` to those two Gmail nodes in the JSON
 copies you import (use the one-off-container procedure above, or toggle the node off
-in the UI); the status update, auto-assign and the 5-minute fallback keep working, only
+in the UI); the status update, auto-assign and the 20-second fallback keep working, only
 the email is skipped. Keep the repo JSON files as they are (nodes enabled).
 
 ### Duplicate-email caveat
@@ -396,14 +396,14 @@ request.
 
 Normal path: the customer's app calls `POST /api/customer/orders/:id/complete-delivery`
 after its 15 s animation, which sets `delivered` and triggers the delivered email.
-Fallback: when workflow 05 sees `picked_up` it waits 5 minutes, then calls
+Fallback: when workflow 05 sees `picked_up` it waits 20 seconds, then calls
 `POST /api/internal/orders/:id/complete-delivery` (X-Internal-Secret). That call
 is a no-op (200) if the customer already finished and 409 for cancelled orders.
 The workflow must be **active** for the Wait node to resume. Re-import the JSON
 into n8n and Publish it after pulling this change (repo JSON = 10 nodes; the
 Gmail credential is attached in n8n only). Live-verified 2026-10-02: an untouched
 order was completed exactly 5:00.09 after pickup with exactly one delivered email
-execution; for customer-completed orders the 5-minute wait fires as a harmless
+execution; for customer-completed orders the 20-second wait fires as a harmless
 no-op ("already delivered", no second email).
 
 ### If an order is stuck in picked_up

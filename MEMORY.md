@@ -2876,3 +2876,46 @@ unfamiliar `node_modules`.
   to Vishal and is reported done by him.
 - `scripts/start-all-roles.ps1` now runs `npm run app:start:all-roles`; `scripts/stop-all-roles.ps1`
   runs `npm run app:stop -- --all-roles` (stops everything). The old `-SkipN8n`/`-All` switches are gone.
+
+## Reduce Motion fix + manuals v3.2/v4.2 + "Reset Data" rule (2026-10-02)
+- Bug: on Vishal's iPhone the delivery animation card appeared but the scene was static while
+  the countdown/progress bar ran. Evidence from his recording: buildings, trees and pedals
+  identical at 11s/8s/6s, pedals horizontal (= `riderPose(0)`). Root cause: the dialogs
+  deliberately froze at pose 0 when the OS asks for reduced motion (iOS Reduce Motion was ON).
+  Not an SVG/library bug (react-native-svg 15.15.4 matches Expo Go's bundled version).
+- Fix (Vishal chose "always play", web and mobile): removed the reduced-motion check from
+  `components/DeliveryAnimationDialog.tsx` and `mobile/components/DeliveryAnimation.tsx`
+  (also the unused `AccessibilityInfo` import). root + mobile `tsc` clean, eslint clean,
+  96/96 tests. Vishal confirmed it plays perfectly on his iPhone (recording 11-43-28 shows
+  the moving ride, customer app, order `#cb4b5cc2`).
+- Manuals: web v3.2 (reduced-motion note in 3.5.1), mobile v4.2 (real animation + Delivered
+  figures in 3.6.1, privacy mosaic over name/email/phone/address, "always plays" note). A first
+  soft Gaussian blur was too weak at full resolution (email nearly legible) and was replaced by
+  a coarse mosaic: use mosaic masking, not blur, for personal data in manual figures.
+- RESOLVED: the mobile manual's partner screenshot. Vishal's first named file (11-43-28) was the
+  customer app; he then supplied the real partner recordings (`11-56-34`, `11-59-42`). Mobile manual
+  v4.3: new "Partner assigned / Mark picked up" figure (p24) and the old dimmed "Mark delivered"
+  image replaced by the "On the way / Customer is receiving the order..." card (p26); both with the
+  drop-off name/phone/address mosaic-masked. TOC 3, 6, 9, 22, 28, 30; 30 pages. An older real partner
+  screenshot (p25, "Partner assigned", from the 10-01 run, name blurred, demo address "123 Test House")
+  overlaps with the new one and was left in place. The History recording (11-59-42) was not used.
+- Metro gotcha: `scripts/start.mjs` starts Metro as plain `npx expo start` (no `-c`) and
+  leaves it on :8081; a later `npx expo start -c` then asks to use :8082 and quits if you say
+  no. Stop the old process first (it was PID 30392), then run `npx expo start -c` in `mobile/`.
+- New CLAUDE.md standing phrase "Reset Data": backup, delete orders/payments/customers (SQL),
+  clear n8n executions through the container's bundled `sqlite3` (n8n has no CLI command for
+  it; verified read-only that the tables are `execution_entity`, `execution_data`,
+  `execution_metadata`, `execution_annotations`). The rule itself was not executed.
+
+## Auto-complete + auto-close follow-up (2026-10-02)
+- Vishal's ask: delivery must not depend on the customer having the order screen open, and the
+  animation's "Done" button must go. Changes: n8n workflow 05's fallback Wait is now 20 seconds
+  (was 5 minutes; repo JSON + `tests/n8n-workflows.test.mjs` updated; the live n8n needs the Wait
+  node edited to 20 s and Published, or a re-import); web `DeliveryAnimationDialog` and mobile
+  `DeliveryAnimation` drop the Done button and close themselves 3 s after "Delivered!" (the
+  "Close" button remains only for the failed-confirmation phase). 20 s sits 5 s after the 15 s
+  animation, so the customer path still wins when the order page is open.
+- `scripts/start.mjs` now starts Metro with `expo start -c` (clears the stale cache).
+- Manuals: web v3.3, mobile v4.4 (Done button and 5-minute text replaced, older overlapping
+  partner screenshot removed). History recording deliberately not added.
+- Live end-to-end check of the 20 s fallback and the auto-close not yet run (stack was down).

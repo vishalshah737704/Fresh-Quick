@@ -1,5 +1,5 @@
 import { memo, useEffect, useRef, useState } from "react";
-import { AccessibilityInfo, Modal, Pressable, StyleSheet, Text, View, useWindowDimensions } from "react-native";
+import { Modal, Pressable, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import Svg, { Circle, G, Line, Path, Polygon, Rect, Text as SvgText } from "react-native-svg";
 import { BRAND } from "../theme";
 import { LOGO_COLORS, LOGO_PATHS } from "../lib/brand-logo";
@@ -25,6 +25,9 @@ type Phase = "playing" | "finishing" | "delivered" | "failed";
 
 // Start time per order for this app session, so reopening mid-animation resumes.
 const animationStarts = new Map<string, number>();
+
+// How long the "Delivered!" card stays up before closing itself.
+const AUTO_CLOSE_MS = 3000;
 
 const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 const FAR = skyline(5, 60, 130, FAR_COLORS.length, SCENE_WIDTH, false);
@@ -108,18 +111,21 @@ export function DeliveryAnimation({
   const { width } = useWindowDimensions();
   const [ms, setMs] = useState(0);
   const [phase, setPhase] = useState<Phase>("playing");
-  const [reduced, setReduced] = useState(false);
   const postRef = useRef(post);
   const onDeliveredRef = useRef(onDelivered);
+  const onCloseRef = useRef(onClose);
 
   useEffect(() => {
     postRef.current = post;
     onDeliveredRef.current = onDelivered;
+    onCloseRef.current = onClose;
   });
 
   useEffect(() => {
-    AccessibilityInfo.isReduceMotionEnabled().then(setReduced).catch(() => {});
-  }, []);
+    if (phase !== "delivered") return;
+    const timer = setTimeout(() => onCloseRef.current(), AUTO_CLOSE_MS);
+    return () => clearTimeout(timer);
+  }, [phase]);
 
   useEffect(() => {
     if (!visible) return;
@@ -152,7 +158,8 @@ export function DeliveryAnimation({
     };
   }, [visible, orderId]);
 
-  const pose = riderPose(reduced ? 0 : ms);
+  // Always animated, even with iOS Reduce Motion on: the ride is the delivery confirmation (Vishal's call, 2026-10-02).
+  const pose = riderPose(ms);
   const secondsLeft = Math.max(0, Math.ceil((DELIVERY_ANIMATION_MS - ms) / 1000));
   const cardWidth = Math.min(width - 32, 520);
   const R = RIDER_TRANSFORM;
@@ -245,9 +252,9 @@ export function DeliveryAnimation({
           </Svg>
 
           <View style={styles.foot}>
-            {phase === "delivered" || phase === "failed" ? (
+            {phase === "delivered" ? null : phase === "failed" ? (
               <Pressable style={styles.button} onPress={onClose}>
-                <Text style={styles.buttonText}>{phase === "delivered" ? "Done" : "Close"}</Text>
+                <Text style={styles.buttonText}>Close</Text>
               </Pressable>
             ) : (
               <>

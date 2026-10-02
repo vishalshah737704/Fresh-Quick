@@ -71,15 +71,15 @@
     },
     {
       "id": "wait-customer-fallback",
-      "name": "Wait 5 min (customer fallback)",
+      "name": "Wait 20 s (customer fallback)",
       "type": "n8n-nodes-base.wait",
       "typeVersion": 1.1,
       "position": [900, 60],
       "webhookId": "f47ac10b-58cc-4372-a567-0e02b2c3d006",
       "parameters": {
         "resume": "timeInterval",
-        "amount": 5,
-        "unit": "minutes"
+        "amount": 20,
+        "unit": "seconds"
       },
       "notes": "Workflow must stay active for the wait to resume. The webhook node already responds immediately (responseMode onReceived)."
     },
@@ -170,11 +170,11 @@
     },
     "Filter: status = picked_up": {
       "main": [
-        [{ "node": "Wait 5 min (customer fallback)", "type": "main", "index": 0 }],
+        [{ "node": "Wait 20 s (customer fallback)", "type": "main", "index": 0 }],
         []
       ]
     },
-    "Wait 5 min (customer fallback)": {
+    "Wait 20 s (customer fallback)": {
       "main": [[{ "node": "POST /api/internal/orders/:id/complete-delivery", "type": "main", "index": 0 }]]
     },
     "Filter: status = delivered": {

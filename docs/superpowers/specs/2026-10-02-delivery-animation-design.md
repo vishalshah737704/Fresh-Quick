@@ -99,7 +99,7 @@ assigned --partner--> picked_up --customer app, 15 s--> delivered --> n8n 05 del
   and retry; network error -> retry with backoff; success -> close dialog,
   refresh order (poll already does this) and show Delivered state.
 - Not dismissible (no close button, no Escape, no backdrop click).
-- `prefers-reduced-motion`: static scene plus progress bar and countdown.
+- `prefers-reduced-motion` / iOS Reduce Motion: **ignored — the scene always animates** (changed 2026-10-02: the original "static scene" rule froze the ride on a phone with Reduce Motion on and looked broken; Vishal chose always-play).
 - Header and ARIA: `role="dialog"`, `aria-modal`, live region announcing
   "Your order is on the way" then "Delivered".
 

@@ -80,7 +80,7 @@ to claim (no admin-assignment step — see MEMORY.md's Phase 5 entry for
 why). After claiming, mark the order picked_up from the same dashboard;
 partners no longer mark it delivered — the customer's order page plays a ~15 s
 courier animation and then completes delivery itself (if the customer never
-opens the order, n8n workflow 05 completes it after 5 minutes). The partner's
+opens the order, n8n workflow 05 completes it after 20 seconds). The partner's
 card shows "Customer is receiving the order…" meanwhile. While online, the dashboard pings a lat/lng every 15 seconds (prefilled
 from the browser's own geolocation when permission is granted, falling
 back to manual entry); the customer's order-confirmation page shows that

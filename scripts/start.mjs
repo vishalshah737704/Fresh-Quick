@@ -107,7 +107,7 @@ if (!skipMobile) {
     console.log("Starting Expo (mobile app) in the background...");
     startBackgroundService(
       "Mobile (Expo)",
-      "npx expo start",
+      "npx expo start -c",
       join(logDir, "mobile-expo.log"),
       { cwd: join(root, "mobile") }
     );

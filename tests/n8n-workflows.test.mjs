@@ -104,17 +104,17 @@ test("status filters in workflows 03 and 05 list the intended statuses", () => {
   for (const s of ["accepted", "preparing", "ready"]) assert.ok(w3.includes(s), s);
 });
 
-test("workflow 05: picked_up branch waits 5 min then calls the internal complete-delivery fallback", () => {
+test("workflow 05: picked_up branch waits 20 s then calls the internal complete-delivery fallback", () => {
   const wf = load("05-delivery-status-propagation.json");
   const byName = Object.fromEntries(wf.nodes.map((n) => [n.name, n]));
   const isPicked = byName["Filter: status = picked_up"];
-  const wait = byName["Wait 5 min (customer fallback)"];
+  const wait = byName["Wait 20 s (customer fallback)"];
   const post = byName["POST /api/internal/orders/:id/complete-delivery"];
   assert.ok(isPicked && wait && post);
   assert.equal(isPicked.parameters.conditions.string[0].value2, "picked_up");
   assert.equal(wait.type, "n8n-nodes-base.wait");
-  assert.equal(wait.parameters.amount, 5);
-  assert.equal(wait.parameters.unit, "minutes");
+  assert.equal(wait.parameters.amount, 20);
+  assert.equal(wait.parameters.unit, "seconds");
   assert.equal(post.parameters.method, "POST");
   assert.ok(post.parameters.url.includes("/complete-delivery"));
   assert.equal(post.parameters.options.response.response.neverError, true);

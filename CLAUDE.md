@@ -117,14 +117,19 @@ branch `worktree-delivery-animation` were removed):** partners only mark
 (not anchored to `picked_up_at` — that cut it short on a phone), then calls
 `POST /api/customer/orders/[id]/complete-delivery` (server-enforced 14 s rule in
 `lib/complete-delivery.ts`; 425 if too early). If the customer never opens the
-order, n8n workflow 05 completes it after 5 minutes (one delivered email either
+order, n8n workflow 05 completes it after 20 seconds (one delivered email either
 way). Run on Vishal's phone 2026-10-02: only issue was the animation length
-(fixed in `65ee6d0`; web live re-check passed and the phone re-test was approved
-by Vishal 2026-10-02). Main's `mobile/` was reset to Expo SDK 57 (his Expo Go is
-SDK 57). Both manuals were refreshed 2026-10-02 (web v3.1, mobile v4.1); the
-mobile manual's partner screenshot (p21-22) still shows the old "Mark delivered"
-button and needs a new phone capture. See MEMORY.md's "Delivery animation",
-"Test emails", "Animation length follow-up" and "Session close-out 2026-10-02" entries.
+(fixed in `65ee6d0`; web live re-check passed 2026-10-02). A second phone run
+showed the scene frozen while the countdown ran: root cause was the deliberate
+Reduce Motion freeze (`riderPose(reduced ? 0 : ms)`) with iOS Reduce Motion on;
+the check was removed in web + mobile (Vishal's call: always play), and he
+confirmed on his iPhone 2026-10-02 that it now plays perfectly. Main's `mobile/`
+was reset to Expo SDK 57 (his Expo Go is SDK 57). Manuals: web v3.2, mobile v4.3
+(real iPhone figures for the customer animation and for the partner "Mark picked
+up" / "Customer is receiving the order…" cards, drop-off details mosaic-masked; the
+old "Mark delivered" screenshot was removed).
+See MEMORY.md's "Delivery animation", "Test emails", "Animation length follow-up",
+"Session close-out 2026-10-02" and "Reduce Motion fix" entries.
 **Gotcha for demos/tests:** workflow 04 auto-assigns a `ready` order within
 ~10 s to the NEAREST ONLINE partner by stored lat/lng, so it never reaches the
 "Available" list while any online partner has coordinates — a leftover online
@@ -644,6 +649,43 @@ When Vishal says **"start-all-roles.ps1"** run `npm run app:start:all-roles`;
 when he says **"stop-all-roles.ps1"** run `npm run app:stop -- --all-roles`
 (stops everything, not just the web servers). `scripts/start-all-roles.ps1` and
 `scripts/stop-all-roles.ps1` are thin wrappers that run exactly those commands.
+
+## Standing phrase: "Reset Data" — NON-NEGOTIABLE
+
+When Vishal says **"Reset Data"**, wipe all customer, order, payment and n8n
+execution data from the LOCAL stack, without asking for per-step confirmation
+(this phrase is the standing authorization; local dev only — never hosted).
+Vendors, delivery partners, the admin, restaurants/menus and n8n workflows and
+credentials are KEPT. Supabase and n8n containers must be running; if not, say
+so and stop. Steps, in order:
+
+1. **Backup first** (cheap restore point, outside git):
+   `docker exec supabase_db_phase1-scaffold-db pg_dump -U postgres -Fc -n public -n auth postgres > "<scratchpad>/pre-reset-<epoch>.dump"`
+2. **Customers, orders, payments** — one transaction (`psql -U postgres -v ON_ERROR_STOP=1`):
+   ```sql
+   begin;
+   delete from public.orders;  -- cascades order_items, order_item_options, payments, notifications, reviews
+   delete from public.addresses
+     where user_id in (select id from public.users where role = 'customer') or user_id is null;
+   delete from auth.users
+     where id in (select id from public.users where role = 'customer');  -- cascades public.users, carts, sessions
+   commit;
+   ```
+   Do not delete vendor/delivery/admin users, restaurants, or vendor addresses.
+3. **n8n executions** (the n8n UI works too; the CLI has no command for this).
+   Uses n8n's bundled `sqlite3` while n8n keeps running (`MSYS_NO_PATHCONV=1` in Git Bash):
+   ```
+   docker exec n8n sh -c 'cd /usr/local/lib/node_modules/n8n && node -e "
+   const s=require(\"sqlite3\");const db=new s.Database(\"/home/node/.n8n/database.sqlite\");
+   db.serialize(()=>{db.run(\"delete from execution_data\");db.run(\"delete from execution_metadata\");db.run(\"delete from execution_annotations\");db.run(\"delete from execution_entity\");
+   db.get(\"select count(*) c from execution_entity\",(e,r)=>{console.log(e||JSON.stringify(r));db.close();});});"'
+   ```
+   Pending 20-second "Wait" executions are deleted too (their orders are gone anyway).
+4. **Verify and report** counts: orders, order_items, payments, notifications, customers
+   (public.users role customer and auth.users) all 0; vendors/delivery/admin counts unchanged;
+   n8n executions 0. Tell Vishal that browser-side data (localStorage cart/location in each
+   browser or app) cannot be cleared from here, and that a fresh customer must sign up.
+   There is no wallet table (the Wallet page is a placeholder); payments live in `payments`.
 
 ## Standing phrase: "Commit Work" — NON-NEGOTIABLE
 

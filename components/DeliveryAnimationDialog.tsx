@@ -26,6 +26,9 @@ type Phase = "playing" | "finishing" | "delivered" | "failed";
 // Start time per order for this app session, so reopening mid-animation resumes.
 const animationStarts = new Map<string, number>();
 
+// How long the "Delivered!" card stays up before closing itself.
+const AUTO_CLOSE_MS = 3000;
+
 const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
 function Limb({ p, q, w1, w2, fill, opacity = 1 }: { p: Pt; q: Pt; w1: number; w2: number; fill: string; opacity?: number }) {
@@ -153,12 +156,9 @@ export function DeliveryAnimationDialog({
 }) {
   const [ms, setMs] = useState(() => animationElapsedMs(getAnimationStart(animationStarts, orderId, Date.now()), Date.now()));
   const [phase, setPhase] = useState<Phase>("playing");
-  // Dialog only mounts client-side after the order loads, so reading window here is hydration-safe.
-  const [reduced] = useState(
-    () => typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches,
-  );
   const postRef = useRef(post);
   const onDeliveredRef = useRef(onDelivered);
+  const onCloseRef = useRef(onClose);
   const closeRef = useRef<HTMLButtonElement>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
 
@@ -169,6 +169,7 @@ export function DeliveryAnimationDialog({
   useEffect(() => {
     postRef.current = post;
     onDeliveredRef.current = onDelivered;
+    onCloseRef.current = onClose;
   });
 
   useEffect(() => {
@@ -203,10 +204,14 @@ export function DeliveryAnimationDialog({
   }, [orderId]);
 
   useEffect(() => {
-    if (phase === "delivered" || phase === "failed") closeRef.current?.focus();
+    if (phase === "failed") closeRef.current?.focus();
+    if (phase !== "delivered") return;
+    const timer = setTimeout(() => onCloseRef.current(), AUTO_CLOSE_MS);
+    return () => clearTimeout(timer);
   }, [phase]);
 
-  const pose = riderPose(reduced ? 0 : ms);
+  // Always animated, even with prefers-reduced-motion: the ride is the delivery confirmation (Vishal's call, 2026-10-02).
+  const pose = riderPose(ms);
   const secondsLeft = Math.max(0, Math.ceil((DELIVERY_ANIMATION_MS - ms) / 1000));
   const nearFoot = pose.legNear.foot;
   const farFoot = pose.legFar.foot;
@@ -353,14 +358,14 @@ export function DeliveryAnimationDialog({
         </svg>
 
         <div className="px-5 pb-5 pt-3">
-          {phase === "delivered" || phase === "failed" ? (
+          {phase === "delivered" ? null : phase === "failed" ? (
             <button
               ref={closeRef}
               type="button"
               onClick={onClose}
               className="rounded-full bg-brand-ink px-5 py-2 text-sm font-semibold text-white"
             >
-              {phase === "delivered" ? "Done" : "Close"}
+              Close
             </button>
           ) : (
             <>
