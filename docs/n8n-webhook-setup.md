@@ -375,3 +375,13 @@ unreachable host, per section 1) means it will fire on every matching
 Supabase event and silently fail — check n8n's execution log for red
 (failed) runs after activating, not just that the webhook received a
 request.
+
+## Workflow 05 customer-completion fallback (added 2026-10-02)
+
+Normal path: the customer's app calls `POST /api/customer/orders/:id/complete-delivery`
+after its 15 s animation, which sets `delivered` and triggers the delivered email.
+Fallback: when workflow 05 sees `picked_up` it waits 5 minutes, then calls
+`POST /api/internal/orders/:id/complete-delivery` (X-Internal-Secret). That call
+is a no-op (200) if the customer already finished and 409 for cancelled orders.
+The workflow must be **active** for the Wait node to resume. Re-import the JSON
+into n8n and Publish it after pulling this change.
