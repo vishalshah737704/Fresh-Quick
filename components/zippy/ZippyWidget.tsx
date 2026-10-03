@@ -14,15 +14,18 @@ import {
   listConversations,
   loadConversation,
   streamChat,
+  ZippyError,
   type ChatMessage,
   type ConversationSummary,
 } from "@/lib/zippy/client-api";
+
+type LocalMessage = ChatMessage & { isError?: boolean };
 
 export function ZippyWidget() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [messages, setMessages] = useState<LocalMessage[]>([]);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
@@ -31,17 +34,25 @@ export function ZippyWidget() {
   const listRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
   const userIdRef = useRef<string | null | undefined>(undefined);
+  // Bumped whenever the chat is reset or replaced; slower history/resume results for an older token are dropped.
+  const tokenRef = useRef(0);
 
-  // Drops any in-flight stream so late deltas can never land in a fresh chat.
-  const reset = useCallback(() => {
+  const cancelStream = useCallback(() => {
     abortRef.current?.abort();
     abortRef.current = null;
     setBusy(false);
+  }, []);
+
+  // Drops any in-flight stream so late deltas can never land in a fresh chat.
+  const reset = useCallback(() => {
+    tokenRef.current += 1;
+    cancelStream();
     setMessages([]);
+    setConversations([]);
     setConversationId(null);
     setShowHistory(false);
     setInput("");
-  }, []);
+  }, [cancelStream]);
 
   // A different account in the same tab must never see the previous chat.
   useEffect(() => {
@@ -78,7 +89,9 @@ export function ZippyWidget() {
     async (text: string) => {
       const question = text.trim();
       if (!question || busy) return;
-      const history = messages;
+      const history: ChatMessage[] = messages
+        .filter((m) => !m.isError && m.content.trim() !== "")
+        .map(({ role, content }) => ({ role, content }));
       const controller = new AbortController();
       abortRef.current = controller;
       setMessages([...history, { role: "user", content: question }, { role: "assistant", content: "" }]);
@@ -103,10 +116,10 @@ export function ZippyWidget() {
         if (!controller.signal.aborted && result.conversationId) setConversationId(result.conversationId);
       } catch (error) {
         if (controller.signal.aborted) return;
-        const message = error instanceof Error ? error.message : ZIPPY_ERROR_MESSAGE;
+        const message = error instanceof ZippyError ? error.message : ZIPPY_ERROR_MESSAGE;
         setMessages((current) => {
           const copy = [...current];
-          copy[copy.length - 1] = { role: "assistant", content: message };
+          copy[copy.length - 1] = { role: "assistant", content: message, isError: true };
           return copy;
         });
       } finally {
@@ -120,22 +133,29 @@ export function ZippyWidget() {
   );
 
   const openHistory = async () => {
+    cancelStream();
+    const token = ++tokenRef.current;
     setShowHistory(true);
+    setConversations([]);
     try {
-      setConversations(await listConversations());
+      const list = await listConversations();
+      if (token === tokenRef.current) setConversations(list);
     } catch {
-      setConversations([]);
+      if (token === tokenRef.current) setConversations([]);
     }
   };
 
   const resume = async (id: string) => {
+    cancelStream();
+    const token = ++tokenRef.current;
     try {
       const loaded = await loadConversation(id);
+      if (token !== tokenRef.current) return;
       setMessages(loaded);
       setConversationId(id);
       setShowHistory(false);
     } catch {
-      setShowHistory(false);
+      if (token === tokenRef.current) setShowHistory(false);
     }
   };
 

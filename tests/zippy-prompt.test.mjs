@@ -148,3 +148,16 @@ test("normalizeHistory skips null and non-object items without throwing", () => 
     { role: "assistant", content: "a1" },
   ]);
 });
+
+test("normalizeHistory drops empty and whitespace-only turns", () => {
+  const out = normalizeHistory([
+    { role: "user", content: "q1" },
+    { role: "assistant", content: "" },
+    { role: "user", content: "   " },
+    { role: "assistant", content: "a1" },
+  ]);
+  assert.deepEqual(out, [
+    { role: "user", content: "q1" },
+    { role: "assistant", content: "a1" },
+  ]);
+});

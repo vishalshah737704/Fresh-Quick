@@ -75,7 +75,8 @@ export function normalizeHistory(
   const valid = history.filter(
     (m): m is { role: "user" | "assistant"; content: string } =>
       typeof m === "object" && m !== null &&
-      (m.role === "user" || m.role === "assistant") && typeof m.content === "string"
+      (m.role === "user" || m.role === "assistant") && typeof m.content === "string" &&
+      m.content.trim() !== ""
   );
   const tail = valid.slice(-max);
   const firstUser = tail.findIndex((m) => m.role === "user");
