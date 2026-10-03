@@ -1,0 +1,57 @@
+{
+  "name": "06 - Zippy Knowledge Ingestion",
+  "nodes": [
+    {
+      "id": "zippy-webhook",
+      "name": "Run ingestion now (webhook)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 200],
+      "webhookId": "f47ac10b-58cc-4372-a567-0e02b2c3d006",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "foodhub/zippy-ingest",
+        "responseMode": "lastNode"
+      },
+      "notes": "POST here (no body needed) after editing knowledge/*.md to refresh Zippy right away."
+    },
+    {
+      "id": "zippy-schedule",
+      "name": "Nightly at 03:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [240, 400],
+      "parameters": {
+        "rule": { "interval": [{ "field": "cronExpression", "expression": "0 3 * * *" }] }
+      }
+    },
+    {
+      "id": "zippy-ingest-call",
+      "name": "POST /api/internal/zippy/ingest",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [520, 300],
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.APP_BASE_URL}}/api/internal/zippy/ingest",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "X-Internal-Secret", "value": "={{$env.N8N_INTERNAL_SECRET}}" }
+          ]
+        }
+      },
+      "notes": "The app reads knowledge/*.md, embeds only changed chunks (OpenAI key stays in the app) and upserts into pgvector. Returns {total, embedded, unchanged, deleted}."
+    }
+  ],
+  "connections": {
+    "Run ingestion now (webhook)": {
+      "main": [[{ "node": "POST /api/internal/zippy/ingest", "type": "main", "index": 0 }]]
+    },
+    "Nightly at 03:00": {
+      "main": [[{ "node": "POST /api/internal/zippy/ingest", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" }
+}

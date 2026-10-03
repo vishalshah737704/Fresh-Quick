@@ -426,3 +426,33 @@ To list stale ones (psql against the local Supabase):
 select id, picked_up_at from public.orders
 where status = 'picked_up' and picked_up_at < now() - interval '10 minutes';
 ```
+
+## Workflow 06: Zippy knowledge ingestion
+
+`n8n/workflows/06-zippy-knowledge-ingestion.json` keeps the Ask Zippy
+knowledge base (pgvector table `zippy_chunks`) in sync with the markdown files
+in the repo's `knowledge/` folder.
+
+- **Triggers:** a Webhook (`POST /webhook/foodhub/zippy-ingest`) and a Schedule
+  (nightly at 03:00). Both feed one HTTP Request node.
+- **What it calls:** `POST {APP_BASE_URL}/api/internal/zippy/ingest` with the
+  `X-Internal-Secret` header (`$env.N8N_INTERNAL_SECRET`). No n8n credential is
+  needed.
+- **Where the work happens:** the app reads `knowledge/*.md`, splits it into
+  chunks, embeds only chunks whose hash changed and upserts them. The OpenAI key
+  stays in the app's `.env.local`; n8n never sees it. The response is
+  `{total, embedded, unchanged, deleted}`.
+- **Empty-folder guard:** if no `knowledge/*.md` files are found the route fails
+  with HTTP 500 "No knowledge/*.md files found" before touching the database, so
+  a missing folder can never wipe the existing chunks.
+- **Run on demand** (after editing a knowledge file), with the workflow
+  published:
+
+  ```bash
+  curl -s -X POST http://localhost:5678/webhook/foodhub/zippy-ingest
+  ```
+
+  Re-running with no file changes returns `embedded: 0`.
+- `APP_BASE_URL` must be `http://host.docker.internal:3000` on the n8n
+  container (already set), as for workflows 01-05. Import and Publish it like
+  the others (section 3).
