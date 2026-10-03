@@ -41,6 +41,10 @@ export function ZippyWidget() {
     abortRef.current?.abort();
     abortRef.current = null;
     setBusy(false);
+    setMessages((current) => {
+      const last = current[current.length - 1];
+      return last && last.role === "assistant" && last.content === "" && !last.isError ? current.slice(0, -1) : current;
+    });
   }, []);
 
   // Drops any in-flight stream so late deltas can never land in a fresh chat.
@@ -92,8 +96,11 @@ export function ZippyWidget() {
       const history: ChatMessage[] = messages
         .filter((m) => !m.isError && m.content.trim() !== "")
         .map(({ role, content }) => ({ role, content }));
+      abortRef.current?.abort();
       const controller = new AbortController();
       abortRef.current = controller;
+      tokenRef.current += 1;
+      setShowHistory(false);
       setMessages([...history, { role: "user", content: question }, { role: "assistant", content: "" }]);
       setInput("");
       setBusy(true);
