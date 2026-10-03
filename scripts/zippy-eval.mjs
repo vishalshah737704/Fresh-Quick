@@ -28,20 +28,10 @@ for (const c of cases) {
     console.error(`HTTP ${res.status} for: ${c.question}`);
     process.exit(1);
   }
-  const { matches } = await res.json();
-  const usable = matches.filter((m) => m.similarity >= MIN).slice(0, 3);
-  // Production selectContext keeps up to 5 matches, so isolation checks look at 5; positives stay strict at 3.
-  const usable5 = matches.filter((m) => m.similarity >= MIN).slice(0, 5);
-  let ok;
-  if (c.expectTitleExcludes) {
-    ok = !usable5.some((m) => m.title.includes(c.expectTitleExcludes));
-  } else if (c.expectTitleIncludes === null) {
-    ok = usable.length === 0;
-  } else {
-    ok = usable.some((m) => m.title.includes(c.expectTitleIncludes));
-  }
+  const { matches, catalog = [] } = await res.json();
+  const ok = caseOk(c, matches, catalog, MIN);
   if (ok) hits++;
-  else misses.push({ question: c.question, expected: c.expectTitleIncludes, excluded: c.expectTitleExcludes, got: matches.slice(0, 3).map((m) => `${m.title} (${m.similarity.toFixed(2)})`) });
+  else misses.push({ question: c.question, expected: c.expectTitleIncludes ?? c.expectCatalogIncludes, excluded: c.expectTitleExcludes, got: c.expectCatalogIncludes ? catalog.slice(0, 5).map((h) => `${String(h.content).slice(0, 60)} (${h.similarity.toFixed(2)})`) : matches.slice(0, 3).map((m) => `${m.title} (${m.similarity.toFixed(2)})`) });
 }
 console.log(`hit rate: ${hits}/${cases.length}`);
 for (const m of misses) console.log(JSON.stringify(m));
