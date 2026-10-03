@@ -10,8 +10,8 @@ After you sign in as a Customer, the app has three tabs at the bottom: Home, Ord
 
 ## How do I find a store in the mobile app?
 
-1. On the Home tab, use the search pill to search by store name, cuisine or even the name of a dish.
-2. Or tap a category chip; tap the same chip again to clear it.
+1. On the Home tab, use the search pill ("Search restaurants or dishes") to search by store name, cuisine or even the name of a dish.
+2. Or tap a cuisine chip in the row of chips; tap the same chip again to clear it.
 3. Home also shows promotions and an "Order again" row with stores you ordered from before, if you have any orders.
 4. Tap a store card to open the store.
 
@@ -21,7 +21,7 @@ Pull down on the list to refresh it.
 
 1. Open a store.
 2. Tap the round + on an item to add it straight to your cart.
-3. If an item has options such as size or add-ons, tapping it opens a sheet where you choose them first. Required choices must be made before you can add it.
+3. If an item has options such as size or add-ons, tapping it opens a pop-up sheet where you choose them first. Required choices must be made before you can add it.
 4. You can add a special-instructions note to an item in that same step.
 
 Once your cart has items, a floating "View cart" pill appears above the tab bar. Tap it to open the cart.
@@ -32,7 +32,7 @@ No. A cart holds items from one store only. Adding an item from another store as
 
 ## What is in the cart on the phone?
 
-The cart opens as a sheet over the screen. It has quantity buttons, Remove, a note for each item, an order note for the whole order, Clear cart, and the subtotal, delivery fee and total. Tap Checkout when ready. The tip buttons are for show only: choosing a tip does not change your total and no tip is charged.
+The cart is its own screen titled Cart. It has quantity buttons, Remove, a note for each item, an order note for the whole order, Clear cart, and the subtotal, delivery fee and total. Tap Checkout when ready. The tip buttons are for show only: choosing a tip does not change your total and no tip is charged.
 
 ## How do I place an order in the mobile app?
 
@@ -60,7 +60,7 @@ The screen shows "Payment failed. Your order was not placed — please try check
 
 ## How do I cancel an order?
 
-You cannot cancel an order yourself. The store can cancel before accepting it, and an order is cancelled automatically if payment fails. After the store accepts, it can no longer be cancelled from the app.
+You cannot cancel an order yourself; the app has no cancel button for customers. If the store cannot take your order while it is still Placed, it rejects it: the order shows Rejected and your payment is marked refunded. An order is also cancelled automatically if the payment fails.
 
 ## Will I get an email about my order?
 

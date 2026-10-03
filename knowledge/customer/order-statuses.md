@@ -30,7 +30,7 @@ Partner assigned is step 5 of 6. The message reads "Delivery partner assigned". 
 
 ## What does "On the way" mean?
 
-On the way is also step 5 of 6. The message reads "Order picked up — on the way". The partner has collected your order and is bringing it to you. Your order page then plays a short delivery animation; see the delivery animation guide.
+On the way is also step 5 of 6. The message reads "Order picked up — on the way". The partner has collected your order and is bringing it to you. Your order page then plays a 15-second courier animation, after which the order becomes Delivered.
 
 ## What does "Delivered" mean?
 
@@ -38,11 +38,11 @@ Delivered is step 6 of 6 and the final state. The message reads "Delivered". The
 
 ## What does "Cancelled" mean?
 
-Cancelled shows a red banner reading "Order cancelled" instead of the tracker. It is a final state. An order is cancelled, for example, when payment fails or when the store cancels before accepting it. You cannot cancel an order yourself.
+Cancelled shows a red banner reading "Order cancelled" instead of the tracker. It is a final state. An order is cancelled automatically when its payment fails. You cannot cancel an order yourself.
 
 ## What does "Rejected" mean?
 
-Rejected shows a red banner reading "Restaurant rejected your order — payment refunded". It is a final state: the store declined the order and your payment is refunded.
+Rejected shows a red banner reading "Restaurant rejected your order — payment refunded". It is a final state: the store declined the order while it was still Placed, and your payment is marked refunded.
 
 ## Does the order page keep updating?
 

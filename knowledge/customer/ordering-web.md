@@ -7,11 +7,11 @@ title: Ordering on the website
 ## How do I find a restaurant or store on the website?
 
 1. Open the customer home page. You can browse without an account.
-2. Use the search box in the header to search by store name or cuisine or category name.
+2. Use the search box in the header ("Search restaurants or cuisines") to search by store name or cuisine.
 3. Or tap a category in the left sidebar (Restaurants, Grocery, Convenience, Alcohol, Health, Retail, Pet, Flowers, Baby, Personal Care, Electronics), or tap a cuisine chip.
 4. Tap a store card to open its menu or catalog.
 
-The home page also has quick filters (Rating, Delivery fee, Under 30 min) and a sort menu (Distance, Rating, Delivery fee, Prep time).
+The home page also has quick filter buttons: Rating and Delivery fee (which sort the stores) and Under 30 min.
 
 ## How do I add items to my cart on the website?
 
@@ -31,10 +31,10 @@ No. A cart holds items from one store only. If you add an item from a different 
 3. Enter your phone number (required). Use a 10-digit Indian mobile number starting with 6, 7, 8 or 9. Typing +91, 91 or 0 in front is optional.
 4. Fill in the delivery address: Address 1, City, State and Pincode are required; Address 2 is optional.
 5. Choose a payment method and fill in its fields.
-6. Check the subtotal, delivery fee and total in the cart panel, then select Place Order.
+6. Check the subtotal, delivery fee and total in the cart panel, then select Place order.
 7. You are taken to your order page to follow its progress.
 
-The Place Order button stays greyed out until every required field is valid.
+The Place order button stays greyed out until every required field is valid.
 
 ## Which payment methods can I use?
 
@@ -56,7 +56,7 @@ After checkout you land on the order page, which shows a six-step tracker: Place
 
 ## How do I cancel an order?
 
-You cannot cancel an order yourself. The store can cancel before it accepts your order, and an order is cancelled automatically if payment fails. Once the store accepts an order it can no longer be cancelled from the app.
+You cannot cancel an order yourself; the app has no cancel button for customers. If the store cannot take your order while it is still Placed, it rejects it: the order shows Rejected and your payment is marked refunded. An order is also cancelled automatically if the payment fails.
 
 ## Will I get an email about my order?
 
