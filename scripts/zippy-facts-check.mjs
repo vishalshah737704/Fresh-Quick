@@ -79,4 +79,5 @@ for (const store of checkedStores) {
 }
 
 console.log(`facts: ${passed}/${total}`);
-process.exit(total > 0 && passed === total ? 0 : 1);
+// exitCode (not process.exit) lets open keep-alive sockets close; a hard exit crashes Node on Windows.
+process.exitCode = total > 0 && passed === total ? 0 : 1;

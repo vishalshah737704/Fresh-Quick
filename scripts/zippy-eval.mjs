@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { caseOk } from "./zippy-eval-match.mjs";
 
 const base = process.env.ZIPPY_BASE_URL ?? "http://localhost:3000";
 const secret = process.env.N8N_INTERNAL_SECRET;
@@ -8,7 +9,8 @@ if (!secret) {
   console.error("Set N8N_INTERNAL_SECRET in your shell (the script never reads .env files).");
   process.exit(2);
 }
-const cases = JSON.parse(readFileSync(new URL("../tests/fixtures/zippy-eval.json", import.meta.url), "utf8"));
+const fixturePath = process.env.ZIPPY_EVAL_FIXTURE ?? new URL("../tests/fixtures/zippy-eval.json", import.meta.url);
+const cases = JSON.parse(readFileSync(fixturePath, "utf8"));
 
 let hits = 0;
 const misses = [];
@@ -35,4 +37,5 @@ for (const c of cases) {
 }
 console.log(`hit rate: ${hits}/${cases.length}`);
 for (const m of misses) console.log(JSON.stringify(m));
-process.exit(hits / cases.length >= 0.9 ? 0 : 1);
+// exitCode (not process.exit) lets open keep-alive sockets close; a hard exit crashes Node on Windows.
+process.exitCode = hits / cases.length >= 0.9 ? 0 : 1;
