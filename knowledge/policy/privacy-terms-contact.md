@@ -37,15 +37,18 @@ Fresh & Quick is a demonstration food-ordering app. By using it you agree to the
 - Who sees it: the store and, while an order is active, its delivery partner (see above). Order emails are sent through Gmail by an n8n automation.
 - Ask Zippy: when you are signed in, your chats are saved so you can continue them on web and mobile. A visitor's chat is temporary. Your questions are sent to Anthropic (Claude) and OpenAI to produce the answer.
 - Payment details: none are collected or stored.
-- Retention: orders and Zippy chats are kept for 30 days. To have your data deleted sooner, contact support.
+- Retention: orders and Zippy chats may be deleted after 30 days. Deletion is not automatic, so to have your data deleted, contact support.
 
 ## What is the refund policy?
 
 - If a store rejects your order while it is still Placed, the order shows Rejected and the payment is marked refunded automatically.
 - If your payment fails, the order is cancelled automatically.
 - You cannot cancel an order yourself, and a store cannot reject an order it has already accepted.
-- If an order arrives wrong or with items missing, contact support within 24 hours of delivery with your order details. Each case is reviewed individually.
 - Because payments are simulated, no real money is ever returned.
+
+## What if my order arrives wrong or with items missing?
+
+Contact support within 24 hours of delivery with your order details. Each case is reviewed individually. The app has no button for reporting a problem with a delivered order. Because payments are simulated, no real money is returned.
 
 ## How do I contact support?
 

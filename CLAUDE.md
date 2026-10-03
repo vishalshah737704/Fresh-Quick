@@ -670,8 +670,11 @@ See [MEMORY.md](MEMORY.md) for phase-by-phase progress and decisions.
   "partners are admin-added" when self sign-up exists). The in-app Help FAQ
   (web + mobile) cancel answer was corrected on 2026-10-03 to match the code (customers cannot
   cancel; a store can only reject while Placed; failed payment cancels). The policy knowledge file
-  now holds Vishal's real support contact, simulated-payment terms, 30-day retention wording and a
-  24-hour wrong-item rule (retention is wording only - no purge job exists).
+  now holds Vishal's real support contact, simulated-payment terms, a 24-hour wrong-item rule and
+  retention wording ("may be deleted after 30 days", deletion not automatic - no purge job exists;
+  keep the wording soft unless one is built). Both manuals gained an Ask Zippy chapter on 2026-10-03
+  (web v3.3 Chapter 8, mobile v4.4 Chapter 6, edited in place; mobile figure is from Vishal's iPhone
+  recording with the Expo gear left in, like the other figures).
 - **pgvector: `ALTER FUNCTION ... SET hnsw.*` needs the library loaded first**
   (`select '[1]'::vector;` in the same session). Otherwise the GUC is an unknown
   placeholder and a non-superuser gets 42501. Also: an audience filter after an

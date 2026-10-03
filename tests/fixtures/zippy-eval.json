@@ -34,5 +34,10 @@
   { "question": "write me a poem about the ocean", "role": "customer", "expectTitleIncludes": null },
   { "question": "how do i close my restaurant for the day", "role": "customer", "expectTitleIncludes": null, "expectTitleExcludes": "Vendor portal guide" },
   { "question": "how do i add new dishes to my menu", "role": null, "expectTitleIncludes": null, "expectTitleExcludes": "Vendor portal guide" },
-  { "question": "where do I reassign a delivery partner", "role": "customer", "expectTitleIncludes": null, "expectTitleExcludes": "Admin portal guide" }
+  { "question": "where do I reassign a delivery partner", "role": "customer", "expectTitleIncludes": null, "expectTitleExcludes": "Admin portal guide" },
+  { "question": "who do i call or email if i have a problem", "role": "customer", "expectTitleIncludes": "How do I contact support?" },
+  { "question": "how long do you keep my order history and chats", "role": "customer", "expectTitleIncludes": "What is the privacy policy?" },
+  { "question": "what are the rules for using this app", "role": "customer", "expectTitleIncludes": "What are the terms of use?" },
+  { "question": "my order arrived with items missing what can i do", "role": "customer", "expectTitleIncludes": "wrong or with items missing" },
+  { "question": "is there a privacy policy page", "role": "customer", "expectTitleIncludes": "What is the privacy policy?" }
 ]
