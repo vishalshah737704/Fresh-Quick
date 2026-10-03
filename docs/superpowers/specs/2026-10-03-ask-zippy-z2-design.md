@@ -126,3 +126,16 @@ Rules shared by every tool result:
 - Mobile cannot sort by distance until the mobile Customer app has a delivery pin.
 - The server-side `fallbacks` refusal option is deliberately left out of Z2; a refused request takes the friendly error path.
 - `npm audit` printed a notice after the SDK install; it has not been triaged and is not part of this design.
+
+## 13. Amendments (2026-10-03, as built)
+
+These record where the build departed from the sections above (numbered 13 because the spec has twelve sections).
+
+- **Final round (section 6).** The last, answer-only call is not made without `tools`: the API requires tool definitions whenever the history contains `tool_use`/`tool_result` blocks, so that call sends the definitions with `tool_choice: {type: "none"}`. Confirmed live on `claude-sonnet-5-5`.
+- **Round cap override (section 6).** The cap of 4 tool rounds can be changed with env `ZIPPY_MAX_TOOL_ROUNDS` (integer 1 to 6, default 4).
+- **Web location (section 8).** Besides the stored pin, the web client sends the default Mumbai pin on `/customer` and `/customer/*` pages, because the default pin is never written to localStorage. Other pages send none. `resolveLocation` in `lib/zippy/client-location.ts` does this.
+- **Answer delivery (sections 6, 8).** Because tool-round text is discarded, the answer reaches web and mobile as one piece after generation, not word by word. This also applies with `ZIPPY_TOOLS=off`.
+- **Developer routes (sections 4, 10).** `POST /api/internal/zippy/tool` was added to run one tool directly (secret-guarded, optional location), and `/api/internal/zippy/search` now returns `{matches, catalog}`.
+- **Candidate fetch (section 5).** `search_catalog` fetches 60 catalog candidates when a `kind` filter is set (12 otherwise), then filters and keeps 6, so a store-only or dish-only search does not run short.
+- **Prompt (section 7).** The Z1 rule "answer only from the knowledge / say you do not have that information" is scoped to how-to questions; unscoped it made live lookups refuse.
+- **Workflow 07 (section 4).** `n8n/workflows/07-zippy-catalog-sync.json` is in the repo but not yet imported or published in the local n8n (publishing needs an n8n restart).

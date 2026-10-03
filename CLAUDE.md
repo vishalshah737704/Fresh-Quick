@@ -140,8 +140,27 @@ chats are saved (web + mobile share history); visitors get a temporary chat.
 To re-ingest after editing `knowledge/`: POST the n8n webhook `foodhub/zippy-ingest`
 (workflow 06) or `POST /api/internal/zippy/ingest`; check quality with
 `node scripts/zippy-eval.mjs` (last 35/36). Needs `ANTHROPIC_API_KEY` (workspace-scoped,
-with credits) and `OPENAI_API_KEY` in `.env.local`. Z2 (live lookups), Z3 (my orders),
+with credits) and `OPENAI_API_KEY` in `.env.local`. Z2 (live lookups) is built on branch `ask-zippy-z2` (next paragraph); Z3 (my orders) and
 Z4 (actions) are next. See MEMORY.md's "Ask Zippy Z1" entry and the spec's Amendments.
+**Ask Zippy Z2 (2026-10-03, branch `ask-zippy-z2`, built and live-verified, not yet merged to `main`):**
+Zippy now answers store, menu, price, option and open/closed questions from LIVE data (web and
+mobile, same `POST /api/zippy/chat`); it still cannot see orders or act (Z3/Z4). The question is
+embedded once and searches the Z1 knowledge AND a catalog index (migration 31, `zippy_catalog_chunks`
++ `match_zippy_catalog`, service-role only; text is names/descriptions/categories/cuisines, never
+prices, fees or open status); hits are hydrated live into a `<catalog>` prompt block, then a bounded
+Claude tool loop runs on `@anthropic-ai/sdk` (`lib/zippy/agent.ts` + pure `agent-loop.ts`; four
+read-only tools in `tools.ts`: `search_catalog`, `find_stores`, `get_store_menu`, `get_item_options`;
+data in `catalog.ts` (pure) / `catalog-data.ts`; index sync in `catalog-sync.ts`). Max 4 tool rounds
+(env `ZIPPY_MAX_TOOL_ROUNDS`, 1-6). **The answer now arrives in one piece, not word by word.** Kill
+switch: `ZIPPY_TOOLS=off` (no tools, no catalog = Z1 content). Web sends the delivery pin
+(`lib/zippy/client-location.ts`: stored pin, or the default pin on `/customer*` only); mobile sends NO
+location, so "nearest" is unavailable there. The location is never saved or logged. Keep the index
+fresh with `POST /api/internal/zippy/catalog-sync` (n8n workflow 07, webhook
+`foodhub/zippy-catalog-sync`, nightly; the file is in the repo but NOT yet imported/published in the
+local n8n because that needs an n8n restart). Developer routes: `POST /api/internal/zippy/tool` (run
+one tool) and `/search` (returns `{matches, catalog}`). Checks: `scripts/zippy-eval.mjs` (46/47) and
+`scripts/zippy-facts-check.mjs` (compares answers to the database; 6/6). See MEMORY.md's "Ask Zippy
+Z2" entry and the spec's section 13 Amendments.
 **Gotcha for demos/tests:** workflow 04 auto-assigns a `ready` order within
 ~10 s to the NEAREST ONLINE partner by stored lat/lng, so it never reaches the
 "Available" list while any online partner has coordinates — a leftover online
@@ -688,6 +707,27 @@ See [MEMORY.md](MEMORY.md) for phase-by-phase progress and decisions.
   floating mid-screen on pages with no basket.
 - **Never run the dev app against the same `.next` while a build is running** -
   the two corrupt each other's output.
+- **A default value that the UI shows but never stores is invisible to code that
+  reads storage.** Z2's first web build read the delivery pin only from localStorage, but
+  the default Mumbai pin is never written there, so a fresh customer session sent no
+  location and "nearest" could not work. Use `resolveLocation` (stored pin, else the
+  default on `/customer*`), and check any "read the user's setting" code path on a
+  brand-new session, not just after the setting has been changed.
+- **A pure-function unit test and `node --check` do not prove a script runs.** The Zippy eval
+  script shipped with a missing import (`caseOk`) that both passed; only running it end to end
+  found it. Every CLI script needs a test that runs it against a stub server. In Node CLIs set
+  `process.exitCode` instead of calling `process.exit()` while fetch sockets are open - on
+  Windows that crashes Node (exit 0xC0000409).
+- **An Anthropic tool loop whose history contains `tool_use`/`tool_result` blocks must still send
+  the `tools` definitions on every call, including the last "answer now" call**: send them with
+  `tool_choice: {type: "none"}`, never drop them (the API rejects it). Pass the whole assistant
+  turn back unchanged (thinking blocks included) and return all tool results of a round in ONE
+  user message. All of this was confirmed live on `claude-sonnet-5-5` before relying on it.
+- **A prompt rule written for one feature silently blocks the next.** Z1's "answer only from the
+  knowledge below, otherwise say you do not have that information" made Z2's live lookups
+  refuse until it was scoped to how-to questions only. When adding a capability, re-read every
+  existing prompt rule for wording that forbids it, and check with a live question, not only a
+  prompt snapshot test.
 
 ## Standing phrases: "start-all-roles.ps1" / "stop-all-roles.ps1"
 

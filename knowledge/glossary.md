@@ -66,4 +66,4 @@ An administrator action that pauses a store. A suspended store is switched to cl
 
 ## What is Zippy?
 
-Zippy is the in-app help assistant that answers questions about using the app.
+Zippy is the in-app help assistant. It answers questions about using the app and, for customers, about stores, dishes, prices and whether a store is open. It cannot see your orders or place orders for you yet.

@@ -158,6 +158,23 @@ retrieval. Target is at least 90 % hits; the last run scored 35/36.
 
 **Tests:** `node --test tests/*.test.mjs` (132 passing at the end of Z1).
 
+**Z2: live store and menu lookups (built 2026-10-03, branch `ask-zippy-z2`).** Zippy also answers
+store, dish, price, option and open/closed questions from live data using four read-only tools
+(`search_catalog`, `find_stores`, `get_store_menu`, `get_item_options`). It still cannot see or place
+orders. The answer arrives in one piece. "Nearest" works on the website (it sends your delivery
+location) but not in the mobile app. Spec: `docs/superpowers/specs/2026-10-03-ask-zippy-z2-design.md`.
+- **Database:** migration 31 (catalog index), applied with `npx supabase migration up --local`.
+- **Catalog sync:** `POST /api/internal/zippy/catalog-sync` (header `X-Internal-Secret`) re-embeds changed
+  stores and dishes and removes deleted or suspended ones; run it after menu edits. n8n workflow 07
+  (`n8n/workflows/07-zippy-catalog-sync.json`, webhook `foodhub/zippy-catalog-sync`, nightly) does the same
+  once imported.
+- **Environment:** optional `ZIPPY_MAX_TOOL_ROUNDS` (1-6, default 4); kill switch `ZIPPY_TOOLS=off`
+  (no tools and no catalog, which restores Z1 answers).
+- **Developer routes** (secret-guarded): `POST /api/internal/zippy/tool` runs one tool;
+  `POST /api/internal/zippy/search` returns knowledge matches and catalog matches.
+- **Checks:** `node scripts/zippy-eval.mjs` (last 46/47) and `node scripts/zippy-facts-check.mjs`
+  (compares answers with the database; last 6/6). Unit tests: 183 passing.
+
 **Build caveat:** in a git worktree with a `node_modules` junction, Turbopack
 rejects the build; use `npx next build --webpack` there and run the real
 `npm run build` once merged to `main`.
