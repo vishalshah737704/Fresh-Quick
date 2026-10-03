@@ -52,7 +52,11 @@ export async function POST(request: NextRequest) {
   const { caller } = resolved;
 
   try {
-    const ip = request.headers.get("x-forwarded-for")?.split(",")[0].trim() ?? null;
+    // Trust model: the LEFTMOST x-forwarded-for entry is client-controlled, so use the
+    // rightmost (appended by the nearest proxy/server). This app runs locally with no
+    // untrusted proxy; the global visitor bucket caps cost even if IP identity is wrong.
+    const forwarded = request.headers.get("x-forwarded-for")?.split(",").pop()?.trim();
+    const ip = forwarded ? forwarded : null;
     if (!(await withinLimits(caller.userId, ip))) return fail(RATE_LIMIT_MESSAGE, 429);
 
     let history: ClaudeMessage[];
