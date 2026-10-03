@@ -2920,7 +2920,7 @@ unfamiliar `node_modules`.
   partner screenshot removed). History recording deliberately not added.
 - Live n8n Wait node set to 20 s and published, live run of the 20 s fallback and 3 s auto-close, and manual page check: all confirmed done by Vishal 2026-10-02 (reported by him, not re-verified by Claude).
 
-## Ask Zippy Z1 (2026-10-03, branch `ask-zippy-z1`, commits f2c3912..HEAD, pushed to origin, merged into LOCAL `main` 2026-10-03 (fast-forward, 1f4e909; `origin/main` not updated))
+## Ask Zippy Z1 (2026-10-03, branch `ask-zippy-z1`, commits f2c3912..HEAD, pushed to origin, merged into `main` 2026-10-03 (fast-forward) and pushed to `origin/main`)
 Spec `docs/superpowers/specs/2026-10-03-ask-zippy-z1-design.md` (see its section 13 Amendments),
 plan `docs/superpowers/plans/2026-10-03-ask-zippy-z1.md`. Built with subagent-driven development
 (12 tasks, per-task reviews, one opus final review plus a fix wave and addendum).
