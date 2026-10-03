@@ -35,6 +35,7 @@ export async function streamChat(args: {
   history: ChatMessage[];
   onDelta: (text: string) => void;
   signal?: AbortSignal;
+  location?: { lat: number; lng: number } | null;
 }): Promise<{ conversationId: string | null }> {
   const res = await fetch("/api/zippy/chat", {
     method: "POST",
@@ -44,6 +45,7 @@ export async function streamChat(args: {
       conversationId: args.conversationId,
       history: args.history,
       stream: true,
+      location: args.location ?? undefined,
     }),
     signal: args.signal,
   });
