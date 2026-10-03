@@ -2963,3 +2963,10 @@ plan `docs/superpowers/plans/2026-10-03-ask-zippy-z1.md`. Built with subagent-dr
 - **Deferred minors** (from the ledger, not blocking): stream abort path edge cases, DB lookup errors in
   caller/store treated as 401/404 not 502, ingest upsert not batched, aria-live on whole message list,
   no focus management in the dialog.
+
+## Post-Z1 follow-ups (2026-10-03)
+
+- Help FAQ cancel wording fixed in `app/customer/help/page.tsx` and `mobile/src/app/customer/help.tsx` (identical text; customers cannot cancel, store can reject while Placed, failed payment cancels). Earlier open item (2) above is resolved.
+- Real `npm run build` (Turbopack) on `main` passed; `tsc --noEmit` clean; 132 unit tests pass. Earlier open item (7) is resolved.
+- `knowledge/policy/privacy-terms-contact.md` rewritten with Vishal's answers: support email and phone, simulated payments, no age limit/operator/law, 30-day retention, 24-hour wrong-or-missing-item window, Gmail via n8n and Anthropic/OpenAI named as providers. Re-ingested through the n8n webhook (143 chunks). **The 30-day retention is wording only - no deletion job exists**; build one or soften the text. The eval was NOT re-run (needs `N8N_INTERNAL_SECRET`, authorization not yet given).
+- Next, in Vishal's order: manuals chapter for Zippy, then install `@anthropic-ai/sdk` (approved) and start the Z2 brainstorm.

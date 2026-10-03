@@ -20,7 +20,7 @@ const FAQS = [
   },
   {
     q: "How do I cancel an order?",
-    a: "Orders can only be cancelled by the restaurant before they're accepted, or automatically if payment fails. Once a restaurant accepts your order, it can no longer be cancelled from this app.",
+    a: "You can't cancel an order yourself. While an order is still Placed, the restaurant can reject it, and your payment is then marked refunded. An order is also cancelled automatically if its payment fails. Once a restaurant accepts your order, it can no longer be stopped from this app.",
   },
   {
     q: "What payment methods are supported?",

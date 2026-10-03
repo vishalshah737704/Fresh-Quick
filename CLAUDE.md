@@ -668,9 +668,10 @@ See [MEMORY.md](MEMORY.md) for phase-by-phase progress and decisions.
   from the manuals or memory.** Two review rounds caught wrong claims in
   `knowledge/` (a store "cancel" action that does not exist - only reject - and
   "partners are admin-added" when self sign-up exists). The in-app Help FAQ
-  (web + mobile) STILL says orders can be cancelled by the restaurant before
-  acceptance, which the code does not support - outstanding for Vishal to decide;
-  Zippy deliberately does not repeat it.
+  (web + mobile) cancel answer was corrected on 2026-10-03 to match the code (customers cannot
+  cancel; a store can only reject while Placed; failed payment cancels). The policy knowledge file
+  now holds Vishal's real support contact, simulated-payment terms, 30-day retention wording and a
+  24-hour wrong-item rule (retention is wording only - no purge job exists).
 - **pgvector: `ALTER FUNCTION ... SET hnsw.*` needs the library loaded first**
   (`select '[1]'::vector;` in the same session). Otherwise the GUC is an unknown
   placeholder and a non-superuser gets 42501. Also: an audience filter after an
