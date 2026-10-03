@@ -36,3 +36,10 @@ test("knowledge never contains secrets or internal developer material", () => {
     }
   }
 });
+
+test("each audience that Zippy serves has at least one guide", () => {
+  const audiences = new Set(buildChunks(loaded).map((c) => c.audience));
+  for (const needed of ["all", "customer", "vendor", "delivery", "admin"]) {
+    assert.ok(audiences.has(needed), `no knowledge for audience ${needed}`);
+  }
+});
