@@ -161,3 +161,14 @@ test("normalizeHistory drops empty and whitespace-only turns", () => {
     { role: "assistant", content: "a1" },
   ]);
 });
+
+test("extractTextDeltas reports stop_reason from message_delta events", () => {
+  const frame = (reason) =>
+    `event: message_delta\ndata: ${JSON.stringify({ type: "message_delta", delta: { stop_reason: reason } })}\n\n`;
+  for (const reason of ["end_turn", "refusal", "max_tokens"]) {
+    assert.equal(extractTextDeltas(frame(reason)).stopReason, reason);
+  }
+  const none = `event: message_delta\ndata: ${JSON.stringify({ type: "message_delta", delta: {} })}\n\n`;
+  assert.equal(extractTextDeltas(none).stopReason, undefined);
+  assert.equal(extractTextDeltas("").stopReason, undefined);
+});

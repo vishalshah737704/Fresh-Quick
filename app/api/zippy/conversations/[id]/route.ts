@@ -9,7 +9,10 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const resolved = await resolveCaller(request);
-  if ("error" in resolved || resolved.caller.userId === null) {
+  if ("error" in resolved) {
+    return NextResponse.json({ error: resolved.error }, { status: resolved.status });
+  }
+  if (resolved.caller.userId === null) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
   const { id } = await params;

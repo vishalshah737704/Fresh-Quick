@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import {
+  MAX_HISTORY_MESSAGES,
   MAX_MESSAGE_CHARS,
   SUGGESTED_QUESTIONS,
   ZIPPY_ERROR_MESSAGE,
@@ -95,7 +96,8 @@ export function ZippyWidget() {
       if (!question || busy) return;
       const history: ChatMessage[] = messages
         .filter((m) => !m.isError && m.content.trim() !== "")
-        .map(({ role, content }) => ({ role, content }));
+        .map(({ role, content }) => ({ role, content }))
+        .slice(-MAX_HISTORY_MESSAGES);
       abortRef.current?.abort();
       const controller = new AbortController();
       abortRef.current = controller;

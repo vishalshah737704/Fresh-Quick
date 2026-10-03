@@ -53,3 +53,17 @@ test("parseChatRequest rejects null and non-object history items without throwin
     assert.equal(r.error, "Invalid history");
   }
 });
+
+test("parseChatRequest rejects oversized history", () => {
+  const turn = { role: "user", content: "hi" };
+  const tooMany = parseChatRequest({ message: "q", history: Array.from({ length: 51 }, () => turn) });
+  assert.equal(tooMany.ok, false);
+  assert.ok(tooMany.error.length > 0);
+  const tooLong = parseChatRequest({
+    message: "q",
+    history: Array.from({ length: 3 }, () => ({ role: "user", content: "a".repeat(3000) })),
+  });
+  assert.equal(tooLong.ok, false);
+  const fine = parseChatRequest({ message: "q", history: Array.from({ length: 50 }, () => turn) });
+  assert.equal(fine.ok, true);
+});

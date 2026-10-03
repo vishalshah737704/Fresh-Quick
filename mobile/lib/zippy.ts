@@ -12,6 +12,8 @@ export class ZippyError extends Error {
   }
 }
 
+const REQUEST_TIMEOUT_MS = 30_000;
+
 // Unlike apiFetch, a missing session is fine: visitors can ask help questions.
 // The base URL is read at call time so a missing env var never breaks import.
 async function request<T>(path: string, init: { method?: "GET" | "POST"; body?: unknown } = {}): Promise<T> {
@@ -20,6 +22,8 @@ async function request<T>(path: string, init: { method?: "GET" | "POST"; body?: 
   const { data } = await supabase.auth.getSession();
   const token = data.session?.access_token;
   let res: Response;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
   try {
     res = await fetch(`${apiBaseUrl}${path}`, {
       method: init.method ?? "GET",
@@ -28,16 +32,21 @@ async function request<T>(path: string, init: { method?: "GET" | "POST"; body?: 
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
       body: init.body !== undefined ? JSON.stringify(init.body) : undefined,
+      signal: controller.signal,
     });
   } catch {
+    clearTimeout(timer);
     throw new ZippyError(ZIPPY_ERROR_MESSAGE, 0);
   }
   let json: unknown = null;
   try {
     json = await res.json();
   } catch {
-    // non-JSON body; fall through to status handling
+    // non-JSON body; fall through to status handling (a timeout mid-body is handled below)
+  } finally {
+    clearTimeout(timer);
   }
+  if (controller.signal.aborted) throw new ZippyError(ZIPPY_ERROR_MESSAGE, 0);
   if (!res.ok) {
     const message =
       json && typeof json === "object" && typeof (json as { error?: unknown }).error === "string"

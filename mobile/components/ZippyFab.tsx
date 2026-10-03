@@ -14,6 +14,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { BRAND } from "../theme";
 import { supabase } from "../lib/supabase";
 import {
+  MAX_HISTORY_MESSAGES,
   MAX_MESSAGE_CHARS,
   SUGGESTED_QUESTIONS,
   ZIPPY_ERROR_MESSAGE,
@@ -93,7 +94,8 @@ export function ZippyFab() {
     if (!question || busy) return;
     const history = messages
       .filter((m) => !m.isError && m.content.trim() !== "")
-      .map((m) => ({ role: m.role, content: m.content }));
+      .map((m) => ({ role: m.role, content: m.content }))
+      .slice(-MAX_HISTORY_MESSAGES);
     const token = invalidatePending();
     setShowHistory(false);
     setMessages([...messages, { role: "user", content: question }]);

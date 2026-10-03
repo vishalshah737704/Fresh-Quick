@@ -48,7 +48,9 @@ export async function POST(request: NextRequest) {
   let { conversationId } = parsed.value;
 
   const resolved = await resolveCaller(request);
-  if ("error" in resolved) return fail(SIGN_IN_AGAIN_MESSAGE, resolved.status);
+  if ("error" in resolved) {
+    return fail(resolved.status === 401 ? SIGN_IN_AGAIN_MESSAGE : ZIPPY_ERROR_MESSAGE, resolved.status);
+  }
   const { caller } = resolved;
 
   try {
@@ -85,9 +87,14 @@ export async function POST(request: NextRequest) {
 
     if (!stream) {
       let reply = "";
-      for await (const piece of streamClaude(system, messages)) reply += piece;
+      for await (const piece of streamClaude(system, messages, request.signal)) reply += piece;
+      if (reply.trim() === "") throw new Error("Model returned an empty reply");
       if (savedConversationId) {
-        await saveMessage({ conversationId: savedConversationId, role: "assistant", content: reply, sourceIds });
+        try {
+          await saveMessage({ conversationId: savedConversationId, role: "assistant", content: reply, sourceIds });
+        } catch (error) {
+          console.error("zippy: saving reply failed", error);
+        }
       }
       return NextResponse.json({ reply, conversationId: savedConversationId });
     }
@@ -98,14 +105,25 @@ export async function POST(request: NextRequest) {
         let full = "";
         let failed = false;
         try {
-          for await (const piece of streamClaude(system, messages)) {
+          for await (const piece of streamClaude(system, messages, request.signal)) {
             full += piece;
             controller.enqueue(encoder.encode(piece));
           }
+          if (full.trim() === "") {
+            failed = true;
+            console.error("zippy: model returned an empty reply");
+            controller.enqueue(encoder.encode(ZIPPY_ERROR_MESSAGE));
+          }
         } catch (error) {
           failed = true;
-          console.error("zippy: model stream failed", error);
-          controller.enqueue(encoder.encode(full ? `\n\n${ZIPPY_ERROR_MESSAGE}` : ZIPPY_ERROR_MESSAGE));
+          if (!request.signal.aborted) console.error("zippy: model stream failed", error);
+          try {
+            controller.enqueue(encoder.encode(full ? `
+
+${ZIPPY_ERROR_MESSAGE}` : ZIPPY_ERROR_MESSAGE));
+          } catch {
+            // client already disconnected
+          }
         }
         if (!failed && savedConversationId && full) {
           try {
@@ -114,7 +132,11 @@ export async function POST(request: NextRequest) {
             console.error("zippy: saving reply failed", error);
           }
         }
-        controller.close();
+        try {
+          controller.close();
+        } catch {
+          // already closed or cancelled
+        }
       },
     });
     const headers: Record<string, string> = { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" };

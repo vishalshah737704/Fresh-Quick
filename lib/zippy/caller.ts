@@ -15,14 +15,23 @@ export async function resolveCaller(
   const bearer = parseBearer(request.headers.get("authorization"));
   if (bearer.kind === "none") return { caller: { userId: null, role: null } };
   if (bearer.kind === "malformed") return { error: "Not authenticated", status: 401 };
-  const { data, error } = await supabaseServer.auth.getUser(bearer.token);
-  if (error || !data.user) return { error: "Not authenticated", status: 401 };
-  const { data: profile } = await supabaseServer
-    .from("users")
-    .select("role")
-    .eq("id", data.user.id)
-    .single();
-  const role = profile?.role as ZippyRole | undefined;
-  if (!role || !ROLES.includes(role)) return { error: "Not authenticated", status: 401 };
-  return { caller: { userId: data.user.id, role } };
+  try {
+    const { data, error } = await supabaseServer.auth.getUser(bearer.token);
+    if (error || !data.user) return { error: "Not authenticated", status: 401 };
+    const { data: profile, error: profileError } = await supabaseServer
+      .from("users")
+      .select("role")
+      .eq("id", data.user.id)
+      .single();
+    if (profileError && profileError.code !== "PGRST116") {
+      console.error("zippy: profile lookup failed", profileError);
+      return { error: "Could not verify your account", status: 502 };
+    }
+    const role = profile?.role as ZippyRole | undefined;
+    if (!role || !ROLES.includes(role)) return { error: "Not authenticated", status: 401 };
+    return { caller: { userId: data.user.id, role } };
+  } catch (error) {
+    console.error("zippy: resolving caller failed", error);
+    return { error: "Could not verify your account", status: 502 };
+  }
 }

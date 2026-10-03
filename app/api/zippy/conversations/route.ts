@@ -4,7 +4,10 @@ import { listConversations } from "@/lib/zippy/store";
 
 export async function GET(request: NextRequest) {
   const resolved = await resolveCaller(request);
-  if ("error" in resolved || resolved.caller.userId === null) {
+  if ("error" in resolved) {
+    return NextResponse.json({ error: resolved.error }, { status: resolved.status });
+  }
+  if (resolved.caller.userId === null) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
   try {

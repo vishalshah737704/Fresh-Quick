@@ -6,11 +6,13 @@ export function extractTextDeltas(buffer: string): {
   texts: string[];
   rest: string;
   error?: string;
+  stopReason?: string;
 } {
   const events = buffer.split("\n\n");
   const rest = events.pop() ?? "";
   const texts: string[] = [];
   let error: string | undefined;
+  let stopReason: string | undefined;
   for (const event of events) {
     const dataLine = event.split("\n").find((line) => line.startsWith("data: "));
     if (!dataLine) continue;
@@ -22,14 +24,16 @@ export function extractTextDeltas(buffer: string): {
     }
     const obj = parsed as {
       type?: string;
-      delta?: { type?: string; text?: string };
+      delta?: { type?: string; text?: string; stop_reason?: string };
       error?: { message?: string };
     };
     if (obj.type === "content_block_delta" && obj.delta?.type === "text_delta" && typeof obj.delta.text === "string") {
       texts.push(obj.delta.text);
+    } else if (obj.type === "message_delta" && typeof obj.delta?.stop_reason === "string") {
+      stopReason = obj.delta.stop_reason;
     } else if (obj.type === "error") {
       error = obj.error?.message ?? "Unknown stream error";
     }
   }
-  return { texts, rest, error };
+  return { texts, rest, error, stopReason };
 }
