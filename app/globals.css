@@ -52,3 +52,10 @@ body {
     font-weight: 700;
   }
 }
+
+/* Ask Zippy bubble sits beside the 24rem basket sidebar (+2rem gap) only while it is rendered. */
+@media (min-width: 1024px) {
+  body:has([data-basket-panel]) .zippy-anchor {
+    right: 26rem;
+  }
+}

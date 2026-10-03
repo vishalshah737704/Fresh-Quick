@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { usePathname } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import {
   MAX_HISTORY_MESSAGES,
@@ -23,7 +22,6 @@ import {
 type LocalMessage = ChatMessage & { isError?: boolean };
 
 export function ZippyWidget() {
-  const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const [messages, setMessages] = useState<LocalMessage[]>([]);
@@ -168,12 +166,9 @@ export function ZippyWidget() {
     }
   };
 
-  // The customer portal shows a 24rem basket sidebar on the right at lg+.
-  const bubbleOffset = pathname?.startsWith("/customer") ? "lg:right-[26rem]" : "";
-
   return (
     // z-40 keeps the bubble beneath z-50 modals (item customization bottom bar).
-    <div className={`fixed bottom-4 right-4 z-40 ${bubbleOffset}`}>
+    <div className="zippy-anchor fixed bottom-4 right-4 z-40">
       {open && (
         <section
           role="dialog"

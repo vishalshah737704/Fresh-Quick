@@ -38,7 +38,7 @@ export function CartPanel() {
   const total = totalPaise !== null ? totalPaise / 100 : null;
 
   return (
-    <aside className="hidden h-full w-96 shrink-0 flex-col overflow-y-auto rounded-[var(--radius-card)] border border-brand-ink-muted/10 bg-brand-surface [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden lg:flex">
+    <aside data-basket-panel className="hidden h-full w-96 shrink-0 flex-col overflow-y-auto rounded-[var(--radius-card)] border border-brand-ink-muted/10 bg-brand-surface [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden lg:flex">
       <div className="rounded-t-[var(--radius-card)] bg-brand-accent-text-safe px-4 py-3">
         <h2 className="text-lg font-bold text-white">My Basket</h2>
         <p className="text-sm text-white/85">{storeName}</p>

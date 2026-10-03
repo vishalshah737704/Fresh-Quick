@@ -58,7 +58,8 @@ test("with no usable knowledge the prompt forbids factual claims", () => {
   const prompt = buildSystemPrompt({ brandName: "Fresh & Quick", role: null, chunks: [] });
   assert.doesNotMatch(prompt, /<knowledge>/);
   assert.match(prompt, /do not have that information/i);
-  assert.match(prompt, /support/i);
+  assert.match(prompt, /checking the Help page/i);
+  assert.doesNotMatch(prompt, /contacting support/i);
 });
 
 test("normalizeHistory drops leading assistant turns, bad roles, and caps length", () => {
