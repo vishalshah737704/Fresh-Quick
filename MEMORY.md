@@ -2919,3 +2919,47 @@ unfamiliar `node_modules`.
 - Manuals: web v3.3, mobile v4.4 (Done button and 5-minute text replaced, older overlapping
   partner screenshot removed). History recording deliberately not added.
 - Live n8n Wait node set to 20 s and published, live run of the 20 s fallback and 3 s auto-close, and manual page check: all confirmed done by Vishal 2026-10-02 (reported by him, not re-verified by Claude).
+
+## Ask Zippy Z1 (2026-10-03, branch `ask-zippy-z1`, commits f2c3912..HEAD, NOT pushed or merged)
+Spec `docs/superpowers/specs/2026-10-03-ask-zippy-z1-design.md` (see its section 13 Amendments),
+plan `docs/superpowers/plans/2026-10-03-ask-zippy-z1.md`. Built with subagent-driven development
+(12 tasks, per-task reviews, one opus final review plus a fix wave and addendum).
+- **What shipped:** knowledge base in `knowledge/**/*.md` (140 chunks); migrations 29-30 (pgvector,
+  `zippy_chunks/conversations/messages/usage`, `match_zippy_chunks`, `zippy_hit`); routes
+  `/api/zippy/chat`, `/api/zippy/conversations[/id]`, `/api/internal/zippy/ingest`, `/api/internal/zippy/search`;
+  n8n workflow 06 (webhook `foodhub/zippy-ingest` + cron); web widget in the root layout; mobile chat
+  button/sheet (Customer + Delivery); eval script `scripts/zippy-eval.mjs`; `tests/` now 132 passing.
+- **Decisions:** Claude via raw fetch (no SDK; installing packages needs approval) with
+  `thinking: {type: "between_tools"}`, `max_tokens` 1500; OpenAI embeddings server-side only (app holds
+  the key, n8n just triggers ingest); conversation tables deny-all RLS, service-role only; no support
+  link anywhere (app has no support contact); rate limits signed-in 20/min + 100/day, visitors 10/min +
+  40/day per IP (rightmost XFF) + global visitor backstop 60/min + 1000/day; history caps 50 items /
+  8000 chars each / 40000 total over last 10 turns; mobile non-streaming with 60 s timeout.
+- **Review findings that mattered:** nested `</knowledge>` prompt bypass; visitor rate-limit bypass via
+  leftmost XFF; empty/error assistant turns in history would 400 at Anthropic; Sonnet 5.5 adaptive
+  thinking eating `max_tokens` (final review); HNSW post-filter recall (migration 30); history caps first
+  set too small (4000/8000) and had to be relaxed; two wrong factual claims in `knowledge/` (store cancel,
+  admin-only partner creation); eval runner used top-3 where production uses top-5.
+- **Live verification (worktree app on :3000, production webpack build, real keys):** chat stream and
+  non-stream grounded and correct; `between_tools` accepted; prompt injection stays on topic; two
+  throwaway accounts - B gets 404 on A's conversation, visitor list 401; visitor 429 after 10/min with a
+  friendly body; bad key gives friendly text (stream) / 502 (non-stream) with nothing leaked; ingest
+  guards (missing/empty `knowledge/` -> 500, nothing deleted; wrong secret 401); n8n workflow 06
+  imported + published, webhook returned `{total:140, embedded:0, unchanged:140, deleted:0}`; eval 35/36
+  (97 %, only miss defensible); Playwright on customer/vendor/delivery/admin login pages (bubble, chip
+  streams, Escape closes, History resumes a saved chat, sign-out clears), 390 px no overflow. A live
+  finding (Zippy said Help "connects to support"; bubble floating mid-screen with empty basket) was fixed.
+- **Test data left in the local dev DB:** 2 throwaway users `zippy-a-1791042439@example.invalid` and
+  `zippy-b-1791042439@example.invalid` (no orders, no Gmail) + 1 conversation + rate-limit rows. n8n
+  container `n8n` is running with workflow 06 (id `hQkHKeGUuEQSPzl3`).
+- **Open items for Vishal:** (1) the app has no terms, privacy policy, support contact, refund window or
+  tip option - the policy knowledge file says so honestly; decide if any should exist; (2) the in-app Help
+  FAQ (web + mobile) says orders can be cancelled by the restaurant before acceptance - the code only has
+  reject; fix the wording or add the feature; (3) password reset only works when signed in (no forgot-password
+  link); (4) the 20 s auto-complete and delivery emails depend on live n8n; (5) check the mobile chat button
+  on his phone (Expo) - FAB offset 124 is calculated, not seen; (6) vendor/delivery/admin SIGNED-IN pages were
+  not driven (login pages only); (7) run the real `npm run build` (Turbopack) from `main` after merge;
+  (8) merge/push is awaiting "Commit Work" or explicit approval; (9) Z2 (live lookups), Z3, Z4 are next.
+- **Deferred minors** (from the ledger, not blocking): stream abort path edge cases, DB lookup errors in
+  caller/store treated as 401/404 not 502, ingest upsert not batched, aria-live on whole message list,
+  no focus management in the dialog.

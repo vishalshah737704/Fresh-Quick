@@ -128,6 +128,40 @@ delivery-completion fallback in workflow 05 only exists while n8n is running
 with 05 active; see `docs/n8n-webhook-setup.md` for recovering a stuck
 `picked_up` order.)
 
+## Ask Zippy (in-app assistant, Z1 built 2026-10-03)
+
+Zippy is a floating chat bubble on every web portal (and a chat button in the
+mobile Customer and Delivery apps) that answers how-to questions from a
+knowledge base of Markdown files in `knowledge/`. Signed-in users keep their
+chat history; visitors get a temporary chat. Spec:
+`docs/superpowers/specs/2026-10-03-ask-zippy-z1-design.md` (see its
+Amendments section for what was built).
+
+**Environment variables** (in `.env.local`, never committed; placeholders are in `.env.example`):
+- `ANTHROPIC_API_KEY` - must be a workspace-scoped key on an account with credit
+  (an empty balance shows up as an HTTP 400 in the server log, and Zippy says it is resting).
+- `OPENAI_API_KEY` - used for embeddings.
+- Optional: `ZIPPY_CLAUDE_MODEL` (default `claude-sonnet-5-5`), `ZIPPY_EMBEDDING_MODEL` (default `text-embedding-3-small`).
+
+**Database:** migrations 29 (pgvector + Zippy tables) and 30 (HNSW iterative
+scan) are applied with `npx supabase migration up --local`. Never use
+`db reset` for this.
+
+**Refreshing the knowledge base:** edit `knowledge/**/*.md`, then either POST
+the n8n webhook `foodhub/zippy-ingest` (workflow 06, see
+`docs/n8n-webhook-setup.md`) or call `POST /api/internal/zippy/ingest` with the
+`X-Internal-Secret` header. Unchanged files are skipped by content hash.
+
+**Quality check:** with `N8N_INTERNAL_SECRET` exported in your shell and the
+app running, `node scripts/zippy-eval.mjs` runs the known-question set against
+retrieval. Target is at least 90 % hits; the last run scored 35/36.
+
+**Tests:** `node --test tests/*.test.mjs` (132 passing at the end of Z1).
+
+**Build caveat:** in a git worktree with a `node_modules` junction, Turbopack
+rejects the build; use `npx next build --webpack` there and run the real
+`npm run build` once merged to `main`.
+
 ## Usage guide
 
 `docs/Usage_Guide.docx` is a screenshot-illustrated walkthrough of the

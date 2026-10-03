@@ -130,6 +130,18 @@ up" / "Customer is receiving the order…" cards, drop-off details mosaic-masked
 old "Mark delivered" screenshot was removed).
 See MEMORY.md's "Delivery animation", "Test emails", "Animation length follow-up",
 "Session close-out 2026-10-02" and "Reduce Motion fix" entries.
+**Ask Zippy Z1 (2026-10-03, branch `ask-zippy-z1`, built and live-verified, NOT yet merged/pushed):**
+in-app AI assistant. Floating bubble on all web portals (one widget in the root
+layout) plus a chat button in mobile Customer + Delivery; answers how-to questions
+from `knowledge/**/*.md` via pgvector (migrations 29-30, tables `zippy_*`, all
+service-role only) and Claude (`claude-sonnet-5-5`, raw fetch) through
+`POST /api/zippy/chat`; OpenAI `text-embedding-3-small` for embeddings. Signed-in
+chats are saved (web + mobile share history); visitors get a temporary chat.
+To re-ingest after editing `knowledge/`: POST the n8n webhook `foodhub/zippy-ingest`
+(workflow 06) or `POST /api/internal/zippy/ingest`; check quality with
+`node scripts/zippy-eval.mjs` (last 35/36). Needs `ANTHROPIC_API_KEY` (workspace-scoped,
+with credits) and `OPENAI_API_KEY` in `.env.local`. Z2 (live lookups), Z3 (my orders),
+Z4 (actions) are next. See MEMORY.md's "Ask Zippy Z1" entry and the spec's Amendments.
 **Gotcha for demos/tests:** workflow 04 auto-assigns a `ready` order within
 ~10 s to the NEAREST ONLINE partner by stored lat/lng, so it never reaches the
 "Available" list while any online partner has coordinates — a leftover online
@@ -642,6 +654,36 @@ See [MEMORY.md](MEMORY.md) for phase-by-phase progress and decisions.
   an address Vishal owns, one order at a time, and ask first — or switch the two
   nodes off again (n8n UI: select node, press `D`, Publish) and verify from n8n's
   execution record instead. A fresh n8n imported from the repo JSON has them on.
+
+- **Claude Sonnet 5.5 API: omit `thinking` and it runs adaptive thinking at
+  effort high, which eats `max_tokens`** (Zippy replies came back truncated or
+  empty). Send `thinking: {type: "between_tools"}`. Never send
+  `{type: "disabled"}`, `budget_tokens`, a forced `tool_choice` or a non-default
+  `temperature` - each is a 400 on this model.
+- **Anthropic API keys must be workspace-scoped** (or each request needs an
+  `anthropic-workspace-id` header). A zero credit balance is an HTTP 400, not a
+  401/402, so it looks like a code bug. Log provider error bodies server-side
+  (never to the client) - that is how Zippy's credit problem was found.
+- **Knowledge-base content must be fact-checked against the code, not written
+  from the manuals or memory.** Two review rounds caught wrong claims in
+  `knowledge/` (a store "cancel" action that does not exist - only reject - and
+  "partners are admin-added" when self sign-up exists). The in-app Help FAQ
+  (web + mobile) STILL says orders can be cancelled by the restaurant before
+  acceptance, which the code does not support - outstanding for Vishal to decide;
+  Zippy deliberately does not repeat it.
+- **pgvector: `ALTER FUNCTION ... SET hnsw.*` needs the library loaded first**
+  (`select '[1]'::vector;` in the same session). Otherwise the GUC is an unknown
+  placeholder and a non-superuser gets 42501. Also: an audience filter after an
+  HNSW scan can return fewer rows than asked for - set `hnsw.iterative_scan`.
+- **SDD worktree build caveat:** Turbopack rejects a `node_modules` junction
+  (outside filesystem root). In a worktree build with `npx next build --webpack`,
+  and run the real `npm run build` after merge to `main`.
+- **A widget mounted in the ROOT layout cannot know about a page's own sidebar
+  by props** - anchor it with CSS (`:has([data-basket-panel])`) so it sits beside
+  the basket only when one is rendered. Found live: a fixed offset left the bubble
+  floating mid-screen on pages with no basket.
+- **Never run the dev app against the same `.next` while a build is running** -
+  the two corrupt each other's output.
 
 ## Standing phrases: "start-all-roles.ps1" / "stop-all-roles.ps1"
 
