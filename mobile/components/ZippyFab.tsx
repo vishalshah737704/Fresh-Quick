@@ -36,6 +36,8 @@ type LocalMessage = { role: "user" | "assistant"; content: string; isError?: boo
 // floating cart pill (bottom 12, ~46 tall) so it overlaps neither.
 const FAB_BOTTOM_OFFSET = 124;
 
+const headerButton = { minHeight: 44, minWidth: 44, alignItems: "center", justifyContent: "center" } as const;
+
 export function ZippyFab() {
   const insets = useSafeAreaInsets();
   const [open, setOpen] = useState(false);
@@ -46,6 +48,8 @@ export function ZippyFab() {
   const [busy, setBusy] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [conversations, setConversations] = useState<ConversationSummary[]>([]);
+  const [loadingList, setLoadingList] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
   const listRef = useRef<FlatList<LocalMessage>>(null);
   // Every action that starts async work bumps this; a result whose token is no
   // longer current (New chat, account switch, a newer action) is dropped.
@@ -57,6 +61,8 @@ export function ZippyFab() {
   const invalidatePending = useCallback(() => {
     requestToken.current += 1;
     setBusy(false);
+    setLoadingList(false);
+    setNotice(null);
     return requestToken.current;
   }, []);
 
@@ -110,11 +116,18 @@ export function ZippyFab() {
   const openHistory = async () => {
     const token = invalidatePending();
     setShowHistory(true);
+    setConversations([]);
+    setLoadingList(true);
     try {
       const list = await listConversations();
       if (token === requestToken.current) setConversations(list);
     } catch {
-      if (token === requestToken.current) setConversations([]);
+      if (token === requestToken.current) {
+        setConversations([]);
+        setNotice(ZIPPY_ERROR_MESSAGE);
+      }
+    } finally {
+      if (token === requestToken.current) setLoadingList(false);
     }
   };
 
@@ -125,10 +138,10 @@ export function ZippyFab() {
       if (token !== requestToken.current) return;
       setMessages(loaded);
       setConversationId(id);
+      setShowHistory(false);
     } catch {
-      // keep the current chat; the history view closes below
-    } finally {
-      if (token === requestToken.current) setShowHistory(false);
+      // stay in History and say so; the notice clears on the next action
+      if (token === requestToken.current) setNotice(ZIPPY_ERROR_MESSAGE);
     }
   };
 
@@ -168,20 +181,43 @@ export function ZippyFab() {
 
       <Modal visible={open} animationType="slide" onRequestClose={() => setOpen(false)}>
         <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          keyboardVerticalOffset={0}
           style={{ flex: 1, backgroundColor: BRAND.colors.background, paddingTop: insets.top }}
         >
           <View style={{ flexDirection: "row", alignItems: "center", backgroundColor: BRAND.colors.primaryTextSafe, padding: 12, gap: 12 }}>
             <Text style={{ flex: 1, color: "#fff", fontSize: 18, fontFamily: BRAND.fonts.heading }}>{ZIPPY_NAME}</Text>
             {userId && (
-              <Pressable onPress={showHistory ? () => setShowHistory(false) : openHistory}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={showHistory ? "Back to chat" : "Chat history"}
+                accessibilityState={{ disabled: busy }}
+                disabled={busy}
+                hitSlop={8}
+                onPress={showHistory ? () => setShowHistory(false) : openHistory}
+                style={[headerButton, { opacity: busy ? 0.4 : 1 }]}
+              >
                 <Text style={{ color: "#fff", fontFamily: BRAND.fonts.bodyMedium }}>{showHistory ? "Chat" : "History"}</Text>
               </Pressable>
             )}
-            <Pressable onPress={reset}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="New chat"
+              accessibilityState={{ disabled: busy }}
+              disabled={busy}
+              hitSlop={8}
+              onPress={reset}
+              style={[headerButton, { opacity: busy ? 0.4 : 1 }]}
+            >
               <Text style={{ color: "#fff", fontFamily: BRAND.fonts.bodyMedium }}>New chat</Text>
             </Pressable>
-            <Pressable accessibilityLabel="Close Zippy" onPress={() => setOpen(false)}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`Close ${ZIPPY_NAME}`}
+              hitSlop={8}
+              onPress={() => setOpen(false)}
+              style={headerButton}
+            >
               <Text style={{ color: "#fff", fontSize: 24 }}>×</Text>
             </Pressable>
           </View>
@@ -191,7 +227,14 @@ export function ZippyFab() {
               data={conversations}
               keyExtractor={(c) => c.id}
               contentContainerStyle={{ padding: 12 }}
-              ListEmptyComponent={<Text style={{ color: BRAND.colors.inkMuted }}>No saved chats yet.</Text>}
+              ListHeaderComponent={notice ? <Text style={{ color: BRAND.colors.danger, marginBottom: 8 }}>{notice}</Text> : null}
+              ListEmptyComponent={
+                loadingList ? (
+                  <Text style={{ color: BRAND.colors.inkMuted }}>Loading…</Text>
+                ) : notice ? null : (
+                  <Text style={{ color: BRAND.colors.inkMuted }}>No saved chats yet.</Text>
+                )
+              }
               renderItem={({ item }) => (
                 <Pressable onPress={() => resume(item.id)} style={{ backgroundColor: BRAND.colors.surface, borderRadius: 16, padding: 12, marginBottom: 8 }}>
                   <Text style={{ color: BRAND.colors.ink, fontFamily: BRAND.fonts.body }}>{item.title}</Text>
@@ -235,7 +278,7 @@ export function ZippyFab() {
               value={input}
               onChangeText={setInput}
               maxLength={MAX_MESSAGE_CHARS}
-              placeholder="Ask Zippy a question…"
+              placeholder={`${ZIPPY_NAME} a question…`}
               placeholderTextColor={BRAND.colors.inkMuted}
               onSubmitEditing={() => send(input)}
               returnKeyType="send"
