@@ -197,3 +197,31 @@ test("the catalog block also appears alongside knowledge chunks", () => {
   assert.match(p, /<catalog>\nStore: Z\n<\/catalog>/);
   assert.match(p, /<knowledge>/);
 });
+
+test("tools on: store/price/open questions come from catalog or tools; the Help-page fallback is how-to only", () => {
+  for (const chunks of [[], [match("x", 0.9)]]) {
+    const p = buildSystemPrompt({ brandName: "B", role: null, chunks, toolsEnabled: true });
+    assert.match(p, /stores, menus, dishes, prices, delivery fees, options and whether a store is open are answered from the catalog block or tool results/i);
+    assert.match(p, /how-to question/i);
+    assert.match(p, /do not have that information/i);
+    assert.match(p, /never promise a support contact/i);
+    assert.doesNotMatch(p, /Answer using only the knowledge below/);
+  }
+});
+
+test("tools on: prompt says what to do when no tool is available", () => {
+  const p = buildSystemPrompt({ brandName: "B", role: null, chunks: [], toolsEnabled: true });
+  assert.match(p, /If no tool is available, answer from the catalog block/);
+  assert.match(p, /do not promise further lookups or write tool calls as text/);
+});
+
+test("tools off keeps the Z1 wording and has no catalog or tool language", () => {
+  for (const chunks of [[], [match("x", 0.9)]]) {
+    const p = buildSystemPrompt({ brandName: "B", role: null, chunks, catalogBlock: "Store: Z", toolsEnabled: false });
+    assert.match(p, /say you do not have that information and suggest checking the Help page/i);
+    assert.match(p, /cannot look up stores, menus, orders/i);
+    assert.doesNotMatch(p, /catalog|tool/i);
+  }
+  const withK = buildSystemPrompt({ brandName: "B", role: null, chunks: [match("x", 0.9)], toolsEnabled: false });
+  assert.match(withK, /Answer using only the knowledge below/);
+});
