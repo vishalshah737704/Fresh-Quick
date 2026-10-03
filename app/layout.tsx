@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, Poppins } from "next/font/google";
 import { BRAND } from "@/lib/branding";
 import { SessionEpochGuard } from "@/components/SessionEpochGuard";
+import { ZippyWidget } from "@/components/zippy/ZippyWidget";
 import "./globals.css";
 
 const inter = Inter({
@@ -29,6 +30,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="min-h-full flex flex-col">
         <SessionEpochGuard />
         {children}
+        <ZippyWidget />
       </body>
     </html>
   );
