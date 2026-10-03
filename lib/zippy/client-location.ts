@@ -17,3 +17,19 @@ export function readStoredLocation(read: (key: string) => string | null): { lat:
     return null;
   }
 }
+
+// Must match DEFAULT_LAT / DEFAULT_LNG in lib/address-store.tsx (a test checks this).
+export const DEFAULT_LAT = 19.076;
+export const DEFAULT_LNG = 72.8777;
+
+export function resolveLocation(
+  read: (key: string) => string | null,
+  pathname: string,
+): { lat: number; lng: number } | null {
+  const stored = readStoredLocation(read);
+  if (stored) return stored;
+  if (pathname === "/customer" || pathname.startsWith("/customer/")) {
+    return { lat: DEFAULT_LAT, lng: DEFAULT_LNG };
+  }
+  return null;
+}
