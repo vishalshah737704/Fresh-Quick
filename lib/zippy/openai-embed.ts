@@ -13,7 +13,16 @@ export async function embedTexts(texts: string[]): Promise<number[][]> {
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
       body: JSON.stringify({ model: MODEL, input: texts.slice(i, i + BATCH) }),
     });
-    if (!res.ok) throw new Error(`OpenAI embeddings request failed (${res.status})`);
+    if (!res.ok) {
+      let bodyText = "";
+      try {
+        bodyText = await res.text();
+        if (bodyText.length > 500) bodyText = bodyText.slice(0, 500);
+      } catch {
+        // ignore if we can't read the body
+      }
+      throw new Error(`OpenAI embeddings request failed (${res.status}): ${bodyText}`);
+    }
     const json = (await res.json()) as { data: { index: number; embedding: number[] }[] };
     const ordered = [...json.data].sort((a, b) => a.index - b.index);
     for (const row of ordered) vectors.push(row.embedding);

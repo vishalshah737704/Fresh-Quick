@@ -31,7 +31,17 @@ export async function* streamClaude(
     }),
     signal,
   });
-  if (!res.ok || !res.body) throw new Error(`Anthropic request failed (${res.status})`);
+  if (!res.ok) {
+    let bodyText = "";
+    try {
+      bodyText = await res.text();
+      if (bodyText.length > 500) bodyText = bodyText.slice(0, 500);
+    } catch {
+      // ignore if we can't read the body
+    }
+    throw new Error(`Anthropic request failed (${res.status}): ${bodyText}`);
+  }
+  if (!res.body) throw new Error(`Anthropic request failed (${res.status}): no response body`);
   const reader = res.body.getReader();
   const decoder = new TextDecoder();
   let carry = "";
