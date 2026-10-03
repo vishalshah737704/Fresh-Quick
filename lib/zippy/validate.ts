@@ -40,6 +40,9 @@ export function parseChatRequest(
   if (b.history !== undefined) {
     if (!Array.isArray(b.history)) return { ok: false, error: "Invalid history" };
     for (const item of b.history) {
+      if (typeof item !== "object" || item === null) {
+        return { ok: false, error: "Invalid history" };
+      }
       const turn = item as { role?: unknown; content?: unknown };
       if (
         (turn.role !== "user" && turn.role !== "assistant") ||

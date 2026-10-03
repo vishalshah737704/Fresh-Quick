@@ -44,7 +44,16 @@ export function buildSystemPrompt(args: {
     ].join("\n");
   }
   // Strip any closing fence a chunk might contain so it cannot break out.
-  const safe = (text: string) => text.replace(/<\/?knowledge>/gi, "");
+  // Use repeated replacement to catch nested escapes like </know</knowledge>ledge>.
+  const safe = (text: string) => {
+    let result = text;
+    let prev;
+    while (result !== prev) {
+      prev = result;
+      result = result.replace(/<\s*\/?\s*knowledge\s*>/gi, "");
+    }
+    return result;
+  };
   const blocks = chunks
     .map((c) => `[${safe(c.title)}]\n${safe(c.content)}`)
     .join("\n\n---\n\n");
@@ -65,6 +74,7 @@ export function normalizeHistory(
 ): { role: "user" | "assistant"; content: string }[] {
   const valid = history.filter(
     (m): m is { role: "user" | "assistant"; content: string } =>
+      typeof m === "object" && m !== null &&
       (m.role === "user" || m.role === "assistant") && typeof m.content === "string"
   );
   const tail = valid.slice(-max);

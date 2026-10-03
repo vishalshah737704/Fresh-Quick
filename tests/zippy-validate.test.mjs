@@ -45,3 +45,11 @@ test("parseChatRequest validates conversationId and history shape", () => {
   assert.equal(ok.value.stream, false);
   assert.equal(ok.value.history.length, 2);
 });
+
+test("parseChatRequest rejects null and non-object history items without throwing", () => {
+  for (const badItem of [null, undefined, 5, "x", true]) {
+    const r = parseChatRequest({ message: "hi", history: [badItem] });
+    assert.equal(r.ok, false, `history with ${JSON.stringify(badItem)} should fail`);
+    assert.equal(r.error, "Invalid history");
+  }
+});
