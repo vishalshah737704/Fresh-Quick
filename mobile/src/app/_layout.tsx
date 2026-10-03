@@ -7,6 +7,7 @@ import { View, ActivityIndicator } from "react-native";
 import { BRAND } from "../../theme";
 import { CartProvider } from "../../lib/cart-store";
 import { supabase } from "../../lib/supabase";
+import { ZippyFab } from "../../components/ZippyFab";
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
@@ -68,6 +69,7 @@ export default function RootLayout() {
         <Stack.Screen name="delivery/dashboard" options={{ title: "Dashboard", headerBackVisible: false }} />
         <Stack.Screen name="delivery/history" options={{ title: "History" }} />
       </Stack>
+      <ZippyFab />
     </CartProvider>
   );
 }

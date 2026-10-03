@@ -1,0 +1,21 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import * as web from "../lib/zippy/constants.ts";
+import * as mobile from "../mobile/lib/zippy-constants.ts";
+import { parseChatRequest } from "../lib/zippy/validate.ts";
+
+test("web and mobile Zippy copy and limits are identical", () => {
+  assert.deepEqual(mobile.ZIPPY_NAME, web.ZIPPY_NAME);
+  assert.deepEqual(mobile.ZIPPY_WELCOME, web.ZIPPY_WELCOME);
+  assert.deepEqual([...mobile.SUGGESTED_QUESTIONS], [...web.SUGGESTED_QUESTIONS]);
+  assert.equal(mobile.MAX_MESSAGE_CHARS, web.MAX_MESSAGE_CHARS);
+  assert.equal(mobile.MAX_HISTORY_MESSAGES, web.MAX_HISTORY_MESSAGES);
+  assert.equal(mobile.ZIPPY_ERROR_MESSAGE, web.ZIPPY_ERROR_MESSAGE);
+  assert.equal(mobile.RATE_LIMIT_MESSAGE, web.RATE_LIMIT_MESSAGE);
+  assert.equal(mobile.SIGN_IN_AGAIN_MESSAGE, web.SIGN_IN_AGAIN_MESSAGE);
+});
+
+test("the server's message cap (validate.ts) matches the shared constant", () => {
+  assert.equal(parseChatRequest({ message: "a".repeat(web.MAX_MESSAGE_CHARS) }).ok, true);
+  assert.equal(parseChatRequest({ message: "a".repeat(web.MAX_MESSAGE_CHARS + 1) }).ok, false);
+});
