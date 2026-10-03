@@ -12,7 +12,7 @@ export class ZippyError extends Error {
   }
 }
 
-const REQUEST_TIMEOUT_MS = 30_000;
+const REQUEST_TIMEOUT_MS = 60_000;
 
 // Unlike apiFetch, a missing session is fine: visitors can ask help questions.
 // The base URL is read at call time so a missing env var never breaks import.

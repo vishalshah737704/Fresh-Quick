@@ -54,16 +54,18 @@ test("parseChatRequest rejects null and non-object history items without throwin
   }
 });
 
-test("parseChatRequest rejects oversized history", () => {
-  const turn = { role: "user", content: "hi" };
-  const tooMany = parseChatRequest({ message: "q", history: Array.from({ length: 51 }, () => turn) });
-  assert.equal(tooMany.ok, false);
-  assert.ok(tooMany.error.length > 0);
-  const tooLong = parseChatRequest({
-    message: "q",
-    history: Array.from({ length: 3 }, () => ({ role: "user", content: "a".repeat(3000) })),
-  });
-  assert.equal(tooLong.ok, false);
-  const fine = parseChatRequest({ message: "q", history: Array.from({ length: 50 }, () => turn) });
-  assert.equal(fine.ok, true);
+test("parseChatRequest history caps", () => {
+  const turn = (role, n) => ({ role, content: "a".repeat(n) });
+  const ten = Array.from({ length: 10 }, (_, k) => turn(k % 2 ? "assistant" : "user", k % 2 ? 6000 : 10));
+  assert.equal(parseChatRequest({ message: "q", history: ten }).ok, true);
+  assert.equal(parseChatRequest({ message: "q", history: [turn("user", 8001)] }).ok, false);
+  assert.equal(parseChatRequest({ message: "q", history: [turn("user", 8000)] }).ok, true);
+  assert.equal(parseChatRequest({ message: "q", history: Array.from({ length: 51 }, () => turn("user", 2)) }).ok, false);
+  const heavy = Array.from({ length: 10 }, () => turn("assistant", 4500));
+  assert.equal(parseChatRequest({ message: "q", history: heavy }).ok, false);
+  const oldPrefix = [
+    ...Array.from({ length: 40 }, () => turn("user", 3000)),
+    ...Array.from({ length: 10 }, () => turn("assistant", 5)),
+  ];
+  assert.equal(parseChatRequest({ message: "q", history: oldPrefix }).ok, true);
 });

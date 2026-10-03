@@ -1,9 +1,9 @@
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const MAX_MESSAGE_CHARS = 1000;
-const MAX_HISTORY_ITEM_CHARS = 4000;
+const MAX_HISTORY_ITEM_CHARS = 8000;
 const MAX_HISTORY_ITEMS = 10;
 const MAX_HISTORY_INPUT_ITEMS = 50;
-const MAX_HISTORY_TOTAL_CHARS = 8000;
+const MAX_HISTORY_TOTAL_CHARS = 40000;
 
 export function parseBearer(
   header: string | null
@@ -42,7 +42,6 @@ export function parseChatRequest(
   if (b.history !== undefined) {
     if (!Array.isArray(b.history)) return { ok: false, error: "Invalid history" };
     if (b.history.length > MAX_HISTORY_INPUT_ITEMS) return { ok: false, error: "History is too long" };
-    let totalChars = 0;
     for (const item of b.history) {
       if (typeof item !== "object" || item === null) {
         return { ok: false, error: "Invalid history" };
@@ -55,11 +54,12 @@ export function parseChatRequest(
       ) {
         return { ok: false, error: "Invalid history" };
       }
-      totalChars += turn.content.length;
-      if (totalChars > MAX_HISTORY_TOTAL_CHARS) return { ok: false, error: "History is too long" };
       history.push({ role: turn.role, content: turn.content });
     }
     history = history.slice(-MAX_HISTORY_ITEMS);
+    if (history.reduce((sum, turn) => sum + turn.content.length, 0) > MAX_HISTORY_TOTAL_CHARS) {
+      return { ok: false, error: "History is too long" };
+    }
   }
   const stream = b.stream === undefined ? true : b.stream === true;
   return { ok: true, value: { message, conversationId, history, stream } };
