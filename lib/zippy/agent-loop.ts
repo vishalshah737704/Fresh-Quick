@@ -16,6 +16,15 @@ type ToolUse = { id: string; name: string; input: unknown };
 // Bounded tool loop. Only the final round's text is ever yielded; text written in a round that ends
 // in tool calls is discarded. The assistant turn (including thinking blocks) is passed back unchanged,
 // and every tool result of a round goes back in ONE user message.
+// The Messages API needs `tools` defined whenever the conversation holds tool_use/tool_result blocks.
+export function hasToolBlocks(messages: LoopMessage[]): boolean {
+  return messages.some(
+    (m) =>
+      Array.isArray(m.content) &&
+      m.content.some((b: Block | null) => b !== null && (b.type === "tool_use" || b.type === "tool_result"))
+  );
+}
+
 export async function* runAgentLoop(deps: LoopDeps): AsyncGenerator<string> {
   const messages: LoopMessage[] = [...deps.initialMessages];
   let toolRounds = 0;

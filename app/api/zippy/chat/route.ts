@@ -24,7 +24,7 @@ import {
 
 type ChatTurn = { role: "user" | "assistant"; content: string };
 
-const fail =(error: string, status: number) => NextResponse.json({ error }, { status });
+const fail = (error: string, status: number) => NextResponse.json({ error }, { status });
 
 async function withinLimits(userId: string | null, ip: string | null): Promise<boolean> {
   for (const step of rateLimitPlan({ userId, ip })) {

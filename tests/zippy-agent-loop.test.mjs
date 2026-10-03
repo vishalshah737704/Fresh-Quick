@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { runAgentLoop } from "../lib/zippy/agent-loop.ts";
+import { runAgentLoop, hasToolBlocks } from "../lib/zippy/agent-loop.ts";
 
 const text = (t, stop = "end_turn") => ({ stopReason: stop, content: [{ type: "text", text: t }], text: t });
 const toolRound = (calls, preamble = "") => ({
@@ -134,4 +134,12 @@ test("zero-row tool results are fine", async () => {
     runTool: async () => ({ content: '{"stores":[]}', isError: false }),
   });
   assert.deepEqual(out, ["No stores match."]);
+});
+
+test("hasToolBlocks detects tool_use and tool_result blocks only", () => {
+  assert.equal(hasToolBlocks([]), false);
+  assert.equal(hasToolBlocks([{ role: "user", content: "plain" }]), false);
+  assert.equal(hasToolBlocks([{ role: "assistant", content: [{ type: "thinking" }, { type: "text", text: "x" }] }]), false);
+  assert.equal(hasToolBlocks([{ role: "assistant", content: [{ type: "text", text: "x" }, { type: "tool_use", id: "1" }] }]), true);
+  assert.equal(hasToolBlocks([{ role: "user", content: [{ type: "tool_result", tool_use_id: "1" }] }]), true);
 });

@@ -1,11 +1,17 @@
 import "server-only";
 import Anthropic from "@anthropic-ai/sdk";
-import { runAgentLoop, type Block, type LoopMessage, type Round } from "./agent-loop";
+import { hasToolBlocks, runAgentLoop, type Block, type LoopMessage, type Round } from "./agent-loop";
 import { runTool, ZIPPY_TOOLS } from "./tools";
 import type { Point } from "./catalog";
 
 const MODEL = process.env.ZIPPY_CLAUDE_MODEL ?? "claude-sonnet-5-5";
-const MAX_TOOL_ROUNDS = 4;
+const DEFAULT_TOOL_ROUNDS = 4;
+
+// Read at call time so the capped path can be exercised live with ZIPPY_MAX_TOOL_ROUNDS=1.
+const maxToolRounds = () => {
+  const n = Number.parseInt(process.env.ZIPPY_MAX_TOOL_ROUNDS ?? "", 10);
+  return n >= 1 && n <= 6 ? n : DEFAULT_TOOL_ROUNDS;
+};
 
 let client: Anthropic | null = null;
 const getClient = () => {
@@ -34,7 +40,12 @@ export async function* runAgent(args: {
         thinking: { type: "between_tools" },
         system: args.system,
         messages,
-        ...(withTools ? { tools: ZIPPY_TOOLS } : {}),
+        // Final forced-answer round: tool blocks in history still require `tools`; tool_choice none stops new calls.
+        ...(withTools
+          ? { tools: ZIPPY_TOOLS }
+          : hasToolBlocks(messages)
+            ? { tools: ZIPPY_TOOLS, tool_choice: { type: "none" } }
+            : {}),
       } as unknown as Anthropic.MessageStreamParams;
       const stream = anthropic.messages.stream(params, { signal: args.signal });
       const message = await stream.finalMessage();
@@ -54,7 +65,7 @@ export async function* runAgent(args: {
 
   yield* runAgentLoop({
     initialMessages: args.messages,
-    maxToolRounds: MAX_TOOL_ROUNDS,
+    maxToolRounds: maxToolRounds(),
     toolsEnabled: args.toolsEnabled,
     runRound,
     runTool: (name, input) => runTool(name, input, { location: args.location }),
