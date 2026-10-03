@@ -130,7 +130,7 @@ up" / "Customer is receiving the order…" cards, drop-off details mosaic-masked
 old "Mark delivered" screenshot was removed).
 See MEMORY.md's "Delivery animation", "Test emails", "Animation length follow-up",
 "Session close-out 2026-10-02" and "Reduce Motion fix" entries.
-**Ask Zippy Z1 (2026-10-03, branch `ask-zippy-z1`, built and live-verified, NOT yet merged/pushed):**
+**Ask Zippy Z1 (2026-10-03, branch `ask-zippy-z1`, built and live-verified, pushed to origin, NOT yet merged to `main`):**
 in-app AI assistant. Floating bubble on all web portals (one widget in the root
 layout) plus a chat button in mobile Customer + Delivery; answers how-to questions
 from `knowledge/**/*.md` via pgvector (migrations 29-30, tables `zippy_*`, all
