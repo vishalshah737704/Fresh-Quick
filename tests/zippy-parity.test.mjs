@@ -19,3 +19,8 @@ test("the server's message cap (validate.ts) matches the shared constant", () =>
   assert.equal(parseChatRequest({ message: "a".repeat(web.MAX_MESSAGE_CHARS) }).ok, true);
   assert.equal(parseChatRequest({ message: "a".repeat(web.MAX_MESSAGE_CHARS + 1) }).ok, false);
 });
+
+test("the server accepts the optional location the web client sends and ignores its absence (mobile sends none)", () => {
+  assert.equal(parseChatRequest({ message: "near me?", location: { lat: 19.076, lng: 72.8777 } }).ok, true);
+  assert.equal(parseChatRequest({ message: "hi", history: [], stream: false }).value.location, null);
+});

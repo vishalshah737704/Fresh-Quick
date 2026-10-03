@@ -18,7 +18,16 @@ type ChatTurn = { role: "user" | "assistant"; content: string };
 export function parseChatRequest(
   body: unknown
 ):
-  | { ok: true; value: { message: string; conversationId: string | null; history: ChatTurn[]; stream: boolean } }
+  | {
+      ok: true;
+      value: {
+        message: string;
+        conversationId: string | null;
+        history: ChatTurn[];
+        stream: boolean;
+        location: { lat: number; lng: number } | null;
+      };
+    }
   | { ok: false; error: string } {
   if (typeof body !== "object" || body === null || Array.isArray(body)) {
     return { ok: false, error: "Invalid request body" };
@@ -61,6 +70,19 @@ export function parseChatRequest(
       return { ok: false, error: "History is too long" };
     }
   }
+  let location: { lat: number; lng: number } | null = null;
+  if (b.location !== undefined && b.location !== null) {
+    const loc = b.location as { lat?: unknown; lng?: unknown };
+    if (
+      typeof b.location !== "object" ||
+      Array.isArray(b.location) ||
+      typeof loc.lat !== "number" || !Number.isFinite(loc.lat) || loc.lat < -90 || loc.lat > 90 ||
+      typeof loc.lng !== "number" || !Number.isFinite(loc.lng) || loc.lng < -180 || loc.lng > 180
+    ) {
+      return { ok: false, error: "Invalid location" };
+    }
+    location = { lat: loc.lat, lng: loc.lng };
+  }
   const stream = b.stream === undefined ? true : b.stream === true;
-  return { ok: true, value: { message, conversationId, history, stream } };
+  return { ok: true, value: { message, conversationId, history, stream, location } };
 }
