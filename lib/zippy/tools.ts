@@ -1,4 +1,5 @@
 import "server-only";
+import type Anthropic from "@anthropic-ai/sdk";
 import { supabaseServer } from "@/lib/supabase-server";
 import { embedTexts } from "./openai-embed";
 import {
@@ -13,7 +14,7 @@ import { findStores, getItemOptions, getStoreMenu, hydrateHits, loadCuisineLabel
 export type ToolContext = { location: Point | null };
 
 // Anthropic tool definitions. strict: true guarantees schema-valid input; ranges are re-checked by the parsers.
-export const ZIPPY_TOOLS = [
+export const ZIPPY_TOOLS: Anthropic.Tool[] = [
   {
     name: "search_catalog",
     description:
@@ -79,7 +80,7 @@ export const ZIPPY_TOOLS = [
       additionalProperties: false,
     },
   },
-] as const;
+];
 
 export const MIN_CATALOG_SIMILARITY = 0.3;
 
@@ -110,8 +111,10 @@ export async function runTool(
       const parsed = parseSearchCatalogInput(rawInput);
       if (!parsed.ok) return bad(parsed.error);
       const [embedding] = await embedTexts([parsed.value.query]);
+      if (!embedding) throw new Error("embedTexts returned no embedding");
       const wanted = parsed.value.kind === "store" ? "store" : parsed.value.kind === "dish" ? "product" : null;
-      const hits = (await matchCatalog(embedding, 12)).filter((h) => (wanted ? h.kind === wanted : true)).slice(0, 6);
+      // Dishes (~2,900) dominate stores (~80), so a kind filter needs a much wider candidate pool.
+      const hits = (await matchCatalog(embedding, wanted ? 60 : 12)).filter((h) => (wanted ? h.kind === wanted : true)).slice(0, 6);
       const labels = await loadCuisineLabels();
       const { stores, dishes } = await hydrateHits(hits, ctx.location, labels);
       return ok({ stores, dishes });

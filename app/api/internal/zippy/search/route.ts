@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyInternalSecret } from "@/lib/internal-auth";
-import { retrieveChunks } from "@/lib/zippy/retrieve";
+import { embedQuestion, retrieveChunks } from "@/lib/zippy/retrieve";
+import { matchCatalog } from "@/lib/zippy/tools";
 import type { ZippyRole } from "@/lib/zippy/audience";
 
 const ROLES = ["customer", "vendor", "delivery", "admin"];
@@ -24,8 +25,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid role" }, { status: 400 });
   }
   try {
-    const matches = await retrieveChunks(body.question.trim(), role as ZippyRole | null);
-    return NextResponse.json({ matches });
+    const embedding = await embedQuestion(body.question.trim());
+    const matches = await retrieveChunks(embedding, role as ZippyRole | null);
+    const catalog = await matchCatalog(embedding, 8);
+    return NextResponse.json({ matches, catalog });
   } catch (error) {
     console.error("zippy search failed", error);
     return NextResponse.json({ error: (error as Error).message }, { status: 500 });
