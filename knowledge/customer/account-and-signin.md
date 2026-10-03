@@ -75,4 +75,4 @@ After you sign in, the hamburger icon in the top right opens a menu with your na
 
 ## Can I create a delivery partner or admin account from the customer app?
 
-No. Delivery partner accounts are added by an administrator, and admin accounts are not self-service. Store owners and delivery partners use their own sign-in pages.
+No. The customer app cannot create those accounts. Delivery partners sign up on the delivery sign-in page (an administrator can also add them), and store owners sign up on the vendor sign-in page. Admin accounts cannot be created from the app.

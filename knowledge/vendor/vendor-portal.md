@@ -33,12 +33,14 @@ The message "Add at least one available menu item before opening" appears when n
 ## How do I add a menu item?
 
 1. Open Menu in the left menu.
-2. Enter the Item name and Price (rupees, above zero). An Image URL is optional.
+2. Enter the Item name and Price (rupees, above zero). An image link is optional.
 3. Choose Add item.
+
+The add form takes only these fields. Add the description, category and vegetarian marking afterwards with Edit on the item's row.
 
 ## How do I edit, hide or delete a menu item?
 
-In the Menu table each item has these buttons: Edit (name, description, category, veg, price, image), "Mark unavailable" or "Mark available", and Delete. An unavailable item cannot be ordered.
+In the Menu table each item has these buttons: Edit (name, description, category, veg, price, image), "Mark unavailable" or "Mark available", and Delete. An unavailable item cannot be ordered. Delete is refused for an item that has past orders, with the message "This item has past orders — mark it unavailable instead of deleting it." Use "Mark unavailable" for those items.
 
 ## How do I add choices like size or toppings to an item?
 
