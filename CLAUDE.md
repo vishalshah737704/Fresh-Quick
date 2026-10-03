@@ -134,12 +134,12 @@ See MEMORY.md's "Delivery animation", "Test emails", "Animation length follow-up
 in-app AI assistant. Floating bubble on all web portals (one widget in the root
 layout) plus a chat button in mobile Customer + Delivery; answers how-to questions
 from `knowledge/**/*.md` via pgvector (migrations 29-30, tables `zippy_*`, all
-service-role only) and Claude (`claude-sonnet-5-5`, raw fetch) through
+service-role only) and Claude (`claude-sonnet-5-5`, raw fetch (superseded by Z2: the Anthropic SDK; eval now 46/47)) through
 `POST /api/zippy/chat`; OpenAI `text-embedding-3-small` for embeddings. Signed-in
 chats are saved (web + mobile share history); visitors get a temporary chat.
 To re-ingest after editing `knowledge/`: POST the n8n webhook `foodhub/zippy-ingest`
 (workflow 06) or `POST /api/internal/zippy/ingest`; check quality with
-`node scripts/zippy-eval.mjs` (last 35/36). Needs `ANTHROPIC_API_KEY` (workspace-scoped,
+`node scripts/zippy-eval.mjs` (last 35/36, now 46/47 after Z2). Needs `ANTHROPIC_API_KEY` (workspace-scoped,
 with credits) and `OPENAI_API_KEY` in `.env.local`. Z2 (live lookups) is built on branch `ask-zippy-z2` (next paragraph); Z3 (my orders) and
 Z4 (actions) are next. See MEMORY.md's "Ask Zippy Z1" entry and the spec's Amendments.
 **Ask Zippy Z2 (2026-10-03, branch `ask-zippy-z2`, built and live-verified, not yet merged to `main`):**
@@ -150,7 +150,7 @@ embedded once and searches the Z1 knowledge AND a catalog index (migration 31, `
 prices, fees or open status); hits are hydrated live into a `<catalog>` prompt block, then a bounded
 Claude tool loop runs on `@anthropic-ai/sdk` (`lib/zippy/agent.ts` + pure `agent-loop.ts`; four
 read-only tools in `tools.ts`: `search_catalog`, `find_stores`, `get_store_menu`, `get_item_options`;
-data in `catalog.ts` (pure) / `catalog-data.ts`; index sync in `catalog-sync.ts`). Max 4 tool rounds
+data in `catalog.ts` (pure) / `catalog-data.ts`; index sync in `catalog-sync.ts`). Max 4 tool rounds, max 6 tool calls per round (extras get an error result)
 (env `ZIPPY_MAX_TOOL_ROUNDS`, 1-6). **The answer now arrives in one piece, not word by word.** Kill
 switch: `ZIPPY_TOOLS=off` (no tools, no catalog = Z1 content). Web sends the delivery pin
 (`lib/zippy/client-location.ts`: stored pin, or the default pin on `/customer*` only); mobile sends NO

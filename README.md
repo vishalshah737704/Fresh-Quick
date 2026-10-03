@@ -154,7 +154,7 @@ the n8n webhook `foodhub/zippy-ingest` (workflow 06, see
 
 **Quality check:** with `N8N_INTERNAL_SECRET` exported in your shell and the
 app running, `node scripts/zippy-eval.mjs` runs the known-question set against
-retrieval. Target is at least 90 % hits; the last run scored 35/36.
+retrieval. Target is at least 90 % hits; the last run scored 35/36 (superseded by Z2: the Anthropic SDK; eval now 46/47).
 
 **Tests:** `node --test tests/*.test.mjs` (132 passing at the end of Z1).
 

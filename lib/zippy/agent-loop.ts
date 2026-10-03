@@ -5,6 +5,7 @@ export type Round = { stopReason: string | null; content: Block[]; text: string 
 export type LoopDeps = {
   initialMessages: LoopMessage[];
   maxToolRounds: number;
+  maxToolCallsPerRound: number;
   toolsEnabled: boolean;
   runRound(messages: LoopMessage[], withTools: boolean): Promise<Round>;
   runTool(name: string, input: unknown): Promise<{ content: string; isError: boolean }>;
@@ -46,7 +47,16 @@ export async function* runAgentLoop(deps: LoopDeps): AsyncGenerator<string> {
     if (round.stopReason === "max_tokens") throw new Error("Tool input truncated (stop_reason max_tokens)");
     messages.push({ role: "assistant", content: round.content });
     const results = await Promise.all(
-      calls.map(async (call) => {
+      calls.map(async (call, index) => {
+        if (index >= deps.maxToolCallsPerRound) {
+          // Every tool_use id needs a result or the API rejects the next request.
+          return {
+            type: "tool_result",
+            tool_use_id: call.id,
+            content: "Too many lookups at once. Use the results you already have, or ask the user to narrow the request.",
+            is_error: true,
+          };
+        }
         try {
           const r = await deps.runTool(call.name, call.input);
           return { type: "tool_result", tool_use_id: call.id, content: r.content, ...(r.isError ? { is_error: true } : {}) };

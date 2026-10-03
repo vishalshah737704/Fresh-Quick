@@ -15,7 +15,7 @@ const toolRound = (calls, preamble = "") => ({
 
 async function collect(deps) {
   const out = [];
-  for await (const piece of runAgentLoop({ initialMessages: [{ role: "user", content: "hi" }], maxToolRounds: 4, toolsEnabled: true, onToolError() {}, ...deps })) out.push(piece);
+  for await (const piece of runAgentLoop({ initialMessages: [{ role: "user", content: "hi" }], maxToolRounds: 4, maxToolCallsPerRound: 6, toolsEnabled: true, onToolError() {}, ...deps })) out.push(piece);
   return out;
 }
 
@@ -142,4 +142,40 @@ test("hasToolBlocks detects tool_use and tool_result blocks only", () => {
   assert.equal(hasToolBlocks([{ role: "assistant", content: [{ type: "thinking" }, { type: "text", text: "x" }] }]), false);
   assert.equal(hasToolBlocks([{ role: "assistant", content: [{ type: "text", text: "x" }, { type: "tool_use", id: "1" }] }]), true);
   assert.equal(hasToolBlocks([{ role: "user", content: [{ type: "tool_result", tool_use_id: "1" }] }]), true);
+});
+
+test("per-round cap: extra tool_use blocks get an error result in order and never run", async () => {
+  const calls = Array.from({ length: 10 }, (_, i) => ({ id: `c${i}`, name: "find_stores" }));
+  const rounds = [toolRound(calls), text("done")];
+  let ran = 0;
+  let second;
+  const out = await collect({
+    runRound: async (messages) => { if (rounds.length === 1) second = structuredClone(messages); return rounds.shift(); },
+    runTool: async () => { ran += 1; return { content: "{}", isError: false }; },
+  });
+  assert.deepEqual(out, ["done"]);
+  assert.equal(ran, 6);
+  const results = second.at(-1).content;
+  assert.deepEqual(results.map((r) => r.tool_use_id), calls.map((c) => c.id));
+  assert.equal(results.filter((r) => r.is_error).length, 4);
+  assert.ok(results.slice(6).every((r) => r.is_error && r.content.startsWith("Too many lookups at once.")));
+  assert.ok(results.slice(0, 6).every((r) => !r.is_error));
+});
+
+test("abort after a tool round: loop throws and no further tool runs", async () => {
+  let ran = 0;
+  let n = 0;
+  await assert.rejects(
+    collect({
+      runRound: async () => {
+        n += 1;
+        if (n === 1) return toolRound([{ id: "a", name: "find_stores" }]);
+        throw Object.assign(new Error("aborted"), { name: "AbortError" });
+      },
+      runTool: async () => { ran += 1; return { content: "{}", isError: false }; },
+    }),
+    { name: "AbortError" }
+  );
+  assert.equal(ran, 1);
+  assert.equal(n, 2);
 });

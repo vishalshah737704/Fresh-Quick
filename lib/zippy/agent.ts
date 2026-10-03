@@ -6,6 +6,7 @@ import type { Point } from "./catalog";
 
 const MODEL = process.env.ZIPPY_CLAUDE_MODEL ?? "claude-sonnet-5-5";
 const DEFAULT_TOOL_ROUNDS = 4;
+const MAX_TOOL_CALLS_PER_ROUND = 6;
 
 // Read at call time so the capped path can be exercised live with ZIPPY_MAX_TOOL_ROUNDS=1.
 const maxToolRounds = () => {
@@ -66,6 +67,7 @@ export async function* runAgent(args: {
   yield* runAgentLoop({
     initialMessages: args.messages,
     maxToolRounds: maxToolRounds(),
+    maxToolCallsPerRound: MAX_TOOL_CALLS_PER_ROUND,
     toolsEnabled: args.toolsEnabled,
     runRound,
     runTool: (name, input) => runTool(name, input, { location: args.location }),

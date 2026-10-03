@@ -2986,7 +2986,7 @@ plan `docs/superpowers/plans/2026-10-03-ask-zippy-z2.md`. Subagent-driven develo
   (web 8.4, mobile 6.3 "Asking about stores and menus", TOCs unchanged, 49 and 31 pages).
 - **Decisions:** one embedding feeds knowledge and catalog search; embedded text never holds prices, fees
   or open status (hydration supplies live facts, so a stale index is harmless); prices via integer paise;
-  vendor text sanitised, capped at 200 chars and fenced as data; max 4 tool rounds (`ZIPPY_MAX_TOOL_ROUNDS`
+  vendor text sanitised, capped at 200 chars and fenced as data; max 6 tool calls per round (extras answered with an error result); max 4 tool rounds (`ZIPPY_MAX_TOOL_ROUNDS`
   1-6); tool-round text is discarded so the answer is ONE piece, web and mobile (accepted UX change);
   kill switch `ZIPPY_TOOLS=off` = Z1 content (also one piece); web sends the delivery pin, mobile none
   (no mobile pin exists, so no distance sort there); location never stored or logged.

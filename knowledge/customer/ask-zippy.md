@@ -10,7 +10,7 @@ Zippy can look up stores and dishes for you. You can ask whether a store is open
 
 ## Are the prices and open status Zippy gives me up to date?
 
-Yes, they are looked up when you ask. Stores can change a price, mark a dish unavailable, or open and close at any time, so an answer can be out of date a few minutes later. Before you order, check the price and the store status in the cart and at checkout, which always use the current values.
+Yes, they are looked up when you ask. Stores can change a price, mark a dish unavailable, or open and close at any time, so an answer can be out of date a few minutes later. Before you order, check the store status. Checkout always re-checks the current prices and tells you if something changed since you added the item.
 
 ## Can Zippy find the store nearest to me?
 
