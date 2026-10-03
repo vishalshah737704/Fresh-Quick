@@ -33,5 +33,6 @@
   { "question": "what is the cricket score right now", "role": null, "expectTitleIncludes": null },
   { "question": "write me a poem about the ocean", "role": "customer", "expectTitleIncludes": null },
   { "question": "how do i close my restaurant for the day", "role": "customer", "expectTitleIncludes": null, "expectTitleExcludes": "Vendor portal guide" },
-  { "question": "how do i add new dishes to my menu", "role": null, "expectTitleIncludes": null, "expectTitleExcludes": "Vendor portal guide" }
+  { "question": "how do i add new dishes to my menu", "role": null, "expectTitleIncludes": null, "expectTitleExcludes": "Vendor portal guide" },
+  { "question": "where do I reassign a delivery partner", "role": "customer", "expectTitleIncludes": null, "expectTitleExcludes": "Admin portal guide" }
 ]

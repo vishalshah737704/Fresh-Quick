@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 
 const base = process.env.ZIPPY_BASE_URL ?? "http://localhost:3000";
 const secret = process.env.N8N_INTERNAL_SECRET;
+// Keep in sync with MIN_SIMILARITY in lib/zippy/prompt.ts (or override via env).
 const MIN = Number(process.env.ZIPPY_MIN_SIMILARITY ?? "0.3");
 if (!secret) {
   console.error("Set N8N_INTERNAL_SECRET in your shell (the script never reads .env files).");
@@ -12,20 +13,28 @@ const cases = JSON.parse(readFileSync(new URL("../tests/fixtures/zippy-eval.json
 let hits = 0;
 const misses = [];
 for (const c of cases) {
-  const res = await fetch(`${base}/api/internal/zippy/search`, {
+  let res;
+  try {
+    res = await fetch(`${base}/api/internal/zippy/search`, {
     method: "POST",
     headers: { "content-type": "application/json", "x-internal-secret": secret },
     body: JSON.stringify({ question: c.question, role: c.role }),
-  });
+    });
+  } catch (err) {
+    console.error(`Request failed: ${err.cause?.code ?? err.message}`);
+    process.exit(1);
+  }
   if (!res.ok) {
     console.error(`HTTP ${res.status} for: ${c.question}`);
     process.exit(1);
   }
   const { matches } = await res.json();
   const usable = matches.filter((m) => m.similarity >= MIN).slice(0, 3);
+  // Production selectContext keeps up to 5 matches, so isolation checks look at 5; positives stay strict at 3.
+  const usable5 = matches.filter((m) => m.similarity >= MIN).slice(0, 5);
   let ok;
   if (c.expectTitleExcludes) {
-    ok = !usable.some((m) => m.title.includes(c.expectTitleExcludes));
+    ok = !usable5.some((m) => m.title.includes(c.expectTitleExcludes));
   } else if (c.expectTitleIncludes === null) {
     ok = usable.length === 0;
   } else {
