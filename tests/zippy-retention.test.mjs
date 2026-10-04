@@ -32,6 +32,9 @@ test("migration 32 guards the window, is service-role only and touches only Zipp
   assert.match(sql, /set search_path = ''/);
   assert.match(sql, /revoke all on function public\.purge_zippy_chats\(int, boolean\) from public, anon, authenticated/);
   assert.match(sql, /grant execute on function public\.purge_zippy_chats\(int, boolean\) to service_role/);
+  assert.doesNotMatch(sql, /truncate/i);
+  assert.doesNotMatch(sql, /execute\s+(format|'|")/i);
+  assert.match(sql, /p_retention_days > 3650/);
   const deletes = [...sql.matchAll(/delete from ([\w.]+)/g)].map((m) => m[1]);
   assert.deepEqual(deletes.sort(), ["public.zippy_conversations", "public.zippy_usage"]);
 });

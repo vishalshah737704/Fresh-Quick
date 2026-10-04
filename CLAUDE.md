@@ -251,9 +251,10 @@ window (30 days; env `ZIPPY_RETENTION_DAYS` 1..3650, else 30), plus `zippy_usage
 (internal secret). n8n workflow 08 "Zippy Chat Retention" runs the real purge nightly at 03:45; its webhook
 `foodhub/zippy-purge` is a DRY RUN unless the body is `{"dryRun": false}`. Orders are not purged. Policy text
 and both manuals (web v3.5.1, mobile v4.6.1, PDFs regenerated, page counts unchanged) now say chats are deleted
-automatically 30 days after the last message. After merge Vishal must: re-ingest `knowledge/`, import and publish
-workflow 08 in the local n8n (never stop or restart the n8n container), then run the dry run first:
-`Invoke-RestMethod -Method Post http://localhost:5678/webhook/foodhub/zippy-purge`. See MEMORY.md's
+by a nightly cleanup once they have had no activity for 30 days. After merge Vishal must, IN THIS ORDER (so Zippy never states the promise before the job exists): import and publish
+workflow 08 in the local n8n (never stop or restart the n8n container), run the dry run
+(`Invoke-RestMethod -Method Post http://localhost:5678/webhook/foodhub/zippy-purge`), THEN re-ingest `knowledge/`.
+Scheduled runs happen only while Docker, n8n and the app are up (n8n does not catch up missed runs; the next night's run does the work), and the schedule uses the workflow's timezone setting (`Asia/Kolkata`). See MEMORY.md's
 "Zippy chat retention" entry and `docs/n8n-webhook-setup.md` (Workflow 08).
 **Gotcha for demos/tests:** workflow 04 auto-assigns a `ready` order within
 ~10 s to the NEAREST ONLINE partner by stored lat/lng, so it never reaches the
@@ -784,8 +785,8 @@ See [MEMORY.md](MEMORY.md) for phase-by-phase progress and decisions.
   (web + mobile) cancel answer was corrected on 2026-10-03 to match the code (customers cannot
   cancel; a store can only reject while Placed; failed payment cancels). The policy knowledge file
   now holds Vishal's real support contact, simulated-payment terms, a 24-hour wrong-item rule and
-  retention wording (as of 2026-10-04 Zippy chats ARE purged automatically 30 days after their last
-  message by the retention job, see "Zippy chat retention"; orders are NOT purged and are deleted only on request). Both manuals gained an Ask Zippy chapter on 2026-10-03
+  retention wording (as of 2026-10-04 Zippy chats ARE purged by a nightly retention job once they have had no activity
+  for 30 days, see "Zippy chat retention"; orders are NOT purged and are deleted only on request). Both manuals gained an Ask Zippy chapter on 2026-10-03
   (web v3.3 Chapter 8, mobile v4.4 Chapter 6, edited in place; mobile figure is from Vishal's iPhone
   recording with the Expo gear left in, like the other figures).
 - **pgvector: `ALTER FUNCTION ... SET hnsw.*` needs the library loaded first**

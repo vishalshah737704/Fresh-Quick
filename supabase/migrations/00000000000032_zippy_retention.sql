@@ -22,9 +22,10 @@ declare
   expired uuid[];
   message_count int;
   usage_count int;
+  conversation_count int;
 begin
-  if p_retention_days is null or p_retention_days < 1 then
-    raise exception 'retention days must be at least 1';
+  if p_retention_days is null or p_retention_days < 1 or p_retention_days > 3650 then
+    raise exception 'retention days must be between 1 and 3650';
   end if;
   cutoff := now() - make_interval(days => p_retention_days);
 
@@ -36,20 +37,45 @@ begin
            c.created_at
          ) < cutoff;
 
-  select count(*)::int into message_count
-    from public.zippy_messages m
-   where m.conversation_id = any (expired);
+  if p_dry_run then
+    conversation_count := coalesce(cardinality(expired), 0);
 
-  select count(*)::int into usage_count
-    from public.zippy_usage u
-   where u.window_start < now() - interval '2 days';
+    select count(*)::int into message_count
+      from public.zippy_messages m
+     where m.conversation_id = any (expired);
 
-  if not p_dry_run then
-    delete from public.zippy_conversations c where c.id = any (expired);
+    select count(*)::int into usage_count
+      from public.zippy_usage u
+     where u.window_start < now() - interval '2 days';
+  else
+    -- Lock the candidates, then re-check idleness inside the delete so a chat
+    -- that received a message since the scan above is never deleted.
+    perform 1 from public.zippy_conversations c where c.id = any (expired) for update;
+
+    select count(*)::int into message_count
+      from public.zippy_messages m
+     where m.conversation_id in (
+       select c.id from public.zippy_conversations c
+        where c.id = any (expired)
+          and coalesce(
+                (select max(m2.created_at) from public.zippy_messages m2 where m2.conversation_id = c.id),
+                c.created_at
+              ) < cutoff
+     );
+
+    delete from public.zippy_conversations c
+     where c.id = any (expired)
+       and coalesce(
+             (select max(m.created_at) from public.zippy_messages m where m.conversation_id = c.id),
+             c.created_at
+           ) < cutoff;
+    get diagnostics conversation_count = row_count;
+
     delete from public.zippy_usage u where u.window_start < now() - interval '2 days';
+    get diagnostics usage_count = row_count;
   end if;
 
-  return query select coalesce(cardinality(expired), 0), message_count, usage_count;
+  return query select conversation_count, message_count, usage_count;
 end;
 $$;
 

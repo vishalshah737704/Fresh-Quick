@@ -78,5 +78,5 @@
     }
   },
   "active": false,
-  "settings": { "executionOrder": "v1" }
+  "settings": { "executionOrder": "v1", "timezone": "Asia/Kolkata" }
 }

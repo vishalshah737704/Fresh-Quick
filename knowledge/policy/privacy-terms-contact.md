@@ -41,7 +41,7 @@ Fresh & Quick is a demonstration food-ordering app. By using it you agree to the
 - Who sees it: the store and, while an order is active, its delivery partner (see above). Order emails are sent through Gmail by an n8n automation.
 - Ask Zippy: when you are signed in, your chats are saved so you can continue them on web and mobile. A visitor's chat is temporary. Your questions are sent to Anthropic (Claude) and OpenAI to produce the answer.
 - Payment details: none are collected or stored.
-- Retention: saved Zippy chats are deleted automatically 30 days after their last message. Orders are kept, and may be deleted on request, so to have your orders deleted, contact support.
+- Retention: saved Zippy chats with no activity for 30 days are deleted by a nightly cleanup. Orders are kept, and may be deleted on request, so to have your orders deleted, contact support.
 
 ## What is the refund policy?
 

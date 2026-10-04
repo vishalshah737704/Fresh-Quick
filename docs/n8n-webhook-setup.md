@@ -500,6 +500,9 @@ is real. Orders, accounts and everything else are never touched.
 - **What it calls:** `POST {APP_BASE_URL}/api/internal/zippy/purge` with the
   `X-Internal-Secret` header (`$env.N8N_INTERNAL_SECRET`). No n8n credential is
   needed.
+- **Timezone:** the workflow sets `settings.timezone` to `Asia/Kolkata`, so 03:45 is
+  India time. Scheduled runs only happen while Docker, n8n and the app are up;
+  n8n does not catch up missed runs.
 - **Dry run first:** the webhook is a DRY RUN unless the body is
   `{"dryRun": false}`; it returns `{dryRun, retentionDays, conversations,
   messages, usageRows}` (what would be deleted). The nightly schedule really

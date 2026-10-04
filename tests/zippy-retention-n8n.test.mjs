@@ -41,3 +41,17 @@ test("workflow 08 holds no credentials or real tokens", () => {
   assert.doesNotMatch(JSON.stringify(wf), /eyJ[A-Za-z0-9_-]{20,}/);
   assert.equal(wf.nodes.some((n) => n.credentials), false);
 });
+
+test("workflow 08 is pinned to Asia/Kolkata so 03:45 is local time", () => {
+  assert.equal(wf.settings.timezone, "Asia/Kolkata");
+});
+
+test("the webhook body expression is a dry run unless the body is exactly dryRun false", () => {
+  const expr = webhookCall.parameters.jsonBody.replace(/^=\{\{/, "").replace(/\}\}$/, "");
+  const run = (json) => JSON.parse(new Function("$json", "JSON", `return ${expr};`)(json, JSON));
+  assert.equal(run({}).dryRun, true);
+  assert.equal(run({ body: {} }).dryRun, true);
+  assert.equal(run({ body: "false" }).dryRun, true);
+  assert.equal(run({ body: { dryRun: "false" } }).dryRun, true);
+  assert.equal(run({ body: { dryRun: false } }).dryRun, false);
+});

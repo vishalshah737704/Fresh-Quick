@@ -16,16 +16,27 @@ export async function POST(request: NextRequest) {
     body = null;
   }
   const dryRun = parseDryRun(body);
-  const retentionDays = parseRetentionDays(process.env.ZIPPY_RETENTION_DAYS);
-  const { data, error } = await supabaseServer.rpc("purge_zippy_chats", {
-    p_retention_days: retentionDays,
-    p_dry_run: dryRun,
-  });
-  if (error) {
+  const rawDays = process.env.ZIPPY_RETENTION_DAYS;
+  const retentionDays = parseRetentionDays(rawDays);
+  if (rawDays !== undefined && rawDays !== "" && String(retentionDays) !== rawDays.trim()) {
+    console.warn(`ZIPPY_RETENTION_DAYS is invalid, using ${retentionDays} days`);
+  }
+  let data: unknown;
+  try {
+    const result = await supabaseServer.rpc("purge_zippy_chats", {
+      p_retention_days: retentionDays,
+      p_dry_run: dryRun,
+    });
+    if (result.error) throw result.error;
+    data = result.data;
+  } catch (error) {
     console.error("zippy purge failed", error);
     return NextResponse.json({ error: "Purge failed" }, { status: 500 });
   }
-  const row = Array.isArray(data) ? data[0] : data;
+  const row = (Array.isArray(data) ? data[0] : data) as
+    | { conversations?: number; messages?: number; usage_rows?: number }
+    | null
+    | undefined;
   return NextResponse.json({
     dryRun,
     retentionDays,
