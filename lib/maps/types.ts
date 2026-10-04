@@ -115,8 +115,12 @@ export type GoogleNs = {
     importLibrary(name: "maps"): Promise<{
       Map: new (el: HTMLElement, opts?: MapOptions) => GMap;
       Polyline: new (opts?: PolylineOptions) => GPolyline;
-      LatLngBounds: new () => GLatLngBounds;
     }>;
+    // LatLngBounds, LatLng and SymbolPath live in the "core" library, not "maps".
+    importLibrary(name: "core"): Promise<{
+      LatLngBounds?: new () => GLatLngBounds;
+      SymbolPath?: { CIRCLE: number };
+    } & Record<string, unknown>>;
     // The legacy google.maps.Marker lives in the "marker" library, not "maps".
     importLibrary(name: "marker"): Promise<{
       Marker?: new (opts?: MarkerOptions) => GMarker;
@@ -128,6 +132,9 @@ export type GoogleNs = {
       ) => GPlaceAutocompleteElement;
     }>;
     Marker?: new (opts?: MarkerOptions) => GMarker;
+    Polyline?: new (opts?: PolylineOptions) => GPolyline;
+    LatLngBounds?: new () => GLatLngBounds;
+    SymbolPath?: { CIRCLE: number };
     event: { removeListener(l: MapsEventListener): void };
   };
 };

@@ -2,7 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { pickClass } from "./library";
-import type { GMarker, GoogleNs, MapsErrorKind, MapsStatus, MarkerOptions } from "./types";
+import type {
+  GLatLngBounds,
+  GMarker,
+  GPolyline,
+  GoogleNs, MapsErrorKind, MapsStatus,
+  MarkerOptions,
+  PolylineOptions,
+} from "./types";
 
 export class MapsError extends Error {
   kind: MapsErrorKind;
@@ -92,12 +99,31 @@ export function loadGoogleMaps(): Promise<GoogleNs> {
   return tracked;
 }
 
-// The one place that obtains the classic Marker constructor (the "marker"
-// library, with the global as a fallback). Rejects if Maps cannot load.
-export async function loadMarkerClass(): Promise<new (opts?: MarkerOptions) => GMarker> {
+export type MapClasses = {
+  Marker: new (opts?: MarkerOptions) => GMarker;
+  Polyline: new (opts?: PolylineOptions) => GPolyline;
+  LatLngBounds: new () => GLatLngBounds;
+  circlePath: number;
+};
+
+// Loads "maps" (Polyline), "marker" (Marker) and "core" (LatLngBounds,
+// SymbolPath), each class taken from its own library with the global
+// google.maps.<Class> as a fallback. Rejects if Maps or a class is unavailable.
+export async function loadMapClasses(): Promise<MapClasses> {
   const google = await loadGoogleMaps();
-  const lib = await google.maps.importLibrary("marker");
-  return pickClass<new (opts?: MarkerOptions) => GMarker>("Marker", lib.Marker, google.maps.Marker);
+  const [maps, marker, core] = await Promise.all([
+    google.maps.importLibrary("maps"),
+    google.maps.importLibrary("marker"),
+    google.maps.importLibrary("core"),
+  ]);
+  const symbols = core.SymbolPath ?? google.maps.SymbolPath;
+  return {
+    Marker: pickClass("Marker", marker.Marker, google.maps.Marker),
+    Polyline: pickClass("Polyline", maps.Polyline, google.maps.Polyline),
+    LatLngBounds: pickClass("LatLngBounds", core.LatLngBounds, google.maps.LatLngBounds),
+    // SymbolPath.CIRCLE is 0 in the API.
+    circlePath: typeof symbols?.CIRCLE === "number" ? symbols.CIRCLE : 0,
+  };
 }
 
 export function useGoogleMaps(): MapsStatus {

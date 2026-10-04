@@ -5,8 +5,7 @@ import MapCanvas from "@/components/maps/MapCanvas";
 import { BRAND } from "@/lib/branding";
 import { haversineDistanceKm } from "@/lib/geo";
 import { formatDistanceKm, interpolateLatLng } from "@/lib/maps/geo-math";
-import { loadMarkerClass, useGoogleMaps } from "@/lib/maps/loader";
-import { pickClass } from "@/lib/maps/library";
+import { loadMapClasses, useGoogleMaps, type MapClasses } from "@/lib/maps/loader";
 import {
   fitKey,
   formatUpdatedAt,
@@ -42,6 +41,8 @@ type Scene = {
   google: GoogleNs;
   Marker: new (opts?: MarkerOptions) => GMarker;
   LatLngBounds: new () => GLatLngBounds;
+  Polyline: MapClasses["Polyline"];
+  circlePath: number;
   store: GMarker | null;
   destination: GMarker | null;
   partner: GMarker | null;
@@ -52,10 +53,10 @@ type Scene = {
 
 const ANIMATION_MS = 1000;
 
-function circle(fill: string, scale: number) {
-  // SymbolPath.CIRCLE is 0; a symbol needs no google.maps.Size object.
+function circle(path: number, fill: string, scale: number) {
+  // A symbol (path from core SymbolPath.CIRCLE) needs no google.maps.Size object.
   return {
-    path: 0,
+    path,
     scale,
     fillColor: fill,
     fillOpacity: 1,
@@ -119,7 +120,7 @@ export default function OrderTrackingMap({ status, store, destination, partnerLo
           position: p,
           title: "Store",
           label: letter("S"),
-          icon: circle(BRAND.theme.primaryTextSafe, 13),
+          icon: circle(scene.circlePath, BRAND.theme.primaryTextSafe, 13),
           zIndex: 1,
         })
     );
@@ -132,7 +133,7 @@ export default function OrderTrackingMap({ status, store, destination, partnerLo
           position: p,
           title: "Delivery address",
           label: letter("H"),
-          icon: circle(BRAND.theme.accentTextSafe, 13),
+          icon: circle(scene.circlePath, BRAND.theme.accentTextSafe, 13),
           zIndex: 1,
         })
     );
@@ -142,26 +143,18 @@ export default function OrderTrackingMap({ status, store, destination, partnerLo
       if (scene.line) {
         scene.line.setPath(path);
       } else {
-        void scene.google.maps.importLibrary("maps").then((lib) => {
-          if (sceneRef.current !== scene || scene.line) return;
-          try {
-          const Polyline = pickClass<typeof lib.Polyline>("Polyline", lib.Polyline, undefined);
-          scene.line = new Polyline({
-            map: scene.map,
-            path: viewRef.current.store && viewRef.current.destination ? [viewRef.current.store, viewRef.current.destination] : path,
-            strokeOpacity: 0,
-            icons: [
-              {
-                icon: { path: "M 0,-1 0,1", strokeOpacity: 0.7, strokeColor: BRAND.theme.ink, scale: 3 },
-                offset: "0",
-                repeat: "14px",
-              },
-            ],
-          });
-          } catch (error) {
-            fail(error);
-          }
-        }, fail);
+        scene.line = new scene.Polyline({
+          map: scene.map,
+          path,
+          strokeOpacity: 0,
+          icons: [
+            {
+              icon: { path: "M 0,-1 0,1", strokeOpacity: 0.7, strokeColor: BRAND.theme.ink, scale: 3 },
+              offset: "0",
+              repeat: "14px",
+            },
+          ],
+        });
       }
     } else if (scene.line) {
       scene.line.setMap(null);
@@ -180,7 +173,7 @@ export default function OrderTrackingMap({ status, store, destination, partnerLo
         position: v.partner,
         title: "Delivery partner",
         label: letter("D"),
-        icon: circle(BRAND.theme.ink, 15),
+        icon: circle(scene.circlePath, BRAND.theme.ink, 15),
         zIndex: 3,
       });
     } else {
@@ -230,23 +223,23 @@ export default function OrderTrackingMap({ status, store, destination, partnerLo
   const onReady = useCallback(
     (map: GMap, google: GoogleNs) => {
       let disposed = false;
-      void Promise.all([google.maps.importLibrary("maps"), loadMarkerClass()]).then(([lib, Marker]) => {
-        if (disposed) return;
-        const LatLngBounds = pickClass<typeof lib.LatLngBounds>("LatLngBounds", lib.LatLngBounds, undefined);
-        sceneRef.current = {
-          map,
-          google,
-          Marker,
-          LatLngBounds,
-          store: null,
-          destination: null,
-          partner: null,
-          line: null,
-          lastFitKey: null,
-          frame: null,
-        };
-        apply();
-      }).catch(fail);
+      void loadMapClasses()
+        .then((classes) => {
+          if (disposed) return;
+          sceneRef.current = {
+            map,
+            google,
+            ...classes,
+            store: null,
+            destination: null,
+            partner: null,
+            line: null,
+            lastFitKey: null,
+            frame: null,
+          };
+          apply();
+        })
+        .catch(fail);
       return () => {
         disposed = true;
         const scene = sceneRef.current;

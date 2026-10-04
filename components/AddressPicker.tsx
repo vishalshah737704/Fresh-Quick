@@ -4,7 +4,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react
 import { useAddress } from "@/lib/address-store";
 import MapCanvas from "@/components/maps/MapCanvas";
 import MapErrorBoundary from "@/components/maps/MapErrorBoundary";
-import { loadMarkerClass } from "@/lib/maps/loader";
+import { loadMapClasses } from "@/lib/maps/loader";
 import AddressSearch, { type SelectedPlace } from "@/components/maps/AddressSearch";
 import { useGoogleMaps } from "@/lib/maps/loader";
 import { reverseGeocodePoint } from "@/lib/maps/geocode";
@@ -124,7 +124,7 @@ export function AddressPicker() {
       let cleanup: (() => void) | undefined;
       (async () => {
         try {
-          const Marker = await loadMarkerClass();
+          const { Marker } = await loadMapClasses();
           if (!mapRef.current) return;
           const start = parseCoordinates(draftLatRef.current, draftLngRef.current) ?? {
             lat,
