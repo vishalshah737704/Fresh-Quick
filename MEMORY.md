@@ -3029,3 +3029,4 @@ plan `docs/superpowers/plans/2026-10-03-ask-zippy-z2.md`. Subagent-driven develo
 - `npm audit`: 5 high, one dev-only chain (braces -> micromatch -> fast-glob -> @next/eslint-plugin-next -> eslint-config-next); only fix is a breaking downgrade; left alone.
 - Manuals: example "Which dishes have extra options?" replaced by "What options does the Cheese Dosa have?" in both.
 - Order agreed with Vishal: this branch, then n8n workflow 07 import (I do it, restart authorized), then Z3. Retention stays soft wording; streaming stays deferred.
+- n8n workflow 07 imported + published 2026-10-03 (id `1PATpa02vD2oQhmt`, nightly 03:15 + webhook `foodhub/zippy-catalog-sync`); verified `{total:2999, embedded:0, unchanged:2999}`. Incident: `docker stop n8n` deleted the `--rm` container, n8n was down until Vishal recreated it from the doc's `docker run`; rule added to CLAUDE.md. Leftover scratch dir `n8n/only07/` (untracked) awaits Vishal's OK to delete.
