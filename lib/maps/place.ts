@@ -118,3 +118,28 @@ export function placeLabel(place: {
   }
   return "";
 }
+
+// Checkout form shape (same keys as DeliveryDetails in lib/address-store.tsx,
+// declared here so this file stays import-free). line2 is always blank: a
+// geocoder cannot know a flat number or landmark. A missing part stays "".
+export type AddressFormFields = {
+  line1: string;
+  line2: string;
+  city: string;
+  state: string;
+  pincode: string;
+};
+
+export function toAddressFormFields(
+  components: AddressComponent[] | null | undefined,
+  fallbackLine1?: string | null
+): AddressFormFields {
+  const parsed = parseAddressComponents(components);
+  return {
+    line1: parsed.line1 || (fallbackLine1 ?? "").trim(),
+    line2: "",
+    city: parsed.city,
+    state: parsed.state,
+    pincode: parsed.pincode,
+  };
+}

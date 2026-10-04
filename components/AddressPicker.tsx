@@ -3,7 +3,9 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useAddress } from "@/lib/address-store";
 import MapCanvas from "@/components/maps/MapCanvas";
-import { loadGoogleMaps, useGoogleMaps } from "@/lib/maps/loader";
+import AddressSearch, { type SelectedPlace } from "@/components/maps/AddressSearch";
+import { useGoogleMaps } from "@/lib/maps/loader";
+import { reverseGeocodePoint } from "@/lib/maps/geocode";
 import { isValidLatLng, placeLabel } from "@/lib/maps/place";
 import {
   formatCoordinate,
@@ -29,7 +31,6 @@ export function AddressPicker() {
 
   const rootRef = useRef<HTMLDivElement | null>(null);
   const panelRef = useRef<HTMLDivElement | null>(null);
-  const searchHostRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<GMap | null>(null);
   const markerRef = useRef<GMarker | null>(null);
   const mountedRef = useRef(true);
@@ -93,21 +94,14 @@ export function AddressPicker() {
   // Resolves a label for a point; falls back to the coordinates.
   const reverseGeocode = useCallback(async (point: LatLngLiteral): Promise<string> => {
     const fallback = placeLabel({ lat: point.lat, lng: point.lng });
-    try {
-      const google = await loadGoogleMaps();
-      const { Geocoder } = await google.maps.importLibrary("geocoding");
-      const { results } = await new Geocoder().geocode({ location: point });
-      const first = results[0];
-      if (!first) return fallback;
-      return (
-        placeLabel({
-          formatted_address: first.formatted_address,
-          components: first.address_components,
-        }) || fallback
-      );
-    } catch {
-      return fallback;
-    }
+    const found = await reverseGeocodePoint(point);
+    if (!found) return fallback;
+    return (
+      placeLabel({
+        formatted_address: found.formattedAddress,
+        components: found.components,
+      }) || fallback
+    );
   }, []);
 
   const pinFromMap = useCallback(
@@ -175,61 +169,16 @@ export function AddressPicker() {
     draftLngRef.current = draftLng;
   }, [draftLat, draftLng]);
 
-  // Mount the Places autocomplete web component imperatively.
-  useEffect(() => {
-    if (!open || maps.status !== "ready") return;
-    const host = searchHostRef.current;
-    if (!host) return;
-    let disposed = false;
-    let element: HTMLElement | null = null;
-    (async () => {
-      try {
-        const google = await loadGoogleMaps();
-        const { PlaceAutocompleteElement } = await google.maps.importLibrary("places");
-        if (disposed) return;
-        const autocomplete = new PlaceAutocompleteElement({
-          includedRegionCodes: ["in"],
-          placeholder: "Search for your address",
-        });
-        autocomplete.style.colorScheme = "light";
-        autocomplete.style.width = "100%";
-        autocomplete.setAttribute("aria-label", "Search for your address");
-        autocomplete.addEventListener("gmp-select", async (event) => {
-          try {
-            const place = event.placePrediction.toPlace();
-            await place.fetchFields({
-              fields: ["displayName", "formattedAddress", "location", "addressComponents"],
-            });
-            if (disposed || !place.location) return;
-            const point = { lat: place.location.lat(), lng: place.location.lng() };
-            if (!isValidLatLng(point.lat, point.lng)) return;
-            const chosen =
-              placeLabel({
-                displayName: place.displayName,
-                formattedAddress: place.formattedAddress,
-                lat: point.lat,
-                lng: point.lng,
-              }) || "Custom location";
-            applyRef.current(point.lat, point.lng, chosen);
-          } catch {
-            if (!disposed) setMessage("That place could not be loaded. Try another search.");
-          }
-        });
-        autocomplete.addEventListener("gmp-error", () => {
-          if (!disposed) setMessage("Address search is unavailable right now. Drop a pin on the map instead.");
-        });
-        element = autocomplete;
-        host.replaceChildren(autocomplete);
-      } catch {
-        // Places library unavailable; the map and manual fields still work.
-      }
-    })();
-    return () => {
-      disposed = true;
-      element?.remove();
-      host.replaceChildren();
-    };
-  }, [open, maps.status]);
+  const onPlaceSelected = useCallback((place: SelectedPlace) => {
+    const chosen =
+      placeLabel({
+        displayName: place.displayName,
+        formattedAddress: place.formattedAddress,
+        lat: place.point.lat,
+        lng: place.point.lng,
+      }) || "Custom location";
+    applyRef.current(place.point.lat, place.point.lng, chosen);
+  }, []);
 
   function toggle() {
     if (!open) {
@@ -322,7 +271,12 @@ export function AddressPicker() {
           className="absolute top-full z-50 mt-2 flex w-[22rem] max-w-[calc(100vw-1rem)] flex-col gap-3 rounded-2xl border border-brand-ink-muted bg-brand-surface p-3 text-brand-ink shadow-lg"
         >
           {mapAvailable && (
-            <div ref={searchHostRef} className="min-h-10" aria-label="Address search" />
+            <AddressSearch
+              className="min-h-10"
+              onSelect={onPlaceSelected}
+              onError={setMessage}
+              unavailableMessage="Address search is unavailable right now. Drop a pin on the map instead."
+            />
           )}
           {mapAvailable && (
             <MapCanvas

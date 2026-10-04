@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/lib/cart-store";
 import { useAddress, type DeliveryDetails } from "@/lib/address-store";
@@ -9,6 +9,10 @@ import { supabase } from "@/lib/supabase";
 import { useDeliveryFee } from "@/lib/use-delivery-fee";
 import { validateCardFields, validateUpiFields, validateRecipientEmail } from "@/lib/payment-fields";
 import { validateRecipientPhone } from "@/lib/phone";
+import AddressSearch, { type SelectedPlace } from "@/components/maps/AddressSearch";
+import { useGoogleMaps } from "@/lib/maps/loader";
+import { reverseGeocodePoint } from "@/lib/maps/geocode";
+import { placeLabel, toAddressFormFields } from "@/lib/maps/place";
 
 // Spec requires every checkout field blank on every visit — never seed the
 // form from AddressProvider's deliveryDetails, which survives client-side
@@ -30,7 +34,11 @@ const PAYMENT_METHODS = [
 export default function CheckoutPage() {
   const router = useRouter();
   const { storeId, items, subtotal, orderNote, clearCart, setCheckoutHandler } = useCart();
-  const { lat, lng, label, setDeliveryDetails } = useAddress();
+  const { lat, lng, label, setAddress: setPin, setDeliveryDetails } = useAddress();
+  const maps = useGoogleMaps();
+  const [lookupNote, setLookupNote] = useState<string | null>(null);
+  const [pinLookupBusy, setPinLookupBusy] = useState(false);
+  const pinLookupSeq = useRef(0);
   const { userId, loading: sessionLoading } = useSession();
 
   const [paymentMethod, setPaymentMethod] =
@@ -49,6 +57,38 @@ export default function CheckoutPage() {
 
   function updateAddressField(field: keyof DeliveryDetails, value: string) {
     setAddress((prev) => ({ ...prev, [field]: value }));
+  }
+
+  // Autofill only sets this page's own form state; nothing here is stored.
+  function applyPlace(place: SelectedPlace) {
+    pinLookupSeq.current += 1;
+    setPinLookupBusy(false);
+    setLookupNote(null);
+    setAddress(toAddressFormFields(place.components, place.displayName));
+    setPin(
+      place.point.lat,
+      place.point.lng,
+      placeLabel({
+        displayName: place.displayName,
+        formattedAddress: place.formattedAddress,
+        lat: place.point.lat,
+        lng: place.point.lng,
+      }) || "Custom location"
+    );
+  }
+
+  async function fillFromPin() {
+    const seq = ++pinLookupSeq.current;
+    setLookupNote(null);
+    setPinLookupBusy(true);
+    const found = await reverseGeocodePoint({ lat, lng });
+    if (seq !== pinLookupSeq.current) return;
+    setPinLookupBusy(false);
+    if (!found) {
+      setLookupNote("Could not look up that location. Please type the address.");
+      return;
+    }
+    setAddress(toAddressFormFields(found.components));
   }
 
   // Persist to AddressProvider (a different component's state) as an effect,
@@ -282,6 +322,31 @@ export default function CheckoutPage() {
         <section className="rounded-[var(--radius-card)] border-t-4 border-brand-accent bg-brand-surface p-4 shadow-sm">
           <h2 className="mb-3 font-semibold text-brand-accent">Delivery address</h2>
           <div className="flex flex-col gap-3">
+            {maps.status !== "error" && (
+              <div className="flex flex-col gap-2">
+                <label className="block text-sm font-medium text-brand-ink">
+                  Search for your address
+                </label>
+                <AddressSearch
+                  className="min-h-10"
+                  onSelect={applyPlace}
+                  onError={setLookupNote}
+                />
+                <button
+                  type="button"
+                  onClick={fillFromPin}
+                  disabled={pinLookupBusy || maps.status !== "ready"}
+                  className="self-start rounded-full border border-brand-accent px-3 py-1.5 text-sm font-medium text-brand-ink disabled:opacity-60"
+                >
+                  {pinLookupBusy ? "Looking up…" : "Use my pinned location"}
+                </button>
+                {lookupNote && (
+                  <p role="alert" className="text-xs text-red-600">
+                    {lookupNote}
+                  </p>
+                )}
+              </div>
+            )}
             <div>
               <label className="mb-1 block text-sm font-medium text-brand-ink">Address 1</label>
               <input

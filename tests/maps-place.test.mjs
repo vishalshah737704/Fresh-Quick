@@ -126,3 +126,39 @@ test("isValidLatLng", () => {
   assert.equal(isValidLatLng("19", "72"), false);
   assert.equal(isValidLatLng(null, undefined), false);
 });
+
+import { toAddressFormFields } from "../lib/maps/place.ts";
+
+test("toAddressFormFields maps a full place and leaves line2 blank", () => {
+  const out = toAddressFormFields([
+    { longText: "12", shortText: "12", types: ["street_number"] },
+    { longText: "MG Road", shortText: "MG Road", types: ["route"] },
+    { longText: "Bengaluru", shortText: "Bengaluru", types: ["locality"] },
+    { longText: "Karnataka", shortText: "KA", types: ["administrative_area_level_1"] },
+    { longText: "560038", shortText: "560038", types: ["postal_code"] },
+  ]);
+  assert.deepEqual(out, {
+    line1: "12 MG Road",
+    line2: "",
+    city: "Bengaluru",
+    state: "Karnataka",
+    pincode: "560038",
+  });
+});
+
+test("toAddressFormFields tolerates missing parts and uses the fallback name", () => {
+  assert.deepEqual(toAddressFormFields(null), {
+    line1: "",
+    line2: "",
+    city: "",
+    state: "",
+    pincode: "",
+  });
+  const out = toAddressFormFields(
+    [{ long_name: "Pune", short_name: "Pune", types: ["locality"] }],
+    "  Phoenix Mall "
+  );
+  assert.equal(out.line1, "Phoenix Mall");
+  assert.equal(out.city, "Pune");
+  assert.equal(out.pincode, "");
+});
