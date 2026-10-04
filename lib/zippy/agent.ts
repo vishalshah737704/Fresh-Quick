@@ -72,7 +72,7 @@ export async function* runAgent(args: {
         .join("");
       return { stopReason: message.stop_reason, content: message.content as unknown as Block[], text };
     } catch (error) {
-      if (error instanceof Anthropic.APIError) {
+      if (error instanceof Anthropic.APIError && !(error instanceof Anthropic.APIUserAbortError) && !args.signal?.aborted) {
         // Provider error bodies are logged server-side only (billing and key problems show up here).
         console.error("zippy: Anthropic request failed", error.status, JSON.stringify(error.error)?.slice(0, 500));
       }

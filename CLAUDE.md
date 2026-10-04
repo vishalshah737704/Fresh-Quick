@@ -252,7 +252,7 @@ The old plain-text stream and its header are gone. `runAgentLoop` yields `delta`
 streamed model round at a time; a round that streams text and then ends in tool calls emits `reset`, because
 that text was only a lead-in. The client replaces its streamed text with `done.reply`, so a lost delta cannot
 corrupt the final text. Cards appear when the answer finishes. The assistant message is saved once, at the end;
-cancelling or closing mid-answer saves nothing (the model call is aborted through `request.signal`). Web:
+starting a New chat, opening History, switching account or leaving the page/app mid-answer aborts the model call (through `request.signal`) and saves nothing, but closing the chat panel does not abort: the reply finishes and is saved. Web:
 `lib/zippy/stream-events.ts` (pure line parser) and `ZippyWidget`; mobile uses `expo/fetch` with a
 byte-identical parser copy under `mobile/lib/` (parity-tested); phone check pending. `knowledge/customer/
 ask-zippy.md` changed, so re-ingest `knowledge/` (`foodhub/zippy-ingest`). Spec

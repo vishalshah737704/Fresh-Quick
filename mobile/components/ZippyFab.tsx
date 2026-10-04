@@ -62,6 +62,7 @@ export function ZippyFab() {
   const [notice, setNotice] = useState<string | null>(null);
   const cart = useCart();
   const nextId = useRef(1);
+  const streamIdRef = useRef<number | null>(null);
   const listRef = useRef<FlatList<LocalMessage>>(null);
   // Every action that starts async work bumps this; a result whose token is no
   // longer current (New chat, account switch, a newer action) is dropped.
@@ -75,6 +76,10 @@ export function ZippyFab() {
 
   const invalidatePending = useCallback(() => {
     requestToken.current += 1;
+    // An aborted reply is partial and never saved, so drop it instead of leaving it looking complete.
+    const partialId = streamIdRef.current;
+    streamIdRef.current = null;
+    if (abortRef.current && partialId !== null) setMessages((current) => current.filter((m) => m.id !== partialId));
     abortRef.current?.abort();
     abortRef.current = null;
     setBusy(false);
@@ -141,6 +146,7 @@ export function ZippyFab() {
           if (streamId === null) {
             const id = nextId.current++;
             streamId = id;
+            streamIdRef.current = id;
             setStreaming(true);
             setMessages((current) => [...current, { role: "assistant", content: delta, id }]);
           } else {
@@ -152,6 +158,7 @@ export function ZippyFab() {
           if (token !== requestToken.current) return;
           const id = streamId;
           streamId = null;
+          streamIdRef.current = null;
           setStreaming(false);
           if (id !== null) setMessages((current) => current.filter((m) => m.id !== id));
         },
@@ -178,6 +185,7 @@ export function ZippyFab() {
         setBusy(false);
         setStreaming(false);
         abortRef.current = null;
+        streamIdRef.current = null;
       }
     }
   };
