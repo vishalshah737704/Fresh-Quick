@@ -12,3 +12,4 @@ export const ZIPPY_ERROR_MESSAGE = "Zippy is resting. Please try again in a mome
 export const RATE_LIMIT_MESSAGE =
   "You're asking a little too fast. Please wait a moment and try again.";
 export const SIGN_IN_AGAIN_MESSAGE = "Please sign in again to keep chatting with Zippy.";
+export const BODY_TOO_LARGE_MESSAGE = "That request is too large for Zippy. Please send a shorter message.";

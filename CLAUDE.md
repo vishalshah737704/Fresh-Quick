@@ -154,7 +154,7 @@ data in `catalog.ts` (pure) / `catalog-data.ts`; index sync in `catalog-sync.ts`
 (env `ZIPPY_MAX_TOOL_ROUNDS`, 1-6). The answer streams word by word again (see the streaming paragraph after Z4b). Kill
 switch: `ZIPPY_TOOLS=off` (no tools, no catalog = Z1 content). Web sends the delivery pin
 (`lib/zippy/client-location.ts`: stored pin, or the default pin on `/customer*` only); mobile sends the phone's foreground GPS fix
-(`mobile/lib/zippy-location.ts`; permission is asked only when the question is about nearby stores; denied = no location, so "nearest" is unavailable). Rate limits as of 2026-10-03: signed-in 10/min + 60/day, visitors 5/min + 20/day per IP (global backstop unchanged). The location is never saved or logged. Keep the index
+(`mobile/lib/zippy-location.ts`; permission is asked only when the question is about nearby stores; denied = no location, so "nearest" is unavailable). Rate limits are env-tunable (defaults: signed-in 10/min + 60/day, visitors 5/min + 20/day per IP; see the rate-limit paragraph below). The location is never saved or logged. Keep the index
 fresh with `POST /api/internal/zippy/catalog-sync` (n8n workflow 07, webhook
 `foodhub/zippy-catalog-sync`, nightly; imported and published in the local n8n 2026-10-03, webhook verified: `embedded: 0`). Developer routes: `POST /api/internal/zippy/tool` (run
 one tool) and `/search` (returns `{matches, catalog}`). Checks: `scripts/zippy-eval.mjs` (46/47) and
@@ -259,6 +259,30 @@ ask-zippy.md` changed, so re-ingest `knowledge/` (`foodhub/zippy-ingest`). Spec
 `docs/superpowers/specs/2026-10-04-zippy-streaming-design.md`. Manuals: web v3.6, mobile v4.7, edited in place
 (web Appendix A-D start pages moved by one, so the static TOC was renumbered). See MEMORY.md's "Ask Zippy
 streaming" entry.
+**Ask Zippy rate limits and abuse guards (2026-10-04, branch `zippy-rate-limits`):**
+every limit is an env var with a validated default (`lib/zippy/rate-limit.ts`; bad values fall back to the default,
+never off): per user 10/min + 60/day, per visitor IP 5/min + 20/day, global visitors 60/min + 1000/day, global
+signed-in users 120/min + 5000/day, an overall ceiling of 8000/day, and a pre-auth burst of 40/min per IP that runs
+before the body is read or the token is verified. `ZIPPY_TRUSTED_PROXY_HOPS` (default 1, 0 to 5) says how many
+trusted proxies sit in front of the app (`lib/zippy/client-ip.ts`: the client is the `x-forwarded-for` entry that
+many positions from the right; 0 ignores the header). Bodies over 200,000 bytes get 413 (`body-cap.ts`). A trip
+returns 429 with `Retry-After` and a message by class (minute / day / busy) and logs the class only. Full table,
+proxy examples, cost arithmetic and what is NOT covered (sign-up throttling, CAPTCHA, concurrency caps, provider
+monthly budgets) are in `docs/DEPLOYMENT.md` "Public deployment checklist"; spec
+`docs/superpowers/specs/2026-10-04-zippy-rate-limits-design.md`.
+**Zippy chat retention (2026-10-04, branch `zippy-retention`, built and live-verified, merge pending):**
+SQL function `purge_zippy_chats(retention_days, dry_run)` deletes Zippy conversations (messages go by cascade)
+whose last activity (newest message, or the conversation's creation time if it has none) is older than the
+window (30 days; env `ZIPPY_RETENTION_DAYS` 1..3650, else 30), plus `zippy_usage` rate-limit rows older than
+2 days; it touches nothing else and defaults to a dry run. Internal route `POST /api/internal/zippy/purge`
+(internal secret). n8n workflow 08 "Zippy Chat Retention" runs the real purge nightly at 03:45; its webhook
+`foodhub/zippy-purge` is a DRY RUN unless the body is `{"dryRun": false}`. Orders are not purged. Policy text
+and both manuals (web v3.5.1, mobile v4.6.1, PDFs regenerated, page counts unchanged) now say chats are deleted
+by a nightly cleanup once they have had no activity for 30 days. After merge Vishal must, IN THIS ORDER (so Zippy never states the promise before the job exists): import and publish
+workflow 08 in the local n8n (never stop or restart the n8n container), run the dry run
+(`Invoke-RestMethod -Method Post http://localhost:5678/webhook/foodhub/zippy-purge`), THEN re-ingest `knowledge/`.
+Scheduled runs happen only while Docker, n8n and the app are up (n8n does not catch up missed runs; the next night's run does the work), and the schedule uses the workflow's timezone setting (`Asia/Kolkata`). See MEMORY.md's
+"Zippy chat retention" entry and `docs/n8n-webhook-setup.md` (Workflow 08).
 **Gotcha for demos/tests:** workflow 04 auto-assigns a `ready` order within
 ~10 s to the NEAREST ONLINE partner by stored lat/lng, so it never reaches the
 "Available" list while any online partner has coordinates — a leftover online
@@ -772,6 +796,11 @@ See [MEMORY.md](MEMORY.md) for phase-by-phase progress and decisions.
   nodes off again (n8n UI: select node, press `D`, Publish) and verify from n8n's
   execution record instead. A fresh n8n imported from the repo JSON has them on.
 
+- **Every new capability that spends money or calls a provider needs an abuse-gap audit before the app is
+  exposed publicly:** check the limits for a global bucket for EVERY identity class (a per-user limit alone is
+  unbounded when sign-up is public), a cheap pre-auth check, proxy trust (how the client IP is derived and what
+  happens with the wrong number of proxies), and a request body cap. The Zippy limits had per-user buckets but no
+  signed-in global bucket, no overall ceiling, a hard-wired IP rule and no body cap until this audit.
 - **Claude Sonnet 5.5 API: omit `thinking` and it runs adaptive thinking at
   effort high, which eats `max_tokens`** (Zippy replies came back truncated or
   empty). Send `thinking: {type: "between_tools"}`. Never send
@@ -788,8 +817,8 @@ See [MEMORY.md](MEMORY.md) for phase-by-phase progress and decisions.
   (web + mobile) cancel answer was corrected on 2026-10-03 to match the code (customers cannot
   cancel; a store can only reject while Placed; failed payment cancels). The policy knowledge file
   now holds Vishal's real support contact, simulated-payment terms, a 24-hour wrong-item rule and
-  retention wording ("may be deleted after 30 days", deletion not automatic - no purge job exists;
-  keep the wording soft unless one is built). Both manuals gained an Ask Zippy chapter on 2026-10-03
+  retention wording (as of 2026-10-04 Zippy chats ARE purged by a nightly retention job once they have had no activity
+  for 30 days, see "Zippy chat retention"; orders are NOT purged and are deleted only on request). Both manuals gained an Ask Zippy chapter on 2026-10-03
   (web v3.3 Chapter 8, mobile v4.4 Chapter 6, edited in place; mobile figure is from Vishal's iPhone
   recording with the Expo gear left in, like the other figures).
 - **pgvector: `ALTER FUNCTION ... SET hnsw.*` needs the library loaded first**
@@ -868,6 +897,10 @@ See [MEMORY.md](MEMORY.md) for phase-by-phase progress and decisions.
 - **React Native's global `fetch` does not expose a streaming body.** Use `import { fetch } from "expo/fetch"`
   for the streaming call only (Expo SDK 57); keep the parser shared byte-for-byte with web and guard it with a
   parity test. A streaming client also needs a non-streaming fallback path.
+- **Retention/purge functions are tested inside a rolled-back transaction with fake rows, never against
+  real data; a destructive scheduled job needs a dry-run default on its manual trigger.** The Zippy purge
+  was verified with `begin; ... rollback;` on fabricated conversations, and its webhook only deletes when
+  the body says `{"dryRun": false}`; only the scheduled workflow run is real.
 
 ## Standing phrases: "start-all-roles.ps1" / "stop-all-roles.ps1"
 

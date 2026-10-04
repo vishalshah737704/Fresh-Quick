@@ -206,6 +206,12 @@ cart's store changed after the card was made, the tap says "Your cart changed, a
 delivery partners and admins never get it; one checkout card per reply. Kill switch: `ZIPPY_ACTIONS=off`. After
 merge, re-ingest `knowledge/` and re-run the eval (two new cases).
 
+**Rate limits and abuse guards (2026-10-04).** Zippy's limits are env-tunable (defaults: signed-in 10/min and
+60/day, visitors 5/min and 20/day per IP, plus global buckets for visitors and signed-in users and an overall
+8000/day ceiling). A burst check runs before sign-in is verified, oversized bodies get 413, and a limit trip
+returns 429 with `Retry-After`. Set `ZIPPY_TRUSTED_PROXY_HOPS` to the number of proxies in front of the app.
+See the "Public deployment checklist" in `docs/DEPLOYMENT.md` before exposing the app publicly.
+
 **Build caveat:** in a git worktree with a `node_modules` junction, Turbopack
 rejects the build; use `npx next build --webpack` there and run the real
 `npm run build` once merged to `main`.
@@ -215,6 +221,14 @@ rejects the build; use `npx next build --webpack` there and run the real
 `docs/Usage_Guide.docx` is a screenshot-illustrated walkthrough of the
 whole site (customer app + vendor/delivery/admin portals) for anyone
 who wants to read how to use it rather than run it.
+
+**Zippy chat retention (2026-10-04).** Saved Zippy chats with no activity for 30 days are deleted by a nightly
+cleanup (SQL `purge_zippy_chats`, route `POST /api/internal/zippy/purge`, n8n workflow 08 nightly at
+03:45; env `ZIPPY_RETENTION_DAYS`, 1..3650). Orders are not purged. After merge, in this order: import
+and publish workflow 08, run the dry run
+(`Invoke-RestMethod -Method Post http://localhost:5678/webhook/foodhub/zippy-purge`, a dry run unless the
+body is `{"dryRun": false}`), then re-ingest `knowledge/`. Scheduled runs happen only while Docker, n8n and
+the app are up (n8n does not catch up missed runs); the schedule uses n8n's timezone (workflow set to Asia/Kolkata). See `docs/n8n-webhook-setup.md`.
 
 ## Status
 
