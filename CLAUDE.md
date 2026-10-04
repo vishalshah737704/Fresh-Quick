@@ -922,10 +922,12 @@ when he says **"stop-all-roles.ps1"** run `npm run app:stop -- --all-roles`
 
 ## Standing phrase: "Reset Data" — NON-NEGOTIABLE
 
-When Vishal says **"Reset Data"**, wipe all customer, order, payment and n8n
+When Vishal says **"Reset Data"**, wipe all customer, order, payment, Ask Zippy chat
+history (every role's, plus the rate-limit counters) and n8n
 execution data from the LOCAL stack, without asking for per-step confirmation
 (this phrase is the standing authorization; local dev only — never hosted).
-Vendors, delivery partners, the admin, restaurants/menus and n8n workflows and
+Vendors, delivery partners, the admin, restaurants/menus, the Zippy knowledge
+and catalog indexes (`zippy_chunks`, `zippy_catalog_chunks`) and n8n workflows and
 credentials are KEPT. Supabase and n8n containers must be running; if not, say
 so and stop. Steps, in order:
 
@@ -942,7 +944,16 @@ so and stop. Steps, in order:
    commit;
    ```
    Do not delete vendor/delivery/admin users, restaurants, or vendor addresses.
-3. **n8n executions** (the n8n UI works too; the CLI has no command for this).
+3. **Ask Zippy chats and counters** (all roles, not just customers: chats of vendors,
+   delivery partners and the admin survive step 2) — one transaction:
+   ```sql
+   begin;
+   delete from public.zippy_conversations;  -- cascades zippy_messages
+   delete from public.zippy_usage;           -- rate-limit counters
+   commit;
+   ```
+   Never touch `zippy_chunks` or `zippy_catalog_chunks` (re-ingesting them costs API calls).
+4. **n8n executions** (the n8n UI works too; the CLI has no command for this).
    Uses n8n's bundled `sqlite3` while n8n keeps running (`MSYS_NO_PATHCONV=1` in Git Bash):
    ```
    docker exec n8n sh -c 'cd /usr/local/lib/node_modules/n8n && node -e "
@@ -951,10 +962,19 @@ so and stop. Steps, in order:
    db.get(\"select count(*) c from execution_entity\",(e,r)=>{console.log(e||JSON.stringify(r));db.close();});});"'
    ```
    Pending 20-second "Wait" executions are deleted too (their orders are gone anyway).
-4. **Verify and report** counts: orders, order_items, payments, notifications, customers
-   (public.users role customer and auth.users) all 0; vendors/delivery/admin counts unchanged;
+5. **Android emulator app data** (cart, delivery location and session saved in Expo Go
+   on the emulator): if `adb devices` lists an emulator, run
+   `adb shell pm clear host.exp.exponent` (adb is `$env:LOCALAPPDATA\Android\Sdk\platform-toolsdb.exe`)
+   and expect `Success`. If no emulator is running, do not boot one for this; report that it
+   was skipped and that Vishal can run the command whenever the emulator is next started.
+6. **Verify and report** counts: orders, order_items, payments, notifications, customers
+   (public.users role customer and auth.users), zippy_conversations, zippy_messages and
+   zippy_usage all 0; zippy_chunks and zippy_catalog_chunks unchanged; vendors/delivery/admin counts unchanged;
    n8n executions 0. Tell Vishal that browser-side data (localStorage cart/location in each
    browser or app) cannot be cleared from here, and that a fresh customer must sign up.
+   How he clears it: web, F12 > Application > Clear site data on each of
+   localhost:3000 to 3003 (or the console: `localStorage.clear(); sessionStorage.clear()`);
+   iPhone Expo Go, delete and reinstall Expo Go (the Android emulator is cleared by step 5).
    There is no wallet table (the Wallet page is a placeholder); payments live in `payments`.
 
 ## Standing phrase: "Commit Work" — NON-NEGOTIABLE
