@@ -343,3 +343,15 @@ test("actions on: the checkout rule is present in both orders states, never asks
     assert.doesNotMatch(buildSystemPrompt({ brandName: "B", role: "customer", chunks: [], ...args }), /propose_go_to_checkout/);
   }
 });
+
+test("actions on: no rule tells the model to send checkout away while another says to use the checkout card", () => {
+  for (const ordersEnabled of [true, false]) {
+    for (const chunks of [[], [match("x", 0.9)]]) {
+      const p = buildSystemPrompt({ brandName: "B", role: "customer", chunks, toolsEnabled: true, ordersEnabled, actionsEnabled: true });
+      assert.doesNotMatch(p, /place orders or pay yet/i);
+      assert.doesNotMatch(p, /place orders, pay or cancel\.(?! )/i);
+      assert.match(p, /checkout card/i);
+      assert.match(p, /requests to check out with the checkout card, not from the knowledge/i);
+    }
+  }
+});

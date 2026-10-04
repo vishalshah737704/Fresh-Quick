@@ -335,6 +335,9 @@ export function buildCheckoutCard(
   };
 }
 
+// Checked and pushed with no await in between: tool calls of one round run concurrently, so a second checkout card must be refused at push time.
+export const checkoutAlreadyPrepared = (actions: ActionCard[]): boolean => actions.some((card) => card.kind === "go_to_checkout");
+
 export function shapeCartForModel(snapshot: CartSnapshot | null, deps: Pick<ActionShapeDeps, "sanitize" | "toPaise" | "formatRupees">) {
   if (!snapshot || snapshot.items.length === 0) return { store: null, lines: [], empty: true };
   return {

@@ -4,7 +4,7 @@ import { sanitizeText, toPaise, formatRupees } from "../lib/zippy/catalog.ts";
 import { MAX_LINE_QUANTITY, MAX_CARDS_PER_REPLY } from "../lib/zippy/action-types.ts";
 import {
   parseProposeAddInput, parseProposeReorderInput, parseProposeCartChangeInput, parseProposeClearInput,
-  selectOptions, buildAddItemCard, buildReorderCard, buildCartChangeCard, buildClearCartCard, buildCheckoutCard, cartDishIds, menuItemIdOfLine,
+  selectOptions, buildAddItemCard, buildReorderCard, buildCartChangeCard, buildClearCartCard, buildCheckoutCard, cartDishIds, menuItemIdOfLine, checkoutAlreadyPrepared,
   shapeCartForModel, ACTION_TOOLS, ACTION_TOOL_NAMES, selectActionTools, LIMITS,
 } from "../lib/zippy/actions.ts";
 
@@ -359,4 +359,18 @@ test("propose_go_to_checkout: strict no-input tool offered only to a customer wi
   for (const ordersEnabled of [true, false]) {
     assert.equal(selectActionTools(base, { customerId: "c1", actionsEnabled: true, ordersEnabled }).some((t) => t.name === "propose_go_to_checkout"), true);
   }
+});
+
+test("concurrent checkout proposals: re-checking after the await lets only the first push a card", async () => {
+  const actions = [];
+  const run = async () => {
+    if (checkoutAlreadyPrepared(actions)) return "refused";
+    await new Promise((resolve) => setTimeout(resolve, 5));
+    if (checkoutAlreadyPrepared(actions)) return "refused";
+    actions.push(buildCheckoutCard(checkoutCart(), liveProducts(), deps).card);
+    return "pushed";
+  };
+  assert.deepEqual(await Promise.all([run(), run()]), ["pushed", "refused"]);
+  assert.equal(actions.length, 1);
+  assert.equal(checkoutAlreadyPrepared([{ kind: "clear_cart" }]), false);
 });

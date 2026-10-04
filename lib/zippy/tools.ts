@@ -19,6 +19,7 @@ import {
   buildCartChangeCard,
   buildCheckoutCard,
   cartDishIds,
+  checkoutAlreadyPrepared,
   buildClearCartCard,
   buildReorderCard,
   parseProposeAddInput,
@@ -234,8 +235,11 @@ export async function runTool(
       if (!actionsAllowed(ctx)) return bad("Cart actions are only available to a signed-in customer");
       const parsed = parseProposeClearInput(rawInput);
       if (!parsed.ok) return bad(parsed.error);
-      if (ctx.actions.some((card) => card.kind === "go_to_checkout")) return bad("A checkout card is already prepared in this reply");
+      const already = () => bad("A checkout card is already prepared in this reply");
+      if (checkoutAlreadyPrepared(ctx.actions)) return already();
       const products = await loadProductsForCart(cartDishIds(ctx.cart));
+      // Concurrent calls in one round all passed the check above; re-check after the await, with no await before the push.
+      if (checkoutAlreadyPrepared(ctx.actions)) return already();
       return pushCard(ctx, buildCheckoutCard(ctx.cart, products, actionDeps));
     }
     default:
