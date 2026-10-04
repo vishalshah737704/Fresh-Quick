@@ -216,6 +216,13 @@ rejects the build; use `npx next build --webpack` there and run the real
 whole site (customer app + vendor/delivery/admin portals) for anyone
 who wants to read how to use it rather than run it.
 
+**Zippy chat retention (2026-10-04).** Saved Zippy chats are deleted automatically 30 days after their
+last message (SQL `purge_zippy_chats`, route `POST /api/internal/zippy/purge`, n8n workflow 08 nightly at
+03:45; env `ZIPPY_RETENTION_DAYS`, 1..3650). Orders are not purged. After merge: re-ingest `knowledge/`, import
+and publish workflow 08, and run the dry run first
+(`Invoke-RestMethod -Method Post http://localhost:5678/webhook/foodhub/zippy-purge`, a dry run unless the
+body is `{"dryRun": false}`). See `docs/n8n-webhook-setup.md`.
+
 ## Status
 
 All 8 phases of the web platform (spec §7) are built: customer browse/

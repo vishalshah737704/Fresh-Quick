@@ -243,6 +243,18 @@ a Modal). Open for Vishal: after merge re-ingest `knowledge/` and re-run `node s
 cases: "can zippy check out for me", "take me to checkout"); phone check. See MEMORY.md's "Ask Zippy Z4b"
 entry and `docs/superpowers/specs/2026-10-04-ask-zippy-z4b-design.md`. Manuals: web v3.5, mobile v4.6, edited in
 place (no page start changed, so the static TOCs were untouched).
+**Zippy chat retention (2026-10-04, branch `zippy-retention`, built and live-verified, merge pending):**
+SQL function `purge_zippy_chats(retention_days, dry_run)` deletes Zippy conversations (messages go by cascade)
+whose last activity (newest message, or the conversation's creation time if it has none) is older than the
+window (30 days; env `ZIPPY_RETENTION_DAYS` 1..3650, else 30), plus `zippy_usage` rate-limit rows older than
+2 days; it touches nothing else and defaults to a dry run. Internal route `POST /api/internal/zippy/purge`
+(internal secret). n8n workflow 08 "Zippy Chat Retention" runs the real purge nightly at 03:45; its webhook
+`foodhub/zippy-purge` is a DRY RUN unless the body is `{"dryRun": false}`. Orders are not purged. Policy text
+and both manuals (web v3.5.1, mobile v4.6.1, PDFs regenerated, page counts unchanged) now say chats are deleted
+automatically 30 days after the last message. After merge Vishal must: re-ingest `knowledge/`, import and publish
+workflow 08 in the local n8n (never stop or restart the n8n container), then run the dry run first:
+`Invoke-RestMethod -Method Post http://localhost:5678/webhook/foodhub/zippy-purge`. See MEMORY.md's
+"Zippy chat retention" entry and `docs/n8n-webhook-setup.md` (Workflow 08).
 **Gotcha for demos/tests:** workflow 04 auto-assigns a `ready` order within
 ~10 s to the NEAREST ONLINE partner by stored lat/lng, so it never reaches the
 "Available" list while any online partner has coordinates — a leftover online
@@ -772,8 +784,8 @@ See [MEMORY.md](MEMORY.md) for phase-by-phase progress and decisions.
   (web + mobile) cancel answer was corrected on 2026-10-03 to match the code (customers cannot
   cancel; a store can only reject while Placed; failed payment cancels). The policy knowledge file
   now holds Vishal's real support contact, simulated-payment terms, a 24-hour wrong-item rule and
-  retention wording ("may be deleted after 30 days", deletion not automatic - no purge job exists;
-  keep the wording soft unless one is built). Both manuals gained an Ask Zippy chapter on 2026-10-03
+  retention wording (as of 2026-10-04 Zippy chats ARE purged automatically 30 days after their last
+  message by the retention job, see "Zippy chat retention"; orders are NOT purged and are deleted only on request). Both manuals gained an Ask Zippy chapter on 2026-10-03
   (web v3.3 Chapter 8, mobile v4.4 Chapter 6, edited in place; mobile figure is from Vishal's iPhone
   recording with the Expo gear left in, like the other figures).
 - **pgvector: `ALTER FUNCTION ... SET hnsw.*` needs the library loaded first**
@@ -841,6 +853,11 @@ See [MEMORY.md](MEMORY.md) for phase-by-phase progress and decisions.
 - **Parallel tool calls need a re-check after any await.** The model may emit several tool calls in one round
   and they run concurrently (`Promise.all`), so a "one card per reply" guard checked before an await can pass
   twice and produce duplicate cards. Re-check the shared state after the await, before pushing the result.
+
+- **Retention/purge functions are tested inside a rolled-back transaction with fake rows, never against
+  real data; a destructive scheduled job needs a dry-run default on its manual trigger.** The Zippy purge
+  was verified with `begin; ... rollback;` on fabricated conversations, and its webhook only deletes when
+  the body says `{"dryRun": false}`; only the scheduled workflow run is real.
 
 ## Standing phrases: "start-all-roles.ps1" / "stop-all-roles.ps1"
 
