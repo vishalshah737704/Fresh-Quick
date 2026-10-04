@@ -139,7 +139,7 @@ export function ZippyFab() {
         conversationId,
         history,
         location,
-        cart: snapshotCart(cart),
+        cart: snapshotCart({ ...cart, orderNote: cart.orderNote }),
         signal: controller.signal,
         onDelta: (delta) => {
           if (token !== requestToken.current) return;

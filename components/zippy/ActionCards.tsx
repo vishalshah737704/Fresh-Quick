@@ -57,7 +57,7 @@ export function ActionCards({
         if (state.status === "dismissed") return null;
         return (
           <div key={card.id} className="rounded-2xl border border-brand-primary-text-safe/40 bg-white p-3 text-sm text-brand-ink">
-            <p className="font-semibold">{card.title}</p>
+            <p className="break-words font-semibold">{card.title}</p>
             <p className="mt-1 break-words">{card.description}</p>
             {state.status === "idle" ? (
               cart || card.kind === "go_to_checkout" ? (
