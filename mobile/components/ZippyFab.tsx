@@ -29,10 +29,15 @@ import {
   type ConversationSummary,
 } from "../lib/zippy";
 import { getChatLocation } from "../lib/zippy-location";
+import { useCart } from "../lib/cart-store";
+import { snapshotCart } from "../lib/client-cart";
+import type { ActionCard } from "../lib/action-types";
+import { ZippyActionCards } from "./ZippyActionCards";
 
 // Local view of a turn: isError marks a failure notice shown in the sheet,
 // which must never be sent back to the server as conversation history.
-type LocalMessage = { role: "user" | "assistant"; content: string; isError?: boolean };
+// id is a stable list key so action cards keep their state as messages are appended.
+type LocalMessage = { role: "user" | "assistant"; content: string; isError?: boolean; actions?: ActionCard[]; id?: number };
 
 // Sits above the customer tab bar (~49 + bottom inset) and the full-width
 // floating cart pill (bottom 12, ~46 tall) so it overlaps neither.
@@ -52,6 +57,8 @@ export function ZippyFab() {
   const [conversations, setConversations] = useState<ConversationSummary[]>([]);
   const [loadingList, setLoadingList] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+  const cart = useCart();
+  const nextId = useRef(1);
   const listRef = useRef<FlatList<LocalMessage>>(null);
   // Every action that starts async work bumps this; a result whose token is no
   // longer current (New chat, account switch, a newer action) is dropped.
@@ -99,19 +106,22 @@ export function ZippyFab() {
       .slice(-MAX_HISTORY_MESSAGES);
     const token = invalidatePending();
     setShowHistory(false);
-    setMessages([...messages, { role: "user", content: question }]);
+    setMessages([
+      ...messages.map((m) => (m.id === undefined ? { ...m, id: nextId.current++ } : m)),
+      { role: "user", content: question, id: nextId.current++ },
+    ]);
     setInput("");
     setBusy(true);
     try {
       const location = await getChatLocation(question);
-      const result = await sendChat({ message: question, conversationId, history, location });
+      const result = await sendChat({ message: question, conversationId, history, location, cart: snapshotCart(cart) });
       if (token !== requestToken.current) return;
-      setMessages((current) => [...current, { role: "assistant", content: result.reply }]);
+      setMessages((current) => [...current, { role: "assistant", content: result.reply, actions: result.actions, id: nextId.current++ }]);
       if (result.conversationId) setConversationId(result.conversationId);
     } catch (error) {
       if (token !== requestToken.current) return;
       const message = error instanceof ZippyError ? error.message : ZIPPY_ERROR_MESSAGE;
-      setMessages((current) => [...current, { role: "assistant", content: message, isError: true }]);
+      setMessages((current) => [...current, { role: "assistant", content: message, isError: true, id: nextId.current++ }]);
     } finally {
       if (token === requestToken.current) setBusy(false);
     }
@@ -249,7 +259,7 @@ export function ZippyFab() {
             <FlatList
               ref={listRef}
               data={messages}
-              keyExtractor={(_, i) => String(i)}
+              keyExtractor={(m, i) => (m.id !== undefined ? `m${m.id}` : `i${i}`)}
               onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: true })}
               contentContainerStyle={{ padding: 12 }}
               ListHeaderComponent={
@@ -269,8 +279,13 @@ export function ZippyFab() {
                 </View>
               }
               renderItem={({ item }) => (
-                <View style={bubble(item.role)}>
-                  <Text style={{ color: item.role === "user" ? "#fff" : BRAND.colors.ink, fontFamily: BRAND.fonts.body }}>{item.content}</Text>
+                <View>
+                  {(item.content.trim() !== "" || !item.actions?.length) && (
+                    <View style={bubble(item.role)}>
+                      <Text style={{ color: item.role === "user" ? "#fff" : BRAND.colors.ink, fontFamily: BRAND.fonts.body }}>{item.content}</Text>
+                    </View>
+                  )}
+                  {item.role === "assistant" && item.actions && item.actions.length > 0 && <ZippyActionCards cards={item.actions} cart={cart} />}
                 </View>
               )}
               ListFooterComponent={busy ? <ActivityIndicator color={BRAND.colors.primary} style={{ alignSelf: "flex-start", margin: 8 }} /> : null}
