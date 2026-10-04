@@ -56,6 +56,7 @@ resolves its payment via a local n8n workflow if one is running
 dev state — the checkout route waits out a full ~10s poll timeout
 before its in-process fallback resolves the payment, so **every order
 takes the full ~10 seconds to confirm without n8n running**, not less.
+Status: merged to main (PR #18); Places API (New) and Geocoding were enabled on the key; knowledge re-ingested and the Zippy eval is 58/58.
 
 ## Trying the vendor flow
 
