@@ -6,6 +6,7 @@ import { supabase } from "@/lib/supabase";
 import { useRoleGuard } from "@/lib/auth";
 import { OrderStatusTimeline } from "@/components/OrderStatusTimeline";
 import { OrderDetailView } from "@/components/OrderDetailView";
+import MapErrorBoundary from "@/components/maps/MapErrorBoundary";
 import OrderTrackingMap from "@/components/maps/OrderTrackingMap";
 import { showTrackingMap } from "@/lib/maps/tracking";
 import { DeliveryAnimationDialog } from "@/components/DeliveryAnimationDialog";
@@ -144,12 +145,14 @@ export default function OrderConfirmationPage() {
             </section>
 
             {showTrackingMap(order.status) && (
-              <OrderTrackingMap
-                status={order.status}
-                store={order.storePoint}
-                destination={order.deliveryPoint}
-                partnerLocation={partnerLocation}
-              />
+              <MapErrorBoundary>
+                <OrderTrackingMap
+                  status={order.status}
+                  store={order.storePoint}
+                  destination={order.deliveryPoint}
+                  partnerLocation={partnerLocation}
+                />
+              </MapErrorBoundary>
             )}
 
             <OrderDetailView order={order} />

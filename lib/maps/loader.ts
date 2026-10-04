@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { GoogleNs, MapsErrorKind, MapsStatus } from "./types";
+import { pickClass } from "./library";
+import type { GMarker, GoogleNs, MapsErrorKind, MapsStatus, MarkerOptions } from "./types";
 
 export class MapsError extends Error {
   kind: MapsErrorKind;
@@ -89,6 +90,14 @@ export function loadGoogleMaps(): Promise<GoogleNs> {
   tracked.catch(() => undefined);
   cached = tracked;
   return tracked;
+}
+
+// The one place that obtains the classic Marker constructor (the "marker"
+// library, with the global as a fallback). Rejects if Maps cannot load.
+export async function loadMarkerClass(): Promise<new (opts?: MarkerOptions) => GMarker> {
+  const google = await loadGoogleMaps();
+  const lib = await google.maps.importLibrary("marker");
+  return pickClass<new (opts?: MarkerOptions) => GMarker>("Marker", lib.Marker, google.maps.Marker);
 }
 
 export function useGoogleMaps(): MapsStatus {

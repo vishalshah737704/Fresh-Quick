@@ -76,7 +76,8 @@ export default function AddressSearch({ onSelect, onError, unavailableMessage, c
         });
         element = autocomplete;
         host.replaceChildren(autocomplete);
-      } catch {
+      } catch (error) {
+        console.error("Address search failed to start", error);
         // Places library unavailable; callers still work without search.
       }
     })();

@@ -54,7 +54,8 @@ export default function MapCanvas({
         });
         setCreated(true);
         userCleanup = onReadyRef.current?.(map, google);
-      } catch {
+      } catch (error) {
+        console.error("Map failed to start", error);
         // The library import failed after the script loaded; leave the empty box.
       }
     })();

@@ -116,15 +116,18 @@ export type GoogleNs = {
       Map: new (el: HTMLElement, opts?: MapOptions) => GMap;
       Polyline: new (opts?: PolylineOptions) => GPolyline;
       LatLngBounds: new () => GLatLngBounds;
-      Marker: new (opts?: MarkerOptions) => GMarker;
     }>;
-    importLibrary(name: "marker"): Promise<Record<string, unknown>>;
+    // The legacy google.maps.Marker lives in the "marker" library, not "maps".
+    importLibrary(name: "marker"): Promise<{
+      Marker?: new (opts?: MarkerOptions) => GMarker;
+    } & Record<string, unknown>>;
     importLibrary(name: "geocoding"): Promise<{ Geocoder: new () => GGeocoder }>;
     importLibrary(name: "places"): Promise<{
       PlaceAutocompleteElement: new (
         opts?: PlaceAutocompleteElementOptions
       ) => GPlaceAutocompleteElement;
     }>;
+    Marker?: new (opts?: MarkerOptions) => GMarker;
     event: { removeListener(l: MapsEventListener): void };
   };
 };

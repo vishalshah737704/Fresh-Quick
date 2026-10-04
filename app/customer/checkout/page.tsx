@@ -9,6 +9,7 @@ import { supabase } from "@/lib/supabase";
 import { useDeliveryFee } from "@/lib/use-delivery-fee";
 import { validateCardFields, validateUpiFields, validateRecipientEmail } from "@/lib/payment-fields";
 import { validateRecipientPhone } from "@/lib/phone";
+import MapErrorBoundary from "@/components/maps/MapErrorBoundary";
 import AddressSearch, { type SelectedPlace } from "@/components/maps/AddressSearch";
 import { useGoogleMaps } from "@/lib/maps/loader";
 import { reverseGeocodePoint } from "@/lib/maps/geocode";
@@ -323,6 +324,7 @@ export default function CheckoutPage() {
           <h2 className="mb-3 font-semibold text-brand-accent">Delivery address</h2>
           <div className="flex flex-col gap-3">
             {maps.status !== "error" && (
+              <MapErrorBoundary>
               <div className="flex flex-col gap-2">
                 <label className="block text-sm font-medium text-brand-ink">
                   Search for your address
@@ -346,6 +348,7 @@ export default function CheckoutPage() {
                   </p>
                 )}
               </div>
+              </MapErrorBoundary>
             )}
             <div>
               <label className="mb-1 block text-sm font-medium text-brand-ink">Address 1</label>

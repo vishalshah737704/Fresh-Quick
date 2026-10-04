@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useAddress } from "@/lib/address-store";
 import MapCanvas from "@/components/maps/MapCanvas";
+import MapErrorBoundary from "@/components/maps/MapErrorBoundary";
+import { loadMarkerClass } from "@/lib/maps/loader";
 import AddressSearch, { type SelectedPlace } from "@/components/maps/AddressSearch";
 import { useGoogleMaps } from "@/lib/maps/loader";
 import { reverseGeocodePoint } from "@/lib/maps/geocode";
@@ -122,7 +124,7 @@ export function AddressPicker() {
       let cleanup: (() => void) | undefined;
       (async () => {
         try {
-          const { Marker } = await google.maps.importLibrary("maps");
+          const Marker = await loadMarkerClass();
           if (!mapRef.current) return;
           const start = parseCoordinates(draftLatRef.current, draftLngRef.current) ?? {
             lat,
@@ -148,8 +150,11 @@ export function AddressPicker() {
             marker.setMap(null);
           };
           if (!mapRef.current) cleanup();
-        } catch {
-          // Marker library failed to load; the manual fields still work.
+        } catch (error) {
+          // Marker setup failed; the manual fields still work.
+          console.error("Map pin setup failed", error);
+          cleanup?.();
+          cleanup = undefined;
         }
       })();
       return () => {
@@ -271,14 +276,17 @@ export function AddressPicker() {
           className="absolute top-full z-50 mt-2 flex w-[22rem] max-w-[calc(100vw-1rem)] flex-col gap-3 rounded-2xl border border-brand-ink-muted bg-brand-surface p-3 text-brand-ink shadow-lg"
         >
           {mapAvailable && (
+            <MapErrorBoundary>
             <AddressSearch
               className="min-h-10"
               onSelect={onPlaceSelected}
               onError={setMessage}
               unavailableMessage="Address search is unavailable right now. Drop a pin on the map instead."
             />
+            </MapErrorBoundary>
           )}
           {mapAvailable && (
+            <MapErrorBoundary>
             <MapCanvas
               center={startPoint}
               zoom={15}
@@ -286,6 +294,7 @@ export function AddressPicker() {
               ariaLabel="Map. Click or drag the pin to set your delivery location."
               onReady={onMapReady}
             />
+            </MapErrorBoundary>
           )}
           {!mapAvailable && maps.status === "error" && (
             <MapCanvas center={startPoint} className="w-full rounded-xl" />

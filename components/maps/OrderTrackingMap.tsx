@@ -1,11 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import MapCanvas from "@/components/maps/MapCanvas";
 import { BRAND } from "@/lib/branding";
 import { haversineDistanceKm } from "@/lib/geo";
 import { formatDistanceKm, interpolateLatLng } from "@/lib/maps/geo-math";
-import { useGoogleMaps } from "@/lib/maps/loader";
+import { loadMarkerClass, useGoogleMaps } from "@/lib/maps/loader";
+import { pickClass } from "@/lib/maps/library";
 import {
   fitKey,
   formatUpdatedAt,
@@ -74,8 +75,23 @@ export default function OrderTrackingMap({ status, store, destination, partnerLo
   const viewRef = useRef<TrackingView>(view);
   viewRef.current = view;
   const sceneRef = useRef<Scene | null>(null);
+  const [broken, setBroken] = useState(false);
 
-  const apply = useCallback(() => {
+  const mountedRef = useRef(true);
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
+
+  // Any failure while building the map switches to the text fallback.
+  const fail = useCallback((error: unknown) => {
+    console.error("Order tracking map failed", error);
+    if (mountedRef.current) setBroken(true);
+  }, []);
+
+  const applyUnsafe = useCallback(() => {
     const scene = sceneRef.current;
     if (!scene) return;
     const v = viewRef.current;
@@ -126,8 +142,10 @@ export default function OrderTrackingMap({ status, store, destination, partnerLo
       if (scene.line) {
         scene.line.setPath(path);
       } else {
-        void scene.google.maps.importLibrary("maps").then(({ Polyline }) => {
+        void scene.google.maps.importLibrary("maps").then((lib) => {
           if (sceneRef.current !== scene || scene.line) return;
+          try {
+          const Polyline = pickClass<typeof lib.Polyline>("Polyline", lib.Polyline, undefined);
           scene.line = new Polyline({
             map: scene.map,
             path: viewRef.current.store && viewRef.current.destination ? [viewRef.current.store, viewRef.current.destination] : path,
@@ -140,7 +158,10 @@ export default function OrderTrackingMap({ status, store, destination, partnerLo
               },
             ],
           });
-        });
+          } catch (error) {
+            fail(error);
+          }
+        }, fail);
       }
     } else if (scene.line) {
       scene.line.setMap(null);
@@ -192,7 +213,15 @@ export default function OrderTrackingMap({ status, store, destination, partnerLo
         scene.map.fitBounds(bounds, 48);
       }
     }
-  }, []);
+  }, [fail]);
+
+  const apply = useCallback(() => {
+    try {
+      applyUnsafe();
+    } catch (error) {
+      fail(error);
+    }
+  }, [applyUnsafe, fail]);
 
   useEffect(() => {
     apply();
@@ -201,8 +230,9 @@ export default function OrderTrackingMap({ status, store, destination, partnerLo
   const onReady = useCallback(
     (map: GMap, google: GoogleNs) => {
       let disposed = false;
-      void google.maps.importLibrary("maps").then(({ Marker, LatLngBounds }) => {
+      void Promise.all([google.maps.importLibrary("maps"), loadMarkerClass()]).then(([lib, Marker]) => {
         if (disposed) return;
+        const LatLngBounds = pickClass<typeof lib.LatLngBounds>("LatLngBounds", lib.LatLngBounds, undefined);
         sceneRef.current = {
           map,
           google,
@@ -216,7 +246,7 @@ export default function OrderTrackingMap({ status, store, destination, partnerLo
           frame: null,
         };
         apply();
-      });
+      }).catch(fail);
       return () => {
         disposed = true;
         const scene = sceneRef.current;
@@ -229,7 +259,7 @@ export default function OrderTrackingMap({ status, store, destination, partnerLo
         scene.line?.setMap(null);
       };
     },
-    [apply]
+    [apply, fail]
   );
 
   const first = view.store ?? view.destination ?? view.partner;
@@ -242,7 +272,7 @@ export default function OrderTrackingMap({ status, store, destination, partnerLo
           haversineDistanceKm(view.partner.lat, view.partner.lng, view.destination.lat, view.destination.lng)
         )
       : "";
-  const mapFailed = maps.status === "error";
+  const mapFailed = maps.status === "error" || broken;
 
   return (
     <section
