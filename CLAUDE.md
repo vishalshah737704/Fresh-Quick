@@ -221,6 +221,26 @@ phone. Open: phone check of card taps; after merge, re-ingest `knowledge/` and r
 screenshot (the mobile card figure needs a new phone recording). Also: Vishal validated "Where is my order?"
 on his phone; the Z3 eval was 48/50 after re-ingest and PR #8 replaced one mis-specified fixture (49/50
 expected).
+**Ask Zippy Z4b (2026-10-04, branch `ask-zippy-z4b`, built and live-verified locally, not yet merged to `main`):**
+a signed-in customer who asks Zippy to check out gets a "Go to checkout" card (one per reply) that opens the
+Checkout page/screen for the CURRENT cart; one tap, the chat closes. It is a navigation card, not a purchase:
+Zippy never places or pays for an order and never asks for name, contact, address or card numbers (the
+customer enters them on checkout). Zippy refuses, with no card, when the cart is empty, the store is closed or
+suspended, or a dish is unavailable. The card is server-built from live data and shows no prices. Tool
+`propose_go_to_checkout` + `buildCheckoutCard` + `proposalStatus` in `lib/zippy/actions.ts`; the `tools.ts` case
+re-checks after its await because concurrent tool calls run in parallel (`Promise.all`); prompt rules; a
+`go_to_checkout` variant in the shared byte-identical `action-types.ts` / `action-exec.ts` (web + mobile); web
+`ActionCards` uses `router.push` and `onNavigate` closes the widget; mobile `ZippyActionCards` closes the modal
+then `router.push`. Web: works on any page for a signed-in customer (needs no cart provider). Mobile: always
+works. If the live cart's store changed since the card was made, the tap says "Your cart changed, ask me
+again." `ZIPPY_ACTIONS=off` disables it too. Visitors, vendors, delivery partners and admins never get it.
+Live findings (2026-10-04): the reply said "Tap Confirm" but the button is "Go to checkout" (fixed by
+`proposalStatus` and a prompt rule); the first review caught a duplicate-card race and an orders-off prompt
+contradiction (both fixed). Not verified: a phone tap (iOS may be flaky pushing a route right after dismissing
+a Modal). Open for Vishal: after merge re-ingest `knowledge/` and re-run `node scripts/zippy-eval.mjs` (two new
+cases: "can zippy check out for me", "take me to checkout"); phone check. See MEMORY.md's "Ask Zippy Z4b"
+entry and `docs/superpowers/specs/2026-10-04-ask-zippy-z4b-design.md`. Manuals: web v3.5, mobile v4.6, edited in
+place (no page start changed, so the static TOCs were untouched).
 **Gotcha for demos/tests:** workflow 04 auto-assigns a `ready` order within
 ~10 s to the NEAREST ONLINE partner by stored lat/lng, so it never reaches the
 "Available" list while any online partner has coordinates — a leftover online
@@ -812,6 +832,13 @@ See [MEMORY.md](MEMORY.md) for phase-by-phase progress and decisions.
 - **Cart changes are atomic and proposed, not executed, by the AI.** Use `addItems(...)` for add/replace,
   never `clearCart()` then `addItem()` in one tick (it opens the "clear cart?" modal), and never let a tool
   mutate the cart; the server cannot, because the cart is client state.
+- **A per-kind status string hard-coded in a generic helper leaks onto the next card kind.** Z4a's shared
+  reply text said "tap Confirm"; the new checkout card's button is "Go to checkout", so Zippy told customers to
+  tap a button that did not exist (found only live). When adding an action kind, grep the generic helpers and
+  prompt for kind-specific wording (`proposalStatus` now supplies the per-kind text).
+- **Parallel tool calls need a re-check after any await.** The model may emit several tool calls in one round
+  and they run concurrently (`Promise.all`), so a "one card per reply" guard checked before an await can pass
+  twice and produce duplicate cards. Re-check the shared state after the await, before pushing the result.
 
 ## Standing phrases: "start-all-roles.ps1" / "stop-all-roles.ps1"
 

@@ -196,6 +196,16 @@ website, Confirm works on the customer pages (the cart lives there). Kill switch
 cart is client state. Spec: `docs/superpowers/specs/2026-10-04-ask-zippy-z4a-design.md`. Unit tests: 251
 passing. After merge, re-ingest `knowledge/` and re-run the eval as above.
 
+**Z4b: go to checkout (built 2026-10-04, branch `ask-zippy-z4b`).** When a signed-in customer asks Zippy to check
+out, Zippy shows a "Go to checkout" card that opens the Checkout page (web) or screen (mobile) for the current
+cart. One tap, and the chat closes. Zippy refuses, with no card, if the cart is empty, the store is closed or
+suspended, or a dish is unavailable. The customer still enters their own name, contact details and address and
+pays on the checkout page; Zippy never places or pays for an order and never asks for those details or card
+numbers. On the website the card works on any page for a signed-in customer; on mobile it always works. If the
+cart's store changed after the card was made, the tap says "Your cart changed, ask me again." Visitors, vendors,
+delivery partners and admins never get it; one checkout card per reply. Kill switch: `ZIPPY_ACTIONS=off`. After
+merge, re-ingest `knowledge/` and re-run the eval (two new cases).
+
 **Build caveat:** in a git worktree with a `node_modules` junction, Turbopack
 rejects the build; use `npx next build --webpack` there and run the real
 `npm run build` once merged to `main`.
