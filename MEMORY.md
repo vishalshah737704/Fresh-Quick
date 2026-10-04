@@ -3021,3 +3021,12 @@ plan `docs/superpowers/plans/2026-10-03-ask-zippy-z2.md`. Subagent-driven develo
   of the mobile chat (answers now arrive in one piece); (4) decide whether to add a mobile delivery pin;
   (5) Z3 (my orders) and Z4 (actions) are next; Z4 needs its own prompt-injection review; (6) `npm audit`
   notice after the SDK install is untriaged.
+
+## Zippy limits + mobile pin (2026-10-03, branch `zippy-limits-and-mobile-pin`)
+
+- Vishal chose: signed-in 10/min + 60/day, visitors 5/min + 20/day per IP (`lib/zippy/rate-limit.ts`, test updated; global backstop 60/min + 1000/day unchanged). Supersedes the 20/100 and 10/40 numbers in the Z1 entry above.
+- Mobile "nearest": Vishal left the approach to me. I used the phone's foreground GPS via `expo-location` (already installed for the delivery partner, so no install). `mobile/lib/zippy-location.ts` asks permission only when the question matches a nearby/closest/near-me pattern, uses the last known fix or a Balanced current fix, never stores it, and returns null on any failure. `ZippyFab` passes it as `location` to the unchanged `/api/zippy/chat`. Mobile manual, `knowledge/customer/ask-zippy.md` and the no-location tool note updated; knowledge needs re-ingest and the eval re-run (needs `N8N_INTERNAL_SECRET` permission). Not yet verified on a real phone.
+- `npm audit`: 5 high, one dev-only chain (braces -> micromatch -> fast-glob -> @next/eslint-plugin-next -> eslint-config-next); only fix is a breaking downgrade; left alone.
+- Manuals: example "Which dishes have extra options?" replaced by "What options does the Cheese Dosa have?" in both.
+- Order agreed with Vishal: this branch, then n8n workflow 07 import (I do it, restart authorized), then Z3. Retention stays soft wording; streaming stays deferred.
+- n8n workflow 07 imported + published 2026-10-03 (id `1PATpa02vD2oQhmt`, nightly 03:15 + webhook `foodhub/zippy-catalog-sync`); verified `{total:2999, embedded:0, unchanged:2999}`. Incident: `docker stop n8n` deleted the `--rm` container, n8n was down until Vishal recreated it from the doc's `docker run`; rule added to CLAUDE.md. Leftover scratch dir `n8n/only07/` (untracked) awaits Vishal's OK to delete.

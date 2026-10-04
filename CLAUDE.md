@@ -153,11 +153,10 @@ read-only tools in `tools.ts`: `search_catalog`, `find_stores`, `get_store_menu`
 data in `catalog.ts` (pure) / `catalog-data.ts`; index sync in `catalog-sync.ts`). Max 4 tool rounds, max 6 tool calls per round (extras get an error result)
 (env `ZIPPY_MAX_TOOL_ROUNDS`, 1-6). **The answer now arrives in one piece, not word by word.** Kill
 switch: `ZIPPY_TOOLS=off` (no tools, no catalog = Z1 content). Web sends the delivery pin
-(`lib/zippy/client-location.ts`: stored pin, or the default pin on `/customer*` only); mobile sends NO
-location, so "nearest" is unavailable there. The location is never saved or logged. Keep the index
+(`lib/zippy/client-location.ts`: stored pin, or the default pin on `/customer*` only); mobile sends the phone's foreground GPS fix
+(`mobile/lib/zippy-location.ts`; permission is asked only when the question is about nearby stores; denied = no location, so "nearest" is unavailable). Rate limits as of 2026-10-03: signed-in 10/min + 60/day, visitors 5/min + 20/day per IP (global backstop unchanged). The location is never saved or logged. Keep the index
 fresh with `POST /api/internal/zippy/catalog-sync` (n8n workflow 07, webhook
-`foodhub/zippy-catalog-sync`, nightly; the file is in the repo but NOT yet imported/published in the
-local n8n because that needs an n8n restart). Developer routes: `POST /api/internal/zippy/tool` (run
+`foodhub/zippy-catalog-sync`, nightly; imported and published in the local n8n 2026-10-03, webhook verified: `embedded: 0`). Developer routes: `POST /api/internal/zippy/tool` (run
 one tool) and `/search` (returns `{matches, catalog}`). Checks: `scripts/zippy-eval.mjs` (46/47) and
 `scripts/zippy-facts-check.mjs` (compares answers to the database; 6/6). See MEMORY.md's "Ask Zippy
 Z2" entry and the spec's section 13 Amendments.
@@ -728,6 +727,13 @@ See [MEMORY.md](MEMORY.md) for phase-by-phase progress and decisions.
   refuse until it was scoped to how-to questions only. When adding a capability, re-read every
   existing prompt rule for wording that forbids it, and check with a live question, not only a
   prompt snapshot test.
+- **The local n8n container runs with `--rm`: `docker stop n8n` DELETES it** (state lives in the
+  `n8n_data` volume, so nothing is lost, but the container and its env must be recreated with the
+  `docker run` in `docs/n8n-webhook-setup.md`, which needs `N8N_INTERNAL_SECRET` from `.env.local`).
+  Never stop it just to import/publish a workflow without first making sure the secret can be
+  supplied; the 2026-10-03 workflow 07 import left n8n down until Vishal recreated it by hand, because
+  an assistant-run script reading the secret line was blocked. Also `docker restart` is not an option
+  here, it only works on a container that still exists.
 
 ## Standing phrases: "start-all-roles.ps1" / "stop-all-roles.ps1"
 

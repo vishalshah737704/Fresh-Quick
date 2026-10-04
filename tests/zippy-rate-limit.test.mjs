@@ -6,7 +6,7 @@ test("signed-in users get per-user minute and day buckets", () => {
   const plan = rateLimitPlan({ userId: "u1", ip: "1.2.3.4" });
   assert.deepEqual(plan.map((p) => p.bucket), ["user:u1:min", "user:u1:day"]);
   assert.deepEqual(plan.map((p) => p.windowSeconds), [60, 86400]);
-  assert.deepEqual(plan.map((p) => p.limit), [20, 100]);
+  assert.deepEqual(plan.map((p) => p.limit), [10, 60]);
 });
 
 test("visitors are bucketed by hashed IP with tighter limits; raw IP never stored", () => {
@@ -14,7 +14,7 @@ test("visitors are bucketed by hashed IP with tighter limits; raw IP never store
   assert.equal(plan.length, 4);
   for (const p of plan.slice(0, 2)) assert.match(p.bucket, /^ip:[0-9a-f]{16}:(min|day)$/);
   for (const p of plan) assert.ok(!p.bucket.includes("1.2.3.4"));
-  assert.deepEqual(plan.map((p) => p.limit), [10, 40, 60, 1000]);
+  assert.deepEqual(plan.map((p) => p.limit), [5, 20, 60, 1000]);
 });
 
 test("visitors also hit a global backstop independent of IP", () => {
