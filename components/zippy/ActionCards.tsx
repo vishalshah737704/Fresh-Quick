@@ -1,18 +1,29 @@
 "use client";
 
-import { useRef, useState } from "react";
+import type { Dispatch, MutableRefObject, SetStateAction } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import type { ActionCard, CartApi } from "@/lib/zippy/action-types";
+import type { ActionCard, CardState, CartApi } from "@/lib/zippy/action-types";
 import { executeAction } from "@/lib/zippy/action-exec";
 
-type CardState = { status: "idle" } | { status: "done" | "failed"; message: string } | { status: "dismissed" };
-
 // One tap runs one card, once. `cart` comes from the cart bridge (lib/cart-bridge.ts); it is null outside /customer/* because the provider unmounts there.
-export function ActionCards({ cards, cart, onNavigate }: { cards: ActionCard[]; cart: CartApi | null; onNavigate?: () => void }) {
+// `states` and `executed` live in the widget (not here) so closing the chat, which unmounts this list, never makes a done card tappable again.
+export function ActionCards({
+  cards,
+  cart,
+  onNavigate,
+  states,
+  setStates,
+  executed,
+}: {
+  cards: ActionCard[];
+  cart: CartApi | null;
+  onNavigate?: () => void;
+  states: Record<string, CardState>;
+  setStates: Dispatch<SetStateAction<Record<string, CardState>>>;
+  executed: MutableRefObject<Set<string>>;
+}) {
   const router = useRouter();
-  const [states, setStates] = useState<Record<string, CardState>>({});
-  const executed = useRef<Set<string>>(new Set());
 
   const confirm = (card: ActionCard) => {
     const isCheckout = card.kind === "go_to_checkout";

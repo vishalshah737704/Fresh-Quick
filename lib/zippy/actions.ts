@@ -11,6 +11,10 @@ export type ActionShapeDeps = {
   newId(): string;
 };
 
+export const NO_CART_VISIBLE_ERROR = "I can't see your cart on this page; the customer can open the customer area (or the mobile app) and ask again";
+// Duplicates MAX_SNAPSHOT_LINES in action-types.ts (a test asserts they are equal).
+const SNAPSHOT_LINE_LIMIT = 50;
+
 export const LIMITS = { maxLineQuantity: 20, maxCardsPerReply: 3, maxOptionIds: 20, maxNoteChars: 200, maxLineIdChars: 38 + 37 * 20, maxDescriptionChars: 900, maxListedReorderItems: 5, maxNoteShown: 60 } as const;
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -307,7 +311,8 @@ export function buildCheckoutCard(
   products: Map<string, ProductForCart>,
   deps: ActionShapeDeps
 ): { ok: true; card: ActionCard } | { ok: false; error: string } {
-  if (!cart || cart.items.length === 0 || cart.storeId === null) return { ok: false, error: "The cart is empty" };
+  if (!cart) return { ok: false, error: NO_CART_VISIBLE_ERROR };
+  if (cart.items.length === 0 || cart.storeId === null) return { ok: false, error: "The cart is empty" };
   let storeName: string | null = null;
   for (const line of cart.items) {
     const product = products.get(menuItemIdOfLine(line.lineId));
@@ -321,19 +326,29 @@ export function buildCheckoutCard(
   }
   if (storeName === null) return { ok: false, error: "The cart is empty" };
   const itemCount = cart.items.reduce((sum, line) => sum + line.quantity, 0);
+  // validate.ts clamps each line to 20 and keeps 50 lines, so a snapshot at either limit may under-count the real cart.
+  const countUncertain = cart.items.length >= SNAPSHOT_LINE_LIMIT || cart.items.some((line) => line.quantity >= LIMITS.maxLineQuantity);
+  const forCart = countUncertain ? "your cart" : `${itemCount} ${itemCount === 1 ? "item" : "items"}`;
   return {
     ok: true,
     card: {
       kind: "go_to_checkout",
       id: deps.newId(),
       title: "Go to checkout",
-      description: `Open checkout for ${itemCount} ${itemCount === 1 ? "item" : "items"} from ${storeName}. You enter your details and pay yourself; Zippy does not place the order.`,
+      description: `Open checkout for ${forCart} from ${storeName}. You enter your details and pay yourself; Zippy does not place the order.`,
       storeId: cart.storeId,
       storeName,
       itemCount,
     },
   };
 }
+
+// A checkout card reads the cart as it is NOW, so it must never share a reply with cart cards that are still waiting.
+export const CHECKOUT_AFTER_CART_ERROR = "Cart cards are still waiting for the customer. Ask the customer to confirm the cart cards first, then offer checkout.";
+export const CART_AFTER_CHECKOUT_ERROR = "A checkout card is already prepared in this reply, so do not change the cart in the same reply; the customer can ask again after checkout.";
+export const cartCardPrepared = (actions: ActionCard[]): boolean => actions.some((card) => card.kind !== "go_to_checkout");
+export const checkoutConflict = (actions: ActionCard[]): string | null => (cartCardPrepared(actions) ? CHECKOUT_AFTER_CART_ERROR : null);
+export const cartChangeConflict = (actions: ActionCard[]): string | null => (checkoutAlreadyPrepared(actions) ? CART_AFTER_CHECKOUT_ERROR : null);
 
 // Checked and pushed with no await in between: tool calls of one round run concurrently, so a second checkout card must be refused at push time.
 export const checkoutAlreadyPrepared = (actions: ActionCard[]): boolean => actions.some((card) => card.kind === "go_to_checkout");

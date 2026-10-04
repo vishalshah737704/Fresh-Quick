@@ -231,8 +231,10 @@ suspended, or a dish is unavailable. The card is server-built from live data and
 re-checks after its await because concurrent tool calls run in parallel (`Promise.all`); prompt rules; a
 `go_to_checkout` variant in the shared byte-identical `action-types.ts` / `action-exec.ts` (web + mobile); web
 `ActionCards` uses `router.push` and `onNavigate` closes the widget; mobile `ZippyActionCards` closes the modal
-then `router.push`. Web: works on any page for a signed-in customer (needs no cart provider). Mobile: always
-works. If the live cart's store changed since the card was made, the tap says "Your cart changed, ask me
+then `router.navigate` (no stacked second Checkout screen). Web: works wherever the website shows the customer's cart (the customer pages); on vendor, admin and delivery pages Zippy cannot see the cart, so it cannot prepare the card there; on mobile it always works
+(outside `/customer/*` the widget sends `cart: null`, and the tool says it cannot see the cart). Mobile: always
+works. A checkout card and cart cards never share a reply (`checkoutConflict` / `cartChangeConflict` in `actions.ts`);
+per-card state lives in the widget/Fab so it survives close and reopen. If the live cart's store changed since the card was made, the tap says "Your cart changed, ask me
 again." `ZIPPY_ACTIONS=off` disables it too. Visitors, vendors, delivery partners and admins never get it.
 Live findings (2026-10-04): the reply said "Tap Confirm" but the button is "Go to checkout" (fixed by
 `proposalStatus` and a prompt rule); the first review caught a duplicate-card race and an orders-off prompt

@@ -201,7 +201,7 @@ out, Zippy shows a "Go to checkout" card that opens the Checkout page (web) or s
 cart. One tap, and the chat closes. Zippy refuses, with no card, if the cart is empty, the store is closed or
 suspended, or a dish is unavailable. The customer still enters their own name, contact details and address and
 pays on the checkout page; Zippy never places or pays for an order and never asks for those details or card
-numbers. On the website the card works on any page for a signed-in customer; on mobile it always works. If the
+numbers. On the website the card works wherever the website shows the customer's cart (the customer pages); on vendor, admin and delivery pages Zippy cannot see the cart, so it cannot prepare the card there; on mobile it always works. If the
 cart's store changed after the card was made, the tap says "Your cart changed, ask me again." Visitors, vendors,
 delivery partners and admins never get it; one checkout card per reply. Kill switch: `ZIPPY_ACTIONS=off`. After
 merge, re-ingest `knowledge/` and re-run the eval (two new cases).

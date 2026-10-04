@@ -335,7 +335,9 @@ test("actions on: the checkout rule is present in both orders states, never asks
     const p = buildSystemPrompt({ brandName: "B", role: "customer", chunks: [], toolsEnabled: true, ordersEnabled, actionsEnabled: true });
     assert.match(p, /propose_go_to_checkout/);
     assert.match(p, /only opens checkout[^.]*where they enter their own details and pay themselves/i);
-    assert.match(p, /never ask for or repeat recipient details, an address or payment details/i);
+    assert.match(p, /when the user wants to check out, never ask them to type recipient details, an address or payment details/i);
+    assert.doesNotMatch(p, /never ask for or repeat recipient details/i);
+    assert.match(p, /never propose checkout in the same reply as a cart change/i);
     assert.match(p, /cannot place or pay for the order/i);
     assert.doesNotMatch(p, /for checkout, explain the cart and checkout pages/i);
   }
@@ -362,4 +364,10 @@ test("actions on: checkout rule says tap the Go to checkout button, never Confir
     assert.match(p, /tap the "Go to checkout" button on the card \(never say Confirm for this card\)/);
     assert.match(p, /tap Confirm \(cart cards only/);
   }
+});
+
+test("checkout rule is scoped to checkout and coexists with the Z3 rule that allows reading back the customer's own order details", () => {
+  const p = buildSystemPrompt({ brandName: "B", role: "customer", chunks: [], toolsEnabled: true, ordersEnabled: true, actionsEnabled: true });
+  assert.match(p, /Only repeat personal details such as a phone number, email or address when the user asks for them/);
+  assert.match(p, /reading back details on their own past order when they ask for them is still fine/);
 });

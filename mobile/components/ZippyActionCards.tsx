@@ -1,19 +1,29 @@
-import { useRef, useState } from "react";
+import type { Dispatch, MutableRefObject, SetStateAction } from "react";
 import { useRouter } from "expo-router";
 import { Pressable, Text, View } from "react-native";
 import { BRAND } from "../theme";
-import type { ActionCard, CartApi } from "../lib/action-types";
+import type { ActionCard, CardState, CartApi } from "../lib/action-types";
 import { executeAction } from "../lib/action-exec";
-
-type CardState = { status: "idle" } | { status: "done" | "failed"; message: string } | { status: "dismissed" };
 
 const button = { minHeight: 44, paddingHorizontal: 18, borderRadius: BRAND.radiusPill, alignItems: "center", justifyContent: "center" } as const;
 
-// One tap runs one card, once.
-export function ZippyActionCards({ cards, cart, onNavigate }: { cards: ActionCard[]; cart: CartApi; onNavigate?: () => void }) {
+// One tap runs one card, once. `states` and `executed` live in the Fab (not here) so closing the chat modal, which unmounts this list, never makes a done card tappable again.
+export function ZippyActionCards({
+  cards,
+  cart,
+  onNavigate,
+  states,
+  setStates,
+  executed,
+}: {
+  cards: ActionCard[];
+  cart: CartApi;
+  onNavigate?: () => void;
+  states: Record<string, CardState>;
+  setStates: Dispatch<SetStateAction<Record<string, CardState>>>;
+  executed: MutableRefObject<Set<string>>;
+}) {
   const router = useRouter();
-  const [states, setStates] = useState<Record<string, CardState>>({});
-  const executed = useRef<Set<string>>(new Set());
 
   const confirm = (card: ActionCard) => {
     if (executed.current.has(card.id) || (states[card.id] && states[card.id].status !== "idle")) return;
@@ -28,7 +38,7 @@ export function ZippyActionCards({ cards, cart, onNavigate }: { cards: ActionCar
         }
         setStates((current) => ({ ...current, [card.id]: { status: "done", message: result.message } }));
         onNavigate?.();
-        router.push("/customer/checkout");
+        router.navigate("/customer/checkout");
         return;
       }
       setStates((current) => ({ ...current, [card.id]: { status: result.ok ? "done" : "failed", message: result.message } }));
