@@ -157,3 +157,9 @@ test("snapshotCart carries the order note, capped at 500, and defaults to empty"
   assert.equal(snapshotCart({ ...base, orderNote: "x".repeat(900) }).orderNote.length, 500);
   assert.equal(snapshotCart(base).orderNote, "");
 });
+
+test("set_order_note failure leaves the cart untouched (no setOrderNote call)", () => {
+  const cart = fakeCart("s2", ["x"]);
+  assert.equal(executeAction(noteCard, cart).ok, false);
+  assert.equal(cart.calls.some((call) => call[0] === "setOrderNote"), false);
+});

@@ -304,10 +304,12 @@ export function buildClearCartCard(
   };
 }
 
-const quoted = (text: string) => `"${text.replace(/"/g, "'")}"`;
+const quoted = (text: string) => `"${text}"`;
+// Double quotes become single quotes in the saved text itself, so the card's quoted string is exactly what Confirm saves.
+const noteSafe = (text: string) => text.replace(/"/g, "'");
 
-// The card shows the sanitised text in quotes: exactly what Confirm saves. Text over the limit after sanitising is refused,
-// not silently cut, so what the customer approves is what the model wrote.
+// The card shows the cleaned text in quotes: exactly what Confirm saves. A note longer than the limit after cleaning is
+// refused (never cut), so what the customer approves is what the model wrote.
 export function buildOrderNoteCard(
   snapshot: CartSnapshot | null,
   input: { text: string },
@@ -315,8 +317,13 @@ export function buildOrderNoteCard(
 ): { ok: true; card: ActionCard } | { ok: false; error: string } {
   if (!snapshot) return { ok: false, error: NO_CART_VISIBLE_ERROR };
   if (snapshot.items.length === 0 || snapshot.storeId === null) return { ok: false, error: "The cart is empty" };
-  const cleaned = deps.sanitize(input.text, LIMITS.maxOrderNoteChars);
-  const current = deps.sanitize(snapshot.orderNote ?? "", LIMITS.maxOrderNoteChars);
+  // The cap passed to sanitize is above any possible length, so it never truncates; the limit is checked below.
+  const noLimit = LIMITS.maxOrderNoteChars * 4 + 1;
+  const cleaned = noteSafe(deps.sanitize(input.text, noLimit));
+  if (cleaned.length > LIMITS.maxOrderNoteChars) {
+    return { ok: false, error: `The note is longer than ${LIMITS.maxOrderNoteChars} characters: ask the customer to shorten it` };
+  }
+  const current = noteSafe(deps.sanitize(snapshot.orderNote ?? "", LIMITS.maxOrderNoteChars));
   const currentShown = current.length > LIMITS.maxCurrentNoteShown ? `${current.slice(0, LIMITS.maxCurrentNoteShown - 1)}…` : current;
   let description: string;
   if (cleaned === "") {
