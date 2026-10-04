@@ -51,6 +51,9 @@ test("shared modules are byte-identical copies of the web files", () => {
   assert.equal(read("../mobile/lib/image-url.ts"), read("../lib/image-url.ts"));
   assert.equal(read("../mobile/lib/delivery-animation.ts"), read("../lib/delivery-animation.ts"));
   assert.equal(read("../mobile/lib/brand-logo.ts"), read("../lib/brand-logo.ts"));
+  assert.equal(read("../mobile/lib/tracking.ts"), read("../lib/maps/tracking.ts"));
+  assert.equal(read("../mobile/lib/geo-math.ts"), read("../lib/maps/geo-math.ts"));
+  assert.equal(read("../mobile/lib/geo.ts"), read("../lib/geo.ts"));
 });
 
 test("legacy mobile label exports are gone", () => {
