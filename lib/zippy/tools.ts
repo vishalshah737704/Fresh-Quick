@@ -2,19 +2,45 @@ import "server-only";
 import type Anthropic from "@anthropic-ai/sdk";
 import { supabaseServer } from "@/lib/supabase-server";
 import { embedTexts } from "./openai-embed";
+import { randomUUID } from "node:crypto";
 import {
+  formatRupees,
   parseFindStoresInput,
   parseGetItemOptionsInput,
   parseGetStoreMenuInput,
   parseSearchCatalogInput,
+  sanitizeText,
+  toPaise,
   type Point,
 } from "./catalog";
+import { loadProductsForCart } from "./actions-data";
+import {
+  buildAddItemCard,
+  buildCartChangeCard,
+  buildClearCartCard,
+  buildReorderCard,
+  parseProposeAddInput,
+  parseProposeCartChangeInput,
+  parseProposeClearInput,
+  parseProposeReorderInput,
+  selectActionTools,
+  shapeCartForModel,
+  LIMITS,
+} from "./actions";
+import type { ActionCard, CartSnapshot } from "./action-types";
 import { findStores, getItemOptions, getStoreMenu, hydrateHits, loadCuisineLabels, type CatalogHit } from "./catalog-data";
 
 import { ordersReader } from "./orders-data";
 import { parseGetMyOrderInput, parseListMyOrdersInput, selectTools } from "./orders";
 
-export type ToolContext = { location: Point | null; customerId: string | null; ordersEnabled: boolean };
+export type ToolContext = {
+  location: Point | null;
+  customerId: string | null;
+  ordersEnabled: boolean;
+  actionsEnabled: boolean;
+  cart: CartSnapshot | null;
+  actions: ActionCard[];
+};
 
 // Anthropic tool definitions. strict: true guarantees schema-valid input; ranges are re-checked by the parsers.
 export const ZIPPY_TOOLS: Anthropic.Tool[] = [
@@ -87,7 +113,7 @@ export const ZIPPY_TOOLS: Anthropic.Tool[] = [
 
 // The tool list this caller may use: order tools only for a verified customer with orders switched on.
 export function toolsFor(ctx: ToolContext): Anthropic.Tool[] {
-  return selectTools(ZIPPY_TOOLS, ctx);
+  return selectActionTools(selectTools(ZIPPY_TOOLS, ctx), ctx);
 }
 
 export const MIN_CATALOG_SIMILARITY = 0.3;
@@ -108,6 +134,17 @@ export async function matchCatalog(
 
 const ok = (value: unknown) => ({ content: JSON.stringify(value), isError: false });
 const bad = (message: string) => ({ content: JSON.stringify({ error: message }), isError: true });
+
+const actionDeps = { sanitize: sanitizeText, toPaise, formatRupees, newId: () => randomUUID() };
+
+// Proposals only append a card; nothing is changed until the customer taps Confirm in their own app.
+function pushCard(ctx: ToolContext, result: { ok: true; card: ActionCard } | { ok: false; error: string }) {
+  if (!result.ok) return bad(result.error);
+  if (ctx.actions.length >= LIMITS.maxCardsPerReply) return bad("Too many proposals in one reply; ask the user to confirm these first");
+  ctx.actions.push(result.card);
+  return ok({ proposal_id: result.card.id, summary: result.card.description, status: "waiting for the customer to tap Confirm" });
+}
+const actionsAllowed = (ctx: ToolContext) => Boolean(ctx.customerId) && ctx.actionsEnabled;
 
 export async function runTool(
   name: string,
@@ -156,6 +193,40 @@ export async function runTool(
       if (!parsed.ok) return bad(parsed.error);
       const result = await ordersReader.getMyOrder(ctx.customerId, parsed.value);
       return "error" in result ? bad(result.error) : ok(result);
+    }
+    case "get_my_cart": {
+      if (!actionsAllowed(ctx)) return bad("Cart actions are only available to a signed-in customer");
+      return ok(shapeCartForModel(ctx.cart, actionDeps));
+    }
+    case "propose_add_to_cart": {
+      if (!actionsAllowed(ctx)) return bad("Cart actions are only available to a signed-in customer");
+      const parsed = parseProposeAddInput(rawInput);
+      if (!parsed.ok) return bad(parsed.error);
+      const products = await loadProductsForCart([parsed.value.product_id]);
+      const product = products.get(parsed.value.product_id);
+      if (!product) return bad("dish not found");
+      return pushCard(ctx, buildAddItemCard({ product, quantity: parsed.value.quantity, optionIds: parsed.value.option_ids, note: parsed.value.note }, actionDeps));
+    }
+    case "propose_reorder": {
+      if (!actionsAllowed(ctx) || !ctx.customerId) return bad("Cart actions are only available to a signed-in customer");
+      const parsed = parseProposeReorderInput(rawInput);
+      if (!parsed.ok) return bad(parsed.error);
+      const source = await ordersReader.getReorderSource(ctx.customerId, parsed.value);
+      if ("error" in source) return bad(source.error);
+      const products = await loadProductsForCart(source.lines.map((line) => line.product_id));
+      return pushCard(ctx, buildReorderCard(source, products, actionDeps));
+    }
+    case "propose_cart_change": {
+      if (!actionsAllowed(ctx)) return bad("Cart actions are only available to a signed-in customer");
+      const parsed = parseProposeCartChangeInput(rawInput);
+      if (!parsed.ok) return bad(parsed.error);
+      return pushCard(ctx, buildCartChangeCard(ctx.cart, parsed.value, actionDeps));
+    }
+    case "propose_clear_cart": {
+      if (!actionsAllowed(ctx)) return bad("Cart actions are only available to a signed-in customer");
+      const parsed = parseProposeClearInput(rawInput);
+      if (!parsed.ok) return bad(parsed.error);
+      return pushCard(ctx, buildClearCartCard(ctx.cart, actionDeps));
     }
     default:
       return bad(`unknown tool ${name}`);

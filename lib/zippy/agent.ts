@@ -3,6 +3,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { hasToolBlocks, runAgentLoop, type Block, type LoopMessage, type Round } from "./agent-loop";
 import { runTool, toolsFor } from "./tools";
 import type { Point } from "./catalog";
+import type { ActionCard, CartSnapshot } from "./action-types";
 
 const MODEL = process.env.ZIPPY_CLAUDE_MODEL ?? "claude-sonnet-5-5";
 const DEFAULT_TOOL_ROUNDS = 4;
@@ -28,11 +29,21 @@ export async function* runAgent(args: {
   location: Point | null;
   customerId: string | null;
   ordersEnabled: boolean;
+  actionsEnabled: boolean;
+  cart: CartSnapshot | null;
+  actions: ActionCard[];
   toolsEnabled: boolean;
   signal?: AbortSignal;
 }): AsyncGenerator<string> {
   const anthropic = getClient();
-  const context = { location: args.location, customerId: args.customerId, ordersEnabled: args.ordersEnabled };
+  const context = {
+    location: args.location,
+    customerId: args.customerId,
+    ordersEnabled: args.ordersEnabled,
+    actionsEnabled: args.actionsEnabled,
+    cart: args.cart,
+    actions: args.actions,
+  };
   const tools = toolsFor(context);
   const runRound = async (messages: LoopMessage[], withTools: boolean): Promise<Round> => {
     try {

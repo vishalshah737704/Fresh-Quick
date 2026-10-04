@@ -7,6 +7,7 @@ import { rateLimitPlan } from "@/lib/zippy/rate-limit";
 import { embedQuestion, retrieveCatalogHits, retrieveChunks } from "@/lib/zippy/retrieve";
 import { selectContext, buildSystemPrompt, normalizeHistory } from "@/lib/zippy/prompt";
 import { runAgent } from "@/lib/zippy/agent";
+import type { ActionCard } from "@/lib/zippy/action-types";
 import { hydrateHits, loadCuisineLabels } from "@/lib/zippy/catalog-data";
 import { formatCatalogBlock } from "@/lib/zippy/catalog";
 import {
@@ -48,7 +49,7 @@ export async function POST(request: NextRequest) {
   }
   const parsed = parseChatRequest(raw);
   if (!parsed.ok) return fail(parsed.error, 400);
-  const { message, history: clientHistory, stream, location } = parsed.value;
+  const { message, history: clientHistory, stream, location, cart } = parsed.value;
   let { conversationId } = parsed.value;
 
   const resolved = await resolveCaller(request);
@@ -86,6 +87,8 @@ export async function POST(request: NextRequest) {
     // Orders are visible only to a verified customer; the id comes from the session token, never from the request body.
     const customerId = caller.role === "customer" ? caller.userId : null;
     const ordersEnabled = toolsEnabled && customerId !== null && process.env.ZIPPY_ORDERS !== "off";
+    const actionsEnabled = toolsEnabled && customerId !== null && process.env.ZIPPY_ACTIONS !== "off";
+    const actions: ActionCard[] = [];
     const embedding = await embedQuestion(message);
     const chunks = selectContext(await retrieveChunks(embedding, caller.role));
     let catalogBlock = "";
@@ -105,7 +108,7 @@ export async function POST(request: NextRequest) {
     const messages: ChatTurn[] = [...history, { role: "user", content: message }];
     const sourceIds = chunks.map((c) => c.id);
     const savedConversationId = conversationId;
-    const agentArgs = { system, messages, location, toolsEnabled, customerId, ordersEnabled, signal: request.signal };
+    const agentArgs = { system, messages, location, toolsEnabled, customerId, ordersEnabled, actionsEnabled, cart, actions, signal: request.signal };
 
     if (!stream) {
       let reply = "";
@@ -118,7 +121,7 @@ export async function POST(request: NextRequest) {
           console.error("zippy: saving reply failed", error);
         }
       }
-      return NextResponse.json({ reply, conversationId: savedConversationId });
+      return NextResponse.json({ reply, conversationId: savedConversationId, actions });
     }
 
     const encoder = new TextEncoder();
