@@ -486,3 +486,35 @@ and their dishes in the database.
   does not touch workflows 01-06. `APP_BASE_URL` must be
   `http://host.docker.internal:3000` on the n8n container (already set), as for
   the other workflows.
+
+## Workflow 08: Zippy chat retention
+
+`n8n/workflows/08-zippy-chat-retention.json` deletes saved Zippy chats that
+have had no activity for 30 days (`ZIPPY_RETENTION_DAYS` in the app's
+`.env.local`, integer 1 to 3650, default 30), so the privacy policy's promise
+is real. Orders, accounts and everything else are never touched.
+
+- **Triggers:** a Webhook (`POST /webhook/foodhub/zippy-purge`) and a Schedule
+  (nightly at 03:45 in the n8n instance's timezone). Each has its own HTTP
+  Request node.
+- **What it calls:** `POST {APP_BASE_URL}/api/internal/zippy/purge` with the
+  `X-Internal-Secret` header (`$env.N8N_INTERNAL_SECRET`). No n8n credential is
+  needed.
+- **Timezone:** the workflow sets `settings.timezone` to `Asia/Kolkata`, so 03:45 is
+  India time. Scheduled runs only happen while Docker, n8n and the app are up;
+  n8n does not catch up missed runs.
+- **Dry run first:** the webhook is a DRY RUN unless the body is
+  `{"dryRun": false}`; it returns `{dryRun, retentionDays, conversations,
+  messages, usageRows}` (what would be deleted). The nightly schedule really
+  deletes, so run a dry run before publishing the workflow:
+
+  ```bash
+  curl -s -X POST http://localhost:5678/webhook/foodhub/zippy-purge
+  ```
+
+- **Rule:** a conversation expires when its newest message (or its creation,
+  if it has no messages) is older than the window; its messages go with it.
+  Rate-limit rows older than 2 days are cleaned too. Deleted data cannot be
+  recovered.
+- **Needs migration 32** (`purge_zippy_chats`) applied first. Import and
+  publish this file on its own; it does not touch workflows 01-07.
