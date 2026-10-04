@@ -31,7 +31,7 @@ import {
 import { getChatLocation } from "../lib/zippy-location";
 import { useCart } from "../lib/cart-store";
 import { snapshotCart } from "../lib/client-cart";
-import type { ActionCard } from "../lib/action-types";
+import type { ActionCard, CardState } from "../lib/action-types";
 import { ZippyActionCards } from "./ZippyActionCards";
 
 // Local view of a turn: isError marks a failure notice shown in the sheet,
@@ -63,6 +63,9 @@ export function ZippyFab() {
   // Every action that starts async work bumps this; a result whose token is no
   // longer current (New chat, account switch, a newer action) is dropped.
   const requestToken = useRef(0);
+  // Per-card state is kept here, not in ZippyActionCards, so closing the modal does not forget which cards were already confirmed.
+  const [cardStates, setCardStates] = useState<Record<string, CardState>>({});
+  const executedCards = useRef<Set<string>>(new Set());
   // undefined until the first session resolves, so that first resolution
   // does not count as an account change.
   const previousUserId = useRef<string | null | undefined>(undefined);
@@ -78,6 +81,8 @@ export function ZippyFab() {
   const reset = useCallback(() => {
     invalidatePending();
     setMessages([]);
+    setCardStates({});
+    executedCards.current = new Set();
     setConversations([]);
     setConversationId(null);
     setShowHistory(false);
@@ -285,7 +290,7 @@ export function ZippyFab() {
                       <Text style={{ color: item.role === "user" ? "#fff" : BRAND.colors.ink, fontFamily: BRAND.fonts.body }}>{item.content}</Text>
                     </View>
                   )}
-                  {item.role === "assistant" && item.actions && item.actions.length > 0 && <ZippyActionCards cards={item.actions} cart={cart} />}
+                  {item.role === "assistant" && item.actions && item.actions.length > 0 && <ZippyActionCards cards={item.actions} cart={cart} onNavigate={() => setOpen(false)} states={cardStates} setStates={setCardStates} executed={executedCards} />}
                 </View>
               )}
               ListFooterComponent={busy ? <ActivityIndicator color={BRAND.colors.primary} style={{ alignSelf: "flex-start", margin: 8 }} /> : null}

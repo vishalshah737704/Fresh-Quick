@@ -22,7 +22,7 @@ import { resolveLocation } from "@/lib/zippy/client-location";
 import { useOptionalCart } from "@/lib/cart-store";
 import { snapshotCart } from "@/lib/zippy/client-cart";
 import { ActionCards } from "./ActionCards";
-import type { ActionCard } from "@/lib/zippy/action-types";
+import type { ActionCard, CardState } from "@/lib/zippy/action-types";
 
 type LocalMessage = ChatMessage & { isError?: boolean; actions?: ActionCard[]; id?: number };
 
@@ -42,6 +42,9 @@ export function ZippyWidget() {
   const userIdRef = useRef<string | null | undefined>(undefined);
   // Bumped whenever the chat is reset or replaced; slower history/resume results for an older token are dropped.
   const tokenRef = useRef(0);
+  // Per-card state is kept here, not in ActionCards, so closing the chat does not forget which cards were already confirmed.
+  const [cardStates, setCardStates] = useState<Record<string, CardState>>({});
+  const executedCards = useRef<Set<string>>(new Set());
 
   const cancelStream = useCallback(() => {
     abortRef.current?.abort();
@@ -58,6 +61,8 @@ export function ZippyWidget() {
     tokenRef.current += 1;
     cancelStream();
     setMessages([]);
+    setCardStates({});
+    executedCards.current = new Set();
     setConversations([]);
     setConversationId(null);
     setShowHistory(false);
@@ -239,7 +244,7 @@ export function ZippyWidget() {
                       {m.content || (busy && i === messages.length - 1 ? "…" : "")}
                     </p>
                     )}
-                    {m.role === "assistant" && m.actions && m.actions.length > 0 && <ActionCards cards={m.actions} cart={cart} />}
+                    {m.role === "assistant" && m.actions && m.actions.length > 0 && <ActionCards cards={m.actions} cart={cart} onNavigate={() => setOpen(false)} states={cardStates} setStates={setCardStates} executed={executedCards} />}
                   </div>
                 ))}
               </>

@@ -80,6 +80,17 @@ test("clear_cart clears", () => {
   assert.deepEqual(cart.calls, [["clearCart"]]);
 });
 
+test("go_to_checkout is ok only when the live cart is that store, and never mutates the cart", () => {
+  const card = { kind: "go_to_checkout", id: "c6", title: "t", description: "d", storeId: "s1", storeName: "Dosa Corner", itemCount: 2 };
+  const match = fakeCart("s1", ["L1"]);
+  assert.deepEqual(executeAction(card, match), { ok: true, message: "Opening checkout." });
+  for (const cart of [fakeCart("s2", ["L1"]), fakeCart(null)]) {
+    assert.deepEqual(executeAction(card, cart), { ok: false, message: CART_CHANGED_MESSAGE });
+    assert.deepEqual(cart.calls, []);
+  }
+  assert.deepEqual(match.calls, []);
+});
+
 test("snapshotCart keeps ids, names, quantities, prices and option names, capped at 50 lines", () => {
   const line = (n) => ({ lineId: `L${n}`, name: `Dish ${n}`, quantity: 1, price: 10, selectedOptions: [{ optionName: "Large" }] });
   const snap = snapshotCart({ storeId: "s1", storeName: "Dosa Corner", items: Array.from({ length: 60 }, (_, n) => line(n)) });

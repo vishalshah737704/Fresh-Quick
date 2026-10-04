@@ -45,5 +45,10 @@ export function executeAction(card: ActionCard, cart: CartApi): { ok: boolean; m
       cart.clearCart();
       return { ok: true, message: "Cart cleared." };
     }
+    case "go_to_checkout": {
+      // Navigation only: never mutates the cart, just confirms the card still matches it.
+      if (cart.storeId !== card.storeId) return { ok: false, message: CART_CHANGED_MESSAGE };
+      return { ok: true, message: "Opening checkout." };
+    }
   }
 }

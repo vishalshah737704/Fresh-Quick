@@ -1,10 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { sanitizeText, toPaise, formatRupees } from "../lib/zippy/catalog.ts";
-import { MAX_LINE_QUANTITY, MAX_CARDS_PER_REPLY } from "../lib/zippy/action-types.ts";
+import { MAX_LINE_QUANTITY, MAX_CARDS_PER_REPLY, MAX_SNAPSHOT_LINES } from "../lib/zippy/action-types.ts";
 import {
   parseProposeAddInput, parseProposeReorderInput, parseProposeCartChangeInput, parseProposeClearInput,
-  selectOptions, buildAddItemCard, buildReorderCard, buildCartChangeCard, buildClearCartCard,
+  selectOptions, checkoutConflict, cartChangeConflict, cartCardPrepared, NO_CART_VISIBLE_ERROR, CHECKOUT_AFTER_CART_ERROR, CART_AFTER_CHECKOUT_ERROR, buildAddItemCard, buildReorderCard, buildCartChangeCard, buildClearCartCard, buildCheckoutCard, cartDishIds, menuItemIdOfLine, checkoutAlreadyPrepared, proposalStatus,
   shapeCartForModel, ACTION_TOOLS, ACTION_TOOL_NAMES, selectActionTools, LIMITS,
 } from "../lib/zippy/actions.ts";
 
@@ -162,8 +162,8 @@ test("cart shown to the model is sanitized, in rupees, and says when empty", () 
   assert.deepEqual(shapeCartForModel(null, deps), { store: null, lines: [], empty: true });
 });
 
-test("tool definitions: five strict tools, offered only to a verified customer with actions on", () => {
-  assert.deepEqual(ACTION_TOOL_NAMES, ["get_my_cart", "propose_add_to_cart", "propose_reorder", "propose_cart_change", "propose_clear_cart"]);
+test("tool definitions: six strict tools, offered only to a verified customer with actions on", () => {
+  assert.deepEqual(ACTION_TOOL_NAMES, ["get_my_cart", "propose_add_to_cart", "propose_reorder", "propose_cart_change", "propose_clear_cart", "propose_go_to_checkout"]);
   for (const tool of ACTION_TOOLS) assert.equal(tool.strict, true);
   assert.deepEqual(ACTION_TOOLS.find((t) => t.name === "propose_add_to_cart").input_schema.required, ["product_id"]);
   const base = [{ name: "find_stores" }];
@@ -261,7 +261,7 @@ test("propose_reorder is offered only when order lookups are also on", () => {
   for (const ordersEnabled of [false, undefined]) {
     const list = names({ customerId: "c1", actionsEnabled: true, ordersEnabled });
     assert.equal(list.includes("propose_reorder"), false);
-    assert.deepEqual(list, ["find_stores", "get_my_cart", "propose_add_to_cart", "propose_cart_change", "propose_clear_cart"]);
+    assert.deepEqual(list, ["find_stores", "get_my_cart", "propose_add_to_cart", "propose_cart_change", "propose_clear_cart", "propose_go_to_checkout"]);
   }
 });
 
@@ -300,4 +300,126 @@ test("cards record the store the cart snapshot had (null for an empty or missing
     assert.equal(buildReorderCard(source([line()]), products, deps, cart).card.cartStoreId, null);
   }
   assert.equal(buildReorderCard(source([line()]), products, deps, cartOf("s1", "D", [1])).card.cartStoreId, "s1");
+});
+
+const cartLine = (id, quantity = 1, name = "Masala Dosa") => ({ lineId: `${id}::o1,o3`, name, quantity, price: 130, options: [] });
+const checkoutCart = (lines = [cartLine(U1, 2), cartLine(U2, 3, "Idli")], storeId = "s1") => ({ storeId, storeName: "Dosa Corner", items: lines });
+const liveProducts = (over = {}) => new Map([[U1, product(over)], [U2, product({ id: U2, name: "Idli", ...over })]]);
+
+test("checkout card: success sums line quantities and says the customer pays", () => {
+  const r = buildCheckoutCard(checkoutCart(), liveProducts(), deps);
+  assert.equal(r.ok, true);
+  assert.equal(r.card.kind, "go_to_checkout");
+  assert.equal(r.card.title, "Go to checkout");
+  assert.equal(r.card.itemCount, 5);
+  assert.equal(r.card.storeId, "s1");
+  assert.equal(r.card.storeName, "Dosa Corner");
+  assert.equal(r.card.description, "Open checkout for 5 items from Dosa Corner. You enter your details and pay yourself; Zippy does not place the order.");
+  assert.match(buildCheckoutCard(checkoutCart([cartLine(U1, 1)]), liveProducts(), deps).card.description, /for 1 item from/);
+  assert.equal(r.card.description.length <= LIMITS.maxDescriptionChars, true);
+});
+
+test("checkout card: empty, null and storeless carts are refused", () => {
+  for (const cart of [{ storeId: "s1", storeName: "x", items: [] }, checkoutCart(undefined, null)]) {
+    assert.deepEqual(buildCheckoutCard(cart, liveProducts(), deps), { ok: false, error: "The cart is empty" });
+  }
+});
+
+test("checkout card: closed and suspended stores, unavailable and missing dishes are refused and named", () => {
+  assert.match(buildCheckoutCard(checkoutCart(), liveProducts({ storeOpen: false }), deps).error, /Dosa Corner is closed/);
+  assert.equal(buildCheckoutCard(checkoutCart(), liveProducts({ storeSuspended: true }), deps).error, "not found");
+  assert.match(buildCheckoutCard(checkoutCart(), new Map([[U1, product({ isAvailable: false })], [U2, product({ id: U2 })]]), deps).error, /Masala Dosa is unavailable/);
+  assert.match(buildCheckoutCard(checkoutCart(), new Map([[U1, product()]]), deps).error, /Idli is no longer available/);
+  assert.match(buildCheckoutCard(checkoutCart(), liveProducts({ storeId: "other" }), deps).error, /no longer available/);
+});
+
+test("checkout card: store and dish names are sanitized", () => {
+  const r = buildCheckoutCard(checkoutCart(), liveProducts({ storeName: "Dosa <b>Corner</b>" }), deps);
+  assert.equal(r.card.storeName, "Dosa Corner");
+  assert.equal(/<b>/.test(r.card.description), false);
+  const long = buildCheckoutCard(checkoutCart(), liveProducts({ storeName: "S".repeat(500) }), deps);
+  assert.equal(long.card.description.length <= LIMITS.maxDescriptionChars, true);
+  assert.match(buildCheckoutCard(checkoutCart([cartLine(U1, 1, "Dish <i>x</i>")]), new Map(), deps).error, /^Dish x is no longer/);
+});
+
+test("checkout card ids come from the lineId before '::', uuid-only and deduped", () => {
+  assert.equal(menuItemIdOfLine(`${U1.toUpperCase()}::o1`), U1);
+  assert.deepEqual(cartDishIds(checkoutCart([cartLine(U1), { ...cartLine(U1), lineId: `${U1}::o9` }, cartLine("junk"), cartLine(U2)])), [U1, U2]);
+  assert.deepEqual(cartDishIds(null), []);
+});
+
+test("propose_go_to_checkout: strict no-input tool offered only to a customer with actions on", () => {
+  const tool = ACTION_TOOLS.find((t) => t.name === "propose_go_to_checkout");
+  assert.equal(tool.strict, true);
+  assert.deepEqual(tool.input_schema, { type: "object", properties: {}, additionalProperties: false });
+  const base = [{ name: "find_stores" }];
+  for (const ctx of [{ customerId: null, actionsEnabled: true }, { customerId: "c1", actionsEnabled: false }]) {
+    assert.equal(selectActionTools(base, ctx).some((t) => t.name === "propose_go_to_checkout"), false);
+  }
+  for (const ordersEnabled of [true, false]) {
+    assert.equal(selectActionTools(base, { customerId: "c1", actionsEnabled: true, ordersEnabled }).some((t) => t.name === "propose_go_to_checkout"), true);
+  }
+});
+
+test("concurrent checkout proposals: re-checking after the await lets only the first push a card", async () => {
+  const actions = [];
+  const run = async () => {
+    if (checkoutAlreadyPrepared(actions)) return "refused";
+    await new Promise((resolve) => setTimeout(resolve, 5));
+    if (checkoutAlreadyPrepared(actions)) return "refused";
+    actions.push(buildCheckoutCard(checkoutCart(), liveProducts(), deps).card);
+    return "pushed";
+  };
+  assert.deepEqual(await Promise.all([run(), run()]), ["pushed", "refused"]);
+  assert.equal(actions.length, 1);
+  assert.equal(checkoutAlreadyPrepared([{ kind: "clear_cart" }]), false);
+});
+
+test("proposal status: checkout card names its own button, cart cards still say Confirm", () => {
+  const checkout = buildCheckoutCard(checkoutCart(), liveProducts(), deps).card;
+  assert.match(proposalStatus(checkout), /Go to checkout/);
+  assert.doesNotMatch(proposalStatus(checkout), /confirm/i);
+  assert.equal(proposalStatus(buildClearCartCard(checkoutCart(), deps).card), "waiting for the customer to tap Confirm");
+  assert.equal(/confirm/i.test(checkout.description + checkout.title), false);
+});
+
+test("checkout card: no snapshot at all (null/undefined, e.g. outside /customer) gets its own model-facing error", () => {
+  for (const cart of [null, undefined]) {
+    assert.deepEqual(buildCheckoutCard(cart, liveProducts(), deps), { ok: false, error: NO_CART_VISIBLE_ERROR });
+  }
+  assert.match(NO_CART_VISIBLE_ERROR, /can't see your cart on this page/);
+});
+
+test("checkout card: a possibly clamped snapshot (a line at the max quantity, or 50 lines) gives no number", () => {
+  const atMax = buildCheckoutCard(checkoutCart([cartLine(U1, LIMITS.maxLineQuantity)]), liveProducts(), deps);
+  assert.equal(atMax.card.description, "Open checkout for your cart from Dosa Corner. You enter your details and pay yourself; Zippy does not place the order.");
+  const lines = Array.from({ length: MAX_SNAPSHOT_LINES }, () => cartLine(U1, 1));
+  assert.match(buildCheckoutCard(checkoutCart(lines), liveProducts(), deps).card.description, /^Open checkout for your cart from/);
+  const nearly = Array.from({ length: MAX_SNAPSHOT_LINES - 1 }, () => cartLine(U1, 1));
+  assert.match(buildCheckoutCard(checkoutCart(nearly), liveProducts(), deps).card.description, /^Open checkout for 49 items from/);
+  assert.match(buildCheckoutCard(checkoutCart([cartLine(U1, 19)]), liveProducts(), deps).card.description, /^Open checkout for 19 items from/);
+});
+
+test("the snapshot line limit duplicated in actions.ts equals the shared constant", () => {
+  const lines = Array.from({ length: MAX_SNAPSHOT_LINES - 1 }, () => cartLine(U1, 1));
+  assert.match(buildCheckoutCard(checkoutCart(lines), liveProducts(), deps).card.description, /for 49 items/);
+  assert.match(buildCheckoutCard(checkoutCart([...lines, cartLine(U1, 1)]), liveProducts(), deps).card.description, /for your cart/);
+});
+
+test("checkout and cart cards never share a reply: each side refuses when the other is already in ctx.actions", () => {
+  const checkout = buildCheckoutCard(checkoutCart(), liveProducts(), deps).card;
+  const kinds = [
+    { kind: "add_item", id: "a" }, { kind: "clear_cart", id: "c" }, { kind: "reorder", id: "r" }, { kind: "update_quantity", id: "u" }, { kind: "remove_line", id: "d" },
+  ];
+  assert.equal(checkoutConflict([]), null);
+  assert.equal(cartChangeConflict([]), null);
+  assert.equal(cartChangeConflict([checkout]), CART_AFTER_CHECKOUT_ERROR);
+  assert.equal(checkoutConflict([checkout]), null);
+  for (const card of kinds) {
+    assert.equal(cartCardPrepared([card]), true);
+    assert.equal(checkoutConflict([card]), CHECKOUT_AFTER_CART_ERROR);
+    assert.equal(checkoutConflict([checkout, card]), CHECKOUT_AFTER_CART_ERROR);
+    assert.equal(cartChangeConflict([card]), null);
+  }
+  assert.match(CHECKOUT_AFTER_CART_ERROR, /confirm the cart cards first, then offer checkout/);
 });

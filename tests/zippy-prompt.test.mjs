@@ -329,3 +329,45 @@ test("with order lookups off, the action rules never mention reorder or point at
   assert.match(on, /propose_add_to_cart, propose_reorder, propose_cart_change/);
   assert.match(on, /dish or reorder is from a different store/);
 });
+
+test("actions on: the checkout rule is present in both orders states, never asks for details, and is absent with actions off", () => {
+  for (const ordersEnabled of [true, false]) {
+    const p = buildSystemPrompt({ brandName: "B", role: "customer", chunks: [], toolsEnabled: true, ordersEnabled, actionsEnabled: true });
+    assert.match(p, /propose_go_to_checkout/);
+    assert.match(p, /only opens checkout[^.]*where they enter their own details and pay themselves/i);
+    assert.match(p, /when the user wants to check out, never ask them to type recipient details, an address or payment details/i);
+    assert.doesNotMatch(p, /never ask for or repeat recipient details/i);
+    assert.match(p, /never propose checkout in the same reply as a cart change/i);
+    assert.match(p, /cannot place or pay for the order/i);
+    assert.doesNotMatch(p, /for checkout, explain the cart and checkout pages/i);
+  }
+  for (const args of [{ ordersEnabled: true }, { ordersEnabled: true, actionsEnabled: false }, { ordersEnabled: true, toolsEnabled: false, actionsEnabled: true }]) {
+    assert.doesNotMatch(buildSystemPrompt({ brandName: "B", role: "customer", chunks: [], ...args }), /propose_go_to_checkout/);
+  }
+});
+
+test("actions on: no rule tells the model to send checkout away while another says to use the checkout card", () => {
+  for (const ordersEnabled of [true, false]) {
+    for (const chunks of [[], [match("x", 0.9)]]) {
+      const p = buildSystemPrompt({ brandName: "B", role: "customer", chunks, toolsEnabled: true, ordersEnabled, actionsEnabled: true });
+      assert.doesNotMatch(p, /place orders or pay yet/i);
+      assert.doesNotMatch(p, /place orders, pay or cancel\.(?! )/i);
+      assert.match(p, /checkout card/i);
+      assert.match(p, /requests to check out with the checkout card, not from the knowledge/i);
+    }
+  }
+});
+
+test("actions on: checkout rule says tap the Go to checkout button, never Confirm, while cart cards still say Confirm", () => {
+  for (const ordersEnabled of [true, false]) {
+    const p = buildSystemPrompt({ brandName: "B", role: "customer", chunks: [], toolsEnabled: true, ordersEnabled, actionsEnabled: true });
+    assert.match(p, /tap the "Go to checkout" button on the card \(never say Confirm for this card\)/);
+    assert.match(p, /tap Confirm \(cart cards only/);
+  }
+});
+
+test("checkout rule is scoped to checkout and coexists with the Z3 rule that allows reading back the customer's own order details", () => {
+  const p = buildSystemPrompt({ brandName: "B", role: "customer", chunks: [], toolsEnabled: true, ordersEnabled: true, actionsEnabled: true });
+  assert.match(p, /Only repeat personal details such as a phone number, email or address when the user asks for them/);
+  assert.match(p, /reading back details on their own past order when they ask for them is still fine/);
+});

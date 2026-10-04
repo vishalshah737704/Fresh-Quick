@@ -17,6 +17,12 @@ import { loadProductsForCart } from "./actions-data";
 import {
   buildAddItemCard,
   buildCartChangeCard,
+  buildCheckoutCard,
+  cartDishIds,
+  checkoutAlreadyPrepared,
+  checkoutConflict,
+  cartChangeConflict,
+  proposalStatus,
   buildClearCartCard,
   buildReorderCard,
   parseProposeAddInput,
@@ -140,9 +146,12 @@ const actionDeps = { sanitize: sanitizeText, toPaise, formatRupees, newId: () =>
 // Proposals only append a card; nothing is changed until the customer taps Confirm in their own app.
 function pushCard(ctx: ToolContext, result: { ok: true; card: ActionCard } | { ok: false; error: string }) {
   if (!result.ok) return bad(result.error);
-  if (ctx.actions.length >= LIMITS.maxCardsPerReply) return bad("Too many proposals in one reply; ask the user to confirm these first");
+  if (ctx.actions.length >= LIMITS.maxCardsPerReply) return bad("Too many proposals in one reply; act on these first");
+  // A checkout card and cart cards never share a reply. This runs after every await and just before the push.
+  const conflict = result.card.kind === "go_to_checkout" ? checkoutConflict(ctx.actions) : cartChangeConflict(ctx.actions);
+  if (conflict) return bad(conflict);
   ctx.actions.push(result.card);
-  return ok({ proposal_id: result.card.id, summary: result.card.description, status: "waiting for the customer to tap Confirm" });
+  return ok({ proposal_id: result.card.id, summary: result.card.description, status: proposalStatus(result.card) });
 }
 const actionsAllowed = (ctx: ToolContext) => Boolean(ctx.customerId) && ctx.actionsEnabled;
 
@@ -227,6 +236,19 @@ export async function runTool(
       const parsed = parseProposeClearInput(rawInput);
       if (!parsed.ok) return bad(parsed.error);
       return pushCard(ctx, buildClearCartCard(ctx.cart, actionDeps));
+    }
+    case "propose_go_to_checkout": {
+      if (!actionsAllowed(ctx)) return bad("Cart actions are only available to a signed-in customer");
+      const parsed = parseProposeClearInput(rawInput);
+      if (!parsed.ok) return bad(parsed.error);
+      const already = () => bad("A checkout card is already prepared in this reply");
+      if (checkoutAlreadyPrepared(ctx.actions)) return already();
+      const early = checkoutConflict(ctx.actions);
+      if (early) return bad(early);
+      const products = await loadProductsForCart(cartDishIds(ctx.cart));
+      // Concurrent calls in one round all passed the checks above; re-check after the await, with no await before the push (pushCard re-checks cart cards).
+      if (checkoutAlreadyPrepared(ctx.actions)) return already();
+      return pushCard(ctx, buildCheckoutCard(ctx.cart, products, actionDeps));
     }
     default:
       return bad(`unknown tool ${name}`);
