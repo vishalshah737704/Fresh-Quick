@@ -37,6 +37,8 @@ export function AddressPicker() {
   const markerRef = useRef<GMarker | null>(null);
   const mountedRef = useRef(true);
   const geocodeSeq = useRef(0);
+  // True once the user types in the label field; a map click then keeps their text.
+  const labelEditedRef = useRef(false);
   const applyRef = useRef<(lat: number, lng: number, label: string) => void>(() => {});
 
   useEffect(() => {
@@ -72,7 +74,15 @@ export function AddressPicker() {
   useEffect(() => {
     if (!open) return;
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") close();
+      if (event.key !== "Escape" || event.defaultPrevented) return;
+      // Escape inside the Places autocomplete dismisses its own suggestions only.
+      const insideSearch = event.composedPath().some(
+        (node) =>
+          node instanceof Element &&
+          (node.tagName.toLowerCase() === "gmp-place-autocomplete" ||
+            node.getAttribute("aria-label") === "Address search")
+      );
+      if (!insideSearch) close();
     };
     const onPointer = (event: PointerEvent) => {
       const target = event.target as Node | null;
@@ -110,10 +120,10 @@ export function AddressPicker() {
     async (point: LatLngLiteral) => {
       movePin(point);
       const seq = ++geocodeSeq.current;
-      setDraftLabel("");
+      if (!labelEditedRef.current) setDraftLabel("");
       const found = await reverseGeocode(point);
       if (!mountedRef.current || seq !== geocodeSeq.current) return;
-      setDraftLabel(found);
+      if (!labelEditedRef.current) setDraftLabel(found);
     },
     [movePin, reverseGeocode]
   );
@@ -190,6 +200,7 @@ export function AddressPicker() {
       setDraftLat(formatCoordinate(lat));
       setDraftLng(formatCoordinate(lng));
       setDraftLabel(label);
+      labelEditedRef.current = false;
       setMessage("");
       setManualOpen(false);
       setOpen(true);
@@ -205,9 +216,16 @@ export function AddressPicker() {
     }
     setMessage("");
     setLocating(true);
+    // Taken at click time: closing the picker, picking a place or dropping a
+    // pin before the position arrives invalidates this request.
+    const seq = ++geocodeSeq.current;
     navigator.geolocation.getCurrentPosition(
       async (position) => {
         if (!mountedRef.current) return;
+        if (seq !== geocodeSeq.current) {
+          setLocating(false);
+          return;
+        }
         const point = { lat: position.coords.latitude, lng: position.coords.longitude };
         if (!isValidLatLng(point.lat, point.lng)) {
           setLocating(false);
@@ -215,7 +233,6 @@ export function AddressPicker() {
           return;
         }
         movePin(point);
-        const seq = ++geocodeSeq.current;
         const found = await reverseGeocode(point);
         if (!mountedRef.current) return;
         setLocating(false);
@@ -325,7 +342,10 @@ export function AddressPicker() {
                 className={inputClass}
                 placeholder="Label (e.g. Home)"
                 value={draftLabel}
-                onChange={(e) => setDraftLabel(e.target.value)}
+                onChange={(e) => {
+                  labelEditedRef.current = true;
+                  setDraftLabel(e.target.value);
+                }}
               />
               <input
                 aria-label="Latitude"

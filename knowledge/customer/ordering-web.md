@@ -68,7 +68,7 @@ The order page shows who the order is delivered to, the items with photos and pr
 
 ## How do I change my delivery location?
 
-Your delivery location is the pin used to show nearby stores and delivery fees. It is the address line at the top of the website, for example "Home (19.0760, 72.8777)". Select it to open the location picker, then choose one of these ways:
+Your delivery location is the pin used to show nearby stores. It is the address line at the top of the website, for example "Home (19.0760, 72.8777)". Select it to open the location picker, then choose one of these ways:
 
 1. Search: type your address in "Search for your address" and pick a result. The location is applied at once.
 2. Current location: select "Use my current location" and allow the browser to share your position. It is applied at once when it is found. If you deny permission or your position cannot be found, a message explains why and your location stays as it was.

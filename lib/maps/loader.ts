@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { pickClass } from "./library";
+import { bootstrapAction, failureKind, isRetryable, pickClass } from "./library";
 import type {
   GLatLngBounds,
   GMarker,
@@ -62,34 +62,41 @@ export function loadGoogleMaps(): Promise<GoogleNs> {
   }
   installAuthHook();
   const attempt = new Promise<GoogleNs>((resolve, reject) => {
-    if (window.google?.maps?.importLibrary) {
+    const existing = document.getElementById(SCRIPT_ID);
+    const action = bootstrapAction(Boolean(window.google?.maps?.importLibrary), existing !== null);
+    if (action === "resolve" && window.google) {
       resolve(window.google);
       return;
     }
-    const fail = () => {
-      document.getElementById(SCRIPT_ID)?.remove();
-      reject(new MapsError(authFailed ? "auth_failed" : "load_failed"));
+    // removeScript is false for a timeout: that script may still finish, and a
+    // retry then waits on it (action "reuse") instead of injecting a second one.
+    const fail = (removeScript: boolean) => {
+      if (removeScript) document.getElementById(SCRIPT_ID)?.remove();
+      reject(new MapsError(failureKind(authFailed)));
     };
-    const timer = window.setTimeout(fail, LOAD_TIMEOUT_MS);
-    const script = document.createElement("script");
-    script.id = SCRIPT_ID;
-    script.async = true;
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(key)}&loading=async&v=weekly&callback=__gmapsReady`;
+    const timer = window.setTimeout(() => fail(false), LOAD_TIMEOUT_MS);
+    // Always the latest attempt's callback, so a late load of an earlier
+    // (timed out) attempt resolves the current one.
     window.__gmapsReady = () => {
       window.clearTimeout(timer);
       if (authFailed) reject(new MapsError("auth_failed"));
       else if (window.google?.maps?.importLibrary) resolve(window.google);
-      else fail();
+      else fail(true);
     };
+    if (action === "reuse") return;
+    const script = document.createElement("script");
+    script.id = SCRIPT_ID;
+    script.async = true;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(key)}&loading=async&v=weekly&callback=__gmapsReady`;
     script.onerror = () => {
       window.clearTimeout(timer);
-      fail();
+      fail(true);
     };
     document.head.appendChild(script);
   });
   const tracked = attempt.catch((error: unknown) => {
     // A transient network failure may be retried on the next call.
-    if (error instanceof MapsError && error.kind === "load_failed" && cached === tracked) {
+    if (error instanceof MapsError && isRetryable(error.kind) && cached === tracked) {
       cached = null;
     }
     throw error;

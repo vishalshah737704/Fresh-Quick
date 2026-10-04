@@ -1,6 +1,7 @@
 // Minimal local declarations for the parts of the Google Maps JavaScript API
-// this app uses (no @types/google.maps). Marker choice: the classic
-// google.maps.Marker from the "maps" library, because AdvancedMarkerElement
+// this app uses (no @types/google.maps). Library names: Map and Polyline are in
+// "maps", LatLngBounds and SymbolPath in "core", the classic google.maps.Marker
+// in "marker". Marker choice: the classic Marker, because AdvancedMarkerElement
 // requires a cloud Map ID which this project does not configure.
 
 export type LatLngLiteral = { lat: number; lng: number };

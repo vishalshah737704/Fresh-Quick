@@ -14,6 +14,8 @@ type Props = {
   onReady?: (map: GMap, google: GoogleNs) => void | (() => void);
   // Extra content shown under the message when the map cannot load.
   fallback?: ReactNode;
+  // Called when the map cannot be created, so a consumer can switch to its own fallback.
+  onError?: (error: unknown) => void;
 };
 
 export default function MapCanvas({
@@ -23,16 +25,20 @@ export default function MapCanvas({
   ariaLabel = "Map",
   onReady,
   fallback,
+  onError,
 }: Props) {
   const maps = useGoogleMaps();
   const containerRef = useRef<HTMLDivElement | null>(null);
   const onReadyRef = useRef(onReady);
   const initialView = useRef({ center, zoom });
   const [created, setCreated] = useState(false);
+  const [failed, setFailed] = useState(false);
+  const onErrorRef = useRef(onError);
 
   useEffect(() => {
     onReadyRef.current = onReady;
-  }, [onReady]);
+    onErrorRef.current = onError;
+  }, [onReady, onError]);
 
   useEffect(() => {
     if (maps.status !== "ready" || !containerRef.current) return;
@@ -56,7 +62,10 @@ export default function MapCanvas({
         userCleanup = onReadyRef.current?.(map, google);
       } catch (error) {
         console.error("Map failed to start", error);
-        // The library import failed after the script loaded; leave the empty box.
+        if (!disposed) {
+          setFailed(true);
+          onErrorRef.current?.(error);
+        }
       }
     })();
     return () => {
@@ -66,13 +75,13 @@ export default function MapCanvas({
     };
   }, [maps.status]);
 
-  if (maps.status === "error") {
+  if (maps.status === "error" || failed) {
     return (
       <div
         role="status"
         className={`${className} flex flex-col items-center justify-center gap-1 bg-brand-surface p-4 text-center text-sm text-brand-ink-muted`}
       >
-        <p>{mapsErrorMessage(maps.error)}</p>
+        <p>{maps.status === "error" ? mapsErrorMessage(maps.error) : "The map could not be shown right now."}</p>
         {fallback}
       </div>
     );

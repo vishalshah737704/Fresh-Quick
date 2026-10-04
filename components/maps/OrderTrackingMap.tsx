@@ -218,7 +218,19 @@ export default function OrderTrackingMap({ status, store, destination, partnerLo
 
   useEffect(() => {
     apply();
-  }, [apply, view.store, view.destination, partnerPoint?.lat, partnerPoint?.lng, view.waiting, view.final]);
+    // Coordinate values, not object identity: the order is re-fetched every 3 s and
+    // yields new objects each time. viewRef always holds the latest view.
+  }, [
+    apply,
+    view.store?.lat,
+    view.store?.lng,
+    view.destination?.lat,
+    view.destination?.lng,
+    view.partner?.lat,
+    view.partner?.lng,
+    view.waiting,
+    view.final,
+  ]);
 
   const onReady = useCallback(
     (map: GMap, google: GoogleNs) => {
@@ -279,7 +291,15 @@ export default function OrderTrackingMap({ status, store, destination, partnerLo
           className="h-72 w-full rounded-2xl"
           ariaLabel="Map showing the store, your delivery address and the delivery partner"
           onReady={onReady}
+          onError={fail}
         />
+      )}
+      {first && !mapFailed && (
+        <p className="text-xs text-brand-ink-muted">
+          <span className="font-semibold text-brand-primary-text-safe">S</span> Store ·{" "}
+          <span className="font-semibold text-brand-accent-text-safe">H</span> Your address ·{" "}
+          <span className="font-semibold text-brand-ink">D</span> Delivery partner
+        </p>
       )}
       {mapFailed && (
         <p role="status" className="text-sm text-brand-ink-muted">

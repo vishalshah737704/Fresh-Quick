@@ -63,10 +63,19 @@ export function fitKey(view: TrackingView): string {
   return `${part(view.store)}|${part(view.destination)}|${view.partner ? "p" : "-"}`;
 }
 
-export function formatUpdatedAt(iso: string | null | undefined): string {
+const STALE_PING_MS = 5 * 60 * 1000;
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+// "Updated hh:mm:ss" for a fresh ping; a ping older than 5 minutes shows its
+// date and a warning so an old position is not mistaken for a live one.
+export function formatUpdatedAt(iso: string | null | undefined, now: number = Date.now()): string {
   if (!iso) return "";
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return "";
   const pad = (n: number) => String(n).padStart(2, "0");
-  return `Updated ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+  const time = `${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+  if (now - date.getTime() > STALE_PING_MS) {
+    return `Last seen ${date.getDate()} ${MONTHS[date.getMonth()]} ${time} (location may be out of date)`;
+  }
+  return `Updated ${time}`;
 }

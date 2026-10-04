@@ -61,11 +61,16 @@ export default function CheckoutPage() {
   }
 
   // Autofill only sets this page's own form state; nothing here is stored.
+  // Autofill never knows a flat number or landmark, so keep what the user typed.
+  function keepTypedLine2(prev: DeliveryDetails, next: DeliveryDetails): DeliveryDetails {
+    return prev.line2.trim() ? { ...next, line2: prev.line2 } : next;
+  }
+
   function applyPlace(place: SelectedPlace) {
     pinLookupSeq.current += 1;
     setPinLookupBusy(false);
     setLookupNote(null);
-    setAddress(toAddressFormFields(place.components, place.displayName));
+    setAddress((prev) => keepTypedLine2(prev, toAddressFormFields(place.components, place.displayName)));
     setPin(
       place.point.lat,
       place.point.lng,
@@ -89,7 +94,7 @@ export default function CheckoutPage() {
       setLookupNote("Could not look up that location. Please type the address.");
       return;
     }
-    setAddress(toAddressFormFields(found.components));
+    setAddress((prev) => keepTypedLine2(prev, toAddressFormFields(found.components)));
   }
 
   // Persist to AddressProvider (a different component's state) as an effect,

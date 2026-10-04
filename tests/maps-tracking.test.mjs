@@ -61,7 +61,11 @@ test("fitKey ignores partner movement but not point-set changes", () => {
 test("formatUpdatedAt handles missing and invalid input", () => {
   assert.equal(formatUpdatedAt(null), "");
   assert.equal(formatUpdatedAt("nope"), "");
-  assert.match(formatUpdatedAt("2026-10-04T10:11:12Z"), /^Updated \d\d:\d\d:\d\d$/);
+  const ping = "2026-10-04T10:11:12Z";
+  const at = new Date(ping).getTime();
+  assert.match(formatUpdatedAt(ping, at + 60_000), /^Updated \d\d:\d\d:\d\d$/);
+  assert.match(formatUpdatedAt(ping, at - 5_000), /^Updated /);
+  assert.match(formatUpdatedAt(ping, at + 6 * 60_000), /^Last seen \d+ [A-Z][a-z]{2} \d\d:\d\d:\d\d \(location may be out of date\)$/);
 });
 
 test("order detail carries store and delivery coordinates, null when missing", () => {

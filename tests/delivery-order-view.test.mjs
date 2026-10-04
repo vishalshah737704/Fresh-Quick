@@ -14,6 +14,8 @@ const order = {
   storeAddress: { label: null, lines: ["12 MG Road"] },
   deliveryPartnerId: "p1",
   address: { label: "Home", lines: ["1 Park St", "Pune 411001"] },
+  storePoint: { lat: 19.07, lng: 72.87 },
+  deliveryPoint: { lat: 19.1, lng: 72.9 },
   payment: { status: "success", method: "mock_card" },
   items: [],
 };
@@ -45,6 +47,13 @@ test("history hides phone/address/note, keeps name", () => {
   assert.equal(out.recipientPhone, "");
   assert.equal(out.address, null);
   assert.equal(out.deliveryNote, null);
+});
+
+test("drop-off coordinates: present for active, null for history and available", () => {
+  assert.deepEqual(redactForDelivery(order, "active").deliveryPoint, { lat: 19.1, lng: 72.9 });
+  assert.equal(redactForDelivery({ ...order, status: "delivered" }, "history").deliveryPoint, null);
+  assert.equal(redactForDelivery({ ...order, status: "ready", deliveryPartnerId: null }, "available").deliveryPoint, null);
+  assert.deepEqual(redactForDelivery(order, "available").storePoint, { lat: 19.07, lng: 72.87 });
 });
 
 test("does not mutate its input", () => {
