@@ -238,7 +238,7 @@ again." `ZIPPY_ACTIONS=off` disables it too. Visitors, vendors, delivery partner
 Live findings (2026-10-04): the reply said "Tap Confirm" but the button is "Go to checkout" (fixed by
 `proposalStatus` and a prompt rule); the first review caught a duplicate-card race and an orders-off prompt
 contradiction (both fixed). Phone tap on "Go to checkout" verified on Vishal's phone 2026-10-04 (it opens Checkout; Place order was not tapped).
-Re-ingest and eval re-run done (53/54). See MEMORY.md's "Ask Zippy Z4b"
+Re-ingest and eval re-run done (53/54). Later on 2026-10-04 PR #16 reworded the delivery "How do I go online or offline?" answer (it now says "To start getting deliveries, go online") and, after a re-ingest, the eval reached 54/54. See MEMORY.md's "Ask Zippy Z4b"
 entry and `docs/superpowers/specs/2026-10-04-ask-zippy-z4b-design.md`. Manuals: web v3.5, mobile v4.6, edited in
 place (no page start changed, so the static TOCs were untouched).
 **Ask Zippy streaming (2026-10-04, branch `zippy-streaming`, live-verified on web and phone; merged to `main` as PR #12):**

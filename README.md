@@ -194,7 +194,7 @@ does not place, pay for or cancel orders; checkout stays manual. Only signed-in 
 website, Confirm works on the customer pages (the cart lives there). Kill switch: `ZIPPY_ACTIONS=off`
 (`ZIPPY_TOOLS=off` also disables it). The client sends a snapshot of the cart with each question because the
 cart is client state. Spec: `docs/superpowers/specs/2026-10-04-ask-zippy-z4a-design.md`. Unit tests: 251
-passing. Re-ingest and eval re-run done 2026-10-04 (eval 53/54). Phone check of the card taps passed 2026-10-04.
+passing. Re-ingest and eval re-run done 2026-10-04 (eval 53/54). Phone check of the card taps passed 2026-10-04. Later on 2026-10-04 PR #16 reworded the delivery "How do I go online or offline?" answer (it now says "To start getting deliveries, go online") and, after a re-ingest, the eval reached 54/54.
 
 **Z4b: go to checkout (built 2026-10-04, merged to `main` as PR #10).** When a signed-in customer asks Zippy to check
 out, Zippy shows a "Go to checkout" card that opens the Checkout page (web) or screen (mobile) for the current
