@@ -25,6 +25,8 @@ import { OrderStatusStepper } from "../../../../components/OrderStatusStepper";
 import { OrderStatusPill } from "../../../../components/OrderStatusPill";
 import { OrderItemsList } from "../../../../components/OrderItemsList";
 import { CourierCard } from "../../../../components/CourierCard";
+import { OrderTrackingMap } from "../../../../components/OrderTrackingMap";
+import { showTrackingMap } from "../../../../lib/tracking";
 
 type PartnerLocation = {
   current_lat: number | null;
@@ -199,19 +201,13 @@ export default function OrderDetailScreen() {
 
           {courierAssigned && <CourierCard name={null} />}
 
-          {partnerLocation?.current_lat != null && partnerLocation?.current_lng != null && (
-            <View style={styles.locationBox}>
-              <Text style={{ fontSize: 24 }}>📍</Text>
-              <Text style={styles.locationCoords}>
-                {partnerLocation.current_lat.toFixed(4)}, {partnerLocation.current_lng.toFixed(4)}
-              </Text>
-              {partnerLocation.last_ping_at && (
-                <Text style={styles.mutedText}>
-                  Updated {new Date(partnerLocation.last_ping_at).toLocaleTimeString()}
-                </Text>
-              )}
-              <Text style={styles.mutedTextSmall}>Live map coming soon — showing raw coordinates for now.</Text>
-            </View>
+          {showTrackingMap(order.status) && (
+            <OrderTrackingMap
+              status={order.status}
+              store={order.storePoint}
+              destination={order.deliveryPoint}
+              partnerLocation={partnerLocation}
+            />
           )}
         </>
       )}
@@ -275,7 +271,6 @@ const styles = StyleSheet.create({
   heading: { fontFamily: BRAND.fonts.heading, fontSize: 22, color: BRAND.colors.ink, flexShrink: 1 },
   sectionTitle: { fontFamily: BRAND.fonts.bodySemiBold, fontSize: 16, color: BRAND.colors.ink, marginBottom: 4 },
   mutedText: { fontFamily: BRAND.fonts.body, color: BRAND.colors.inkMuted },
-  mutedTextSmall: { fontFamily: BRAND.fonts.body, fontSize: 11, color: BRAND.colors.inkMuted },
   valueText: { fontFamily: BRAND.fonts.bodyMedium, color: BRAND.colors.ink },
   linkText: { fontFamily: BRAND.fonts.bodyMedium, color: BRAND.colors.primaryTextSafe },
   errorText: { fontFamily: BRAND.fonts.body, color: "#dc2626" },
@@ -293,15 +288,4 @@ const styles = StyleSheet.create({
   etaText: { fontFamily: BRAND.fonts.heading, fontSize: 20, color: BRAND.colors.ink },
   bannerError: { borderWidth: 1, borderColor: "#fecaca", backgroundColor: "#fef2f2", borderRadius: BRAND.radius, padding: 12 },
   bannerErrorText: { fontFamily: BRAND.fonts.bodyMedium, color: "#b91c1c" },
-  locationBox: {
-    alignItems: "center",
-    gap: 4,
-    borderWidth: 1,
-    borderStyle: "dashed",
-    borderColor: BRAND.colors.inkMuted + "40",
-    backgroundColor: BRAND.colors.inkMuted + "0d",
-    borderRadius: BRAND.radius,
-    paddingVertical: 24,
-  },
-  locationCoords: { fontFamily: BRAND.fonts.bodyMedium, color: BRAND.colors.ink },
 });
