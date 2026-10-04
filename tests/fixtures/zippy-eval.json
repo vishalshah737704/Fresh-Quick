@@ -39,5 +39,11 @@
   { "question": "how long do you keep my order history and chats", "role": "customer", "expectTitleIncludes": "What is the privacy policy?" },
   { "question": "what are the rules for using this app", "role": "customer", "expectTitleIncludes": "What are the terms of use?" },
   { "question": "my order arrived with items missing what can i do", "role": "customer", "expectTitleIncludes": "wrong or with items missing" },
-  { "question": "is there a privacy policy page", "role": "customer", "expectTitleIncludes": "What is the privacy policy?" }
+  { "question": "is there a privacy policy page", "role": "customer", "expectTitleIncludes": "What is the privacy policy?" },
+  { "question": "where can I get chilli paneer", "role": "customer", "expectCatalogIncludes": "Wok Style Chilli Paneer" },
+  { "question": "is there a Mexican chocolate cake", "role": "customer", "expectCatalogIncludes": "Fiesta Mexican Chocolate Cake" },
+  { "question": "any good Italian restaurant", "role": "customer", "expectCatalogIncludes": "Bella Italia" },
+  { "question": "I want to order Chinese food from Golden Dragon", "role": "customer", "expectCatalogIncludes": "Golden Dragon" },
+  { "question": "which store sells palak paneer", "role": "customer", "expectCatalogIncludes": "Palak Paneer" },
+  { "question": "a place for cheese dosa", "role": "customer", "expectCatalogIncludes": "Corner Cheese Dosa" }
 ]

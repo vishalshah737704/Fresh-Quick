@@ -2973,3 +2973,51 @@ plan `docs/superpowers/plans/2026-10-03-ask-zippy-z1.md`. Built with subagent-dr
 - Later same day: Vishal authorized reading `N8N_INTERNAL_SECRET` for the eval run. Added 5 policy cases to `tests/fixtures/zippy-eval.json` (now 41; eval 40/41, only the known "start getting deliveries" miss). The wrong/missing-items rule got its own heading in the policy file so it retrieves; re-ingested (144 chunks).
 - Manuals: Ask Zippy chapter added in place (python-docx) - web `User_Manual` Chapter 8 pp. 38-40 (2 production-build Playwright figures, visitor chat, no personal data), 49 pages, TOC renumbered; mobile `Mobile_App_User_Manual` Chapter 6 p. 29 with one 3-panel figure cut from Vishal's 2026-10-03 iPhone recording, 31 pages, Appendix A now p. 31. Known cosmetic: heading 6.4 sits at the bottom of p. 29.
 - Still open: SDK install (approved, to be announced when done) and the Z2 brainstorm; real retention purge job (optional); Android/vendor-delivery-admin signed-in Zippy checks.
+
+## Ask Zippy Z2 (2026-10-03, branch `ask-zippy-z2`, built and live-verified, not yet merged or pushed)
+Spec `docs/superpowers/specs/2026-10-03-ask-zippy-z2-design.md` (section 13 Amendments as built),
+plan `docs/superpowers/plans/2026-10-03-ask-zippy-z2.md`. Subagent-driven development, 12 tasks.
+- **What shipped:** migration 31 (`zippy_catalog_chunks`, `match_zippy_catalog`, deny-all RLS); catalog
+  index of 77 stores + 2,922 products (about 2,999 rows); `lib/zippy/{catalog,catalog-sync,catalog-data,tools,
+  agent-loop,agent,client-location}.ts`, `claude.ts` deleted; four read-only strict tools (`search_catalog`,
+  `find_stores`, `get_store_menu`, `get_item_options`); `POST /api/internal/zippy/{catalog-sync,tool}` and
+  `/search` now returning `{matches, catalog}`; n8n workflow `07-zippy-catalog-sync.json`; scripts
+  `zippy-eval.mjs` (+ `-match`), `zippy-facts-check.mjs`; `knowledge/customer/ask-zippy.md`; manuals
+  (web 8.4, mobile 6.3 "Asking about stores and menus", TOCs unchanged, 49 and 31 pages).
+- **Decisions:** one embedding feeds knowledge and catalog search; embedded text never holds prices, fees
+  or open status (hydration supplies live facts, so a stale index is harmless); prices via integer paise;
+  vendor text sanitised, capped at 200 chars and fenced as data; max 6 tool calls per round (extras answered with an error result); max 4 tool rounds (`ZIPPY_MAX_TOOL_ROUNDS`
+  1-6); tool-round text is discarded so the answer is ONE piece, web and mobile (accepted UX change);
+  kill switch `ZIPPY_TOOLS=off` = Z1 content (also one piece); web sends the delivery pin, mobile none
+  (no mobile pin exists, so no distance sort there); location never stored or logged.
+- **Rulings:** reviewer minors were carried into later tasks instead of extra fix rounds; kept
+  `readStoredLocation` and added `resolveLocation`; skipped the server `fallbacks` option (refusal goes
+  to the friendly error); rate limits unchanged although one chat can now cost up to 5 model calls;
+  n8n workflow 07 import deferred because publishing needs an n8n restart Vishal said not to do unasked.
+- **Confirmed live on claude-sonnet-5-5 (Task 9 Step 7):** (a) strict tools with optional properties
+  (`find_stores` has no `required`) are accepted; (b) an assistant turn with thinking blocks plus
+  tool_result round-trips; (c) the final call with tool definitions and `tool_choice: {type:"none"}` is
+  accepted and answers. Warm tool question about 6-9 s end to end, cold first request about 21 s (dev compile).
+- **Live results:** catalog sync first run embedded 2,999, rerun 0, suspending one store deleted its 51 rows,
+  restoring re-embedded 51, no rupee sign in any embedded text, no-secret call 401. Tool route matched SQL
+  ground truth for rating sort, free delivery, open/closed, suspended store hidden before re-sync, distance
+  sort (haversine), unavailable flag, decimal prices, option groups, error inputs, hostile markup stripped
+  (all temporary edits restored). Chat: Dosa Corner open and Cheese Dosa 150 rupees matched the DB; "3
+  closest stores" with the default pin matched SQL; how-to unchanged; off-topic declined; `ZIPPY_TOOLS=off`
+  gives Z1 text. Evals: `zippy-eval.mjs` 46/47 (only the known "start getting deliveries" miss),
+  `zippy-facts-check.mjs` 6/6; 183 unit tests at Task 11.
+- **Defects only live checks found:** default pin never in localStorage (no location sent); missing
+  `caseOk` import in a CLI script that `node --check` and unit tests passed; final no-tools round needs
+  tool definitions plus `tool_choice: none`; `process.exit()` with open sockets crashes Node on Windows;
+  Z1 prompt "answer only from knowledge" blocked live lookups until scoped to how-to questions.
+- **Deferred minors:** catalog-sync existing-hash read orders by ref_id only, and no guard against an empty
+  products read deleting all product rows; catalog-data `findStores` limit(500) without order (fine at 77),
+  category exact vs substring, no sort tiebreak; catalog.ts empty-string lat/lng and NaN rating edge cases,
+  ellipsis re-trim; agent-loop no tool timeout and max_tokens final text has no truncation marker; prompt
+  does not run knowledge chunks through the catalog-fence stripper; facts-check weak open-word and
+  price-substring checks and error paths still `process.exit`; tool timeouts/abort not passed to tools.
+- **Open items for Vishal:** (1) import and publish n8n workflow 07 (needs an n8n restart, so he decides
+  when) - until then run the sync by hand after menu edits; (2) merge/push `ask-zippy-z2`; (3) phone check
+  of the mobile chat (answers now arrive in one piece); (4) decide whether to add a mobile delivery pin;
+  (5) Z3 (my orders) and Z4 (actions) are next; Z4 needs its own prompt-injection review; (6) `npm audit`
+  notice after the SDK install is untriaged.

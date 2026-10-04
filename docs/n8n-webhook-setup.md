@@ -456,3 +456,33 @@ in the repo's `knowledge/` folder.
 - `APP_BASE_URL` must be `http://host.docker.internal:3000` on the n8n
   container (already set), as for workflows 01-05. Import and Publish it like
   the others (section 3).
+
+## Workflow 07: Zippy catalog sync
+
+`n8n/workflows/07-zippy-catalog-sync.json` keeps Zippy's store and dish
+discovery index (the catalog tables in pgvector) in sync with the active stores
+and their dishes in the database.
+
+- **Triggers:** a Webhook (`POST /webhook/foodhub/zippy-catalog-sync`) and a
+  Schedule (nightly at 03:15 in the n8n instance's timezone). Both feed one
+  HTTP Request node.
+- **What it calls:** `POST {APP_BASE_URL}/api/internal/zippy/catalog-sync` with
+  the `X-Internal-Secret` header (`$env.N8N_INTERNAL_SECRET`). No n8n credential
+  is needed.
+- **Where the work happens:** the app reads active stores and their dishes,
+  embeds only rows whose content changed and upserts them. The OpenAI key stays
+  in the app's `.env.local`; n8n never sees it. The response is
+  `{total, embedded, unchanged, deleted}`. Prices and open status are never
+  embedded; Zippy reads them live.
+- **Run on demand** (after big menu or store changes), with the workflow
+  published:
+
+  ```bash
+  curl -s -X POST http://localhost:5678/webhook/foodhub/zippy-catalog-sync
+  ```
+
+  Re-running with no changes returns `embedded: 0`.
+- **Import separately:** import this file on its own and publish it; doing so
+  does not touch workflows 01-06. `APP_BASE_URL` must be
+  `http://host.docker.internal:3000` on the n8n container (already set), as for
+  the other workflows.

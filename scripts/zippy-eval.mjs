@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { caseOk } from "./zippy-eval-match.mjs";
 
 const base = process.env.ZIPPY_BASE_URL ?? "http://localhost:3000";
 const secret = process.env.N8N_INTERNAL_SECRET;
@@ -8,7 +9,8 @@ if (!secret) {
   console.error("Set N8N_INTERNAL_SECRET in your shell (the script never reads .env files).");
   process.exit(2);
 }
-const cases = JSON.parse(readFileSync(new URL("../tests/fixtures/zippy-eval.json", import.meta.url), "utf8"));
+const fixturePath = process.env.ZIPPY_EVAL_FIXTURE ?? new URL("../tests/fixtures/zippy-eval.json", import.meta.url);
+const cases = JSON.parse(readFileSync(fixturePath, "utf8"));
 
 let hits = 0;
 const misses = [];
@@ -28,21 +30,12 @@ for (const c of cases) {
     console.error(`HTTP ${res.status} for: ${c.question}`);
     process.exit(1);
   }
-  const { matches } = await res.json();
-  const usable = matches.filter((m) => m.similarity >= MIN).slice(0, 3);
-  // Production selectContext keeps up to 5 matches, so isolation checks look at 5; positives stay strict at 3.
-  const usable5 = matches.filter((m) => m.similarity >= MIN).slice(0, 5);
-  let ok;
-  if (c.expectTitleExcludes) {
-    ok = !usable5.some((m) => m.title.includes(c.expectTitleExcludes));
-  } else if (c.expectTitleIncludes === null) {
-    ok = usable.length === 0;
-  } else {
-    ok = usable.some((m) => m.title.includes(c.expectTitleIncludes));
-  }
+  const { matches, catalog = [] } = await res.json();
+  const ok = caseOk(c, matches, catalog, MIN);
   if (ok) hits++;
-  else misses.push({ question: c.question, expected: c.expectTitleIncludes, excluded: c.expectTitleExcludes, got: matches.slice(0, 3).map((m) => `${m.title} (${m.similarity.toFixed(2)})`) });
+  else misses.push({ question: c.question, expected: c.expectTitleIncludes ?? c.expectCatalogIncludes, excluded: c.expectTitleExcludes, got: c.expectCatalogIncludes ? catalog.slice(0, 5).map((h) => `${String(h.content).slice(0, 60)} (${h.similarity.toFixed(2)})`) : matches.slice(0, 3).map((m) => `${m.title} (${m.similarity.toFixed(2)})`) });
 }
 console.log(`hit rate: ${hits}/${cases.length}`);
 for (const m of misses) console.log(JSON.stringify(m));
-process.exit(hits / cases.length >= 0.9 ? 0 : 1);
+// exitCode (not process.exit) lets open keep-alive sockets close; a hard exit crashes Node on Windows.
+process.exitCode = hits / cases.length >= 0.9 ? 0 : 1;

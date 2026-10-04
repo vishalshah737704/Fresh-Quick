@@ -1,0 +1,57 @@
+{
+  "name": "07 - Zippy Catalog Sync",
+  "nodes": [
+    {
+      "id": "zippy-catalog-webhook",
+      "name": "Run catalog sync now (webhook)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 200],
+      "webhookId": "f47ac10b-58cc-4372-a567-0e02b2c3d007",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "foodhub/zippy-catalog-sync",
+        "responseMode": "lastNode"
+      },
+      "notes": "POST here (no body needed) after big menu or store changes to refresh Zippy's store and dish discovery index right away."
+    },
+    {
+      "id": "zippy-catalog-schedule",
+      "name": "Nightly at 03:15",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [240, 400],
+      "parameters": {
+        "rule": { "interval": [{ "field": "cronExpression", "expression": "15 3 * * *" }] }
+      }
+    },
+    {
+      "id": "zippy-catalog-sync-call",
+      "name": "POST /api/internal/zippy/catalog-sync",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [520, 300],
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.APP_BASE_URL}}/api/internal/zippy/catalog-sync",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "X-Internal-Secret", "value": "={{$env.N8N_INTERNAL_SECRET}}" }
+          ]
+        }
+      },
+      "notes": "The app reads active stores and their dishes, embeds only changed rows (OpenAI key stays in the app) and upserts into pgvector. Returns {total, embedded, unchanged, deleted}. Prices and open status are never embedded; Zippy reads them live."
+    }
+  ],
+  "connections": {
+    "Run catalog sync now (webhook)": {
+      "main": [[{ "node": "POST /api/internal/zippy/catalog-sync", "type": "main", "index": 0 }]]
+    },
+    "Nightly at 03:15": {
+      "main": [[{ "node": "POST /api/internal/zippy/catalog-sync", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" }
+}

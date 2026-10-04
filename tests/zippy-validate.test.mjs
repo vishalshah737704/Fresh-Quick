@@ -69,3 +69,13 @@ test("parseChatRequest history caps", () => {
   ];
   assert.equal(parseChatRequest({ message: "q", history: oldPrefix }).ok, true);
 });
+
+test("parseChatRequest location: absent is null, valid is kept, anything else is a 400", () => {
+  assert.equal(parseChatRequest({ message: "hi" }).value.location, null);
+  assert.equal(parseChatRequest({ message: "hi", location: null }).value.location, null);
+  assert.deepEqual(parseChatRequest({ message: "hi", location: { lat: 19.076, lng: 72.8777 } }).value.location, { lat: 19.076, lng: 72.8777 });
+  assert.equal(parseChatRequest({ message: "hi", location: { lat: 90, lng: -180 } }).ok, true);
+  for (const bad of [{}, { lat: 91, lng: 0 }, { lat: 0, lng: 181 }, { lat: "1", lng: 2 }, { lat: NaN, lng: 0 }, { lat: Infinity, lng: 0 }, [], "x", 5]) {
+    assert.equal(parseChatRequest({ message: "hi", location: bad }).ok, false, JSON.stringify(bad));
+  }
+});

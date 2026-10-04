@@ -18,6 +18,7 @@ import {
   type ChatMessage,
   type ConversationSummary,
 } from "@/lib/zippy/client-api";
+import { resolveLocation } from "@/lib/zippy/client-location";
 
 type LocalMessage = ChatMessage & { isError?: boolean };
 
@@ -110,6 +111,7 @@ export function ZippyWidget() {
           conversationId,
           history,
           signal: controller.signal,
+          location: resolveLocation((key) => window.localStorage.getItem(key), window.location.pathname),
           onDelta: (delta) => {
             if (controller.signal.aborted) return;
             setMessages((current) => {
