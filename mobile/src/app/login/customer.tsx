@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { View, Text, TextInput, Pressable, StyleSheet, ActivityIndicator } from "react-native";
+import { KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, Pressable, StyleSheet, ActivityIndicator } from "react-native";
 import { useRouter } from "expo-router";
 import { supabase } from "../../../lib/supabase";
 import { apiPostPublic, ApiError } from "../../../lib/api";
@@ -83,7 +83,8 @@ export default function CustomerLoginScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.flex}>
+      <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
       <Text style={styles.heading}>
         {mode === "signup" ? "Customer Sign Up" : "Customer Log In"}
       </Text>
@@ -131,13 +132,15 @@ export default function CustomerLoginScreen() {
           {mode === "signup" ? "Have an account? Log in" : "Need an account? Sign up"}
         </Text>
       </Pressable>
-    </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
+  flex: { flex: 1, backgroundColor: BRAND.colors.background },
   container: {
-    flex: 1,
+    flexGrow: 1,
     backgroundColor: BRAND.colors.background,
     padding: 24,
     gap: 12,
