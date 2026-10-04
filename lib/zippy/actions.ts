@@ -87,23 +87,25 @@ export type ProductForCart = {
 
 export function selectOptions(
   groups: ProductForCart["groups"],
-  optionIds: string[]
+  optionIds: string[],
+  clean: (value: string) => string = (v) => v
 ): { ok: true; selected: CartOption[] } | { ok: false; error: string } {
+  const unique = [...new Set(optionIds)];
   const selected: CartOption[] = [];
   const counts = new Map<string, number>();
-  for (const optionId of optionIds) {
+  for (const optionId of unique) {
     const group = groups.find((g) => g.options.some((option) => option.id === optionId));
     const option = group?.options.find((candidate) => candidate.id === optionId);
     if (!group || !option) return { ok: false, error: "One of the options is not an option of this dish" };
     counts.set(group.id, (counts.get(group.id) ?? 0) + 1);
-    selected.push({ groupId: group.id, groupName: group.name, optionId: option.id, optionName: option.name, priceDeltaPaise: option.priceDeltaPaise });
+    selected.push({ groupId: group.id, groupName: clean(group.name), optionId: option.id, optionName: clean(option.name), priceDeltaPaise: option.priceDeltaPaise });
   }
   for (const group of groups) {
     const count = counts.get(group.id) ?? 0;
-    if (count < group.minSelect) return { ok: false, error: `Choose at least ${group.minSelect} for "${group.name}"` };
-    if (count > group.maxSelect) return { ok: false, error: `Choose at most ${group.maxSelect} for "${group.name}"` };
+    if (count < group.minSelect) return { ok: false, error: `Choose at least ${group.minSelect} for "${clean(group.name)}"` };
+    if (count > group.maxSelect) return { ok: false, error: `Choose at most ${group.maxSelect} for "${clean(group.name)}"` };
   }
-  // Keep a stable order: by group position, then by option position within the dish.
+  // Keep a stable order: by group position.
   selected.sort((a, b) => groups.findIndex((g) => g.id === a.groupId) - groups.findIndex((g) => g.id === b.groupId));
   return { ok: true, selected };
 }
@@ -114,9 +116,9 @@ const unitPaise = (product: ProductForCart, options: CartOption[], deps: ActionS
 const optionText = (options: CartOption[]) => (options.length > 0 ? ` (${options.map((o) => `${o.groupName}: ${o.optionName}`).join(", ")})` : "");
 
 // The same checks the app's store pages make: a closed or suspended store cannot be ordered from.
-function storeProblem(product: ProductForCart): string | null {
+function storeProblem(product: ProductForCart, cleanStoreName: string): string | null {
   if (product.storeSuspended) return "not found";
-  if (!product.storeOpen) return `${product.storeName} is closed right now`;
+  if (!product.storeOpen) return `${cleanStoreName} is closed right now`;
   return null;
 }
 
@@ -125,13 +127,13 @@ export function buildAddItemCard(
   deps: ActionShapeDeps
 ): { ok: true; card: ActionCard } | { ok: false; error: string } {
   const { product, quantity, optionIds, note } = args;
-  const problem = storeProblem(product);
+  const storeName = deps.sanitize(product.storeName, 80);
+  const problem = storeProblem(product, storeName);
   if (problem) return { ok: false, error: problem };
   if (!product.isAvailable) return { ok: false, error: `${deps.sanitize(product.name, 80)} is unavailable right now` };
-  const chosen = selectOptions(product.groups, optionIds);
+  const chosen = selectOptions(product.groups, optionIds, (v) => deps.sanitize(v, 80));
   if (!chosen.ok) return { ok: false, error: chosen.error };
   const name = deps.sanitize(product.name, 80);
-  const storeName = deps.sanitize(product.storeName, 80);
   const cleanNote = note === undefined ? "" : deps.sanitize(note, LIMITS.maxNoteChars);
   const item: CartLineData = {
     menuItemId: product.id,
@@ -178,9 +180,10 @@ export function buildReorderCard(
       skipped.push({ name: "An item", reason: "no longer on the menu" });
       continue;
     }
-    const problem = storeProblem(product);
+    const cleanStoreName = deps.sanitize(product.storeName, 80);
+    const problem = storeProblem(product, cleanStoreName);
     if (problem) return { ok: false, error: problem };
-    storeName = deps.sanitize(product.storeName, 80);
+    storeName = cleanStoreName;
     const name = deps.sanitize(product.name, 80);
     if (!product.isAvailable) {
       skipped.push({ name, reason: "unavailable now" });
@@ -190,7 +193,7 @@ export function buildReorderCard(
       skipped.push({ name, reason: "options changed" });
       continue;
     }
-    const chosen = selectOptions(product.groups, line.option_ids as string[]);
+    const chosen = selectOptions(product.groups, line.option_ids as string[], (v) => deps.sanitize(v, 80));
     if (!chosen.ok) {
       skipped.push({ name, reason: "options changed" });
       continue;

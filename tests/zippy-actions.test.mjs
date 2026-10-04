@@ -172,3 +172,57 @@ test("tool definitions: five strict tools, offered only to a verified customer w
   assert.deepEqual(selectActionTools(base, { customerId: "c1", actionsEnabled: false }), base);
   assert.equal(selectActionTools(base, { customerId: "c1", actionsEnabled: true }).length, 1 + ACTION_TOOLS.length);
 });
+
+test("dirty product, store, group, and option names are sanitized in add card and closed-store error", () => {
+  const dirty = {
+    id: U1, name: "Masala <b>Dosa</b>", price: "130.00", imageUrl: null, isAvailable: true,
+    storeId: "s1", storeName: "Dosa <b>Corner</b>", storeOpen: false, storeSuspended: false,
+    groups: [
+      { id: "g1", name: "Size <i>x</i>", minSelect: 1, maxSelect: 1, options: [{ id: "o1", name: "Regular", priceDeltaPaise: 0 }, { id: "o2", name: "Big <b>one</b>", priceDeltaPaise: 2000 }] },
+    ],
+  };
+  // closed-store error should have sanitized store name
+  const closedErr = buildAddItemCard({ product: dirty, quantity: 1, optionIds: ["o2"], note: undefined }, deps);
+  assert.equal(closedErr.ok, false);
+  assert.match(closedErr.error, /Dosa Corner is closed/);
+  assert.equal(/[<>]/.test(closedErr.error), false);
+  // reopen it to test add card
+  dirty.storeOpen = true;
+  const out = buildAddItemCard({ product: dirty, quantity: 1, optionIds: ["o2"], note: undefined }, deps);
+  assert.equal(out.ok, true);
+  const card = out.card;
+  assert.equal(card.item.name, "Masala Dosa");
+  assert.equal(card.item.selectedOptions[0].groupName, "Size x");
+  assert.equal(card.item.selectedOptions[0].optionName, "Big one");
+  assert.equal(card.storeName, "Dosa Corner");
+  assert.equal(/[<>]/.test(card.description), false);
+});
+
+test("selectOptions with duplicated ids selects unique options only once and charges once", () => {
+  const groups = product().groups;
+  const out = buildAddItemCard({ product: product(), quantity: 1, optionIds: ["o2", "o2"], note: undefined }, deps);
+  assert.equal(out.ok, true);
+  // o2 from g1 (maxSelect 2 in extras but only has 1 option) is selected once
+  assert.equal(out.card.item.selectedOptions.length, 1);
+  assert.equal(out.card.item.selectedOptions[0].optionId, "o2");
+  // price should be 13000 + 2000 = 15000 paise once, not twice
+  assert.match(out.card.description, /₹150/);
+});
+
+test("reorder line with product in different store is skipped as 'no longer on the menu'", () => {
+  const s2Product = product({ id: "33333333-3333-4333-8333-333333333333", storeId: "s2" });
+  const products = new Map([[U1, product()], ["33333333-3333-4333-8333-333333333333", s2Product]]);
+  const out = buildReorderCard(source([line(), line({ product_id: "33333333-3333-4333-8333-333333333333" })]), products, deps);
+  assert.equal(out.ok, true);
+  assert.equal(out.card.items.length, 1);
+  assert.equal(out.card.skipped.length, 1);
+  assert.equal(out.card.skipped[0].reason, "no longer on the menu");
+});
+
+test("dirty reorder note is sanitized in cart line", () => {
+  const products = new Map([[U1, product()]]);
+  const out = buildReorderCard(source([line({ note: "no <b>onions</b>" })]), products, deps);
+  assert.equal(out.ok, true);
+  assert.equal(out.card.items[0].specialInstructions, "no onions");
+  assert.equal(/[<>]/.test(out.card.items[0].specialInstructions), false);
+});
