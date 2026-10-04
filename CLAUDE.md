@@ -140,11 +140,11 @@ chats are saved (web + mobile share history); visitors get a temporary chat.
 To re-ingest after editing `knowledge/`: POST the n8n webhook `foodhub/zippy-ingest`
 (workflow 06) or `POST /api/internal/zippy/ingest`; check quality with
 `node scripts/zippy-eval.mjs` (last 35/36, now 46/47 after Z2). Needs `ANTHROPIC_API_KEY` (workspace-scoped,
-with credits) and `OPENAI_API_KEY` in `.env.local`. Z2 (live lookups) is built (next paragraph); Z3 (my orders) is built on branch `ask-zippy-z3` (paragraph after it); Z4
-(actions) is next. See MEMORY.md's "Ask Zippy Z1" entry and the spec's Amendments.
-**Ask Zippy Z2 (2026-10-03, branch `ask-zippy-z2`, built and live-verified, not yet merged to `main`):**
+with credits) and `OPENAI_API_KEY` in `.env.local`. Z2 (live lookups) is built (next paragraph); Z3 (my orders) is merged (PR #7, `2cd0a4f`, paragraph after it); Z4a (cart
+actions) is built on branch `ask-zippy-z4a` (last Zippy paragraph), Z4b is next. See MEMORY.md's "Ask Zippy Z1" entry and the spec's Amendments.
+**Ask Zippy Z2 (2026-10-03, branch `ask-zippy-z2`, built and live-verified, merged to `main` 2026-10-03):**
 Zippy now answers store, menu, price, option and open/closed questions from LIVE data (web and
-mobile, same `POST /api/zippy/chat`); it cannot act (Z4); order lookups arrived in Z3 (see the Z3 paragraph). The question is
+mobile, same `POST /api/zippy/chat`); it cannot act (cart actions arrived in Z4a); order lookups arrived in Z3 (see the Z3 paragraph). The question is
 embedded once and searches the Z1 knowledge AND a catalog index (migration 31, `zippy_catalog_chunks`
 + `match_zippy_catalog`, service-role only; text is names/descriptions/categories/cuisines, never
 prices, fees or open status); hits are hydrated live into a `<catalog>` prompt block, then a bounded
@@ -160,7 +160,7 @@ fresh with `POST /api/internal/zippy/catalog-sync` (n8n workflow 07, webhook
 one tool) and `/search` (returns `{matches, catalog}`). Checks: `scripts/zippy-eval.mjs` (46/47) and
 `scripts/zippy-facts-check.mjs` (compares answers to the database; 6/6). See MEMORY.md's "Ask Zippy
 Z2" entry and the spec's section 13 Amendments.
-**Ask Zippy Z3 (2026-10-03, branch `ask-zippy-z3`, built and live-verified locally, not yet merged to `main`):**
+**Ask Zippy Z3 (2026-10-03, branch `ask-zippy-z3`, built, live-verified, merged to `main` as PR #7 `2cd0a4f`; Vishal validated "Where is my order?" on his phone):**
 a SIGNED-IN CUSTOMER can ask Zippy about their OWN orders (status, items with options and notes,
 subtotal/delivery fee/total, payment status and method, store, and the name, phone, email and delivery
 address on the order) on web and mobile, via two read-only tools, `list_my_orders` and `get_my_order`
@@ -180,8 +180,47 @@ plan `docs/superpowers/plans/2026-10-03-ask-zippy-z3.md`. Live results (2026-10-
 matched the database; asking for another customer's order id returned "couldn't find"; a delivery-note
 injection was not followed; a visitor and a vendor got no order data; `ZIPPY_ORDERS=off` behaved as
 described. Tests: 205 pass. Not done: re-ingest of `knowledge/` plus a `node scripts/zippy-eval.mjs`
-re-run; a phone check of order questions; Z4 (actions). Both manuals' Ask Zippy chapters were edited
+re-run (since done: knowledge re-ingested, eval 48/50, PR #8 fixed one fixture); Z4 (actions) became Z4a. Both manuals' Ask Zippy chapters were edited
 in place for Z3 (page numbers unchanged, TOC untouched). See MEMORY.md's "Ask Zippy Z3" entry.
+**Ask Zippy Z4a (2026-10-04, branch `ask-zippy-z4a`, built and live-verified locally, not yet merged to `main`):**
+a SIGNED-IN CUSTOMER can ask Zippy to change their CART: add a dish, add a past order's items again
+(reorder), change a line's quantity, remove a line, or clear the cart. Zippy only PROPOSES, with five
+side-effect-free tools (`get_my_cart`, `propose_add_to_cart`, `propose_reorder`, `propose_cart_change`,
+`propose_clear_cart`); `POST /api/zippy/chat` now returns `{reply, conversationId, actions}`, the client shows
+confirm cards (Confirm / Dismiss), and **nothing changes until the customer taps Confirm**, which runs the
+existing cart store through `executeAction`. The tap uses the atomic `addItems(storeId, storeName, items,
+replace)` because calling `clearCart()` then `addItem()` in the same tick still opened the "clear cart?"
+modal. The cart is client state (mobile AsyncStorage per device; web saved by a debounced PUT), so the client
+sends a cart snapshot with every chat request and the server only validates and sanitizes it. Adding from a
+different store than the cart REPLACES the cart on Confirm (no modal) and the card says so ("Confirming
+replaces the N items from <store> in your cart."). Closed or suspended stores and unavailable dishes are
+refused (on reorder unavailable lines are skipped and listed); quantity 1-20; at most 3 cards per reply; a
+dish with required options makes Zippy ask which option first. Zippy does NOT place, pay for or cancel orders
+and does not edit the order note; checkout stays manual (Z4b may add a "Go to checkout" card). Visitors,
+vendors, delivery partners and admins get no actions. Web: Confirm works on `/customer*` pages (the cart
+provider is mounted only there; elsewhere the card links to the customer area, see `lib/cart-bridge.ts`).
+Mobile: Confirm always works. Kill switch `ZIPPY_ACTIONS=off` (`ZIPPY_TOOLS=off` also disables). Files:
+`lib/zippy/actions.ts` (pure, dependencies injected), `actions-data.ts`, `components/zippy/ActionCards.tsx`,
+`mobile/components/ZippyActionCards.tsx`, `lib/cart-bridge.ts`. These client files are shared BYTE-IDENTICAL
+between web and mobile and guarded by tests: `lib/cart-line.ts`, `lib/zippy/action-types.ts`, `action-exec.ts`,
+`client-cart.ts` <-> their copies under `mobile/lib/`. Live results (2026-10-04, spare instances): add cards
+matched database prices and quantities; update/remove/clear cards matched the snapshot's lineIds, an empty
+cart gave no card; reorder used today's prices and another customer's order id returned "not found"; an
+unavailable dish was refused or skipped and a closed store refused; visitor, vendor and `ZIPPY_ACTIONS=off`
+got no actions; a dish-description injection was ignored; a 5-dish request was capped at 3 cards; Z2/Z3 did
+not regress; a required option was asked for, then the card carried it; the web card tap was verified in a
+real browser with Playwright (Confirm showed "Added to your cart.", a double click added once, a cross-store
+confirm replaced the cart with no modal). THREE defects were found only by live verification (all had passed
+unit tests and reviews): `get_item_options` returned options without ids so required options could never be
+chosen (`89871b3`); the web widget sits outside `CartProvider` so `useOptionalCart()` was always null and
+Confirm never appeared (`772f2b7`, the cart bridge); the cross-store replacement was not disclosed and Zippy
+claimed the app would ask to clear the cart (`0a7c5b3`). Tests: 251 pass. Not verified: a card tap on a real
+phone. Open: phone check of card taps; after merge, re-ingest `knowledge/` and re-run
+`node scripts/zippy-eval.mjs`; Z4b (checkout hand-off) is next. Deferred minors are listed in MEMORY.md's
+"Ask Zippy Z4a" entry. Manuals: web v3.4 (chapter 8), mobile v4.5 (chapter 6), edited in place; no new
+screenshot (the mobile card figure needs a new phone recording). Also: Vishal validated "Where is my order?"
+on his phone; the Z3 eval was 48/50 after re-ingest and PR #8 replaced one mis-specified fixture (49/50
+expected).
 **Gotcha for demos/tests:** workflow 04 auto-assigns a `ready` order within
 ~10 s to the NEAREST ONLINE partner by stored lat/lng, so it never reaches the
 "Available" list while any online partner has coordinates — a leftover online
@@ -756,6 +795,23 @@ See [MEMORY.md](MEMORY.md) for phase-by-phase progress and decisions.
   supplied; the 2026-10-03 workflow 07 import left n8n down until Vishal recreated it by hand, because
   an assistant-run script reading the secret line was blocked. Also `docker restart` is not an option
   here, it only works on a container that still exists.
+
+- **A widget mounted in the ROOT layout cannot use a React context provided by a nested layout.**
+  Ask Zippy's web widget lives in the root layout, `CartProvider` only under `/customer`, so
+  `useOptionalCart()` was always null there and the Confirm button never rendered - unit tests and reviews
+  passed. Use a module-level bridge (`lib/cart-bridge.ts`) that the provider registers into, not a context
+  read from outside the provider's subtree.
+- **A tool that feeds ids to another tool must itself return those ids; check every tool-to-tool handoff
+  live.** `get_item_options` returned option names without ids, so `propose_add_to_cart` could never receive a
+  valid required-option id. Every unit test used hand-written fixtures that already contained ids. Run the
+  real model through the whole chain (look up, then propose) before calling a multi-tool flow done.
+- **A live browser tap test is mandatory for client-side action cards.** The three Z4a defects (missing ids,
+  null cart context, undisclosed cart replacement) all passed 251 unit tests and several review rounds and
+  were found only by driving the real UI (Playwright) and a real model. Mobile card taps still need a phone
+  check. Never claim a Confirm/Dismiss flow works from tests alone.
+- **Cart changes are atomic and proposed, not executed, by the AI.** Use `addItems(...)` for add/replace,
+  never `clearCart()` then `addItem()` in one tick (it opens the "clear cart?" modal), and never let a tool
+  mutate the cart; the server cannot, because the cart is client state.
 
 ## Standing phrases: "start-all-roles.ps1" / "stop-all-roles.ps1"
 

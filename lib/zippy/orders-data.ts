@@ -9,5 +9,6 @@ export const ordersReader = createOrdersReader({
   db: supabaseServer as unknown as OrdersDb,
   listSelect: ORDER_LIST_SELECT,
   detailSelect: ORDER_DETAIL_SELECT,
+  reorderSelect: "id, store_id, order_items(product_id, quantity, special_instructions, order_item_options(menu_item_option_id))",
   deps: { sanitize: sanitizeText, toPaise, formatRupees, statusLabel: STATUS_LABEL },
 });

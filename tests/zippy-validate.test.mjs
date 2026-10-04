@@ -79,3 +79,59 @@ test("parseChatRequest location: absent is null, valid is kept, anything else is
     assert.equal(parseChatRequest({ message: "hi", location: bad }).ok, false, JSON.stringify(bad));
   }
 });
+
+const cartOk = { storeId: "s1", storeName: "Dosa Corner", items: [{ lineId: "m1::o1", name: "Masala Dosa", quantity: 2, price: 130, options: ["Regular"] }] };
+
+test("cart snapshot is optional and defaults to null", () => {
+  assert.equal(parseChatRequest({ message: "hi" }).value.cart, null);
+  assert.equal(parseChatRequest({ message: "hi", cart: null }).value.cart, null);
+});
+
+test("a valid cart snapshot passes through", () => {
+  assert.deepEqual(parseChatRequest({ message: "hi", cart: cartOk }).value.cart, cartOk);
+  assert.deepEqual(parseChatRequest({ message: "hi", cart: { storeId: null, storeName: null, items: [] } }).value.cart, { storeId: null, storeName: null, items: [] });
+});
+
+test("a snapshot that is not a cart is ignored (null), never a 400", () => {
+  const line = cartOk.items[0];
+  const originalError = console.error;
+  console.error = () => {};
+  try {
+    for (const cart of ["x", [], { items: "no" }, { storeId: 5, storeName: null, items: [] }, { storeId: "x".repeat(101), storeName: null, items: [] }]) {
+      const out = parseChatRequest({ message: "hi", cart });
+      assert.equal(out.ok, true, JSON.stringify(cart));
+      assert.equal(out.value.cart, null);
+    }
+  } finally {
+    console.error = originalError;
+  }
+});
+
+test("an over-limit or malformed cart never fails the chat: values are clamped or the line is dropped", () => {
+  const line = cartOk.items[0];
+  const parse = (cart) => {
+    const out = parseChatRequest({ message: "hi", cart });
+    assert.equal(out.ok, true);
+    return out.value.cart;
+  };
+  assert.equal(parse({ ...cartOk, items: [{ ...line, quantity: 21 }] }).items[0].quantity, 20);
+  assert.equal(parse({ ...cartOk, items: [{ ...line, quantity: 500 }] }).items[0].lineId, line.lineId);
+  const sixOptions = "a".repeat(36) + "::" + Array.from({ length: 6 }, () => "b".repeat(36)).join(",");
+  assert.equal(parse({ ...cartOk, items: [{ ...line, lineId: sixOptions }] }).items[0].lineId, sixOptions);
+  assert.equal(parse({ ...cartOk, items: [{ ...line, lineId: "x".repeat(38 + 37 * 20) }] }).items.length, 1);
+  assert.equal(parse({ ...cartOk, items: [{ ...line, lineId: "x".repeat(38 + 37 * 20 + 1) }] }).items.length, 0);
+  assert.equal(parse({ ...cartOk, items: Array.from({ length: 60 }, (_, n) => ({ ...line, lineId: "l" + n })) }).items.length, 50);
+  const mixed = parse({
+    ...cartOk,
+    storeName: "x".repeat(300),
+    items: [
+      null, { ...line, quantity: 0 }, { ...line, quantity: 1.5 }, { ...line, price: -1 }, { ...line, price: Number.NaN }, { ...line, lineId: "" }, { ...line, name: 5 },
+      { ...line, lineId: "ok", name: "n".repeat(300), options: Array.from({ length: 30 }, () => "o".repeat(150)) },
+    ],
+  });
+  assert.equal(mixed.items.length, 1);
+  assert.equal(mixed.items[0].name.length, 200);
+  assert.equal(mixed.items[0].options.length, 20);
+  assert.equal(mixed.items[0].options[0].length, 100);
+  assert.equal(mixed.storeName.length, 200);
+});

@@ -4,7 +4,7 @@ import {
   sanitizeText, toPaise, formatRupees, haversineKm, storeView, productView,
   buildStoreChunkText, buildProductChunkText, hashText, diffCatalog, capResult,
   formatCatalogBlock, parseSearchCatalogInput, parseFindStoresInput,
-  parseGetStoreMenuInput, parseGetItemOptionsInput,
+  parseGetStoreMenuInput, parseGetItemOptionsInput, optionGroupViews,
 } from "../lib/zippy/catalog.ts";
 
 const U1 = "11111111-1111-4111-8111-111111111111";
@@ -168,4 +168,23 @@ test("parseGetStoreMenuInput and parseGetItemOptionsInput require real uuids", (
   for (const bad of [null, {}, { product_id: "../etc" }, { product_id: 1 }]) {
     assert.equal(parseGetItemOptionsInput(bad).ok, false, JSON.stringify(bad));
   }
+});
+
+test("optionGroupViews keeps option ids paired with the right group and sanitizes names", () => {
+  const groups = [
+    { id: "g1", name: "Size", min_select: 1, max_select: 1 },
+    { id: "g2", name: "<b>Extras</b>", min_select: 0, max_select: 2 },
+  ];
+  const options = [
+    { id: "o1", option_group_id: "g1", name: "Small", price_delta_paise: 0 },
+    { id: "o2", option_group_id: "g2", name: "Cheese <x>", price_delta_paise: 2500 },
+    { id: "o3", option_group_id: "g1", name: "Large", price_delta_paise: null },
+  ];
+  const out = optionGroupViews(groups, options);
+  assert.deepEqual(out[0].options.map((o) => o.id), ["o1", "o3"]);
+  assert.deepEqual(out[1].options.map((o) => o.id), ["o2"]);
+  assert.equal(out[1].name, "Extras");
+  assert.equal(out[1].options[0].name, "Cheese");
+  assert.equal(out[1].options[0].extra_price, formatRupees(2500));
+  assert.equal(out[0].min_select, 1);
 });

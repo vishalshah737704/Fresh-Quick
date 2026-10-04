@@ -325,3 +325,24 @@ export function parseGetItemOptionsInput(raw: unknown): Parsed<GetItemOptionsInp
   if (typeof o.product_id !== "string" || !UUID.test(o.product_id)) return { ok: false, error: "product_id must be a dish id from an earlier result" };
   return { ok: true, value: { product_id: o.product_id } };
 }
+
+export type OptionGroupRow = { id: string; name: string; min_select: number; max_select: number };
+export type OptionRow = { id: string; option_group_id: string; name: string; price_delta_paise: number | null };
+export type OptionGroupView = {
+  name: string;
+  min_select: number;
+  max_select: number;
+  options: { id: string; name: string; extra_price: string }[];
+};
+
+// Each option keeps its id so propose_add_to_cart can be given option_ids.
+export function optionGroupViews(groups: OptionGroupRow[], options: OptionRow[]): OptionGroupView[] {
+  return groups.map((g) => ({
+    name: sanitizeText(g.name),
+    min_select: g.min_select,
+    max_select: g.max_select,
+    options: options
+      .filter((o) => o.option_group_id === g.id)
+      .map((o) => ({ id: o.id, name: sanitizeText(o.name), extra_price: formatRupees(o.price_delta_paise ?? 0) })),
+  }));
+}

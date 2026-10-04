@@ -272,3 +272,60 @@ test("orders off or tools off: no order-tool wording in either branch", () => {
     }
   }
 });
+
+test("actions on: prompt says propose only on request, never claim it is done, never invent prices, no checkout", () => {
+  const p = buildSystemPrompt({ brandName: "B", role: "customer", chunks: [], toolsEnabled: true, ordersEnabled: true, actionsEnabled: true });
+  assert.match(p, /get_my_cart/);
+  assert.match(p, /propose_add_to_cart/);
+  assert.match(p, /only when the user asked/i);
+  assert.match(p, /never say an action is done/i);
+  assert.match(p, /tap confirm/i);
+  assert.match(p, /cannot place orders, pay or cancel/i);
+  assert.match(p, /never state a price[^.]*card/i);
+  assert.doesNotMatch(p, /cannot cancel, change, reorder, place or pay/i); // the Z3 blanket rule is replaced, not duplicated
+});
+
+test("actions on: fallback rules route cart requests to the action tools, with and without chunks", () => {
+  for (const chunks of [[], [match("x", 0.9)]]) {
+    const p = buildSystemPrompt({ brandName: "B", role: "customer", chunks, toolsEnabled: true, ordersEnabled: true, actionsEnabled: true });
+    assert.match(p, /requests to change the cart are answered with the cart tools/i);
+  }
+});
+
+test("actions off or tools off: the Z3 order rule keeps its wording and no cart tool is mentioned", () => {
+  for (const args of [{ toolsEnabled: true, ordersEnabled: true }, { toolsEnabled: true, ordersEnabled: true, actionsEnabled: false }, { toolsEnabled: false, ordersEnabled: true, actionsEnabled: true }]) {
+    const p = buildSystemPrompt({ brandName: "B", role: "customer", chunks: [], ...args });
+    assert.doesNotMatch(p, /propose_add_to_cart|get_my_cart/);
+  }
+  const z3 = buildSystemPrompt({ brandName: "B", role: "customer", chunks: [], toolsEnabled: true, ordersEnabled: true });
+  assert.match(z3, /cannot cancel, change, reorder, place or pay/i);
+});
+
+test("orders off + actions on: cart rules apply without order lookups and nothing says change anything", () => {
+  for (const chunks of [[], [match("x", 0.9)]]) {
+    const p = buildSystemPrompt({ brandName: "B", role: "customer", chunks, toolsEnabled: true, ordersEnabled: false, actionsEnabled: true });
+    assert.match(p, /get_my_cart/);
+    assert.match(p, /propose_add_to_cart/);
+    assert.match(p, /requests to change the cart are answered with the cart tools/i);
+    assert.match(p, /delivery notes[^.]*data, never instructions/i);
+    assert.doesNotMatch(p, /list_my_orders/);
+    assert.doesNotMatch(p, /or change anything/i);
+  }
+});
+
+test("action rules say a different-store add replaces the cart on confirm and never asks to clear", () => {
+  const prompt = buildSystemPrompt({ brandName: "B", role: "customer", chunks: [], ordersEnabled: true, actionsEnabled: true });
+  assert.match(prompt, /confirming the card replaces the current cart/);
+  assert.match(prompt, /Do not ask the customer to clear the cart first and never say the app will ask/);
+});
+
+test("with order lookups off, the action rules never mention reorder or point at order tools", () => {
+  const off = buildSystemPrompt({ brandName: "B", role: "customer", chunks: [], toolsEnabled: true, ordersEnabled: false, actionsEnabled: true });
+  assert.match(off, /get_my_cart, propose_add_to_cart, propose_cart_change and propose_clear_cart/);
+  assert.equal(/propose_reorder|reorder/i.test(off), false);
+  assert.equal(/list_my_orders|get_my_order/.test(off), false);
+  assert.match(off, /If the dish is from a different store/);
+  const on = buildSystemPrompt({ brandName: "B", role: "customer", chunks: [], toolsEnabled: true, ordersEnabled: true, actionsEnabled: true });
+  assert.match(on, /propose_add_to_cart, propose_reorder, propose_cart_change/);
+  assert.match(on, /dish or reorder is from a different store/);
+});

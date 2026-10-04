@@ -1,5 +1,6 @@
 import { supabase } from "./supabase";
 import { ZIPPY_ERROR_MESSAGE } from "./zippy-constants";
+import type { ActionCard, CartSnapshot } from "./action-types";
 
 export type ChatMessage = { role: "user" | "assistant"; content: string };
 export type ConversationSummary = { id: string; title: string; created_at: string };
@@ -62,11 +63,13 @@ export async function sendChat(args: {
   conversationId: string | null;
   history: ChatMessage[];
   location?: { lat: number; lng: number } | null;
-}): Promise<{ reply: string; conversationId: string | null }> {
-  return request("/api/zippy/chat", {
+  cart?: CartSnapshot | null;
+}): Promise<{ reply: string; conversationId: string | null; actions: ActionCard[] }> {
+  const result = await request<{ reply: string; conversationId: string | null; actions?: ActionCard[] }>("/api/zippy/chat", {
     method: "POST",
     body: { ...args, stream: false },
   });
+  return { reply: result.reply, conversationId: result.conversationId, actions: Array.isArray(result.actions) ? result.actions : [] };
 }
 
 export async function listConversations(): Promise<ConversationSummary[]> {

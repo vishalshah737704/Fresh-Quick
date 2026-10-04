@@ -1,5 +1,6 @@
 import { supabase } from "@/lib/supabase";
 import { ZIPPY_ERROR_MESSAGE } from "./constants";
+import type { ActionCard, CartSnapshot } from "./action-types";
 
 export type ChatMessage = { role: "user" | "assistant"; content: string };
 export type ConversationSummary = { id: string; title: string; created_at: string };
@@ -58,6 +59,36 @@ export async function streamChat(args: {
     args.onDelta(decoder.decode(value, { stream: true }));
   }
   return { conversationId: res.headers.get("X-Zippy-Conversation-Id") };
+}
+
+export async function sendChat(args: {
+  message: string;
+  conversationId: string | null;
+  history: ChatMessage[];
+  signal?: AbortSignal;
+  location?: { lat: number; lng: number } | null;
+  cart?: CartSnapshot | null;
+}): Promise<{ reply: string; conversationId: string | null; actions: ActionCard[] }> {
+  const res = await fetch("/api/zippy/chat", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+    body: JSON.stringify({
+      message: args.message,
+      conversationId: args.conversationId,
+      history: args.history,
+      stream: false,
+      location: args.location ?? undefined,
+      cart: args.cart ?? undefined,
+    }),
+    signal: args.signal,
+  });
+  if (!res.ok) throw await errorFrom(res);
+  const json = (await res.json()) as { reply?: unknown; conversationId?: unknown; actions?: unknown };
+  return {
+    reply: typeof json.reply === "string" ? json.reply : "",
+    conversationId: typeof json.conversationId === "string" ? json.conversationId : null,
+    actions: Array.isArray(json.actions) ? (json.actions as ActionCard[]) : [],
+  };
 }
 
 export async function listConversations(): Promise<ConversationSummary[]> {

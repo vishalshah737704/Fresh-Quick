@@ -48,5 +48,7 @@
   { "question": "a place for cheese dosa", "role": "customer", "expectCatalogIncludes": "Corner Cheese Dosa" },
   { "question": "can zippy look up my order for me", "role": "customer", "expectTitleIncludes": "Can Zippy see my orders or place an order for me" },
   { "question": "does zippy see my address and phone number", "role": "customer", "expectTitleIncludes": "Does Zippy see my orders and personal details" },
-  { "question": "can zippy cancel my order for me", "role": "customer", "expectTitleIncludes": "Can Zippy see my orders or place an order for me" }
+  { "question": "can zippy cancel my order for me", "role": "customer", "expectTitleIncludes": "Can Zippy see my orders or place an order for me" },
+  { "question": "can zippy put a dosa in my basket for me", "role": "customer", "expectTitleIncludes": "Can Zippy add things to my cart" },
+  { "question": "will zippy order and pay for me automatically", "role": "customer", "expectTitleIncludes": "Can Zippy add things to my cart" }
 ]

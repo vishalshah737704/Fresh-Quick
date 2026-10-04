@@ -13,14 +13,18 @@ import {
 import {
   listConversations,
   loadConversation,
-  streamChat,
+  sendChat,
   ZippyError,
   type ChatMessage,
   type ConversationSummary,
 } from "@/lib/zippy/client-api";
 import { resolveLocation } from "@/lib/zippy/client-location";
+import { useOptionalCart } from "@/lib/cart-store";
+import { snapshotCart } from "@/lib/zippy/client-cart";
+import { ActionCards } from "./ActionCards";
+import type { ActionCard } from "@/lib/zippy/action-types";
 
-type LocalMessage = ChatMessage & { isError?: boolean };
+type LocalMessage = ChatMessage & { isError?: boolean; actions?: ActionCard[]; id?: number };
 
 export function ZippyWidget() {
   const [open, setOpen] = useState(false);
@@ -31,6 +35,8 @@ export function ZippyWidget() {
   const [busy, setBusy] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [conversations, setConversations] = useState<ConversationSummary[]>([]);
+  const cart = useOptionalCart();
+  const nextIdRef = useRef(1);
   const listRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
   const userIdRef = useRef<string | null | undefined>(undefined);
@@ -93,42 +99,47 @@ export function ZippyWidget() {
     async (text: string) => {
       const question = text.trim();
       if (!question || busy) return;
-      const history: ChatMessage[] = messages
-        .filter((m) => !m.isError && m.content.trim() !== "")
-        .map(({ role, content }) => ({ role, content }))
+      // Retained messages keep their action cards for display; only role/content is ever sent as history.
+      const retained = messages
+        .filter((m) => !m.isError && (m.content.trim() !== "" || (m.actions?.length ?? 0) > 0))
         .slice(-MAX_HISTORY_MESSAGES);
+      const history: ChatMessage[] = retained
+        .filter((m) => m.content.trim() !== "")
+        .map(({ role, content }) => ({ role, content }));
       abortRef.current?.abort();
       const controller = new AbortController();
       abortRef.current = controller;
       tokenRef.current += 1;
       setShowHistory(false);
-      setMessages([...history, { role: "user", content: question }, { role: "assistant", content: "" }]);
+      setMessages([
+        ...retained.map((m) => (m.id === undefined ? { ...m, id: nextIdRef.current++ } : m)),
+        { role: "user", content: question, id: nextIdRef.current++ },
+        { role: "assistant", content: "", id: nextIdRef.current++ },
+      ]);
       setInput("");
       setBusy(true);
       try {
-        const result = await streamChat({
+        const result = await sendChat({
           message: question,
           conversationId,
           history,
           signal: controller.signal,
           location: resolveLocation((key) => window.localStorage.getItem(key), window.location.pathname),
-          onDelta: (delta) => {
-            if (controller.signal.aborted) return;
-            setMessages((current) => {
-              const copy = [...current];
-              const last = copy[copy.length - 1];
-              copy[copy.length - 1] = { ...last, content: last.content + delta };
-              return copy;
-            });
-          },
+          cart: cart ? snapshotCart(cart) : null,
         });
-        if (!controller.signal.aborted && result.conversationId) setConversationId(result.conversationId);
+        if (controller.signal.aborted) return;
+        setMessages((current) => {
+          const copy = [...current];
+          copy[copy.length - 1] = { ...copy[copy.length - 1], role: "assistant", content: result.reply, actions: result.actions };
+          return copy;
+        });
+        if (result.conversationId) setConversationId(result.conversationId);
       } catch (error) {
         if (controller.signal.aborted) return;
         const message = error instanceof ZippyError ? error.message : ZIPPY_ERROR_MESSAGE;
         setMessages((current) => {
           const copy = [...current];
-          copy[copy.length - 1] = { role: "assistant", content: message, isError: true };
+          copy[copy.length - 1] = { id: copy[copy.length - 1]?.id, role: "assistant", content: message, isError: true };
           return copy;
         });
       } finally {
@@ -138,7 +149,7 @@ export function ZippyWidget() {
         }
       }
     },
-    [busy, conversationId, messages]
+    [busy, cart, conversationId, messages]
   );
 
   const openHistory = async () => {
@@ -216,16 +227,20 @@ export function ZippyWidget() {
                   </div>
                 )}
                 {messages.map((m, i) => (
-                  <p
-                    key={i}
-                    className={
-                      m.role === "user"
-                        ? "ml-auto max-w-[85%] whitespace-pre-wrap break-words rounded-2xl bg-brand-ink px-3 py-2 text-sm text-white"
-                        : "max-w-[85%] whitespace-pre-wrap break-words rounded-2xl bg-brand-surface px-3 py-2 text-sm text-brand-ink"
-                    }
-                  >
-                    {m.content || (busy && i === messages.length - 1 ? "…" : "")}
-                  </p>
+                  <div key={m.id ?? `i${i}`} className="flex flex-col gap-2">
+                    {(m.content !== "" || m.role === "user" || !m.actions?.length || (busy && i === messages.length - 1)) && (
+                    <p
+                      className={
+                        m.role === "user"
+                          ? "ml-auto max-w-[85%] whitespace-pre-wrap break-words rounded-2xl bg-brand-ink px-3 py-2 text-sm text-white"
+                          : "max-w-[85%] whitespace-pre-wrap break-words rounded-2xl bg-brand-surface px-3 py-2 text-sm text-brand-ink"
+                      }
+                    >
+                      {m.content || (busy && i === messages.length - 1 ? "…" : "")}
+                    </p>
+                    )}
+                    {m.role === "assistant" && m.actions && m.actions.length > 0 && <ActionCards cards={m.actions} cart={cart} />}
+                  </div>
                 ))}
               </>
             )}

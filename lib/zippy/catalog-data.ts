@@ -2,7 +2,7 @@ import "server-only";
 import { supabaseServer } from "@/lib/supabase-server";
 import {
   capResult,
-  formatRupees,
+  optionGroupViews,
   productView,
   sanitizeText,
   storeView,
@@ -10,6 +10,8 @@ import {
   type FindStoresInput,
   type GetItemOptionsInput,
   type GetStoreMenuInput,
+  type OptionGroupView,
+  type OptionRow,
   type Point,
   type ProductRow,
   type ProductView,
@@ -152,7 +154,7 @@ export async function getStoreMenu(
 export async function getItemOptions(input: GetItemOptionsInput): Promise<
   | {
       item: { id: string; name: string; price: string; available: boolean; store: string };
-      option_groups: { name: string; min_select: number; max_select: number; options: { name: string; extra_price: string }[] }[];
+      option_groups: OptionGroupView[];
     }
   | { error: string }
 > {
@@ -179,11 +181,11 @@ export async function getItemOptions(input: GetItemOptionsInput): Promise<
     .order("sort_order");
   if (groupError) throw new Error(`Reading option groups failed: ${groupError.message}`);
   const groupIds = (groups ?? []).map((g) => g.id as string);
-  const options: { option_group_id: string; name: string; price_delta_paise: number; sort_order: number }[] = [];
+  const options: OptionRow[] = [];
   if (groupIds.length > 0) {
     const { data, error: optionError } = await supabaseServer
       .from("menu_item_options")
-      .select("option_group_id, name, price_delta_paise, sort_order")
+      .select("id, option_group_id, name, price_delta_paise, sort_order")
       .in("option_group_id", groupIds)
       .order("sort_order");
     if (optionError) throw new Error(`Reading options failed: ${optionError.message}`);
@@ -192,13 +194,9 @@ export async function getItemOptions(input: GetItemOptionsInput): Promise<
   const view = productView(p);
   return {
     item: { id: view.id, name: view.name, price: view.price, available: view.available, store: sanitizeText(store.name) },
-    option_groups: (groups ?? []).map((g) => ({
-      name: sanitizeText(g.name),
-      min_select: g.min_select as number,
-      max_select: g.max_select as number,
-      options: options
-        .filter((o) => o.option_group_id === g.id)
-        .map((o) => ({ name: sanitizeText(o.name), extra_price: formatRupees(o.price_delta_paise ?? 0) })),
-    })),
+    option_groups: optionGroupViews(
+      (groups ?? []) as { id: string; name: string; min_select: number; max_select: number }[],
+      options,
+    ),
   };
 }

@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
   const loc = body.location as { lat?: unknown; lng?: unknown } | null | undefined;
   if (loc && typeof loc.lat === "number" && typeof loc.lng === "number") location = { lat: loc.lat, lng: loc.lng };
   try {
-    return NextResponse.json(await runTool(body.name, body.input ?? {}, { location, customerId: null, ordersEnabled: false }));
+    return NextResponse.json(await runTool(body.name, body.input ?? {}, { location, customerId: null, ordersEnabled: false, actionsEnabled: false, cart: null, actions: [] }));
   } catch (error) {
     console.error("zippy tool failed", error);
     return NextResponse.json({ error: (error as Error).message }, { status: 500 });

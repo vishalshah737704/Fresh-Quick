@@ -1,8 +1,10 @@
 "use client";
 
-import { createContext, useContext, useEffect, useRef, useState, ReactNode } from "react";
+import { createContext, useContext, useEffect, useRef, useState, useSyncExternalStore, ReactNode } from "react";
 import { supabase } from "@/lib/supabase";
 import { useSession } from "@/lib/auth";
+import { buildLineId, mergeCartLines } from "./cart-line";
+import { createBridge } from "./cart-bridge";
 
 export type SelectedOption = {
   groupId: string;
@@ -50,6 +52,7 @@ type CartContextValue = {
   pendingConflict: PendingConflict;
   checkoutHandler: CheckoutHandler;
   addItem: (storeId: string, storeName: string, item: NewCartItem) => void;
+  addItems: (storeId: string, storeName: string, items: NewCartItem[], replace: boolean) => void;
   updateQuantity: (lineId: string, quantity: number) => void;
   removeItem: (lineId: string) => void;
   setSpecialInstructions: (lineId: string, text: string) => void;
@@ -62,10 +65,10 @@ type CartContextValue = {
 
 const CartContext = createContext<CartContextValue | null>(null);
 
-export function buildLineId(menuItemId: string, selectedOptions: SelectedOption[]): string {
-  const optionIds = selectedOptions.map((o) => o.optionId).sort();
-  return `${menuItemId}::${optionIds.join(",")}`;
-}
+// Mirror of the provider's live value for UI outside the provider (root-layout Zippy widget).
+const cartBridge = createBridge<CartContextValue>();
+
+export { buildLineId };
 
 type ServerCart = {
   storeId: string | null;
@@ -223,6 +226,20 @@ export function CartProvider({ children }: { children: ReactNode }) {
     });
   }
 
+  // Atomic bulk add used by Zippy's confirmed cards. `replace` empties the cart first. It sets state directly, so it
+  // cannot trigger the "clear cart?" conflict modal that addItem opens when the render-time storeId differs.
+  function addItems(sId: string, sName: string, newItems: NewCartItem[], replace: boolean) {
+    if (newItems.length === 0) return;
+    const lines = newItems.map((item) => ({ ...item, lineId: buildLineId(item.menuItemId, item.selectedOptions) }));
+    if (replace) {
+      setOrderNoteState("");
+      setPendingConflict(null);
+    }
+    setStoreId(sId);
+    setStoreName(sName);
+    setItems((prev) => mergeCartLines(replace ? [] : prev, lines));
+  }
+
   function addItem(sId: string, sName: string, item: NewCartItem) {
     if (storeId !== null && storeId !== sId) {
       setPendingConflict({ storeId: sId, storeName: sName, item });
@@ -286,27 +303,34 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const subtotal = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
 
+  const contextValue: CartContextValue = {
+    storeId,
+    storeName,
+    items,
+    subtotal,
+    orderNote,
+    pendingConflict,
+    checkoutHandler,
+    addItem,
+    addItems,
+    updateQuantity,
+    removeItem,
+    setSpecialInstructions,
+    setOrderNote,
+    clearCart,
+    confirmClearAndAdd,
+    cancelPendingAdd,
+    setCheckoutHandler,
+  };
+
+  // Every render republishes, so readers never see a stale closure.
+  useEffect(() => {
+    cartBridge.set(contextValue);
+  });
+  useEffect(() => () => cartBridge.set(null), []);
+
   return (
-    <CartContext.Provider
-      value={{
-        storeId,
-        storeName,
-        items,
-        subtotal,
-        orderNote,
-        pendingConflict,
-        checkoutHandler,
-        addItem,
-        updateQuantity,
-        removeItem,
-        setSpecialInstructions,
-        setOrderNote,
-        clearCart,
-        confirmClearAndAdd,
-        cancelPendingAdd,
-        setCheckoutHandler,
-      }}
-    >
+    <CartContext.Provider value={contextValue}>
       {children}
     </CartContext.Provider>
   );
@@ -316,4 +340,10 @@ export function useCart(): CartContextValue {
   const ctx = useContext(CartContext);
   if (!ctx) throw new Error("useCart must be used within CartProvider");
   return ctx;
+}
+
+// Null when no CartProvider is mounted (it only wraps /customer/*) and on the server / first client
+// render (hydration-safe). Reads the bridge, not context, since callers live in the root layout.
+export function useOptionalCart(): CartContextValue | null {
+  return useSyncExternalStore(cartBridge.subscribe, cartBridge.get, () => null);
 }
