@@ -18,7 +18,7 @@ Yes. On the website, Zippy uses the delivery location you chose (or the default 
 
 ## Can Zippy see my orders or place an order for me?
 
-Not yet. Zippy cannot see your orders, place an order, pay, or change anything. It can explain how to do those things in the app. To check an order, open the Orders page.
+Zippy can look up your own orders when you are signed in as a customer: the status of an order, what was in it, what it cost, how it was paid and where it is being delivered. Zippy reads the order when you ask. It cannot see anyone else's orders, and it cannot place, change, cancel or pay for an order. For those, use the app. If you are not signed in, Zippy cannot see any orders.
 
 ## Why does Zippy take a few seconds to answer a store question?
 

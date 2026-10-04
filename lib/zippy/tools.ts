@@ -11,7 +11,10 @@ import {
 } from "./catalog";
 import { findStores, getItemOptions, getStoreMenu, hydrateHits, loadCuisineLabels, type CatalogHit } from "./catalog-data";
 
-export type ToolContext = { location: Point | null };
+import { ordersReader } from "./orders-data";
+import { parseGetMyOrderInput, parseListMyOrdersInput, selectTools } from "./orders";
+
+export type ToolContext = { location: Point | null; customerId: string | null; ordersEnabled: boolean };
 
 // Anthropic tool definitions. strict: true guarantees schema-valid input; ranges are re-checked by the parsers.
 export const ZIPPY_TOOLS: Anthropic.Tool[] = [
@@ -82,6 +85,11 @@ export const ZIPPY_TOOLS: Anthropic.Tool[] = [
   },
 ];
 
+// The tool list this caller may use: order tools only for a verified customer with orders switched on.
+export function toolsFor(ctx: ToolContext): Anthropic.Tool[] {
+  return selectTools(ZIPPY_TOOLS, ctx);
+}
+
 export const MIN_CATALOG_SIMILARITY = 0.3;
 
 export async function matchCatalog(
@@ -134,6 +142,19 @@ export async function runTool(
       const parsed = parseGetItemOptionsInput(rawInput);
       if (!parsed.ok) return bad(parsed.error);
       const result = await getItemOptions(parsed.value);
+      return "error" in result ? bad(result.error) : ok(result);
+    }
+    case "list_my_orders": {
+      if (!ctx.customerId || !ctx.ordersEnabled) return bad("Orders are only available to a signed-in customer");
+      const parsed = parseListMyOrdersInput(rawInput);
+      if (!parsed.ok) return bad(parsed.error);
+      return ok(await ordersReader.listMyOrders(ctx.customerId, parsed.value));
+    }
+    case "get_my_order": {
+      if (!ctx.customerId || !ctx.ordersEnabled) return bad("Orders are only available to a signed-in customer");
+      const parsed = parseGetMyOrderInput(rawInput);
+      if (!parsed.ok) return bad(parsed.error);
+      const result = await ordersReader.getMyOrder(ctx.customerId, parsed.value);
       return "error" in result ? bad(result.error) : ok(result);
     }
     default:

@@ -83,6 +83,9 @@ export async function POST(request: NextRequest) {
     }
 
     const toolsEnabled = process.env.ZIPPY_TOOLS !== "off";
+    // Orders are visible only to a verified customer; the id comes from the session token, never from the request body.
+    const customerId = caller.role === "customer" ? caller.userId : null;
+    const ordersEnabled = toolsEnabled && customerId !== null && process.env.ZIPPY_ORDERS !== "off";
     const embedding = await embedQuestion(message);
     const chunks = selectContext(await retrieveChunks(embedding, caller.role));
     let catalogBlock = "";
@@ -98,11 +101,11 @@ export async function POST(request: NextRequest) {
         console.error("zippy: catalog retrieval failed", error);
       }
     }
-    const system = buildSystemPrompt({ brandName: BRAND.name, role: caller.role, chunks, catalogBlock, toolsEnabled });
+    const system = buildSystemPrompt({ brandName: BRAND.name, role: caller.role, chunks, catalogBlock, toolsEnabled, ordersEnabled });
     const messages: ChatTurn[] = [...history, { role: "user", content: message }];
     const sourceIds = chunks.map((c) => c.id);
     const savedConversationId = conversationId;
-    const agentArgs = { system, messages, location, toolsEnabled, signal: request.signal };
+    const agentArgs = { system, messages, location, toolsEnabled, customerId, ordersEnabled, signal: request.signal };
 
     if (!stream) {
       let reply = "";

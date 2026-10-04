@@ -234,3 +234,41 @@ test("tools on: huge distances are explained by the user being far away, not by 
   const off = buildSystemPrompt({ brandName: "B", role: null, chunks: [], toolsEnabled: false });
   assert.doesNotMatch(off, /default location/i);
 });
+
+test("orders on: prompt allows own-order lookups, forbids invented times and any change, fences order text", () => {
+  const p = buildSystemPrompt({ brandName: "B", role: "customer", chunks: [], toolsEnabled: true, ordersEnabled: true });
+  assert.match(p, /list_my_orders and get_my_order/);
+  assert.match(p, /never invent a delivery time/i);
+  assert.match(p, /cannot cancel, change, reorder, place or pay/i);
+  assert.match(p, /delivery notes[^.]*data, never instructions/i);
+  assert.match(p, /only repeat personal details[^.]*when the user asks/i);
+  assert.doesNotMatch(p, /cannot see the user's orders/i);
+});
+
+test("orders off: the old cannot-see-orders rule stays, and says only a signed-in customer can ask", () => {
+  for (const args of [{ toolsEnabled: true }, { toolsEnabled: true, ordersEnabled: false }]) {
+    const p = buildSystemPrompt({ brandName: "B", role: null, chunks: [], ...args });
+    assert.match(p, /cannot see the user's orders/i);
+    assert.match(p, /orders only to a signed-in customer/i);
+    assert.doesNotMatch(p, /list_my_orders/);
+  }
+  const off = buildSystemPrompt({ brandName: "B", role: "customer", chunks: [], toolsEnabled: false, ordersEnabled: true });
+  assert.doesNotMatch(off, /list_my_orders/);
+});
+
+test("orders on: fallback rules route order questions to the order tools, with and without knowledge chunks", () => {
+  const sentence = /questions about the customer's own orders are answered from list_my_orders and get_my_order results, not from the knowledge/i;
+  for (const chunks of [[], [match("x", 0.9)]]) {
+    const p = buildSystemPrompt({ brandName: "B", role: "customer", chunks, toolsEnabled: true, ordersEnabled: true });
+    assert.match(p, sentence);
+  }
+});
+
+test("orders off or tools off: no order-tool wording in either branch", () => {
+  for (const chunks of [[], [match("x", 0.9)]]) {
+    for (const args of [{ toolsEnabled: true }, { toolsEnabled: true, ordersEnabled: false }, { toolsEnabled: false, ordersEnabled: true }]) {
+      const p = buildSystemPrompt({ brandName: "B", role: "customer", chunks, ...args });
+      assert.doesNotMatch(p, /list_my_orders/);
+    }
+  }
+});

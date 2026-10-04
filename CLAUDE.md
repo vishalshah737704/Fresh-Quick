@@ -140,11 +140,11 @@ chats are saved (web + mobile share history); visitors get a temporary chat.
 To re-ingest after editing `knowledge/`: POST the n8n webhook `foodhub/zippy-ingest`
 (workflow 06) or `POST /api/internal/zippy/ingest`; check quality with
 `node scripts/zippy-eval.mjs` (last 35/36, now 46/47 after Z2). Needs `ANTHROPIC_API_KEY` (workspace-scoped,
-with credits) and `OPENAI_API_KEY` in `.env.local`. Z2 (live lookups) is built on branch `ask-zippy-z2` (next paragraph); Z3 (my orders) and
-Z4 (actions) are next. See MEMORY.md's "Ask Zippy Z1" entry and the spec's Amendments.
+with credits) and `OPENAI_API_KEY` in `.env.local`. Z2 (live lookups) is built (next paragraph); Z3 (my orders) is built on branch `ask-zippy-z3` (paragraph after it); Z4
+(actions) is next. See MEMORY.md's "Ask Zippy Z1" entry and the spec's Amendments.
 **Ask Zippy Z2 (2026-10-03, branch `ask-zippy-z2`, built and live-verified, not yet merged to `main`):**
 Zippy now answers store, menu, price, option and open/closed questions from LIVE data (web and
-mobile, same `POST /api/zippy/chat`); it still cannot see orders or act (Z3/Z4). The question is
+mobile, same `POST /api/zippy/chat`); it cannot act (Z4); order lookups arrived in Z3 (see the Z3 paragraph). The question is
 embedded once and searches the Z1 knowledge AND a catalog index (migration 31, `zippy_catalog_chunks`
 + `match_zippy_catalog`, service-role only; text is names/descriptions/categories/cuisines, never
 prices, fees or open status); hits are hydrated live into a `<catalog>` prompt block, then a bounded
@@ -160,6 +160,28 @@ fresh with `POST /api/internal/zippy/catalog-sync` (n8n workflow 07, webhook
 one tool) and `/search` (returns `{matches, catalog}`). Checks: `scripts/zippy-eval.mjs` (46/47) and
 `scripts/zippy-facts-check.mjs` (compares answers to the database; 6/6). See MEMORY.md's "Ask Zippy
 Z2" entry and the spec's section 13 Amendments.
+**Ask Zippy Z3 (2026-10-03, branch `ask-zippy-z3`, built and live-verified locally, not yet merged to `main`):**
+a SIGNED-IN CUSTOMER can ask Zippy about their OWN orders (status, items with options and notes,
+subtotal/delivery fee/total, payment status and method, store, and the name, phone, email and delivery
+address on the order) on web and mobile, via two read-only tools, `list_my_orders` and `get_my_order`
+(same `POST /api/zippy/chat`). It cannot see anyone else's orders and cannot place, change, cancel or
+pay for an order (customers cannot cancel in this app). Visitors, vendors, delivery partners and admins
+get no order data (a signed-in non-customer asking about orders is told Zippy cannot see orders, by
+design). Order details go to the AI provider only when a question needs them. Kill switch
+`ZIPPY_ORDERS=off` (`ZIPPY_TOOLS=off` also disables); Zippy then says it cannot look up your order
+from chat. **Identity comes only from the verified session token, and every order query filters on the
+customer id** (`ToolContext` gained `customerId` / `ordersEnabled`); never take an order or customer id
+from the model's tool input as proof of identity. Files: `lib/zippy/orders.ts` (pure parsers, shapers,
+tool definitions and the reader, with its database access INJECTED so node's test runner can run it -
+`tools.ts` is `server-only` and cannot be imported by tests), `lib/zippy/orders-data.ts` (server wiring),
+`tools.ts` / `agent.ts` / the chat route, `prompt.ts` (order rules), plus `knowledge/customer/ask-zippy.md`,
+the policy privacy Q&A and the glossary. Spec `docs/superpowers/specs/2026-10-03-ask-zippy-z3-design.md`,
+plan `docs/superpowers/plans/2026-10-03-ask-zippy-z3.md`. Live results (2026-10-03, local): an own order
+matched the database; asking for another customer's order id returned "couldn't find"; a delivery-note
+injection was not followed; a visitor and a vendor got no order data; `ZIPPY_ORDERS=off` behaved as
+described. Tests: 205 pass. Not done: re-ingest of `knowledge/` plus a `node scripts/zippy-eval.mjs`
+re-run; a phone check of order questions; Z4 (actions). Both manuals' Ask Zippy chapters were edited
+in place for Z3 (page numbers unchanged, TOC untouched). See MEMORY.md's "Ask Zippy Z3" entry.
 **Gotcha for demos/tests:** workflow 04 auto-assigns a `ready` order within
 ~10 s to the NEAREST ONLINE partner by stored lat/lng, so it never reaches the
 "Available" list while any online partner has coordinates — a leftover online

@@ -160,8 +160,8 @@ retrieval. Target is at least 90 % hits; the last run scored 35/36 (superseded b
 
 **Z2: live store and menu lookups (built 2026-10-03, branch `ask-zippy-z2`).** Zippy also answers
 store, dish, price, option and open/closed questions from live data using four read-only tools
-(`search_catalog`, `find_stores`, `get_store_menu`, `get_item_options`). It still cannot see or place
-orders. The answer arrives in one piece. "Nearest" works on the website (it sends your delivery
+(`search_catalog`, `find_stores`, `get_store_menu`, `get_item_options`). It cannot place orders; Z3 (below)
+added looking up your own. The answer arrives in one piece. "Nearest" works on the website (it sends your delivery
 location) but not in the mobile app. Spec: `docs/superpowers/specs/2026-10-03-ask-zippy-z2-design.md`.
 - **Database:** migration 31 (catalog index), applied with `npx supabase migration up --local`.
 - **Catalog sync:** `POST /api/internal/zippy/catalog-sync` (header `X-Internal-Secret`) re-embeds changed
@@ -174,6 +174,16 @@ location) but not in the mobile app. Spec: `docs/superpowers/specs/2026-10-03-as
   `POST /api/internal/zippy/search` returns knowledge matches and catalog matches.
 - **Checks:** `node scripts/zippy-eval.mjs` (last 46/47) and `node scripts/zippy-facts-check.mjs`
   (compares answers with the database; last 6/6). Unit tests: 183 passing.
+
+**Z3: my orders (built 2026-10-03, branch `ask-zippy-z3`).** A signed-in customer can ask Zippy about their
+own orders (status, items, totals, payment, delivery details) on the website and in the mobile app, for
+example "Where is my order?". Two read-only tools, `list_my_orders` and `get_my_order`, read only the
+asker's own orders (identity comes from the verified session token and every query filters on the customer
+id). Zippy cannot see anyone else's orders and cannot place, change, cancel or pay for an order. Visitors,
+vendors, delivery partners and admins get no order data. Order details are sent to the AI provider only
+when a question needs them. Kill switch: `ZIPPY_ORDERS=off` (`ZIPPY_TOOLS=off` also disables it). After
+editing `knowledge/`, re-ingest and re-run the eval as above. Spec:
+`docs/superpowers/specs/2026-10-03-ask-zippy-z3-design.md`. Unit tests: 205 passing.
 
 **Build caveat:** in a git worktree with a `node_modules` junction, Turbopack
 rejects the build; use `npx next build --webpack` there and run the real

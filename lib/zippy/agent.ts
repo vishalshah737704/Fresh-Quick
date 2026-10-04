@@ -1,7 +1,7 @@
 import "server-only";
 import Anthropic from "@anthropic-ai/sdk";
 import { hasToolBlocks, runAgentLoop, type Block, type LoopMessage, type Round } from "./agent-loop";
-import { runTool, ZIPPY_TOOLS } from "./tools";
+import { runTool, toolsFor } from "./tools";
 import type { Point } from "./catalog";
 
 const MODEL = process.env.ZIPPY_CLAUDE_MODEL ?? "claude-sonnet-5-5";
@@ -26,10 +26,14 @@ export async function* runAgent(args: {
   system: string;
   messages: { role: "user" | "assistant"; content: string }[];
   location: Point | null;
+  customerId: string | null;
+  ordersEnabled: boolean;
   toolsEnabled: boolean;
   signal?: AbortSignal;
 }): AsyncGenerator<string> {
   const anthropic = getClient();
+  const context = { location: args.location, customerId: args.customerId, ordersEnabled: args.ordersEnabled };
+  const tools = toolsFor(context);
   const runRound = async (messages: LoopMessage[], withTools: boolean): Promise<Round> => {
     try {
       // thinking "between_tools" turns thinking off on Sonnet 5.5; omitting it runs adaptive thinking at
@@ -43,9 +47,9 @@ export async function* runAgent(args: {
         messages,
         // Final forced-answer round: tool blocks in history still require `tools`; tool_choice none stops new calls.
         ...(withTools
-          ? { tools: ZIPPY_TOOLS }
+          ? { tools }
           : hasToolBlocks(messages)
-            ? { tools: ZIPPY_TOOLS, tool_choice: { type: "none" } }
+            ? { tools, tool_choice: { type: "none" } }
             : {}),
       } as unknown as Anthropic.MessageStreamParams;
       const stream = anthropic.messages.stream(params, { signal: args.signal });
@@ -70,7 +74,7 @@ export async function* runAgent(args: {
     maxToolCallsPerRound: MAX_TOOL_CALLS_PER_ROUND,
     toolsEnabled: args.toolsEnabled,
     runRound,
-    runTool: (name, input) => runTool(name, input, { location: args.location }),
+    runTool: (name, input) => runTool(name, input, context),
     onToolError: (name, error) => console.error(`zippy: tool ${name} failed`, error),
   });
 }
