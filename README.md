@@ -185,6 +185,17 @@ when a question needs them. Kill switch: `ZIPPY_ORDERS=off` (`ZIPPY_TOOLS=off` a
 editing `knowledge/`, re-ingest and re-run the eval as above. Spec:
 `docs/superpowers/specs/2026-10-03-ask-zippy-z3-design.md`. Unit tests: 205 passing.
 
+**Z4a: cart actions (built 2026-10-04, branch `ask-zippy-z4a`).** A signed-in customer can ask Zippy to add a
+dish, add a past order's items again, change a quantity, remove a line or empty the cart, on the website and in
+the mobile app. Zippy only proposes: it shows a card with Confirm and Dismiss, and the cart changes only when
+the customer taps Confirm. Adding from a different store replaces the cart on Confirm, and the card says so.
+Closed stores and unavailable dishes are refused, quantity is 1 to 20, and a reply has at most 3 cards. Zippy
+does not place, pay for or cancel orders; checkout stays manual. Only signed-in customers get actions. On the
+website, Confirm works on the customer pages (the cart lives there). Kill switch: `ZIPPY_ACTIONS=off`
+(`ZIPPY_TOOLS=off` also disables it). The client sends a snapshot of the cart with each question because the
+cart is client state. Spec: `docs/superpowers/specs/2026-10-04-ask-zippy-z4a-design.md`. Unit tests: 251
+passing. After merge, re-ingest `knowledge/` and re-run the eval as above.
+
 **Build caveat:** in a git worktree with a `node_modules` junction, Turbopack
 rejects the build; use `npx next build --webpack` there and run the real
 `npm run build` once merged to `main`.
