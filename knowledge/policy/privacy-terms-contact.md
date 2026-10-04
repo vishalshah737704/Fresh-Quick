@@ -12,6 +12,10 @@ At checkout you give your name, email, phone number and delivery address, and yo
 
 The store sees your name, phone number and delivery address on the order. A delivery partner sees them only after taking your order, and only while it is active. Before that, a partner browsing available orders sees the store and items, not your details.
 
+## Does Zippy see my orders and personal details?
+
+Only when you are signed in as a customer and ask about your own orders. Zippy then reads the order, including the name, phone number, email and delivery address on it, and sends those details to the AI service that writes the answer. Zippy does not read your orders for other questions, and it never sees other customers' orders. Your saved chat history may repeat details you asked about.
+
 ## Are my payment details stored?
 
 No real payment details are stored. Payments are simulated, and the app says so on the Wallet page.
