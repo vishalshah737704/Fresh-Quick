@@ -111,8 +111,25 @@ export type GPlaceAutocompleteElement = HTMLElement & {
   addEventListener(type: "gmp-error", listener: (event: Event) => void): void;
 };
 
+// google.maps.routes.Route: computeRoutes is static. Each returned route has
+// path (LatLng or LatLngAltitude items), durationMillis and distanceMeters when
+// requested in `fields`; the result is validated by parseRoute, hence unknown.
+export type RouteComputeRequest = {
+  origin: LatLngLiteral;
+  destination: LatLngLiteral;
+  travelMode: string;
+  routingPreference?: string;
+  fields: string[];
+};
+
+export type RouteClass = {
+  computeRoutes(request: RouteComputeRequest): Promise<{ routes: unknown[] }>;
+};
+
 export type GoogleNs = {
   maps: {
+    importLibrary(name: "routes"): Promise<{ Route?: RouteClass } & Record<string, unknown>>;
+    routes?: { Route?: RouteClass };
     importLibrary(name: "maps"): Promise<{
       Map: new (el: HTMLElement, opts?: MapOptions) => GMap;
       Polyline: new (opts?: PolylineOptions) => GPolyline;
