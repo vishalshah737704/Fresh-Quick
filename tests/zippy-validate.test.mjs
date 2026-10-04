@@ -79,3 +79,32 @@ test("parseChatRequest location: absent is null, valid is kept, anything else is
     assert.equal(parseChatRequest({ message: "hi", location: bad }).ok, false, JSON.stringify(bad));
   }
 });
+
+const cartOk = { storeId: "s1", storeName: "Dosa Corner", items: [{ lineId: "m1::o1", name: "Masala Dosa", quantity: 2, price: 130, options: ["Regular"] }] };
+
+test("cart snapshot is optional and defaults to null", () => {
+  assert.equal(parseChatRequest({ message: "hi" }).value.cart, null);
+  assert.equal(parseChatRequest({ message: "hi", cart: null }).value.cart, null);
+});
+
+test("a valid cart snapshot passes through", () => {
+  assert.deepEqual(parseChatRequest({ message: "hi", cart: cartOk }).value.cart, cartOk);
+  assert.deepEqual(parseChatRequest({ message: "hi", cart: { storeId: null, storeName: null, items: [] } }).value.cart, { storeId: null, storeName: null, items: [] });
+});
+
+test("an invalid cart snapshot is rejected", () => {
+  const line = cartOk.items[0];
+  const bad = [
+    "x", [], { items: "no" }, { storeId: 5, storeName: null, items: [] },
+    { ...cartOk, items: Array.from({ length: 51 }, () => line) },
+    { ...cartOk, items: [{ ...line, quantity: 0 }] }, { ...cartOk, items: [{ ...line, quantity: 21 }] }, { ...cartOk, items: [{ ...line, quantity: 1.5 }] },
+    { ...cartOk, items: [{ ...line, price: -1 }] }, { ...cartOk, items: [{ ...line, price: Number.NaN }] },
+    { ...cartOk, items: [{ ...line, lineId: "" }] }, { ...cartOk, items: [{ ...line, lineId: "x".repeat(201) }] },
+    { ...cartOk, items: [{ ...line, name: 5 }] }, { ...cartOk, items: [{ ...line, options: "Regular" }] },
+    { ...cartOk, items: [{ ...line, options: Array.from({ length: 21 }, () => "o") }] }, { ...cartOk, items: [null] },
+    { ...cartOk, storeName: "x".repeat(201) },
+  ];
+  for (const cart of bad) {
+    assert.deepEqual(parseChatRequest({ message: "hi", cart }), { ok: false, error: "Invalid cart" }, JSON.stringify(cart).slice(0, 80));
+  }
+});

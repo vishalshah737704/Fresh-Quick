@@ -1,3 +1,5 @@
+import type { CartSnapshot } from "./action-types";
+
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const MAX_MESSAGE_CHARS = 1000;
 const MAX_HISTORY_ITEM_CHARS = 8000;
@@ -15,6 +17,31 @@ export function parseBearer(
 
 type ChatTurn = { role: "user" | "assistant"; content: string };
 
+function parseCartSnapshot(raw: unknown): CartSnapshot | null | "invalid" {
+  if (raw === undefined || raw === null) return null;
+  if (typeof raw !== "object" || Array.isArray(raw)) return "invalid";
+  const c = raw as { storeId?: unknown; storeName?: unknown; items?: unknown };
+  const text = (v: unknown, max: number) => v === null || (typeof v === "string" && v.length <= max);
+  if (!text(c.storeId, 100) || !text(c.storeName, 200) || c.storeId === undefined || c.storeName === undefined) return "invalid";
+  if (!Array.isArray(c.items) || c.items.length > 50) return "invalid";
+  const items: CartSnapshot["items"] = [];
+  for (const entry of c.items) {
+    if (typeof entry !== "object" || entry === null) return "invalid";
+    const line = entry as { lineId?: unknown; name?: unknown; quantity?: unknown; price?: unknown; options?: unknown };
+    if (
+      typeof line.lineId !== "string" || line.lineId === "" || line.lineId.length > 200 ||
+      typeof line.name !== "string" || line.name.length > 200 ||
+      typeof line.quantity !== "number" || !Number.isInteger(line.quantity) || line.quantity < 1 || line.quantity > 20 ||
+      typeof line.price !== "number" || !Number.isFinite(line.price) || line.price < 0 || line.price > 1_000_000 ||
+      !Array.isArray(line.options) || line.options.length > 20 || !line.options.every((o) => typeof o === "string" && o.length <= 100)
+    ) {
+      return "invalid";
+    }
+    items.push({ lineId: line.lineId, name: line.name, quantity: line.quantity, price: line.price, options: line.options as string[] });
+  }
+  return { storeId: c.storeId as string | null, storeName: c.storeName as string | null, items };
+}
+
 export function parseChatRequest(
   body: unknown
 ):
@@ -26,6 +53,7 @@ export function parseChatRequest(
         history: ChatTurn[];
         stream: boolean;
         location: { lat: number; lng: number } | null;
+        cart: CartSnapshot | null;
       };
     }
   | { ok: false; error: string } {
@@ -83,6 +111,8 @@ export function parseChatRequest(
     }
     location = { lat: loc.lat, lng: loc.lng };
   }
+  const cart = parseCartSnapshot(b.cart);
+  if (cart === "invalid") return { ok: false, error: "Invalid cart" };
   const stream = b.stream === undefined ? true : b.stream === true;
-  return { ok: true, value: { message, conversationId, history, stream, location } };
+  return { ok: true, value: { message, conversationId, history, stream, location, cart } };
 }

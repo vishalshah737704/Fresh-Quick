@@ -172,7 +172,7 @@ const O2 = "10000000-0000-4000-8000-000000000002";
 const O3 = "10000000-0000-4000-8000-000000000003";
 const makeReader = (rows) => {
   const db = fakeDb({ orders: rows });
-  return { db, reader: createOrdersReader({ db, listSelect: "LIST", detailSelect: "DETAIL", deps }) };
+  return { db, reader: createOrdersReader({ db, listSelect: "LIST", detailSelect: "DETAIL", reorderSelect: "REORDER", deps }) };
 };
 const rows = () => [
   orderFor(O1, A, "delivered", "2026-10-01T10:00:00Z"),
@@ -233,4 +233,20 @@ test("a database error is thrown (the tool loop reports it generically and logs 
   const reader = createOrdersReader({ db, listSelect: "L", detailSelect: "D", deps });
   await assert.rejects(reader.listMyOrders(A, { status_group: "any", limit: 5 }), /list_my_orders failed: boom/);
   await assert.rejects(reader.getMyOrder(A, { order_id: "latest" }), /get_my_order failed: boom/);
+});
+
+const reorderRow = (id, customerId, storeId, lines) => ({ id, customer_id: customerId, store_id: storeId, order_items: lines, status: "delivered", placed_at: "2026-10-01T10:00:00Z" });
+
+test("reorder source: own order only, product ids, quantities, notes and option ids", async () => {
+  const lines = [{ product_id: "p1", quantity: 2, special_instructions: " extra crispy ", order_item_options: [{ menu_item_option_id: "o1" }, { menu_item_option_id: null }] }];
+  const db = fakeDb({ orders: [reorderRow(O1, A, "s1", lines), reorderRow(O3, B, "s1", lines)] });
+  const reader = createOrdersReader({ db, listSelect: "L", detailSelect: "D", reorderSelect: "REORDER", deps });
+  assert.deepEqual(await reader.getReorderSource(A, { order_id: O1 }), {
+    order_id: O1, store_id: "s1",
+    lines: [{ product_id: "p1", quantity: 2, note: "extra crispy", option_ids: ["o1", null] }],
+  });
+  assert.deepEqual(db.queries.at(-1).eq[0], ["customer_id", A]);
+  assert.deepEqual(await reader.getReorderSource(A, { order_id: O3 }), { error: "not found" });
+  assert.deepEqual(await reader.getReorderSource(A, { order_id: "latest" }), { order_id: O1, store_id: "s1", lines: [{ product_id: "p1", quantity: 2, note: "extra crispy", option_ids: ["o1", null] }] });
+  await assert.rejects(reader.getReorderSource("", { order_id: "latest" }), /customerId is required/);
 });

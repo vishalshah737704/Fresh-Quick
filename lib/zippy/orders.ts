@@ -1,5 +1,6 @@
 import type Anthropic from "@anthropic-ai/sdk";
 import type { Parsed } from "./catalog";
+import type { ReorderSource } from "./actions";
 import type { RawOrderDetail, RawOrderListRow } from "../order-detail";
 
 // This file is pure on purpose: value imports from sibling modules would not resolve under node's test
@@ -195,9 +196,20 @@ type OrdersQuery = {
 
 export type OrdersDb = { from(table: string): OrdersQuery };
 
+type RawReorderRow = {
+  id: string;
+  store_id: string;
+  order_items: {
+    product_id: string;
+    quantity: number;
+    special_instructions: string | null;
+    order_item_options: { menu_item_option_id: string | null }[];
+  }[];
+};
+
 // Every query starts from `customer_id = <verified id>`; the id comes from the session, never from the model.
-export function createOrdersReader(config: { db: OrdersDb; listSelect: string; detailSelect: string; deps: OrderShapeDeps }) {
-  const { db, listSelect, detailSelect, deps } = config;
+export function createOrdersReader(config: { db: OrdersDb; listSelect: string; detailSelect: string; reorderSelect: string; deps: OrderShapeDeps }) {
+  const { db, listSelect, detailSelect, reorderSelect, deps } = config;
   const requireCustomer = (customerId: string | null | undefined): string => {
     if (!customerId) throw new Error("customerId is required");
     return customerId;
@@ -224,6 +236,25 @@ export function createOrdersReader(config: { db: OrdersDb; listSelect: string; d
       if (error) throw new Error(`get_my_order failed: ${error.message}`);
       const row = ((data ?? []) as RawOrderDetail[])[0];
       return row ? shapeOrderDetail(row, deps) : { error: "not found" };
+    },
+    async getReorderSource(customerId: string, input: GetMyOrderInput): Promise<ReorderSource | { error: string }> {
+      const owner = requireCustomer(customerId);
+      let query = db.from("orders").select(reorderSelect).eq("customer_id", owner);
+      query = input.order_id === "latest" ? query.order("placed_at", { ascending: false }) : query.eq("id", input.order_id);
+      const { data, error } = await query.limit(1);
+      if (error) throw new Error(`reorder source failed: ${error.message}`);
+      const row = ((data ?? []) as RawReorderRow[])[0];
+      if (!row) return { error: "not found" };
+      return {
+        order_id: row.id,
+        store_id: row.store_id,
+        lines: row.order_items.map((item) => ({
+          product_id: item.product_id,
+          quantity: item.quantity,
+          note: item.special_instructions === null || item.special_instructions.trim() === "" ? null : item.special_instructions.trim(),
+          option_ids: item.order_item_options.map((option) => option.menu_item_option_id),
+        })),
+      };
     },
   };
 }
