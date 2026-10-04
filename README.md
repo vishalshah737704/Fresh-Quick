@@ -185,7 +185,7 @@ when a question needs them. Kill switch: `ZIPPY_ORDERS=off` (`ZIPPY_TOOLS=off` a
 editing `knowledge/`, re-ingest and re-run the eval as above. Spec:
 `docs/superpowers/specs/2026-10-03-ask-zippy-z3-design.md`. Unit tests: 205 passing.
 
-**Z4a: cart actions (built 2026-10-04, branch `ask-zippy-z4a`).** A signed-in customer can ask Zippy to add a
+**Z4a: cart actions (built 2026-10-04, merged to `main` as PR #9).** A signed-in customer can ask Zippy to add a
 dish, add a past order's items again, change a quantity, remove a line or empty the cart, on the website and in
 the mobile app. Zippy only proposes: it shows a card with Confirm and Dismiss, and the cart changes only when
 the customer taps Confirm. Adding from a different store replaces the cart on Confirm, and the card says so.
@@ -194,19 +194,19 @@ does not place, pay for or cancel orders; checkout stays manual. Only signed-in 
 website, Confirm works on the customer pages (the cart lives there). Kill switch: `ZIPPY_ACTIONS=off`
 (`ZIPPY_TOOLS=off` also disables it). The client sends a snapshot of the cart with each question because the
 cart is client state. Spec: `docs/superpowers/specs/2026-10-04-ask-zippy-z4a-design.md`. Unit tests: 251
-passing. After merge, re-ingest `knowledge/` and re-run the eval as above.
+passing. Re-ingest and eval re-run done 2026-10-04 (eval 53/54). Phone check of the card taps passed 2026-10-04.
 
-**Z4b: go to checkout (built 2026-10-04, branch `ask-zippy-z4b`).** When a signed-in customer asks Zippy to check
+**Z4b: go to checkout (built 2026-10-04, merged to `main` as PR #10).** When a signed-in customer asks Zippy to check
 out, Zippy shows a "Go to checkout" card that opens the Checkout page (web) or screen (mobile) for the current
 cart. One tap, and the chat closes. Zippy refuses, with no card, if the cart is empty, the store is closed or
 suspended, or a dish is unavailable. The customer still enters their own name, contact details and address and
 pays on the checkout page; Zippy never places or pays for an order and never asks for those details or card
 numbers. On the website the card works wherever the website shows the customer's cart (the customer pages); on vendor, admin and delivery pages Zippy cannot see the cart, so it cannot prepare the card there; on mobile it always works. If the
 cart's store changed after the card was made, the tap says "Your cart changed, ask me again." Visitors, vendors,
-delivery partners and admins never get it; one checkout card per reply. Kill switch: `ZIPPY_ACTIONS=off`. After
-merge, re-ingest `knowledge/` and re-run the eval (two new cases).
+delivery partners and admins never get it; one checkout card per reply. Kill switch: `ZIPPY_ACTIONS=off`. Re-ingest
+and eval re-run done 2026-10-04; the phone tap on "Go to checkout" passed (Place order was not tapped).
 
-**Rate limits and abuse guards (2026-10-04).** Zippy's limits are env-tunable (defaults: signed-in 10/min and
+**Rate limits and abuse guards (2026-10-04, merged as PR #14).** Zippy's limits are env-tunable (defaults: signed-in 10/min and
 60/day, visitors 5/min and 20/day per IP, plus global buckets for visitors and signed-in users and an overall
 8000/day ceiling). A burst check runs before sign-in is verified, oversized bodies get 413, and a limit trip
 returns 429 with `Retry-After`. Set `ZIPPY_TRUSTED_PROXY_HOPS` to the number of proxies in front of the app.
@@ -222,12 +222,12 @@ rejects the build; use `npx next build --webpack` there and run the real
 whole site (customer app + vendor/delivery/admin portals) for anyone
 who wants to read how to use it rather than run it.
 
-**Zippy chat retention (2026-10-04).** Saved Zippy chats with no activity for 30 days are deleted by a nightly
+**Zippy chat retention (2026-10-04, merged as PR #13).** Saved Zippy chats with no activity for 30 days are deleted by a nightly
 cleanup (SQL `purge_zippy_chats`, route `POST /api/internal/zippy/purge`, n8n workflow 08 nightly at
-03:45; env `ZIPPY_RETENTION_DAYS`, 1..3650). Orders are not purged. After merge, in this order: import
-and publish workflow 08, run the dry run
-(`Invoke-RestMethod -Method Post http://localhost:5678/webhook/foodhub/zippy-purge`, a dry run unless the
-body is `{"dryRun": false}`), then re-ingest `knowledge/`. Scheduled runs happen only while Docker, n8n and
+03:45; env `ZIPPY_RETENTION_DAYS`, 1..3650). Orders are not purged. Rollout done 2026-10-04: migration 32 applied,
+workflow 08 imported and published, the dry run (`Invoke-RestMethod -Method Post
+http://localhost:5678/webhook/foodhub/zippy-purge`, a dry run unless the body is `{"dryRun": false}`) returned
+`dryRun` true with 0 rows, and `knowledge/` was re-ingested. The first real purge runs from 03:45 Asia/Kolkata. Scheduled runs happen only while Docker, n8n and
 the app are up (n8n does not catch up missed runs); the schedule uses n8n's timezone (workflow set to Asia/Kolkata). See `docs/n8n-webhook-setup.md`.
 
 ## Status

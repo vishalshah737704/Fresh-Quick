@@ -141,7 +141,7 @@ To re-ingest after editing `knowledge/`: POST the n8n webhook `foodhub/zippy-ing
 (workflow 06) or `POST /api/internal/zippy/ingest`; check quality with
 `node scripts/zippy-eval.mjs` (last 35/36, now 46/47 after Z2). Needs `ANTHROPIC_API_KEY` (workspace-scoped,
 with credits) and `OPENAI_API_KEY` in `.env.local`. Z2 (live lookups) is built (next paragraph); Z3 (my orders) is merged (PR #7, `2cd0a4f`, paragraph after it); Z4a (cart
-actions) is built on branch `ask-zippy-z4a` (last Zippy paragraph), Z4b is next. See MEMORY.md's "Ask Zippy Z1" entry and the spec's Amendments.
+actions, PR #9) and Z4b (checkout card, PR #10) are merged (paragraphs below), as are streaming (#12), retention (#13) and rate limits (#14). See MEMORY.md's "Ask Zippy Z1" entry and the spec's Amendments.
 **Ask Zippy Z2 (2026-10-03, branch `ask-zippy-z2`, built and live-verified, merged to `main` 2026-10-03):**
 Zippy now answers store, menu, price, option and open/closed questions from LIVE data (web and
 mobile, same `POST /api/zippy/chat`); it cannot act (cart actions arrived in Z4a); order lookups arrived in Z3 (see the Z3 paragraph). The question is
@@ -182,7 +182,7 @@ injection was not followed; a visitor and a vendor got no order data; `ZIPPY_ORD
 described. Tests: 205 pass. Not done: re-ingest of `knowledge/` plus a `node scripts/zippy-eval.mjs`
 re-run (since done: knowledge re-ingested, eval 48/50, PR #8 fixed one fixture); Z4 (actions) became Z4a. Both manuals' Ask Zippy chapters were edited
 in place for Z3 (page numbers unchanged, TOC untouched). See MEMORY.md's "Ask Zippy Z3" entry.
-**Ask Zippy Z4a (2026-10-04, branch `ask-zippy-z4a`, built and live-verified locally, not yet merged to `main`):**
+**Ask Zippy Z4a (2026-10-04, branch `ask-zippy-z4a`, built and live-verified; merged to `main` as PR #9):**
 a SIGNED-IN CUSTOMER can ask Zippy to change their CART: add a dish, add a past order's items again
 (reorder), change a line's quantity, remove a line, or clear the cart. Zippy only PROPOSES, with five
 side-effect-free tools (`get_my_cart`, `propose_add_to_cart`, `propose_reorder`, `propose_cart_change`,
@@ -214,14 +214,13 @@ confirm replaced the cart with no modal). THREE defects were found only by live 
 unit tests and reviews): `get_item_options` returned options without ids so required options could never be
 chosen (`89871b3`); the web widget sits outside `CartProvider` so `useOptionalCart()` was always null and
 Confirm never appeared (`772f2b7`, the cart bridge); the cross-store replacement was not disclosed and Zippy
-claimed the app would ask to clear the cart (`0a7c5b3`). Tests: 251 pass. Not verified: a card tap on a real
-phone. Open: phone check of card taps; after merge, re-ingest `knowledge/` and re-run
-`node scripts/zippy-eval.mjs`; Z4b (checkout hand-off) is next. Deferred minors are listed in MEMORY.md's
+claimed the app would ask to clear the cart (`0a7c5b3`). Tests: 251 pass. Phone check of card taps passed on Vishal's phone 2026-10-04 (add, double-tap guard, cross-store replace, quantity/remove/clear);
+knowledge re-ingested and eval re-run (53/54) after the merges. Deferred minors are listed in MEMORY.md's
 "Ask Zippy Z4a" entry. Manuals: web v3.4 (chapter 8), mobile v4.5 (chapter 6), edited in place; no new
 screenshot (the mobile card figure needs a new phone recording). Also: Vishal validated "Where is my order?"
 on his phone; the Z3 eval was 48/50 after re-ingest and PR #8 replaced one mis-specified fixture (49/50
 expected).
-**Ask Zippy Z4b (2026-10-04, branch `ask-zippy-z4b`, built and live-verified locally, not yet merged to `main`):**
+**Ask Zippy Z4b (2026-10-04, branch `ask-zippy-z4b`, built and live-verified; merged to `main` as PR #10):**
 a signed-in customer who asks Zippy to check out gets a "Go to checkout" card (one per reply) that opens the
 Checkout page/screen for the CURRENT cart; one tap, the chat closes. It is a navigation card, not a purchase:
 Zippy never places or pays for an order and never asks for name, contact, address or card numbers (the
@@ -238,12 +237,11 @@ per-card state lives in the widget/Fab so it survives close and reopen. If the l
 again." `ZIPPY_ACTIONS=off` disables it too. Visitors, vendors, delivery partners and admins never get it.
 Live findings (2026-10-04): the reply said "Tap Confirm" but the button is "Go to checkout" (fixed by
 `proposalStatus` and a prompt rule); the first review caught a duplicate-card race and an orders-off prompt
-contradiction (both fixed). Not verified: a phone tap (iOS may be flaky pushing a route right after dismissing
-a Modal). Open for Vishal: after merge re-ingest `knowledge/` and re-run `node scripts/zippy-eval.mjs` (two new
-cases: "can zippy check out for me", "take me to checkout"); phone check. See MEMORY.md's "Ask Zippy Z4b"
+contradiction (both fixed). Phone tap on "Go to checkout" verified on Vishal's phone 2026-10-04 (it opens Checkout; Place order was not tapped).
+Re-ingest and eval re-run done (53/54). See MEMORY.md's "Ask Zippy Z4b"
 entry and `docs/superpowers/specs/2026-10-04-ask-zippy-z4b-design.md`. Manuals: web v3.5, mobile v4.6, edited in
 place (no page start changed, so the static TOCs were untouched).
-**Ask Zippy streaming (2026-10-04, branch `zippy-streaming`, built and live-verified on web, phone check pending, not yet merged to `main`):**
+**Ask Zippy streaming (2026-10-04, branch `zippy-streaming`, live-verified on web and phone; merged to `main` as PR #12):**
 answers appear word by word on web and mobile again, including answers that use live lookups and the cart and
 checkout cards. `POST /api/zippy/chat` with `stream: true` (the default) now returns NDJSON, one event per line:
 `delta` (answer text), `reset` (discard what streamed so far), `done` (full final `reply`, `conversationId`,
@@ -254,12 +252,12 @@ that text was only a lead-in. The client replaces its streamed text with `done.r
 corrupt the final text. Cards appear when the answer finishes. The assistant message is saved once, at the end;
 starting a New chat, opening History, switching account or leaving the page/app mid-answer aborts the model call (through `request.signal`) and saves nothing, but closing the chat panel does not abort: the reply finishes and is saved. Web:
 `lib/zippy/stream-events.ts` (pure line parser) and `ZippyWidget`; mobile uses `expo/fetch` with a
-byte-identical parser copy under `mobile/lib/` (parity-tested); phone check pending. `knowledge/customer/
-ask-zippy.md` changed, so re-ingest `knowledge/` (`foodhub/zippy-ingest`). Spec
+byte-identical parser copy under `mobile/lib/` (parity-tested); phone check passed 2026-10-04 (text arrives incrementally). `knowledge/customer/
+ask-zippy.md` changed; re-ingest done 2026-10-04. Spec
 `docs/superpowers/specs/2026-10-04-zippy-streaming-design.md`. Manuals: web v3.6, mobile v4.7, edited in place
 (web Appendix A-D start pages moved by one, so the static TOC was renumbered). See MEMORY.md's "Ask Zippy
 streaming" entry.
-**Ask Zippy rate limits and abuse guards (2026-10-04, branch `zippy-rate-limits`):**
+**Ask Zippy rate limits and abuse guards (2026-10-04, branch `zippy-rate-limits`, merged to `main` as PR #14):**
 every limit is an env var with a validated default (`lib/zippy/rate-limit.ts`; bad values fall back to the default,
 never off): per user 10/min + 60/day, per visitor IP 5/min + 20/day, global visitors 60/min + 1000/day, global
 signed-in users 120/min + 5000/day, an overall ceiling of 8000/day, and a pre-auth burst of 40/min per IP that runs
@@ -269,8 +267,10 @@ many positions from the right; 0 ignores the header). Bodies over 200,000 bytes 
 returns 429 with `Retry-After` and a message by class (minute / day / busy) and logs the class only. Full table,
 proxy examples, cost arithmetic and what is NOT covered (sign-up throttling, CAPTCHA, concurrency caps, provider
 monthly budgets) are in `docs/DEPLOYMENT.md` "Public deployment checklist"; spec
-`docs/superpowers/specs/2026-10-04-zippy-rate-limits-design.md`.
-**Zippy chat retention (2026-10-04, branch `zippy-retention`, built and live-verified, merge pending):**
+`docs/superpowers/specs/2026-10-04-zippy-rate-limits-design.md`. Still open before any PUBLIC deployment: set
+`ZIPPY_LIMIT_*` and `ZIPPY_TRUSTED_PROXY_HOPS` per `docs/DEPLOYMENT.md` (local use needs no change), set provider-side
+monthly budgets in the Anthropic and OpenAI consoles; sign-up throttling/CAPTCHA is not built.
+**Zippy chat retention (2026-10-04, branch `zippy-retention`, built and live-verified; merged to `main` as PR #13):**
 SQL function `purge_zippy_chats(retention_days, dry_run)` deletes Zippy conversations (messages go by cascade)
 whose last activity (newest message, or the conversation's creation time if it has none) is older than the
 window (30 days; env `ZIPPY_RETENTION_DAYS` 1..3650, else 30), plus `zippy_usage` rate-limit rows older than
@@ -278,9 +278,11 @@ window (30 days; env `ZIPPY_RETENTION_DAYS` 1..3650, else 30), plus `zippy_usage
 (internal secret). n8n workflow 08 "Zippy Chat Retention" runs the real purge nightly at 03:45; its webhook
 `foodhub/zippy-purge` is a DRY RUN unless the body is `{"dryRun": false}`. Orders are not purged. Policy text
 and both manuals (web v3.5.1, mobile v4.6.1, PDFs regenerated, page counts unchanged) now say chats are deleted
-by a nightly cleanup once they have had no activity for 30 days. After merge Vishal must, IN THIS ORDER (so Zippy never states the promise before the job exists): import and publish
-workflow 08 in the local n8n (never stop or restart the n8n container), run the dry run
-(`Invoke-RestMethod -Method Post http://localhost:5678/webhook/foodhub/zippy-purge`), THEN re-ingest `knowledge/`.
+by a nightly cleanup once they have had no activity for 30 days. The rollout order was: import and publish workflow 08 in the local n8n (never stop or restart the n8n container), run the
+dry run (`Invoke-RestMethod -Method Post http://localhost:5678/webhook/foodhub/zippy-purge`), THEN re-ingest `knowledge/`
+(so Zippy never states the promise before the job exists). DONE 2026-10-04: migration 32 present, workflow 08 imported and
+published, dry run returned `dryRun` true, `retentionDays` 30, 0 rows; knowledge re-ingested (151 chunks). The first real
+purge runs from 03:45 Asia/Kolkata.
 Scheduled runs happen only while Docker, n8n and the app are up (n8n does not catch up missed runs; the next night's run does the work), and the schedule uses the workflow's timezone setting (`Asia/Kolkata`). See MEMORY.md's
 "Zippy chat retention" entry and `docs/n8n-webhook-setup.md` (Workflow 08).
 **Gotcha for demos/tests:** workflow 04 auto-assigns a `ready` order within
