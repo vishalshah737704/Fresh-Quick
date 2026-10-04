@@ -1,0 +1,82 @@
+{
+  "name": "08 - Zippy Chat Retention",
+  "nodes": [
+    {
+      "id": "zippy-purge-webhook",
+      "name": "Purge dry run (webhook)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 200],
+      "webhookId": "f47ac10b-58cc-4372-a567-0e02b2c3d008",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "foodhub/zippy-purge",
+        "responseMode": "lastNode"
+      },
+      "notes": "POST here to see what the purge WOULD delete (a dry run: nothing is deleted). To delete for real, POST the body {\"dryRun\": false}."
+    },
+    {
+      "id": "zippy-purge-schedule",
+      "name": "Nightly at 03:45",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [240, 400],
+      "parameters": {
+        "rule": { "interval": [{ "field": "cronExpression", "expression": "45 3 * * *" }] }
+      },
+      "notes": "The nightly run REALLY deletes Zippy chats with no activity inside the retention window. Do a webhook dry run before publishing this workflow."
+    },
+    {
+      "id": "zippy-purge-webhook-call",
+      "name": "POST purge (webhook, dry run by default)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [520, 200],
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.APP_BASE_URL}}/api/internal/zippy/purge",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "X-Internal-Secret", "value": "={{$env.N8N_INTERNAL_SECRET}}" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ dryRun: $json.body && $json.body.dryRun === false ? false : true }) }}"
+      },
+      "notes": "Dry run unless the webhook body is {\"dryRun\": false}. Returns {dryRun, retentionDays, conversations, messages, usageRows}."
+    },
+    {
+      "id": "zippy-purge-schedule-call",
+      "name": "POST purge (nightly, deletes)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [520, 400],
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.APP_BASE_URL}}/api/internal/zippy/purge",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "X-Internal-Secret", "value": "={{$env.N8N_INTERNAL_SECRET}}" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\"dryRun\": false}"
+      },
+      "notes": "Deletes Zippy conversations (and their messages) with no activity for ZIPPY_RETENTION_DAYS (default 30) and stale rate-limit rows. Orders, accounts and everything else are never touched."
+    }
+  ],
+  "connections": {
+    "Purge dry run (webhook)": {
+      "main": [[{ "node": "POST purge (webhook, dry run by default)", "type": "main", "index": 0 }]]
+    },
+    "Nightly at 03:45": {
+      "main": [[{ "node": "POST purge (nightly, deletes)", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" }
+}
