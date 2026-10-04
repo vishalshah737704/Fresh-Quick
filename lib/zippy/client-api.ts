@@ -1,6 +1,7 @@
 import { supabase } from "@/lib/supabase";
 import { ZIPPY_ERROR_MESSAGE } from "./constants";
 import type { ActionCard, CartSnapshot } from "./action-types";
+import { createLineParser, type StreamEvent } from "./stream-events";
 
 export type ChatMessage = { role: "user" | "assistant"; content: string };
 export type ConversationSummary = { id: string; title: string; created_at: string };
@@ -35,9 +36,11 @@ export async function streamChat(args: {
   conversationId: string | null;
   history: ChatMessage[];
   onDelta: (text: string) => void;
+  onReset: () => void;
   signal?: AbortSignal;
   location?: { lat: number; lng: number } | null;
-}): Promise<{ conversationId: string | null }> {
+  cart?: CartSnapshot | null;
+}): Promise<{ reply: string; conversationId: string | null; actions: ActionCard[] }> {
   const res = await fetch("/api/zippy/chat", {
     method: "POST",
     headers: { "Content-Type": "application/json", ...(await authHeaders()) },
@@ -47,18 +50,34 @@ export async function streamChat(args: {
       history: args.history,
       stream: true,
       location: args.location ?? undefined,
+      cart: args.cart ?? undefined,
     }),
     signal: args.signal,
   });
-  if (!res.ok || !res.body) throw await errorFrom(res);
+  if (!res.ok) throw await errorFrom(res);
+  if (!res.body) throw new ZippyError(ZIPPY_ERROR_MESSAGE, res.status);
   const reader = res.body.getReader();
   const decoder = new TextDecoder();
+  const parse = createLineParser();
+  const handle = (events: StreamEvent[]) => {
+    for (const event of events) {
+      if (event.t === "delta") args.onDelta(event.text);
+      else if (event.t === "reset") args.onReset();
+      else if (event.t === "error") throw new ZippyError(event.message, res.status);
+      else return { reply: event.reply, conversationId: event.conversationId, actions: event.actions as ActionCard[] };
+    }
+    return null;
+  };
   for (;;) {
     const { done, value } = await reader.read();
     if (done) break;
-    args.onDelta(decoder.decode(value, { stream: true }));
+    const finished = handle(parse(decoder.decode(value, { stream: true })));
+    if (finished) return finished;
   }
-  return { conversationId: res.headers.get("X-Zippy-Conversation-Id") };
+  // Flush a final line that arrived without a trailing newline.
+  const finished = handle(parse(decoder.decode() + "\n"));
+  if (finished) return finished;
+  throw new ZippyError(ZIPPY_ERROR_MESSAGE, res.status);
 }
 
 export async function sendChat(args: {

@@ -13,7 +13,7 @@ import {
 import {
   listConversations,
   loadConversation,
-  sendChat,
+  streamChat,
   ZippyError,
   type ChatMessage,
   type ConversationSummary,
@@ -124,11 +124,27 @@ export function ZippyWidget() {
       setInput("");
       setBusy(true);
       try {
-        const result = await sendChat({
+        const result = await streamChat({
           message: question,
           conversationId,
           history,
           signal: controller.signal,
+          onDelta: (delta) => {
+            if (controller.signal.aborted) return;
+            setMessages((current) => {
+              const last = current[current.length - 1];
+              if (!last || last.role !== "assistant") return current;
+              return [...current.slice(0, -1), { ...last, content: last.content + delta }];
+            });
+          },
+          onReset: () => {
+            if (controller.signal.aborted) return;
+            setMessages((current) => {
+              const last = current[current.length - 1];
+              if (!last || last.role !== "assistant") return current;
+              return [...current.slice(0, -1), { ...last, content: "" }];
+            });
+          },
           location: resolveLocation((key) => window.localStorage.getItem(key), window.location.pathname),
           cart: cart ? snapshotCart(cart) : null,
         });
