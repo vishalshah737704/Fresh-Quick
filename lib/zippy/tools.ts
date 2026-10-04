@@ -22,8 +22,11 @@ import {
   checkoutAlreadyPrepared,
   checkoutConflict,
   cartChangeConflict,
+  orderNoteConflict,
   proposalStatus,
   buildClearCartCard,
+  buildOrderNoteCard,
+  parseProposeOrderNoteInput,
   buildReorderCard,
   parseProposeAddInput,
   parseProposeCartChangeInput,
@@ -150,6 +153,8 @@ function pushCard(ctx: ToolContext, result: { ok: true; card: ActionCard } | { o
   // A checkout card and cart cards never share a reply. This runs after every await and just before the push.
   const conflict = result.card.kind === "go_to_checkout" ? checkoutConflict(ctx.actions) : cartChangeConflict(ctx.actions);
   if (conflict) return bad(conflict);
+  const duplicate = orderNoteConflict(ctx.actions, result.card);
+  if (duplicate) return bad(duplicate);
   ctx.actions.push(result.card);
   return ok({ proposal_id: result.card.id, summary: result.card.description, status: proposalStatus(result.card) });
 }
@@ -236,6 +241,12 @@ export async function runTool(
       const parsed = parseProposeClearInput(rawInput);
       if (!parsed.ok) return bad(parsed.error);
       return pushCard(ctx, buildClearCartCard(ctx.cart, actionDeps));
+    }
+    case "propose_order_note": {
+      if (!actionsAllowed(ctx)) return bad("Cart actions are only available to a signed-in customer");
+      const parsed = parseProposeOrderNoteInput(rawInput);
+      if (!parsed.ok) return bad(parsed.error);
+      return pushCard(ctx, buildOrderNoteCard(ctx.cart, parsed.value, actionDeps));
     }
     case "propose_go_to_checkout": {
       if (!actionsAllowed(ctx)) return bad("Cart actions are only available to a signed-in customer");

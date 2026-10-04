@@ -157,7 +157,7 @@ export function ZippyWidget() {
             });
           },
           location: resolveLocation((key) => window.localStorage.getItem(key), window.location.pathname),
-          cart: cart ? snapshotCart(cart) : null,
+          cart: cart ? snapshotCart({ ...cart, orderNote: cart.orderNote }) : null,
         });
         if (controller.signal.aborted) return;
         setMessages((current) => {

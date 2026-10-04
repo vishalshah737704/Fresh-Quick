@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { View, Text, TextInput, Pressable, StyleSheet, ActivityIndicator } from "react-native";
+import { KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, Pressable, StyleSheet, ActivityIndicator } from "react-native";
 import { useRouter } from "expo-router";
 import { supabase } from "../../../lib/supabase";
 import { BRAND } from "../../../theme";
@@ -48,7 +48,8 @@ export default function DeliveryLoginScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.flex}>
+      <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
       <Text style={styles.heading}>Delivery Partner Log In</Text>
       <TextInput
         style={styles.input}
@@ -75,13 +76,15 @@ export default function DeliveryLoginScreen() {
           <Text style={styles.buttonText}>Log In</Text>
         )}
       </Pressable>
-    </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
+  flex: { flex: 1, backgroundColor: BRAND.colors.background },
   container: {
-    flex: 1,
+    flexGrow: 1,
     backgroundColor: BRAND.colors.background,
     padding: 24,
     gap: 12,

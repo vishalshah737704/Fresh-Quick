@@ -276,7 +276,7 @@ export default function CheckoutScreen() {
 
   return (
     <View style={styles.screen}>
-      <ScrollView contentContainerStyle={styles.container}>
+      <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
         <Text style={styles.heading}>Checkout</Text>
 
         <View style={styles.section}>

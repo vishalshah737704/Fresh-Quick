@@ -1,6 +1,6 @@
 import "server-only";
 import { supabaseServer } from "@/lib/supabase-server";
-import type { ProductForCart } from "./actions";
+import { uuidsOnly, type ProductForCart } from "./actions";
 
 type ProductRow = { id: string; name: string; price: number | string; image_url: string | null; is_available: boolean; store_id: string };
 type StoreRow = { id: string; name: string; is_open: boolean; is_suspended: boolean };
@@ -10,7 +10,7 @@ type OptionRow = { id: string; option_group_id: string; name: string; price_delt
 // Live read of dishes with their store and option groups. Missing ids are simply absent from the map.
 export async function loadProductsForCart(ids: string[]): Promise<Map<string, ProductForCart>> {
   const result = new Map<string, ProductForCart>();
-  const unique = [...new Set(ids)];
+  const unique = [...new Set(uuidsOnly(ids))];
   if (unique.length === 0) return result;
 
   const { data: products, error: productError } = await supabaseServer

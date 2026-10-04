@@ -62,8 +62,11 @@ export function readLimits(env: Record<string, string | undefined>): Limits {
   return out;
 }
 
+// ZIPPY_IP_HASH_SALT is read at call time; empty or unset means no salt, so the hash (and every existing bucket) is unchanged.
 function hashIp(ip: string | null): string {
-  return ip ? createHash("sha256").update(ip).digest("hex").slice(0, 16) : "unknown";
+  if (!ip) return "unknown";
+  const salt = process.env.ZIPPY_IP_HASH_SALT ?? "";
+  return createHash("sha256").update(salt === "" ? ip : `${salt}:${ip}`).digest("hex").slice(0, 16);
 }
 
 // Checked BEFORE authentication, for every caller, so floods cost no auth or database lookups.

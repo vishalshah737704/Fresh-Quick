@@ -250,3 +250,33 @@ test("reorder source: own order only, product ids, quantities, notes and option 
   assert.deepEqual(await reader.getReorderSource(A, { order_id: "latest" }), { order_id: O1, store_id: "s1", lines: [{ product_id: "p1", quantity: 2, note: "extra crispy", option_ids: ["o1", null] }] });
   await assert.rejects(reader.getReorderSource("", { order_id: "latest" }), /customerId is required/);
 });
+
+test("reorder source: 'latest' is the newest of the owner's orders, never another customer's newer one", async () => {
+  const line = (id) => [{ product_id: id, quantity: 1, special_instructions: null, order_item_options: [] }];
+  const db = fakeDb({ orders: [
+    { ...reorderRow(O1, A, "s1", line("old")), placed_at: "2026-10-01T10:00:00Z" },
+    { ...reorderRow(O2, A, "s1", line("new")), placed_at: "2026-10-02T10:00:00Z" },
+    { ...reorderRow(O3, B, "s9", line("theirs")), placed_at: "2026-10-03T10:00:00Z" },
+  ] });
+  const reader = createOrdersReader({ db, listSelect: "L", detailSelect: "D", reorderSelect: "REORDER", deps });
+  const latest = await reader.getReorderSource(A, { order_id: "latest" });
+  assert.equal(latest.order_id, O2);
+  assert.equal(latest.lines[0].product_id, "new");
+  assert.deepEqual(db.queries.at(-1).eq, [["customer_id", A]]);
+  assert.deepEqual(db.queries.at(-1).order, ["placed_at", { ascending: false }]);
+});
+
+test("reorder source: null option and item lists become empty lists, whitespace-only notes become null", async () => {
+  const lines = [
+    { product_id: "p1", quantity: 1, special_instructions: "   ", order_item_options: null },
+    { product_id: "p2", quantity: 3, special_instructions: " \t\n ", order_item_options: [] },
+    { product_id: "p3", quantity: 2, special_instructions: "  no ice ", order_item_options: [{ menu_item_option_id: "o9" }] },
+  ];
+  const reader = createOrdersReader({ db: fakeDb({ orders: [reorderRow(O1, A, "s1", lines), reorderRow(O2, A, "s1", null)] }), listSelect: "L", detailSelect: "D", reorderSelect: "REORDER", deps });
+  assert.deepEqual((await reader.getReorderSource(A, { order_id: O1 })).lines, [
+    { product_id: "p1", quantity: 1, note: null, option_ids: [] },
+    { product_id: "p2", quantity: 3, note: null, option_ids: [] },
+    { product_id: "p3", quantity: 2, note: "no ice", option_ids: ["o9"] },
+  ]);
+  assert.deepEqual((await reader.getReorderSource(A, { order_id: O2 })).lines, []);
+});

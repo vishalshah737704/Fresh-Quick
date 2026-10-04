@@ -231,10 +231,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
   function addItems(sId: string, sName: string, newItems: NewCartItem[], replace: boolean) {
     if (newItems.length === 0) return;
     const lines = newItems.map((item) => ({ ...item, lineId: buildLineId(item.menuItemId, item.selectedOptions) }));
-    if (replace) {
-      setOrderNoteState("");
-      setPendingConflict(null);
-    }
+    if (replace) setOrderNoteState("");
+    // Any open "clear cart?" modal is stale once Zippy changes the cart; dropping it (never auto-applying it) means the user just taps the store-page add again.
+    setPendingConflict(null);
     setStoreId(sId);
     setStoreName(sName);
     setItems((prev) => mergeCartLines(replace ? [] : prev, lines));

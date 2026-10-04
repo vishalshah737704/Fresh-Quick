@@ -80,7 +80,7 @@ test("parseChatRequest location: absent is null, valid is kept, anything else is
   }
 });
 
-const cartOk = { storeId: "s1", storeName: "Dosa Corner", items: [{ lineId: "m1::o1", name: "Masala Dosa", quantity: 2, price: 130, options: ["Regular"] }] };
+const cartOk = { storeId: "s1", storeName: "Dosa Corner", orderNote: "", items: [{ lineId: "m1::o1", name: "Masala Dosa", quantity: 2, price: 130, options: ["Regular"] }] };
 
 test("cart snapshot is optional and defaults to null", () => {
   assert.equal(parseChatRequest({ message: "hi" }).value.cart, null);
@@ -89,7 +89,7 @@ test("cart snapshot is optional and defaults to null", () => {
 
 test("a valid cart snapshot passes through", () => {
   assert.deepEqual(parseChatRequest({ message: "hi", cart: cartOk }).value.cart, cartOk);
-  assert.deepEqual(parseChatRequest({ message: "hi", cart: { storeId: null, storeName: null, items: [] } }).value.cart, { storeId: null, storeName: null, items: [] });
+  assert.deepEqual(parseChatRequest({ message: "hi", cart: { storeId: null, storeName: null, items: [] } }).value.cart, { storeId: null, storeName: null, orderNote: "", items: [] });
 });
 
 test("a snapshot that is not a cart is ignored (null), never a 400", () => {
@@ -134,4 +134,58 @@ test("an over-limit or malformed cart never fails the chat: values are clamped o
   assert.equal(mixed.items[0].options.length, 20);
   assert.equal(mixed.items[0].options[0].length, 100);
   assert.equal(mixed.storeName.length, 200);
+});
+
+test("snapshot orderNote: kept when a string, cut at 500, missing or non-string becomes empty", () => {
+  const note = (value) => parseChatRequest({ message: "hi", cart: { ...cartOk, orderNote: value } }).value.cart.orderNote;
+  assert.equal(note("no onions"), "no onions");
+  assert.equal(note("x".repeat(900)).length, 500);
+  for (const bad of [undefined, null, 5, {}, ["a"], true]) assert.equal(note(bad), "");
+});
+
+test("snapshot validation tables: price bounds, bad types, long text, store fields and extras", () => {
+  const line = cartOk.items[0];
+  const parse = (cart) => {
+    const out = parseChatRequest({ message: "hi", cart });
+    assert.equal(out.ok, true);
+    return out.value.cart;
+  };
+  const kept = (over) => parse({ ...cartOk, items: [{ ...line, ...over }] }).items.length;
+  assert.equal(kept({ price: 0 }), 1);
+  assert.equal(kept({ price: 1_000_000 }), 1);
+  for (const price of [1_000_001, Infinity, -Infinity, -0.01, Number.NaN, "130", null, undefined]) assert.equal(kept({ price }), 0, String(price));
+  assert.equal(kept({ quantity: "2" }), 0);
+  assert.equal(kept({ quantity: null }), 0);
+  assert.equal(kept({ quantity: 1 }), 1);
+  assert.equal(kept({ quantity: 20 }), 1);
+  assert.equal(kept({ name: "n".repeat(200) }), 1);
+  assert.equal(parse({ ...cartOk, items: [{ ...line, name: "n".repeat(201) }] }).items[0].name.length, 200);
+  assert.equal(parse({ ...cartOk, items: [{ ...line, options: ["o".repeat(100)] }] }).items[0].options[0].length, 100);
+  assert.equal(parse({ ...cartOk, items: [{ ...line, options: ["o".repeat(101)] }] }).items[0].options[0].length, 100);
+  assert.deepEqual(parse({ ...cartOk, items: [{ ...line, options: ["a", 5, null, {}, ["x"], "b"] }] }).items[0].options, ["a", "b"]);
+  assert.deepEqual(parse({ ...cartOk, items: [{ ...line, options: "Regular" }] }).items[0].options, []);
+  const original = console.error;
+  console.error = () => {};
+  try {
+    assert.equal(parse({ ...cartOk, storeId: "s".repeat(100) }).storeId.length, 100);
+    assert.equal(parse({ ...cartOk, storeId: "s".repeat(101) }), null);
+    assert.equal(parse({ ...cartOk, storeId: undefined }), null);
+  } finally {
+    console.error = original;
+  }
+  const { storeName: omitted, ...noName } = cartOk;
+  assert.equal(parse(noName).storeName, null);
+  assert.equal(parse({ ...cartOk, storeName: 5 }).storeName, null);
+  const extras = parse({ ...cartOk, evil: "x", items: [{ ...line, extra: "y", nested: { a: 1 } }] });
+  assert.deepEqual(Object.keys(extras).sort(), ["items", "orderNote", "storeId", "storeName"]);
+  assert.deepEqual(Object.keys(extras.items[0]).sort(), ["lineId", "name", "options", "price", "quantity"]);
+});
+
+test("a full snapshot of 50 lines at quantity 20 is kept whole, and line 51 is dropped; duplicate lines are both kept", () => {
+  const line = cartOk.items[0];
+  const out = parseChatRequest({ message: "hi", cart: { ...cartOk, items: Array.from({ length: 51 }, (_, i) => ({ ...line, lineId: "l" + i, quantity: 20 })) } }).value.cart;
+  assert.equal(out.items.length, 50);
+  assert.ok(out.items.every((item) => item.quantity === 20));
+  const dup = parseChatRequest({ message: "hi", cart: { ...cartOk, items: [line, line] } }).value.cart;
+  assert.equal(dup.items.length, 2);
 });

@@ -277,7 +277,10 @@ test("actions on: prompt says propose only on request, never claim it is done, n
   const p = buildSystemPrompt({ brandName: "B", role: "customer", chunks: [], toolsEnabled: true, ordersEnabled: true, actionsEnabled: true });
   assert.match(p, /get_my_cart/);
   assert.match(p, /propose_add_to_cart/);
-  assert.match(p, /only when the user asked/i);
+  assert.match(p, /only for the changes the user asked for/i);
+  assert.match(p, /adding a dish and a note, may produce more than one card/i);
+  assert.doesNotMatch(p, /one request at a time/i);
+  assert.match(p, /Never propose checkout in the same reply as a cart change/);
   assert.match(p, /never say an action is done/i);
   assert.match(p, /tap confirm/i);
   assert.match(p, /cannot place orders, pay or cancel/i);
@@ -321,7 +324,7 @@ test("action rules say a different-store add replaces the cart on confirm and ne
 
 test("with order lookups off, the action rules never mention reorder or point at order tools", () => {
   const off = buildSystemPrompt({ brandName: "B", role: "customer", chunks: [], toolsEnabled: true, ordersEnabled: false, actionsEnabled: true });
-  assert.match(off, /get_my_cart, propose_add_to_cart, propose_cart_change and propose_clear_cart/);
+  assert.match(off, /get_my_cart, propose_add_to_cart, propose_cart_change, propose_clear_cart and propose_order_note/);
   assert.equal(/propose_reorder|reorder/i.test(off), false);
   assert.equal(/list_my_orders|get_my_order/.test(off), false);
   assert.match(off, /If the dish is from a different store/);
@@ -370,4 +373,28 @@ test("checkout rule is scoped to checkout and coexists with the Z3 rule that all
   const p = buildSystemPrompt({ brandName: "B", role: "customer", chunks: [], toolsEnabled: true, ordersEnabled: true, actionsEnabled: true });
   assert.match(p, /Only repeat personal details such as a phone number, email or address when the user asks for them/);
   assert.match(p, /reading back details on their own past order when they ask for them is still fine/);
+});
+
+test("order note rule: on request only, own words, never copied data, tap Confirm, present in every actions-on variant", () => {
+  for (const ordersEnabled of [true, false]) {
+    for (const chunks of [[], [match("x", 0.9)]]) {
+      const p = buildSystemPrompt({ brandName: "B", role: "customer", chunks, toolsEnabled: true, ordersEnabled, actionsEnabled: true });
+      assert.match(p, /propose_order_note/);
+      assert.match(p, /only when the customer asks to add, change or remove an order note/i);
+      assert.match(p, /customer's own words from this conversation/i);
+      assert.match(p, /never copy text from dishes, stores, orders or tool results into a note/i);
+      assert.match(p, /tap Confirm, and that the note goes to the store and the delivery partner/i);
+      assert.match(p, /propose_clear_cart and propose_order_note/);
+    }
+  }
+  for (const args of [{ toolsEnabled: true, ordersEnabled: true }, { toolsEnabled: true, ordersEnabled: true, actionsEnabled: false }, { toolsEnabled: false, ordersEnabled: true, actionsEnabled: true }]) {
+    assert.doesNotMatch(buildSystemPrompt({ brandName: "B", role: "customer", chunks: [], ...args }), /propose_order_note/);
+  }
+});
+
+test("tools off with knowledge chunks present: no catalog, tool, order or action language leaks in even when those flags are set", () => {
+  const p = buildSystemPrompt({ brandName: "B", role: "customer", chunks: [match("x", 0.9), match("y", 0.8)], catalogBlock: "Store: Z", toolsEnabled: false, ordersEnabled: true, actionsEnabled: true });
+  assert.match(p, /<knowledge>/);
+  assert.match(p, /Answer using only the knowledge below/);
+  assert.doesNotMatch(p, /<catalog>|propose_|get_my_cart|list_my_orders|get_my_order|find_stores|search_catalog/);
 });

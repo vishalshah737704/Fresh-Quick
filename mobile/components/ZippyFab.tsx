@@ -10,6 +10,7 @@ import {
   TextInput,
   View,
 } from "react-native";
+import { StatusBar } from "expo-status-bar";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { BRAND } from "../theme";
 import { supabase } from "../lib/supabase";
@@ -89,6 +90,12 @@ export function ZippyFab() {
     return requestToken.current;
   }, []);
 
+  // Unmount: drop the token (no setState after) and abort the request, like web.
+  useEffect(() => () => {
+    requestToken.current += 1;
+    abortRef.current?.abort();
+  }, []);
+
   const reset = useCallback(() => {
     invalidatePending();
     setMessages([]);
@@ -131,6 +138,8 @@ export function ZippyFab() {
     const controller = new AbortController();
     abortRef.current = controller;
     let streamId: number | null = null;
+    // Snapshot what the user saw when asking, before the permission prompt can take seconds; confirm re-checks the live cart (CART_CHANGED).
+    const cartSnapshot = snapshotCart({ ...cart, orderNote: cart.orderNote });
     try {
       const location = await getChatLocation(question);
       if (token !== requestToken.current) return;
@@ -139,7 +148,7 @@ export function ZippyFab() {
         conversationId,
         history,
         location,
-        cart: snapshotCart(cart),
+        cart: cartSnapshot,
         signal: controller.signal,
         onDelta: (delta) => {
           if (token !== requestToken.current) return;
@@ -256,13 +265,14 @@ export function ZippyFab() {
         <Text style={{ color: "#fff", fontFamily: BRAND.fonts.bodySemiBold }}>⚡ {ZIPPY_NAME}</Text>
       </Pressable>
 
-      <Modal visible={open} animationType="slide" onRequestClose={() => setOpen(false)}>
+      <Modal visible={open} animationType="slide" statusBarTranslucent onRequestClose={() => setOpen(false)}>
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : "height"}
           keyboardVerticalOffset={0}
-          style={{ flex: 1, backgroundColor: BRAND.colors.background, paddingTop: insets.top }}
+          style={{ flex: 1, backgroundColor: BRAND.colors.background }}
         >
-          <View style={{ flexDirection: "row", alignItems: "center", backgroundColor: BRAND.colors.primaryTextSafe, padding: 12, gap: 12 }}>
+          <StatusBar style="light" />
+          <View style={{ flexDirection: "row", alignItems: "center", backgroundColor: BRAND.colors.primaryTextSafe, padding: 12, paddingTop: insets.top + 12, gap: 12 }}>
             <Text style={{ flex: 1, color: "#fff", fontSize: 18, fontFamily: BRAND.fonts.heading }}>{ZIPPY_NAME}</Text>
             {userId && (
               <Pressable
