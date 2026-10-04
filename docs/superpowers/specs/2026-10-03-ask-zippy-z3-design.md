@@ -77,3 +77,14 @@ Worktree plus subagent-driven development (about 8 small tasks, a final whole-br
 
 - Whether the privacy/terms knowledge file should say explicitly that Zippy can read a customer's own orders and sends them to the AI provider.
 - Test data method: direct database inserts (recommended) or orders placed through the app to an address Vishal owns.
+
+## 12. Amendments as built
+
+Harmless deviations from the design above:
+
+- Tool output money fields are `total`, `unit_price`, `line_total`, `subtotal` and `delivery_fee`, as formatted rupee strings (for example "₹290"), not `*_rupees` numbers.
+- A database failure reaches the model as the tool loop's generic "live lookup failed" error (the real error is logged server-side only), not `{error: "could not load orders"}`.
+- 3 eval fixture cases were added instead of about 6, and the facts-check script was not extended. The live order checks ran as a one-off controller script (see plan amendment 2).
+- Repeating the live check from the mobile chat is still open (same route and Bearer path).
+- The open items of section 11 were resolved as recommended: the privacy sentence was added, and test data was created by direct SQL inserts with triggers disabled.
+- The final review's minor suggestions were deferred: an `orderAccess` helper for the role and kill-switch gate in the chat route, and an `id` tiebreaker for equal `placed_at`.
