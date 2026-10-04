@@ -3,7 +3,9 @@ import { supabaseServer } from "@/lib/supabase-server";
 import { BRAND } from "@/lib/branding";
 import { resolveCaller } from "@/lib/zippy/caller";
 import { parseChatRequest } from "@/lib/zippy/validate";
-import { rateLimitPlan } from "@/lib/zippy/rate-limit";
+import { limitMessage, preAuthPlan, rateLimitPlan, retryAfterSeconds, type Limit } from "@/lib/zippy/rate-limit";
+import { clientIpFromForwarded, parseTrustedHops } from "@/lib/zippy/client-ip";
+import { MAX_BODY_BYTES, declaredLengthTooLarge } from "@/lib/zippy/body-cap";
 import { embedQuestion, retrieveCatalogHits, retrieveChunks } from "@/lib/zippy/retrieve";
 import { selectContext, buildSystemPrompt, normalizeHistory } from "@/lib/zippy/prompt";
 import { runAgent } from "@/lib/zippy/agent";
@@ -17,8 +19,8 @@ import {
   saveMessage,
 } from "@/lib/zippy/store";
 import {
+  BODY_TOO_LARGE_MESSAGE,
   MAX_HISTORY_MESSAGES,
-  RATE_LIMIT_MESSAGE,
   SIGN_IN_AGAIN_MESSAGE,
   ZIPPY_ERROR_MESSAGE,
 } from "@/lib/zippy/constants";
@@ -27,23 +29,55 @@ type ChatTurn = { role: "user" | "assistant"; content: string };
 
 const fail = (error: string, status: number) => NextResponse.json({ error }, { status });
 
-async function withinLimits(userId: string | null, ip: string | null): Promise<boolean> {
-  for (const step of rateLimitPlan({ userId, ip })) {
+// Counts one hit per bucket and stops at the first one over its limit (returned); null = allowed.
+// A failing zippy_hit throws, so the caller fails closed.
+async function firstTrippedLimit(plan: Limit[]): Promise<Limit | null> {
+  for (const step of plan) {
     const { data, error } = await supabaseServer.rpc("zippy_hit", {
       p_bucket: step.bucket,
       p_window_seconds: step.windowSeconds,
       p_limit: step.limit,
     });
     if (error) throw new Error(`zippy_hit failed: ${error.message}`);
-    if (data === false) return false;
+    if (data === false) return step;
   }
-  return true;
+  return null;
+}
+
+function tooManyRequests(step: Limit) {
+  const retryAfter = retryAfterSeconds(step.windowSeconds, Date.now());
+  // Class only: no user id, raw IP or message content.
+  console.warn("zippy: rate limit tripped", step.kind);
+  return NextResponse.json(
+    { error: limitMessage(step.kind, retryAfter) },
+    { status: 429, headers: { "Retry-After": String(retryAfter) } },
+  );
 }
 
 export async function POST(request: NextRequest) {
+  // Trust model: ZIPPY_TRUSTED_PROXY_HOPS (default 1) trusted proxies sit in front of this app, so the
+  // client is the x-forwarded-for entry that many positions from the right; entries further left are
+  // client-controlled. With 0 hops the header is ignored and every caller shares the "unknown" IP bucket.
+  const ip = clientIpFromForwarded(
+    request.headers.get("x-forwarded-for"),
+    parseTrustedHops(process.env.ZIPPY_TRUSTED_PROXY_HOPS),
+  );
+
+  // Cheap burst check BEFORE the body is read or the caller is authenticated, for every caller.
+  try {
+    const tripped = await firstTrippedLimit(preAuthPlan(ip));
+    if (tripped) return tooManyRequests(tripped);
+  } catch (error) {
+    console.error("zippy: chat failed", error);
+    return fail(ZIPPY_ERROR_MESSAGE, 502);
+  }
+
+  if (declaredLengthTooLarge(request.headers.get("content-length"))) return fail(BODY_TOO_LARGE_MESSAGE, 413);
   let raw: unknown;
   try {
-    raw = await request.json();
+    const text = await request.text();
+    if (Buffer.byteLength(text, "utf8") > MAX_BODY_BYTES) return fail(BODY_TOO_LARGE_MESSAGE, 413);
+    raw = JSON.parse(text);
   } catch {
     return fail("Invalid request body", 400);
   }
@@ -59,12 +93,8 @@ export async function POST(request: NextRequest) {
   const { caller } = resolved;
 
   try {
-    // Trust model: the LEFTMOST x-forwarded-for entry is client-controlled, so use the
-    // rightmost (appended by the nearest proxy/server). This app runs locally with no
-    // untrusted proxy; the global visitor bucket caps cost even if IP identity is wrong.
-    const forwarded = request.headers.get("x-forwarded-for")?.split(",").pop()?.trim();
-    const ip = forwarded ? forwarded : null;
-    if (!(await withinLimits(caller.userId, ip))) return fail(RATE_LIMIT_MESSAGE, 429);
+    const tripped = await firstTrippedLimit(rateLimitPlan({ userId: caller.userId, ip }));
+    if (tripped) return tooManyRequests(tripped);
 
     let history: ChatTurn[];
     if (caller.userId) {
