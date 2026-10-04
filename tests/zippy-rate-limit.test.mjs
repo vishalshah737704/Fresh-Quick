@@ -1,35 +1,144 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { rateLimitPlan } from "../lib/zippy/rate-limit.ts";
+import {
+  rateLimitPlan,
+  preAuthPlan,
+  readLimits,
+  retryAfterSeconds,
+  limitMessage,
+  LIMIT_DAY_MESSAGE,
+  LIMIT_BUSY_MESSAGE,
+} from "../lib/zippy/rate-limit.ts";
+import { clientIpFromForwarded, parseTrustedHops } from "../lib/zippy/client-ip.ts";
+import { MAX_BODY_BYTES, declaredLengthTooLarge } from "../lib/zippy/body-cap.ts";
 
-test("signed-in users get per-user minute and day buckets", () => {
-  const plan = rateLimitPlan({ userId: "u1", ip: "1.2.3.4" });
-  assert.deepEqual(plan.map((p) => p.bucket), ["user:u1:min", "user:u1:day"]);
-  assert.deepEqual(plan.map((p) => p.windowSeconds), [60, 86400]);
-  assert.deepEqual(plan.map((p) => p.limit), [10, 60]);
+const NAMES = [
+  "ZIPPY_LIMIT_USER_PER_MIN", "ZIPPY_LIMIT_USER_PER_DAY", "ZIPPY_LIMIT_VISITOR_PER_MIN",
+  "ZIPPY_LIMIT_VISITOR_PER_DAY", "ZIPPY_LIMIT_GLOBAL_VISITORS_PER_MIN", "ZIPPY_LIMIT_GLOBAL_VISITORS_PER_DAY",
+  "ZIPPY_LIMIT_GLOBAL_USERS_PER_MIN", "ZIPPY_LIMIT_GLOBAL_USERS_PER_DAY", "ZIPPY_LIMIT_ALL_PER_DAY",
+  "ZIPPY_LIMIT_IP_BURST_PER_MIN",
+];
+for (const name of NAMES) delete process.env[name];
+
+test("defaults", () => {
+  assert.deepEqual(readLimits({}), {
+    userPerMin: 10, userPerDay: 60, visitorPerMin: 5, visitorPerDay: 20,
+    globalVisitorsPerMin: 60, globalVisitorsPerDay: 1000, globalUsersPerMin: 120,
+    globalUsersPerDay: 5000, allPerDay: 8000, ipBurstPerMin: 40,
+  });
 });
 
-test("visitors are bucketed by hashed IP with tighter limits; raw IP never stored", () => {
+test("env overrides apply; invalid values fall back to the default", () => {
+  const l = readLimits({ ZIPPY_LIMIT_USER_PER_MIN: "3", ZIPPY_LIMIT_ALL_PER_DAY: " 500 ", ZIPPY_LIMIT_IP_BURST_PER_MIN: "1000000" });
+  assert.equal(l.userPerMin, 3);
+  assert.equal(l.allPerDay, 500);
+  assert.equal(l.ipBurstPerMin, 1000000);
+  for (const bad of ["0", "-1", "abc", "", "1.5", "1000001", "1e3", "NaN"]) {
+    assert.equal(readLimits({ ZIPPY_LIMIT_USER_PER_DAY: bad }).userPerDay, 60, bad);
+  }
+});
+
+test("signed-in plan: identity, then global users, then the overall ceiling", () => {
+  const plan = rateLimitPlan({ userId: "u1", ip: "1.2.3.4" });
+  assert.deepEqual(plan.map((p) => p.bucket), ["user:u1:min", "user:u1:day", "users:all:min", "users:all:day", "all:day"]);
+  assert.deepEqual(plan.map((p) => p.windowSeconds), [60, 86400, 60, 86400, 86400]);
+  assert.deepEqual(plan.map((p) => p.limit), [10, 60, 120, 5000, 8000]);
+  assert.deepEqual(plan.map((p) => p.kind), ["minute", "day", "global", "global", "global"]);
+});
+
+test("visitor plan: hashed IP buckets, global visitors, then the ceiling; raw IP never stored", () => {
   const plan = rateLimitPlan({ userId: null, ip: "1.2.3.4" });
-  assert.equal(plan.length, 4);
+  assert.equal(plan.length, 5);
   for (const p of plan.slice(0, 2)) assert.match(p.bucket, /^ip:[0-9a-f]{16}:(min|day)$/);
   for (const p of plan) assert.ok(!p.bucket.includes("1.2.3.4"));
-  assert.deepEqual(plan.map((p) => p.limit), [5, 20, 60, 1000]);
+  assert.deepEqual(plan.slice(2).map((p) => p.bucket), ["visitors:all:min", "visitors:all:day", "all:day"]);
+  assert.deepEqual(plan.map((p) => p.limit), [5, 20, 60, 1000, 8000]);
+  assert.deepEqual(plan.map((p) => p.kind), ["minute", "day", "global", "global", "global"]);
 });
 
-test("visitors also hit a global backstop independent of IP", () => {
-  for (const ip of ["1.2.3.4", "5.6.7.8", null]) {
-    const plan = rateLimitPlan({ userId: null, ip });
-    assert.deepEqual(plan.slice(2).map((p) => p.bucket), ["visitors:all:min", "visitors:all:day"]);
-    assert.deepEqual(plan.slice(2).map((p) => p.windowSeconds), [60, 86400]);
-    assert.deepEqual(plan.slice(2).map((p) => p.limit), [60, 1000]);
+test("the plan does not repeat the pre-auth burst bucket", () => {
+  for (const plan of [rateLimitPlan({ userId: null, ip: "1.2.3.4" }), rateLimitPlan({ userId: "u", ip: "1.2.3.4" })]) {
+    assert.ok(!plan.some((p) => p.bucket.startsWith("ipburst:")));
   }
-  assert.equal(rateLimitPlan({ userId: "u1", ip: "1.2.3.4" }).length, 2);
 });
 
-test("same IP gives the same bucket; unknown IP shares one strict bucket", () => {
-  const a = rateLimitPlan({ userId: null, ip: "9.9.9.9" })[0].bucket;
-  const b = rateLimitPlan({ userId: null, ip: "9.9.9.9" })[0].bucket;
-  assert.equal(a, b);
+test("null IP shares one strict bucket; same IP gives the same bucket", () => {
   assert.equal(rateLimitPlan({ userId: null, ip: null })[0].bucket, "ip:unknown:min");
+  assert.equal(
+    rateLimitPlan({ userId: null, ip: "9.9.9.9" })[0].bucket,
+    rateLimitPlan({ userId: null, ip: "9.9.9.9" })[0].bucket,
+  );
+  assert.deepEqual(rateLimitPlan({ userId: null, ip: null }).slice(2).map((p) => p.bucket), ["visitors:all:min", "visitors:all:day", "all:day"]);
+});
+
+test("pre-auth plan is one hashed burst bucket", () => {
+  const plan = preAuthPlan("1.2.3.4");
+  assert.equal(plan.length, 1);
+  assert.match(plan[0].bucket, /^ipburst:[0-9a-f]{16}:min$/);
+  assert.equal(plan[0].limit, 40);
+  assert.equal(plan[0].windowSeconds, 60);
+  assert.equal(preAuthPlan(null)[0].bucket, "ipburst:unknown:min");
+});
+
+test("plans read env at call time", () => {
+  process.env.ZIPPY_LIMIT_VISITOR_PER_MIN = "2";
+  try {
+    assert.equal(rateLimitPlan({ userId: null, ip: "1.1.1.1" })[0].limit, 2);
+  } finally {
+    delete process.env.ZIPPY_LIMIT_VISITOR_PER_MIN;
+  }
+  assert.equal(rateLimitPlan({ userId: null, ip: "1.1.1.1" })[0].limit, 5);
+});
+
+test("retryAfterSeconds matches fixed-window arithmetic", () => {
+  assert.equal(retryAfterSeconds(60, 0), 60);
+  assert.equal(retryAfterSeconds(60, 59_999), 1);
+  assert.equal(retryAfterSeconds(60, 60_000), 60);
+  assert.equal(retryAfterSeconds(60, 30_500), 30);
+  assert.equal(retryAfterSeconds(86400, 86_399_000), 1);
+  assert.equal(retryAfterSeconds(86400, 86_400_000), 86400);
+});
+
+test("limit messages by class", () => {
+  assert.equal(limitMessage("minute", 12), "You're asking a little too fast. Please wait 12 seconds and try again.");
+  assert.equal(limitMessage("day", 5), LIMIT_DAY_MESSAGE);
+  assert.equal(limitMessage("global", 5), LIMIT_BUSY_MESSAGE);
+});
+
+test("trusted proxy hops parsing", () => {
+  assert.equal(parseTrustedHops(undefined), 1);
+  assert.equal(parseTrustedHops("0"), 0);
+  assert.equal(parseTrustedHops("2"), 2);
+  assert.equal(parseTrustedHops(" 5 "), 5);
+  for (const bad of ["6", "-1", "x", "", "1.5"]) assert.equal(parseTrustedHops(bad), 1, bad);
+});
+
+test("client IP extraction by trusted hops", () => {
+  const h = "6.6.6.6, 1.2.3.4, 10.0.0.1";
+  assert.equal(clientIpFromForwarded(h, 0), null);
+  assert.equal(clientIpFromForwarded(h, 1), "10.0.0.1");
+  assert.equal(clientIpFromForwarded(h, 2), "1.2.3.4");
+  assert.equal(clientIpFromForwarded(h, 3), "6.6.6.6");
+  assert.equal(clientIpFromForwarded(h, 4), null);
+  assert.equal(clientIpFromForwarded(null, 1), null);
+  assert.equal(clientIpFromForwarded("", 1), null);
+  assert.equal(clientIpFromForwarded("1.2.3.4", 2), null);
+  assert.equal(clientIpFromForwarded("  1.2.3.4  ,   5.6.7.8  ", 1), "5.6.7.8");
+  assert.equal(clientIpFromForwarded("1.2.3.4,", 1), null);
+  assert.equal(clientIpFromForwarded("::1", 1), "::1");
+  assert.equal(clientIpFromForwarded("evil, 2001:db8::1", 1), "2001:db8::1");
+});
+
+test("a spoofed leftmost entry does not change the identified client (hops 1)", () => {
+  assert.equal(clientIpFromForwarded("1.1.1.1, 9.9.9.9", 1), clientIpFromForwarded("2.2.2.2, 9.9.9.9", 1));
+});
+
+test("body cap", () => {
+  assert.equal(MAX_BODY_BYTES, 200_000);
+  assert.equal(declaredLengthTooLarge(null), false);
+  assert.equal(declaredLengthTooLarge("200000"), false);
+  assert.equal(declaredLengthTooLarge("200001"), true);
+  assert.equal(declaredLengthTooLarge(" 999999999 "), true);
+  assert.equal(declaredLengthTooLarge("abc"), false);
+  assert.equal(declaredLengthTooLarge(""), false);
 });
