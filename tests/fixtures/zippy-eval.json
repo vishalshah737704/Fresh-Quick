@@ -46,7 +46,7 @@
   { "question": "I want to order Chinese food from Golden Dragon", "role": "customer", "expectCatalogIncludes": "Golden Dragon" },
   { "question": "which store sells palak paneer", "role": "customer", "expectCatalogIncludes": "Palak Paneer" },
   { "question": "a place for cheese dosa", "role": "customer", "expectCatalogIncludes": "Corner Cheese Dosa" },
-  { "question": "can the assistant tell me where my order is", "role": "customer", "expectTitleIncludes": "Can Zippy see my orders or place an order for me" },
+  { "question": "can zippy look up my order for me", "role": "customer", "expectTitleIncludes": "Can Zippy see my orders or place an order for me" },
   { "question": "does zippy see my address and phone number", "role": "customer", "expectTitleIncludes": "Does Zippy see my orders and personal details" },
   { "question": "can zippy cancel my order for me", "role": "customer", "expectTitleIncludes": "Can Zippy see my orders or place an order for me" }
 ]
