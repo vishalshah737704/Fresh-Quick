@@ -20,6 +20,7 @@ import {
   buildCheckoutCard,
   cartDishIds,
   checkoutAlreadyPrepared,
+  proposalStatus,
   buildClearCartCard,
   buildReorderCard,
   parseProposeAddInput,
@@ -145,7 +146,7 @@ function pushCard(ctx: ToolContext, result: { ok: true; card: ActionCard } | { o
   if (!result.ok) return bad(result.error);
   if (ctx.actions.length >= LIMITS.maxCardsPerReply) return bad("Too many proposals in one reply; ask the user to confirm these first");
   ctx.actions.push(result.card);
-  return ok({ proposal_id: result.card.id, summary: result.card.description, status: "waiting for the customer to tap Confirm" });
+  return ok({ proposal_id: result.card.id, summary: result.card.description, status: proposalStatus(result.card) });
 }
 const actionsAllowed = (ctx: ToolContext) => Boolean(ctx.customerId) && ctx.actionsEnabled;
 

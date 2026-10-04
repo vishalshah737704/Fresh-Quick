@@ -334,7 +334,7 @@ test("actions on: the checkout rule is present in both orders states, never asks
   for (const ordersEnabled of [true, false]) {
     const p = buildSystemPrompt({ brandName: "B", role: "customer", chunks: [], toolsEnabled: true, ordersEnabled, actionsEnabled: true });
     assert.match(p, /propose_go_to_checkout/);
-    assert.match(p, /only opens checkout, where they enter their own details and pay themselves/i);
+    assert.match(p, /only opens checkout[^.]*where they enter their own details and pay themselves/i);
     assert.match(p, /never ask for or repeat recipient details, an address or payment details/i);
     assert.match(p, /cannot place or pay for the order/i);
     assert.doesNotMatch(p, /for checkout, explain the cart and checkout pages/i);
@@ -353,5 +353,13 @@ test("actions on: no rule tells the model to send checkout away while another sa
       assert.match(p, /checkout card/i);
       assert.match(p, /requests to check out with the checkout card, not from the knowledge/i);
     }
+  }
+});
+
+test("actions on: checkout rule says tap the Go to checkout button, never Confirm, while cart cards still say Confirm", () => {
+  for (const ordersEnabled of [true, false]) {
+    const p = buildSystemPrompt({ brandName: "B", role: "customer", chunks: [], toolsEnabled: true, ordersEnabled, actionsEnabled: true });
+    assert.match(p, /tap the "Go to checkout" button on the card \(never say Confirm for this card\)/);
+    assert.match(p, /tap Confirm \(cart cards only/);
   }
 });

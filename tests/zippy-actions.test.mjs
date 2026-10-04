@@ -4,7 +4,7 @@ import { sanitizeText, toPaise, formatRupees } from "../lib/zippy/catalog.ts";
 import { MAX_LINE_QUANTITY, MAX_CARDS_PER_REPLY } from "../lib/zippy/action-types.ts";
 import {
   parseProposeAddInput, parseProposeReorderInput, parseProposeCartChangeInput, parseProposeClearInput,
-  selectOptions, buildAddItemCard, buildReorderCard, buildCartChangeCard, buildClearCartCard, buildCheckoutCard, cartDishIds, menuItemIdOfLine, checkoutAlreadyPrepared,
+  selectOptions, buildAddItemCard, buildReorderCard, buildCartChangeCard, buildClearCartCard, buildCheckoutCard, cartDishIds, menuItemIdOfLine, checkoutAlreadyPrepared, proposalStatus,
   shapeCartForModel, ACTION_TOOLS, ACTION_TOOL_NAMES, selectActionTools, LIMITS,
 } from "../lib/zippy/actions.ts";
 
@@ -373,4 +373,12 @@ test("concurrent checkout proposals: re-checking after the await lets only the f
   assert.deepEqual(await Promise.all([run(), run()]), ["pushed", "refused"]);
   assert.equal(actions.length, 1);
   assert.equal(checkoutAlreadyPrepared([{ kind: "clear_cart" }]), false);
+});
+
+test("proposal status: checkout card names its own button, cart cards still say Confirm", () => {
+  const checkout = buildCheckoutCard(checkoutCart(), liveProducts(), deps).card;
+  assert.match(proposalStatus(checkout), /Go to checkout/);
+  assert.doesNotMatch(proposalStatus(checkout), /confirm/i);
+  assert.equal(proposalStatus(buildClearCartCard(checkoutCart(), deps).card), "waiting for the customer to tap Confirm");
+  assert.equal(/confirm/i.test(checkout.description + checkout.title), false);
 });
