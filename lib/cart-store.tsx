@@ -1,9 +1,10 @@
 "use client";
 
-import { createContext, useContext, useEffect, useRef, useState, ReactNode } from "react";
+import { createContext, useContext, useEffect, useRef, useState, useSyncExternalStore, ReactNode } from "react";
 import { supabase } from "@/lib/supabase";
 import { useSession } from "@/lib/auth";
 import { buildLineId, mergeCartLines } from "./cart-line";
+import { createBridge } from "./cart-bridge";
 
 export type SelectedOption = {
   groupId: string;
@@ -63,6 +64,9 @@ type CartContextValue = {
 };
 
 const CartContext = createContext<CartContextValue | null>(null);
+
+// Mirror of the provider's live value for UI outside the provider (root-layout Zippy widget).
+const cartBridge = createBridge<CartContextValue>();
 
 export { buildLineId };
 
@@ -299,28 +303,34 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const subtotal = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
 
+  const contextValue: CartContextValue = {
+    storeId,
+    storeName,
+    items,
+    subtotal,
+    orderNote,
+    pendingConflict,
+    checkoutHandler,
+    addItem,
+    addItems,
+    updateQuantity,
+    removeItem,
+    setSpecialInstructions,
+    setOrderNote,
+    clearCart,
+    confirmClearAndAdd,
+    cancelPendingAdd,
+    setCheckoutHandler,
+  };
+
+  // Every render republishes, so readers never see a stale closure.
+  useEffect(() => {
+    cartBridge.set(contextValue);
+  });
+  useEffect(() => () => cartBridge.set(null), []);
+
   return (
-    <CartContext.Provider
-      value={{
-        storeId,
-        storeName,
-        items,
-        subtotal,
-        orderNote,
-        pendingConflict,
-        checkoutHandler,
-        addItem,
-        addItems,
-        updateQuantity,
-        removeItem,
-        setSpecialInstructions,
-        setOrderNote,
-        clearCart,
-        confirmClearAndAdd,
-        cancelPendingAdd,
-        setCheckoutHandler,
-      }}
-    >
+    <CartContext.Provider value={contextValue}>
       {children}
     </CartContext.Provider>
   );
@@ -332,7 +342,8 @@ export function useCart(): CartContextValue {
   return ctx;
 }
 
-// Null outside CartProvider (the provider only wraps /customer/*), for UI that lives in the root layout.
+// Null when no CartProvider is mounted (it only wraps /customer/*) and on the server / first client
+// render (hydration-safe). Reads the bridge, not context, since callers live in the root layout.
 export function useOptionalCart(): CartContextValue | null {
-  return useContext(CartContext);
+  return useSyncExternalStore(cartBridge.subscribe, cartBridge.get, () => null);
 }

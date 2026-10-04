@@ -7,7 +7,7 @@ import { executeAction } from "@/lib/zippy/action-exec";
 
 type CardState = { status: "idle" } | { status: "done" | "failed"; message: string } | { status: "dismissed" };
 
-// One tap runs one card, once. `cart` is null outside /customer/* (the cart provider is not mounted there).
+// One tap runs one card, once. `cart` comes from the cart bridge (lib/cart-bridge.ts); it is null outside /customer/* because the provider unmounts there.
 export function ActionCards({ cards, cart }: { cards: ActionCard[]; cart: CartApi | null }) {
   const [states, setStates] = useState<Record<string, CardState>>({});
   const executed = useRef<Set<string>>(new Set());
