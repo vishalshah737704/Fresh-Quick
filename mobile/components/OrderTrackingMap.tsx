@@ -44,7 +44,9 @@ function useBriefTracking() {
   return tracking;
 }
 
-function MapBody({ store, destination, partner, final }: {
+const samePoint = (a: TrackPoint | null, b: TrackPoint | null) => a?.lat === b?.lat && a?.lng === b?.lng;
+
+const MapBody = memo(function MapBody({ store, destination, partner, final }: {
   store: TrackPoint | null;
   destination: TrackPoint | null;
   partner: TrackPoint | null;
@@ -126,7 +128,13 @@ function MapBody({ store, destination, partner, final }: {
       )}
     </MapView>
   );
-}
+},
+(prev, next) =>
+  prev.final === next.final &&
+  samePoint(prev.store, next.store) &&
+  samePoint(prev.destination, next.destination) &&
+  samePoint(prev.partner, next.partner)
+);
 
 // A native map failure must never take the order screen down.
 class MapBoundary extends Component<{ fallback: ReactNode; children: ReactNode }, { failed: boolean }> {
@@ -142,7 +150,7 @@ class MapBoundary extends Component<{ fallback: ReactNode; children: ReactNode }
   }
 }
 
-function OrderTrackingMapInner({ status, store, destination, partnerLocation }: Props) {
+export function OrderTrackingMap({ status, store, destination, partnerLocation }: Props) {
   const partnerPoint = toTrackPoint(partnerLocation?.current_lat, partnerLocation?.current_lng);
   const view = trackingView({ status, store, destination, partner: partnerPoint });
   const first = view.store ?? view.destination ?? view.partner;
@@ -179,6 +187,11 @@ function OrderTrackingMapInner({ status, store, destination, partnerLocation }: 
             address ·{" "}
             <Text style={{ color: BRAND.colors.ink, fontFamily: BRAND.fonts.bodySemiBold }}>D</Text> Delivery partner
           </Text>
+          {(view.partner || view.final) && (
+            <Text style={styles.small}>
+              The dashed line is a straight line and the distance is approximate, not the road route.
+            </Text>
+          )}
         </MapBoundary>
       )}
       <View style={styles.texts}>
@@ -192,28 +205,10 @@ function OrderTrackingMapInner({ status, store, destination, partnerLocation }: 
         {view.final && <Text style={styles.value}>Final route from the store to your address.</Text>}
         {!first && <Text style={styles.value}>Location details are not available for this order.</Text>}
       </View>
-      {(view.partner || view.final) && (
-        <Text style={styles.small}>
-          The dashed line is a straight line and the distance is approximate, not the road route.
-        </Text>
-      )}
       {coords && !first && <Text style={styles.small}>Partner coordinates: {coords}</Text>}
     </View>
   );
 }
-
-const samePoint = (a: TrackPoint | null, b: TrackPoint | null) => a?.lat === b?.lat && a?.lng === b?.lng;
-
-// The order is re-fetched every 3 s and yields new objects; re-render only when a
-// coordinate, the status or the ping time actually changes.
-export const OrderTrackingMap = memo(OrderTrackingMapInner, (prev, next) =>
-  prev.status === next.status &&
-  samePoint(prev.store, next.store) &&
-  samePoint(prev.destination, next.destination) &&
-  prev.partnerLocation?.current_lat === next.partnerLocation?.current_lat &&
-  prev.partnerLocation?.current_lng === next.partnerLocation?.current_lng &&
-  prev.partnerLocation?.last_ping_at === next.partnerLocation?.last_ping_at
-);
 
 const styles = StyleSheet.create({
   card: {
