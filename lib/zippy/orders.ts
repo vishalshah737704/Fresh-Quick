@@ -184,3 +184,46 @@ export function selectTools(
 ): Anthropic.Tool[] {
   return ctx.customerId && ctx.ordersEnabled ? [...base, ...ORDER_TOOLS] : base;
 }
+
+type OrdersQuery = {
+  select(columns: string): OrdersQuery;
+  eq(column: string, value: string): OrdersQuery;
+  in(column: string, values: readonly string[]): OrdersQuery;
+  order(column: string, options: { ascending: boolean }): OrdersQuery;
+  limit(count: number): OrdersQuery;
+} & PromiseLike<{ data: unknown; error: { message: string } | null }>;
+
+export type OrdersDb = { from(table: string): OrdersQuery };
+
+// Every query starts from `customer_id = <verified id>`; the id comes from the session, never from the model.
+export function createOrdersReader(config: { db: OrdersDb; listSelect: string; detailSelect: string; deps: OrderShapeDeps }) {
+  const { db, listSelect, detailSelect, deps } = config;
+  const requireCustomer = (customerId: string | null | undefined): string => {
+    if (!customerId) throw new Error("customerId is required");
+    return customerId;
+  };
+  return {
+    async listMyOrders(customerId: string, input: ListMyOrdersInput): Promise<{ orders: ShapedOrderListRow[]; note?: string }> {
+      const owner = requireCustomer(customerId);
+      let query = db.from("orders").select(listSelect).eq("customer_id", owner);
+      if (input.status_group === "active") query = query.in("status", ACTIVE_STATUSES);
+      if (input.status_group === "past") query = query.in("status", PAST_STATUSES);
+      const { data, error } = await query.order("placed_at", { ascending: false }).limit(input.limit);
+      if (error) throw new Error(`list_my_orders failed: ${error.message}`);
+      const rows = (data ?? []) as RawOrderListRow[];
+      if (rows.length === 0) {
+        return { orders: [], note: input.status_group === "any" ? "This customer has no orders yet" : `This customer has no ${input.status_group} orders` };
+      }
+      return { orders: rows.map((row) => shapeOrderListRow(row, deps)) };
+    },
+    async getMyOrder(customerId: string, input: GetMyOrderInput): Promise<ShapedOrderDetail | { error: string }> {
+      const owner = requireCustomer(customerId);
+      let query = db.from("orders").select(detailSelect).eq("customer_id", owner);
+      query = input.order_id === "latest" ? query.order("placed_at", { ascending: false }) : query.eq("id", input.order_id);
+      const { data, error } = await query.limit(1);
+      if (error) throw new Error(`get_my_order failed: ${error.message}`);
+      const row = ((data ?? []) as RawOrderDetail[])[0];
+      return row ? shapeOrderDetail(row, deps) : { error: "not found" };
+    },
+  };
+}

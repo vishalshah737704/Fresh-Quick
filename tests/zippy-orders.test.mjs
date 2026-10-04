@@ -4,7 +4,7 @@ import { sanitizeText, toPaise, formatRupees } from "../lib/zippy/catalog.ts";
 import { STATUS_LABEL, ORDER_STATUSES, TERMINAL_STATUSES } from "../lib/order-status.ts";
 import {
   ACTIVE_STATUSES, PAST_STATUSES, MAX_DETAIL_ITEMS, ORDER_TOOLS,
-  parseListMyOrdersInput, parseGetMyOrderInput, shapeOrderListRow, shapeOrderDetail, selectTools,
+  parseListMyOrdersInput, parseGetMyOrderInput, shapeOrderListRow, shapeOrderDetail, selectTools, createOrdersReader,
 } from "../lib/zippy/orders.ts";
 
 const deps = { sanitize: sanitizeText, toPaise, formatRupees, statusLabel: STATUS_LABEL };
@@ -132,4 +132,105 @@ test("tool definitions: two strict tools; only customers with orders enabled get
   assert.deepEqual(selectTools(base, { customerId: "", ordersEnabled: true }), base);
   assert.deepEqual(selectTools(base, { customerId: "c1", ordersEnabled: false }), base);
   assert.deepEqual(selectTools(base, { customerId: "c1", ordersEnabled: true }).map((t) => t.name), ["find_stores", "list_my_orders", "get_my_order"]);
+});
+
+// In-memory stand-in for the Supabase query builder: honours eq / in / order / limit like the real one.
+function fakeDb(tables) {
+  const queries = [];
+  return {
+    queries,
+    from(table) {
+      const state = { table, eq: [], in: [], order: null, limit: null };
+      const builder = {
+        select() { return builder; },
+        eq(column, value) { state.eq.push([column, value]); return builder; },
+        in(column, values) { state.in.push([column, values]); return builder; },
+        order(column, options) { state.order = [column, options]; return builder; },
+        limit(count) { state.limit = count; return builder; },
+        then(resolve, reject) {
+          queries.push(state);
+          let rows = [...tables[table]];
+          for (const [column, value] of state.eq) rows = rows.filter((r) => r[column] === value);
+          for (const [column, values] of state.in) rows = rows.filter((r) => values.includes(r[column]));
+          if (state.order) rows.sort((a, b) => (a[state.order[0]] < b[state.order[0]] ? 1 : -1));
+          if (state.limit !== null) rows = rows.slice(0, state.limit);
+          return Promise.resolve({ data: rows, error: null }).then(resolve, reject);
+        },
+      };
+      return builder;
+    },
+  };
+}
+
+const orderFor = (id, customerId, status, placedAt) => ({
+  ...listRow, ...detailRow, id, customer_id: customerId, status, placed_at: placedAt,
+});
+const A = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+const B = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
+const O1 = "10000000-0000-4000-8000-000000000001";
+const O2 = "10000000-0000-4000-8000-000000000002";
+const O3 = "10000000-0000-4000-8000-000000000003";
+const makeReader = (rows) => {
+  const db = fakeDb({ orders: rows });
+  return { db, reader: createOrdersReader({ db, listSelect: "LIST", detailSelect: "DETAIL", deps }) };
+};
+const rows = () => [
+  orderFor(O1, A, "delivered", "2026-10-01T10:00:00Z"),
+  orderFor(O2, A, "picked_up", "2026-10-02T10:00:00Z"),
+  orderFor(O3, B, "placed", "2026-10-03T10:00:00Z"),
+];
+
+test("list: only the caller's orders, newest first, always filtered by customer_id", async () => {
+  const { db, reader } = makeReader(rows());
+  const out = await reader.listMyOrders(A, { status_group: "any", limit: 5 });
+  assert.deepEqual(out.orders.map((o) => o.order_id), [O2, O1]);
+  assert.deepEqual(db.queries[0].eq, [["customer_id", A]]);
+});
+
+test("list: status groups and limit are applied", async () => {
+  const { reader } = makeReader(rows());
+  assert.deepEqual((await reader.listMyOrders(A, { status_group: "active", limit: 5 })).orders.map((o) => o.order_id), [O2]);
+  assert.deepEqual((await reader.listMyOrders(A, { status_group: "past", limit: 5 })).orders.map((o) => o.order_id), [O1]);
+  assert.equal((await reader.listMyOrders(A, { status_group: "any", limit: 1 })).orders.length, 1);
+});
+
+test("list: no orders gives an explicit note, never invented rows", async () => {
+  const { reader } = makeReader(rows());
+  const none = await reader.listMyOrders("cccccccc-cccc-4ccc-8ccc-cccccccccccc", { status_group: "any", limit: 5 });
+  assert.deepEqual(none, { orders: [], note: "This customer has no orders yet" });
+  const noActive = await makeReader([orderFor(O1, A, "delivered", "2026-10-01T10:00:00Z")]).reader.listMyOrders(A, { status_group: "active", limit: 5 });
+  assert.deepEqual(noActive, { orders: [], note: "This customer has no active orders" });
+});
+
+test("get: a foreign order id and a missing id return the identical 'not found'", async () => {
+  const { reader } = makeReader(rows());
+  const foreign = await reader.getMyOrder(A, { order_id: O3 });
+  const missing = await reader.getMyOrder(A, { order_id: "99999999-9999-4999-8999-999999999999" });
+  assert.deepEqual(foreign, { error: "not found" });
+  assert.deepEqual(missing, foreign);
+});
+
+test("get: own order by id and 'latest' (including a cancelled latest order)", async () => {
+  const { reader } = makeReader([...rows(), orderFor("10000000-0000-4000-8000-000000000004", A, "cancelled", "2026-10-04T10:00:00Z")]);
+  assert.equal((await reader.getMyOrder(A, { order_id: O1 })).order_id, O1);
+  const latest = await reader.getMyOrder(A, { order_id: "latest" });
+  assert.equal(latest.order_id, "10000000-0000-4000-8000-000000000004");
+  assert.equal(latest.status_label, "Cancelled");
+  assert.deepEqual(await reader.getMyOrder("cccccccc-cccc-4ccc-8ccc-cccccccccccc", { order_id: "latest" }), { error: "not found" });
+});
+
+test("no identity, no query: empty or null customerId throws before touching the database", async () => {
+  const { db, reader } = makeReader(rows());
+  for (const bad of ["", null, undefined]) {
+    await assert.rejects(reader.listMyOrders(bad, { status_group: "any", limit: 5 }), /customerId is required/);
+    await assert.rejects(reader.getMyOrder(bad, { order_id: "latest" }), /customerId is required/);
+  }
+  assert.equal(db.queries.length, 0);
+});
+
+test("a database error is thrown (the tool loop reports it generically and logs it)", async () => {
+  const db = { from: () => { const b = { select: () => b, eq: () => b, in: () => b, order: () => b, limit: () => b, then: (res) => Promise.resolve({ data: null, error: { message: "boom" } }).then(res) }; return b; } };
+  const reader = createOrdersReader({ db, listSelect: "L", detailSelect: "D", deps });
+  await assert.rejects(reader.listMyOrders(A, { status_group: "any", limit: 5 }), /list_my_orders failed: boom/);
+  await assert.rejects(reader.getMyOrder(A, { order_id: "latest" }), /get_my_order failed: boom/);
 });
