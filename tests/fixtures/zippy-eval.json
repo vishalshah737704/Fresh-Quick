@@ -52,5 +52,5 @@
   { "question": "can zippy put a dosa in my basket for me", "role": "customer", "expectTitleIncludes": "Can Zippy add things to my cart" },
   { "question": "will zippy order and pay for me automatically", "role": "customer", "expectTitleIncludes": "Can Zippy add things to my cart" },
   { "question": "can zippy check out for me", "role": "customer", "expectTitleIncludes": "Can Zippy add things to my cart?" },
-  { "question": "take me to checkout", "role": "customer", "expectTitleIncludes": "Can Zippy add things to my cart?" }
+  { "question": "can zippy open the checkout page for me", "role": "customer", "expectTitleIncludes": "Can Zippy add things to my cart?" }
 ]
