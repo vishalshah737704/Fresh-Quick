@@ -89,6 +89,12 @@ export function ZippyFab() {
     return requestToken.current;
   }, []);
 
+  // Unmount: drop the token (no setState after) and abort the request, like web.
+  useEffect(() => () => {
+    requestToken.current += 1;
+    abortRef.current?.abort();
+  }, []);
+
   const reset = useCallback(() => {
     invalidatePending();
     setMessages([]);
@@ -131,6 +137,8 @@ export function ZippyFab() {
     const controller = new AbortController();
     abortRef.current = controller;
     let streamId: number | null = null;
+    // Snapshot what the user saw when asking, before the permission prompt can take seconds; confirm re-checks the live cart (CART_CHANGED).
+    const cartSnapshot = snapshotCart({ ...cart, orderNote: cart.orderNote });
     try {
       const location = await getChatLocation(question);
       if (token !== requestToken.current) return;
@@ -139,7 +147,7 @@ export function ZippyFab() {
         conversationId,
         history,
         location,
-        cart: snapshotCart({ ...cart, orderNote: cart.orderNote }),
+        cart: cartSnapshot,
         signal: controller.signal,
         onDelta: (delta) => {
           if (token !== requestToken.current) return;
