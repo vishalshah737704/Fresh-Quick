@@ -28,6 +28,7 @@ import {
   sendChat,
   type ConversationSummary,
 } from "../lib/zippy";
+import { getChatLocation } from "../lib/zippy-location";
 
 // Local view of a turn: isError marks a failure notice shown in the sheet,
 // which must never be sent back to the server as conversation history.
@@ -102,7 +103,8 @@ export function ZippyFab() {
     setInput("");
     setBusy(true);
     try {
-      const result = await sendChat({ message: question, conversationId, history });
+      const location = await getChatLocation(question);
+      const result = await sendChat({ message: question, conversationId, history, location });
       if (token !== requestToken.current) return;
       setMessages((current) => [...current, { role: "assistant", content: result.reply }]);
       if (result.conversationId) setConversationId(result.conversationId);

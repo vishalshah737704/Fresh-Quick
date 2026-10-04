@@ -14,7 +14,7 @@ Yes, they are looked up when you ask. Stores can change a price, mark a dish una
 
 ## Can Zippy find the store nearest to me?
 
-On the website, yes. Zippy uses the delivery location you chose (or the default location if you have not chosen one) to rank stores by distance. Zippy only uses the location for that question and does not save it with your chat. The mobile app does not have a delivery location yet, so Zippy there cannot sort stores by distance. You can still ask about ratings, delivery fees and open stores in the mobile app.
+Yes. On the website, Zippy uses the delivery location you chose (or the default location if you have not chosen one) to rank stores by distance. In the mobile app, Zippy uses your phone's location: the first time you ask about nearby stores, your phone asks permission to share it while the app is open. If you say no, Zippy cannot sort by distance but can still answer about ratings, delivery fees and open stores. Zippy only uses the location for that question and does not save it with your chat.
 
 ## Can Zippy see my orders or place an order for me?
 

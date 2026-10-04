@@ -80,7 +80,7 @@ export async function findStores(
     return {
       stores: [],
       truncated: false,
-      note: "No delivery location was shared, so stores cannot be sorted by distance. On the website the user can choose a delivery location on the Home page; the mobile app cannot sort by distance yet. Offer another sort such as rating or delivery fee.",
+      note: "No delivery location was shared, so stores cannot be sorted by distance. On the website the user can choose a delivery location on the Home page; in the mobile app the user must allow location access (they are asked when they ask about nearby stores) and ask again. Offer another sort such as rating or delivery fee.",
     };
   }
   let query = supabaseServer.from("stores").select(STORE_COLUMNS).eq("is_suspended", false);

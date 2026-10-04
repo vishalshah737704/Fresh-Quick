@@ -61,6 +61,7 @@ export async function sendChat(args: {
   message: string;
   conversationId: string | null;
   history: ChatMessage[];
+  location?: { lat: number; lng: number } | null;
 }): Promise<{ reply: string; conversationId: string | null }> {
   return request("/api/zippy/chat", {
     method: "POST",
