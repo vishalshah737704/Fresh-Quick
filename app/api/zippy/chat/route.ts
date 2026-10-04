@@ -101,7 +101,7 @@ export async function POST(request: NextRequest) {
         console.error("zippy: catalog retrieval failed", error);
       }
     }
-    const system = buildSystemPrompt({ brandName: BRAND.name, role: caller.role, chunks, catalogBlock, toolsEnabled });
+    const system = buildSystemPrompt({ brandName: BRAND.name, role: caller.role, chunks, catalogBlock, toolsEnabled, ordersEnabled });
     const messages: ChatTurn[] = [...history, { role: "user", content: message }];
     const sourceIds = chunks.map((c) => c.id);
     const savedConversationId = conversationId;
