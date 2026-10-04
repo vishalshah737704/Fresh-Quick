@@ -122,8 +122,16 @@ function storeProblem(product: ProductForCart, cleanStoreName: string): string |
   return null;
 }
 
+// Adding from a different store than the cart replaces the cart on Confirm (spec), so the card must say so.
+export function replaceNotice(cart: CartSnapshot | null | undefined, cardStoreId: string, deps: Pick<ActionShapeDeps, "sanitize">): string {
+  if (!cart || cart.items.length === 0 || cart.storeId === null || cart.storeId === cardStoreId) return "";
+  const count = cart.items.reduce((sum, line) => sum + line.quantity, 0);
+  const current = cart.storeName === null ? "" : deps.sanitize(cart.storeName, 80);
+  return `. Confirming replaces the ${count} ${count === 1 ? "item" : "items"}${current === "" ? "" : ` from ${current}`} in your cart.`;
+}
+
 export function buildAddItemCard(
-  args: { product: ProductForCart; quantity: number; optionIds: string[]; note: string | undefined },
+  args: { product: ProductForCart; quantity: number; optionIds: string[]; note: string | undefined; cart?: CartSnapshot | null },
   deps: ActionShapeDeps
 ): { ok: true; card: ActionCard } | { ok: false; error: string } {
   const { product, quantity, optionIds, note } = args;
@@ -151,7 +159,7 @@ export function buildAddItemCard(
       kind: "add_item",
       id: deps.newId(),
       title: "Add to cart",
-      description: `Add ${quantity} × ${name}${optionText(chosen.selected)} from ${storeName}, ${deps.formatRupees(totalPaise)}`,
+      description: `Add ${quantity} × ${name}${optionText(chosen.selected)} from ${storeName}, ${deps.formatRupees(totalPaise)}${replaceNotice(args.cart, product.storeId, deps)}`,
       storeId: product.storeId,
       storeName,
       item,
@@ -168,7 +176,8 @@ export type ReorderSource = {
 export function buildReorderCard(
   source: ReorderSource,
   products: Map<string, ProductForCart>,
-  deps: ActionShapeDeps
+  deps: ActionShapeDeps,
+  cart?: CartSnapshot | null
 ): { ok: true; card: ActionCard } | { ok: false; error: string } {
   const items: CartLineData[] = [];
   const skipped: { name: string; reason: string }[] = [];
@@ -220,7 +229,7 @@ export function buildReorderCard(
       kind: "reorder",
       id: deps.newId(),
       title: "Reorder",
-      description: `Add ${count} ${count === 1 ? "item" : "items"} from ${storeName}, ${deps.formatRupees(totalPaise)}${skippedText}`,
+      description: `Add ${count} ${count === 1 ? "item" : "items"} from ${storeName}, ${deps.formatRupees(totalPaise)}${skippedText}${replaceNotice(cart, source.store_id, deps)}`,
       storeId: source.store_id,
       storeName,
       items,

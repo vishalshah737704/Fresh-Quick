@@ -226,3 +226,30 @@ test("dirty reorder note is sanitized in cart line", () => {
   assert.equal(out.card.items[0].specialInstructions, "no onions");
   assert.equal(/[<>]/.test(out.card.items[0].specialInstructions), false);
 });
+
+const cartOf = (storeId, storeName, quantities) => ({
+  storeId, storeName,
+  items: quantities.map((quantity, i) => ({ lineId: `l${i}`, name: "X", quantity, price: 10, options: [] })),
+});
+
+test("add card discloses cart replacement only for a different store with a non-empty cart", () => {
+  const ok = { quantity: 1, optionIds: ["o2"], note: undefined };
+  const other = buildAddItemCard({ product: product(), ...ok, cart: cartOf("s2", "Pizza <b>Place</b>", [2, 1]) }, deps).card.description;
+  assert.match(other, /Confirming replaces the 3 items from Pizza Place in your cart\.$/);
+  assert.equal(/[<>]/.test(other), false);
+  const one = buildAddItemCard({ product: product(), ...ok, cart: cartOf("s2", "Pizza Place", [1]) }, deps).card.description;
+  assert.match(one, /replaces the 1 item from Pizza Place/);
+  for (const cart of [cartOf("s1", "Dosa Corner", [1]), cartOf(null, null, []), cartOf("s2", "Pizza Place", []), null, undefined]) {
+    const d = buildAddItemCard({ product: product(), ...ok, cart }, deps).card.description;
+    assert.equal(/replaces/i.test(d), false);
+  }
+});
+
+test("reorder card discloses cart replacement only for a different store", () => {
+  const products = new Map([[U1, product()]]);
+  const run = (cart) => buildReorderCard(source([line()]), products, deps, cart).card.description;
+  assert.match(run(cartOf("s2", "Pizza Place", [2])), /Confirming replaces the 2 items from Pizza Place in your cart\.$/);
+  assert.equal(/replaces/i.test(run(cartOf("s1", "Dosa Corner", [2]))), false);
+  assert.equal(/replaces/i.test(run(cartOf(null, null, []))), false);
+  assert.equal(/replaces/i.test(run(null)), false);
+});

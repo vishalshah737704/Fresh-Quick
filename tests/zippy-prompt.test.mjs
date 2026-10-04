@@ -312,3 +312,9 @@ test("orders off + actions on: cart rules apply without order lookups and nothin
     assert.doesNotMatch(p, /or change anything/i);
   }
 });
+
+test("action rules say a different-store add replaces the cart on confirm and never asks to clear", () => {
+  const prompt = buildSystemPrompt({ brandName: "B", role: "customer", chunks: [], ordersEnabled: true, actionsEnabled: true });
+  assert.match(prompt, /confirming the card replaces the current cart/);
+  assert.match(prompt, /Do not ask the customer to clear the cart first and never say the app will ask/);
+});

@@ -205,7 +205,7 @@ export async function runTool(
       const products = await loadProductsForCart([parsed.value.product_id]);
       const product = products.get(parsed.value.product_id);
       if (!product) return bad("dish not found");
-      return pushCard(ctx, buildAddItemCard({ product, quantity: parsed.value.quantity, optionIds: parsed.value.option_ids, note: parsed.value.note }, actionDeps));
+      return pushCard(ctx, buildAddItemCard({ product, quantity: parsed.value.quantity, optionIds: parsed.value.option_ids, note: parsed.value.note, cart: ctx.cart }, actionDeps));
     }
     case "propose_reorder": {
       if (!actionsAllowed(ctx) || !ctx.customerId) return bad("Cart actions are only available to a signed-in customer");
@@ -214,7 +214,7 @@ export async function runTool(
       const source = await ordersReader.getReorderSource(ctx.customerId, parsed.value);
       if ("error" in source) return bad(source.error);
       const products = await loadProductsForCart(source.lines.map((line) => line.product_id));
-      return pushCard(ctx, buildReorderCard(source, products, actionDeps));
+      return pushCard(ctx, buildReorderCard(source, products, actionDeps, ctx.cart));
     }
     case "propose_cart_change": {
       if (!actionsAllowed(ctx)) return bad("Cart actions are only available to a signed-in customer");
