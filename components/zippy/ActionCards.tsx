@@ -8,7 +8,7 @@ import { executeAction } from "@/lib/zippy/action-exec";
 
 // One tap runs one card, once. `cart` comes from the cart bridge (lib/cart-bridge.ts); it is null outside /customer/* because the provider unmounts there.
 // `states` and `executed` live in the widget (not here) so closing the chat, which unmounts this list, never makes a done card tappable again.
-// A thrown confirm is the only retryable failure; a failed RESULT (e.g. "Your cart changed") stays final text.
+// A thrown confirm is the only retryable failure (state.retryable); a failed RESULT (e.g. "Your cart changed") stays final text.
 const RETRY_MESSAGE = "Something went wrong, try again.";
 
 export function ActionCards({
@@ -31,8 +31,9 @@ export function ActionCards({
   const confirm = (card: ActionCard, isRetry = false) => {
     const isCheckout = card.kind === "go_to_checkout";
     if (!cart && !isCheckout) return;
-    // A retry is only offered on the thrown-error state, so it may pass the guards that block a second run.
-    if (!isRetry && (executed.current.has(card.id) || (states[card.id] && states[card.id].status !== "idle"))) return;
+    // A retry is only offered on the thrown-error state (its id was released in the catch); a double tap stops here too.
+    if (executed.current.has(card.id)) return;
+    if (!isRetry && states[card.id] && states[card.id].status !== "idle") return;
     executed.current.add(card.id);
     try {
       // Checkout is navigation only: with no cart provider (outside /customer) the store check is skipped.
@@ -50,14 +51,11 @@ export function ActionCards({
       }
       setStates((current) => ({ ...current, [card.id]: { status: result.ok ? "done" : "failed", message: result.message } }));
     } catch {
-      setStates((current) => ({ ...current, [card.id]: { status: "failed", message: RETRY_MESSAGE } }));
+      executed.current.delete(card.id);
+      setStates((current) => ({ ...current, [card.id]: { status: "failed", message: RETRY_MESSAGE, retryable: true } }));
     }
   };
-  // Releases the executed-id guard and the failed state, then runs the same confirm again.
-  const retry = (card: ActionCard) => {
-    executed.current.delete(card.id);
-    confirm(card, true);
-  };
+  const retry = (card: ActionCard) => confirm(card, true);
   const dismiss = (card: ActionCard) => setStates((current) => ({ ...current, [card.id]: { status: "dismissed" } }));
 
   return (
@@ -95,7 +93,7 @@ export function ActionCards({
             ) : (
               <div role="status" className="mt-2">
                 <p className={`text-sm ${state.status === "done" ? "text-brand-accent-text-safe" : "text-brand-danger-text-safe"}`}>{state.message}</p>
-                {state.status === "failed" && state.message === RETRY_MESSAGE && (
+                {state.status === "failed" && state.retryable === true && (cart || card.kind === "go_to_checkout") && (
                   <button
                     type="button"
                     onClick={() => retry(card)}

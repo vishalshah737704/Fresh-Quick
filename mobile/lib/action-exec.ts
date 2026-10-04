@@ -48,6 +48,8 @@ export function executeAction(card: ActionCard, cart: CartApi): { ok: boolean; m
     case "set_order_note": {
       // The card was built for a non-empty cart of one store; a note on a different or empty cart would be a surprise.
       if (cart.items.length === 0 || cart.storeId === null || cart.storeId !== card.cartStoreId) return { ok: false, message: CART_CHANGED_MESSAGE };
+      // The note the card was built from must still be the live note, or a note typed since would be overwritten.
+      if ((cart.orderNote ?? "").slice(0, 500) !== card.expectedNote) return { ok: false, message: CART_CHANGED_MESSAGE };
       cart.setOrderNote(card.text);
       return { ok: true, message: card.text === "" ? "Order note cleared." : "Order note saved." };
     }

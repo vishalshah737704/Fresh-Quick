@@ -16,6 +16,8 @@ export const BRAND = {
     ink: "#0B1D3A",
     inkMuted: "#6B7280",
     danger: "#E0524D",
+    // Darker danger for error TEXT on white (#E0524D is ~3.8:1, below AA); matches --color-brand-danger-text-safe.
+    dangerTextSafe: "#B3302B",
     primaryTint: "#FFF4E8",
     accentTint: "#EAF7EE",
     inkTint: "#E8ECF4",

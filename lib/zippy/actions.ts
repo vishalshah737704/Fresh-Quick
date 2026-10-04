@@ -15,7 +15,7 @@ export const NO_CART_VISIBLE_ERROR = "I can't see your cart on this page; the cu
 // Duplicates MAX_SNAPSHOT_LINES in action-types.ts (a test asserts they are equal).
 const SNAPSHOT_LINE_LIMIT = 50;
 
-export const LIMITS = { maxLineQuantity: 20, maxCardsPerReply: 3, maxOptionIds: 20, maxNoteChars: 200, maxLineIdChars: 38 + 37 * 20, maxDescriptionChars: 900, maxListedReorderItems: 5, maxNoteShown: 60, maxOrderNoteChars: 500, maxCurrentNoteShown: 80, maxNameChars: 80 } as const;
+export const LIMITS = { maxLineQuantity: 20, maxCardsPerReply: 3, maxOptionIds: 20, maxNoteChars: 200, maxLineIdChars: 38 + 37 * 20, maxDescriptionChars: 900, maxListedReorderItems: 5, maxListedSkipped: 3, maxNoteShown: 60, maxOrderNoteChars: 500, maxCurrentNoteShown: 80, maxNameChars: 80 } as const;
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const asObject = (raw: unknown): Record<string, unknown> | null =>
@@ -181,13 +181,18 @@ export function buildAddItemCard(
     specialInstructions: cleanNote === "" ? null : cleanNote,
   };
   const totalPaise = unitPaise(product, chosen.selected, deps) * quantity;
+  const addText = (options: string) =>
+    `Add ${quantity} × ${name}${options} from ${storeName}, ${deps.formatRupees(totalPaise)}${cleanNote === "" ? "" : `; note: "${cleanNote.replace(/"/g, "'")}"`}${replaceNotice(args.cart, product.storeId, deps)}`;
+  // Many long option names can push the text past the cap; then say how many options instead of listing them.
+  const full = addText(optionText(chosen.selected, deps));
+  const description = full.length > LIMITS.maxDescriptionChars ? addText(` (${chosen.selected.length} options)`) : full;
   return {
     ok: true,
     card: {
       kind: "add_item",
       id: deps.newId(),
       title: "Add to cart",
-      description: `Add ${quantity} × ${name}${optionText(chosen.selected, deps)} from ${storeName}, ${deps.formatRupees(totalPaise)}${cleanNote === "" ? "" : `; note: "${cleanNote.replace(/"/g, "'")}"`}${replaceNotice(args.cart, product.storeId, deps)}`,
+      description,
       storeId: product.storeId,
       cartStoreId: cartStoreIdOf(args.cart),
       storeName,
@@ -261,21 +266,30 @@ export function buildReorderCard(
   const count = items.length;
   const itemText = (line: CartLineData) =>
     `${line.quantity} × ${line.name}${optionText(line.selectedOptions, deps)}${line.specialInstructions === null ? "" : noteText(line.specialInstructions, LIMITS.maxNoteShown)}`;
-  const skippedText = skipped.length > 0 ? `; skipped ${skipped.map((s) => `${s.name} (${s.reason})`).join(", ")}` : "";
-  const describe = (listed: number) => {
+  // Long skipped lists are capped too, so the description cap holds however many lines were skipped.
+  const skippedText = (shown: number) => {
+    if (skipped.length === 0) return "";
+    if (shown === 0) return `; skipped ${skipped.length} ${skipped.length === 1 ? "item" : "items"}`;
+    const names = skipped.slice(0, shown).map((s) => `${s.name} (${s.reason})`).join(", ");
+    const more = skipped.length - shown;
+    return `; skipped ${names}${more > 0 ? ` and ${more} more` : ""}`;
+  };
+  const describe = (listed: number, shownSkipped: number) => {
     const more = count - listed;
     const list = listed === 0 ? "items not listed to fit" : items.slice(0, listed).map(itemText).join(", ") + (more > 0 ? ` and ${more} more` : "");
-    return `Add ${count} ${count === 1 ? "item" : "items"} from ${storeName}: ${list}, ${deps.formatRupees(totalPaise)}${skippedText}${replaceNotice(cart, source.store_id, deps)}`;
+    return `Add ${count} ${count === 1 ? "item" : "items"} from ${storeName}: ${list}, ${deps.formatRupees(totalPaise)}${skippedText(shownSkipped)}${replaceNotice(cart, source.store_id, deps)}`;
   };
   let listed = Math.min(count, LIMITS.maxListedReorderItems);
-  while (listed > 0 && describe(listed).length > LIMITS.maxDescriptionChars) listed -= 1;
+  let shownSkipped = Math.min(skipped.length, LIMITS.maxListedSkipped);
+  while (listed > 0 && describe(listed, shownSkipped).length > LIMITS.maxDescriptionChars) listed -= 1;
+  while (shownSkipped > 0 && describe(listed, shownSkipped).length > LIMITS.maxDescriptionChars) shownSkipped -= 1;
   return {
     ok: true,
     card: {
       kind: "reorder",
       id: deps.newId(),
       title: "Reorder",
-      description: describe(listed),
+      description: describe(listed, shownSkipped),
       storeId: source.store_id,
       cartStoreId: cartStoreIdOf(cart),
       storeName,
@@ -323,6 +337,8 @@ export function buildClearCartCard(
 }
 
 const quoted = (text: string) => `"${text}"`;
+// Order note only: C1 controls, zero-width and bidi override/isolate characters are invisible on the card but would be saved.
+const INVISIBLE_NOTE_CHARS = /[\u0080-\u009f\u200b-\u200f\u202a-\u202e\u2066-\u2069]/g;
 // Double quotes become single quotes in the saved text itself, so the card's quoted string is exactly what Confirm saves.
 const noteSafe = (text: string) => text.replace(/"/g, "'");
 
@@ -337,11 +353,12 @@ export function buildOrderNoteCard(
   if (snapshot.items.length === 0 || snapshot.storeId === null) return { ok: false, error: "The cart is empty" };
   // The cap passed to sanitize is above any possible length, so it never truncates; the limit is checked below.
   const noLimit = LIMITS.maxOrderNoteChars * 4 + 1;
-  const cleaned = noteSafe(deps.sanitize(input.text, noLimit));
+  const cleaned = noteSafe(deps.sanitize(input.text.replace(INVISIBLE_NOTE_CHARS, ""), noLimit));
   if (cleaned.length > LIMITS.maxOrderNoteChars) {
     return { ok: false, error: `The note is longer than ${LIMITS.maxOrderNoteChars} characters: ask the customer to shorten it` };
   }
-  const current = noteSafe(deps.sanitize(snapshot.orderNote ?? "", LIMITS.maxOrderNoteChars));
+  const rawCurrent = (snapshot.orderNote ?? "").slice(0, LIMITS.maxOrderNoteChars);
+  const current = noteSafe(deps.sanitize(rawCurrent.replace(INVISIBLE_NOTE_CHARS, ""), LIMITS.maxOrderNoteChars));
   const currentShown = current.length > LIMITS.maxCurrentNoteShown ? `${current.slice(0, LIMITS.maxCurrentNoteShown - 1)}…` : current;
   let description: string;
   if (cleaned === "") {
@@ -353,7 +370,7 @@ export function buildOrderNoteCard(
   }
   return {
     ok: true,
-    card: { kind: "set_order_note", id: deps.newId(), title: cleaned === "" ? "Clear order note" : "Order note", description, text: cleaned, cartStoreId: cartStoreIdOf(snapshot) },
+    card: { kind: "set_order_note", id: deps.newId(), title: cleaned === "" ? "Clear order note" : "Order note", description, text: cleaned, cartStoreId: cartStoreIdOf(snapshot), expectedNote: rawCurrent },
   };
 }
 
@@ -409,6 +426,9 @@ export const CHECKOUT_AFTER_CART_ERROR = "Cart cards are still waiting for the c
 export const CART_AFTER_CHECKOUT_ERROR = "A checkout card is already prepared in this reply, so do not change the cart in the same reply; the customer can ask again after checkout.";
 export const cartCardPrepared = (actions: ActionCard[]): boolean => actions.some((card) => card.kind !== "go_to_checkout");
 export const checkoutConflict = (actions: ActionCard[]): string | null => (cartCardPrepared(actions) ? CHECKOUT_AFTER_CART_ERROR : null);
+export const ORDER_NOTE_TWICE_ERROR = "An order note card is already prepared in this reply; the cart has one note, so send only the final text";
+export const orderNoteConflict = (actions: ActionCard[], card: ActionCard): string | null =>
+  card.kind === "set_order_note" && actions.some((existing) => existing.kind === "set_order_note") ? ORDER_NOTE_TWICE_ERROR : null;
 export const cartChangeConflict = (actions: ActionCard[]): string | null => (checkoutAlreadyPrepared(actions) ? CART_AFTER_CHECKOUT_ERROR : null);
 
 // Checked and pushed with no await in between: tool calls of one round run concurrently, so a second checkout card must be refused at push time.

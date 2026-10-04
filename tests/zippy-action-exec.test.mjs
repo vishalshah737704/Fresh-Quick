@@ -8,11 +8,12 @@ import { snapshotCart } from "../lib/zippy/client-cart.ts";
 const read = (p) => readFileSync(new URL(p, import.meta.url), "utf8").replace(/\r\n/g, "\n");
 const item = (menuItemId = "m1", quantity = 2) => ({ menuItemId, name: "Masala Dosa", price: 130, quantity, imageUrl: null, selectedOptions: [], specialInstructions: null });
 
-function fakeCart(storeId = null, lineIds = []) {
+function fakeCart(storeId = null, lineIds = [], orderNote = "") {
   const calls = [];
   return {
     calls,
     storeId,
+    orderNote,
     items: lineIds.map((lineId) => ({ lineId })),
     addItems: (...args) => calls.push(["addItems", ...args]),
     updateQuantity: (...args) => calls.push(["updateQuantity", ...args]),
@@ -130,7 +131,7 @@ test("a card whose replace notice no longer matches the live cart does nothing a
   assert.equal(executeAction({ ...addCard, cartStoreId: "s2" }, still).ok, true);
 });
 
-const noteCard = { kind: "set_order_note", id: "n1", title: "Order note", description: "d", text: "no onions", cartStoreId: "s1" };
+const noteCard = { kind: "set_order_note", id: "n1", title: "Order note", description: "d", text: "no onions", cartStoreId: "s1", expectedNote: "" };
 
 test("set_order_note saves the card text on a matching non-empty cart", () => {
   const cart = fakeCart("s1", ["x"]);
@@ -162,4 +163,24 @@ test("set_order_note failure leaves the cart untouched (no setOrderNote call)", 
   const cart = fakeCart("s2", ["x"]);
   assert.equal(executeAction(noteCard, cart).ok, false);
   assert.equal(cart.calls.some((call) => call[0] === "setOrderNote"), false);
+});
+
+test("set_order_note refuses when the live note differs from the one the card was built from", () => {
+  const replace = { ...noteCard, expectedNote: "no onions" };
+  const edited = fakeCart("s1", ["x"], "typed after the card");
+  assert.deepEqual(executeAction(replace, edited), { ok: false, message: CART_CHANGED_MESSAGE });
+  assert.deepEqual(edited.calls, []);
+  const emptied = fakeCart("s1", ["x"], "");
+  assert.deepEqual(executeAction(replace, emptied), { ok: false, message: CART_CHANGED_MESSAGE });
+  assert.deepEqual(emptied.calls, []);
+  const newNote = fakeCart("s1", ["x"], "something");
+  assert.equal(executeAction(noteCard, newNote).ok, false);
+});
+
+test("set_order_note still works when the live note is unchanged, including a long one (compared at 500)", () => {
+  const same = fakeCart("s1", ["x"], "no onions");
+  assert.equal(executeAction({ ...noteCard, expectedNote: "no onions", text: "new" }, same).ok, true);
+  assert.deepEqual(same.calls, [["setOrderNote", "new"]]);
+  const long = fakeCart("s1", ["x"], "y".repeat(500));
+  assert.equal(executeAction({ ...noteCard, expectedNote: "y".repeat(500) }, long).ok, true);
 });

@@ -277,7 +277,10 @@ test("actions on: prompt says propose only on request, never claim it is done, n
   const p = buildSystemPrompt({ brandName: "B", role: "customer", chunks: [], toolsEnabled: true, ordersEnabled: true, actionsEnabled: true });
   assert.match(p, /get_my_cart/);
   assert.match(p, /propose_add_to_cart/);
-  assert.match(p, /only when the user asked/i);
+  assert.match(p, /only for the changes the user asked for/i);
+  assert.match(p, /adding a dish and a note, may produce more than one card/i);
+  assert.doesNotMatch(p, /one request at a time/i);
+  assert.match(p, /Never propose checkout in the same reply as a cart change/);
   assert.match(p, /never say an action is done/i);
   assert.match(p, /tap confirm/i);
   assert.match(p, /cannot place orders, pay or cancel/i);

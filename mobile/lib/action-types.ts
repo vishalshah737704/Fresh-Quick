@@ -26,7 +26,12 @@ export type CartLineData = {
 };
 
 // Per-card UI state. The chat widget owns it (keyed by card id) so it survives closing and reopening the chat.
-export type CardState = { status: "idle" } | { status: "done" | "failed"; message: string } | { status: "dismissed" };
+// `retryable` marks a failure caused by a thrown error (offer "Try again"); a failed RESULT is final text.
+export type CardState =
+  | { status: "idle" }
+  | { status: "done"; message: string }
+  | { status: "failed"; message: string; retryable?: boolean }
+  | { status: "dismissed" };
 
 export type ActionCard =
   | { kind: "add_item"; id: string; title: string; description: string; storeId: string; storeName: string; cartStoreId: string | null; item: CartLineData }
@@ -44,7 +49,7 @@ export type ActionCard =
   | { kind: "update_quantity"; id: string; title: string; description: string; lineId: string; quantity: number }
   | { kind: "remove_line"; id: string; title: string; description: string; lineId: string }
   | { kind: "clear_cart"; id: string; title: string; description: string }
-  | { kind: "set_order_note"; id: string; title: string; description: string; text: string; cartStoreId: string | null }
+  | { kind: "set_order_note"; id: string; title: string; description: string; text: string; cartStoreId: string | null; expectedNote: string }
   | { kind: "go_to_checkout"; id: string; title: string; description: string; storeId: string; storeName: string; itemCount: number };
 
 // What the client tells the server about its own cart (the cart is client state; mobile's is per-device).
@@ -59,6 +64,7 @@ export type CartSnapshot = {
 export type CartApi = {
   storeId: string | null;
   items: { lineId: string }[];
+  orderNote: string;
   addItems(storeId: string, storeName: string, items: CartLineData[], replace: boolean): void;
   updateQuantity(lineId: string, quantity: number): void;
   removeItem(lineId: string): void;

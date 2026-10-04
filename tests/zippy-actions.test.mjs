@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { sanitizeText, toPaise, formatRupees } from "../lib/zippy/catalog.ts";
 import { MAX_LINE_QUANTITY, MAX_CARDS_PER_REPLY, MAX_SNAPSHOT_LINES } from "../lib/zippy/action-types.ts";
 import {
-  parseProposeAddInput, parseProposeReorderInput, parseProposeCartChangeInput, parseProposeClearInput, parseProposeOrderNoteInput, buildOrderNoteCard,
+  parseProposeAddInput, parseProposeReorderInput, parseProposeCartChangeInput, parseProposeClearInput, parseProposeOrderNoteInput, buildOrderNoteCard, orderNoteConflict, ORDER_NOTE_TWICE_ERROR,
   selectOptions, checkoutConflict, cartChangeConflict, cartCardPrepared, NO_CART_VISIBLE_ERROR, CHECKOUT_AFTER_CART_ERROR, CART_AFTER_CHECKOUT_ERROR, buildAddItemCard, buildReorderCard, buildCartChangeCard, buildClearCartCard, buildCheckoutCard, cartDishIds, menuItemIdOfLine, checkoutAlreadyPrepared, proposalStatus,
   shapeCartForModel, ACTION_TOOLS, ACTION_TOOL_NAMES, selectActionTools, LIMITS, uuidsOnly,
 } from "../lib/zippy/actions.ts";
@@ -449,7 +449,7 @@ test("order note card: set, replace and clear wording, with the sanitised text i
   assert.equal(buildOrderNoteCard(noteSnap(), { text: "   " }, deps).card.description, "Clear your order note");
 });
 
-test("order note card: long text is cut to 500, quotes cannot break out, markup and injection are only quoted text", () => {
+test("order note card: long text is refused (never cut), quotes cannot break out, markup and injection are only quoted text", () => {
   assert.equal(buildOrderNoteCard(noteSnap(), { text: "a".repeat(500) }, deps).card.text, "a".repeat(500));
   const tooLong = buildOrderNoteCard(noteSnap(), { text: "a".repeat(501) }, deps);
   assert.deepEqual(tooLong, { ok: false, error: "The note is longer than 500 characters: ask the customer to shorten it" });
@@ -595,4 +595,67 @@ test("vendor, delivery and admin callers never get action tools, even with actio
   for (const ctx of [{ customerId: null, actionsEnabled: true, ordersEnabled: true }, { customerId: undefined, actionsEnabled: true, ordersEnabled: true }]) {
     assert.deepEqual(selectActionTools(base, ctx), base);
   }
+});
+
+test("order note card: expectedNote is the raw live note (capped at 500), empty when unknown", () => {
+  assert.equal(buildOrderNoteCard(noteSnap({ orderNote: 'old "x"' }), { text: "n" }, deps).card.expectedNote, 'old "x"');
+  assert.equal(buildOrderNoteCard(noteSnap({ orderNote: undefined }), { text: "n" }, deps).card.expectedNote, "");
+  assert.equal(buildOrderNoteCard(noteSnap({ orderNote: "z".repeat(900) }), { text: "n" }, deps).card.expectedNote.length, 500);
+});
+
+test("order note card: invisible control, zero-width and bidi characters are stripped from the text", () => {
+  const sneaky = "no\u200b onions\u202e \u0085 ok\u2066\u2069 \u200f";
+  const out = buildOrderNoteCard(noteSnap({ orderNote: "a\u200bb" }), { text: sneaky }, deps);
+  assert.equal(out.card.text, "no onions ok");
+  assert.equal(out.card.description, 'Replace your order note "ab" with: "no onions ok"');
+  assert.equal(/[\u0080-\u009f\u200b-\u200f\u202a-\u202e\u2066-\u2069]/.test(out.card.text), false);
+});
+
+test("a second order note card in one reply is refused with a clear message", () => {
+  const card = buildOrderNoteCard(noteSnap(), { text: "a" }, deps).card;
+  assert.equal(orderNoteConflict([], card), null);
+  assert.equal(orderNoteConflict([card], card), ORDER_NOTE_TWICE_ERROR);
+  assert.equal(orderNoteConflict([{ kind: "clear_cart" }], card), null);
+  assert.equal(orderNoteConflict([card], { kind: "clear_cart" }), null);
+  assert.match(ORDER_NOTE_TWICE_ERROR, /already prepared/);
+});
+
+test("reorder description stays within the cap with many long skipped names", () => {
+  const long = "N".repeat(200);
+  const lines = Array.from({ length: 30 }, (_, i) => ({ product_id: `missing-${i}`, quantity: 1, note: null, option_ids: [] }));
+  const goodId = U1;
+  const source = { order_id: "o1", store_id: "s1", lines: [{ product_id: goodId, quantity: 1, note: null, option_ids: [] }, ...lines] };
+  const products = new Map([[goodId, product({ name: long, groups: [] })]]);
+  for (let i = 0; i < 30; i += 1) products.set(`missing-${i}`, product({ id: `missing-${i}`, name: long, isAvailable: false }));
+  const out = buildReorderCard(source, products, deps, null);
+  assert.equal(out.ok, true);
+  assert.ok(out.card.description.length <= LIMITS.maxDescriptionChars, String(out.card.description.length));
+  assert.match(out.card.description, /skipped/);
+  assert.match(out.card.description, /more/);
+});
+
+test("add card description stays within the cap with many long options", () => {
+  const options = Array.from({ length: 20 }, (_, i) => ({ id: `o${i}`, name: "O".repeat(80), priceDeltaPaise: 100 }));
+  const p = product({ groups: [{ id: "g", name: "G", minSelect: 0, maxSelect: 20, options }] });
+  const out = buildAddItemCard({ product: p, quantity: 1, optionIds: options.map((o) => o.id), note: "n".repeat(200) }, deps);
+  assert.equal(out.ok, true);
+  assert.ok(out.card.description.length <= LIMITS.maxDescriptionChars);
+  assert.match(out.card.description, /\(20 options\)/);
+});
+
+test("the 500-character order note limit is the same everywhere", async () => {
+  const { MAX_ORDER_NOTE_CHARS } = await import("../lib/zippy/action-types.ts");
+  const { snapshotCart } = await import("../lib/zippy/client-cart.ts");
+  const { parseChatRequest } = await import("../lib/zippy/validate.ts");
+  const { readFileSync } = await import("node:fs");
+  assert.equal(MAX_ORDER_NOTE_CHARS, 500);
+  assert.equal(LIMITS.maxOrderNoteChars, MAX_ORDER_NOTE_CHARS);
+  assert.equal(snapshotCart({ storeId: "s", storeName: "S", items: [], orderNote: "x".repeat(900) }).orderNote.length, MAX_ORDER_NOTE_CHARS);
+  const cart = { storeId: "s", storeName: "S", orderNote: "x".repeat(900), items: [] };
+  assert.equal(parseChatRequest({ message: "hi", cart }).value.cart.orderNote.length, MAX_ORDER_NOTE_CHARS);
+  const exec = readFileSync(new URL("../lib/zippy/action-exec.ts", import.meta.url), "utf8");
+  assert.match(exec, /slice\(0, 500\)/);
+  const route = readFileSync(new URL("../app/api/cart/checkout/route.ts", import.meta.url), "utf8");
+  assert.match(route, /deliveryNote\.length > 500/);
+  assert.match(route, /Delivery note must be 500 characters or fewer/);
 });
