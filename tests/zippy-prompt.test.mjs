@@ -225,3 +225,12 @@ test("tools off keeps the Z1 wording and has no catalog or tool language", () =>
   const withK = buildSystemPrompt({ brandName: "B", role: null, chunks: [match("x", 0.9)], toolsEnabled: false });
   assert.match(withK, /Answer using only the knowledge below/);
 });
+
+test("tools on: huge distances are explained by the user being far away, not by a default location", () => {
+  const p = buildSystemPrompt({ brandName: "B", role: null, chunks: [], toolsEnabled: true });
+  assert.match(p, /far from the stores/i);
+  assert.match(p, /in the mobile app never say or guess that a default location was used/i);
+  assert.match(p, /cannot change the delivery location/i);
+  const off = buildSystemPrompt({ brandName: "B", role: null, chunks: [], toolsEnabled: false });
+  assert.doesNotMatch(off, /default location/i);
+});

@@ -3030,3 +3030,10 @@ plan `docs/superpowers/plans/2026-10-03-ask-zippy-z2.md`. Subagent-driven develo
 - Manuals: example "Which dishes have extra options?" replaced by "What options does the Cheese Dosa have?" in both.
 - Order agreed with Vishal: this branch, then n8n workflow 07 import (I do it, restart authorized), then Z3. Retention stays soft wording; streaming stays deferred.
 - n8n workflow 07 imported + published 2026-10-03 (id `1PATpa02vD2oQhmt`, nightly 03:15 + webhook `foodhub/zippy-catalog-sync`); verified `{total:2999, embedded:0, unchanged:2999}`. Incident: `docker stop n8n` deleted the `--rm` container, n8n was down until Vishal recreated it from the doc's `docker run`; rule added to CLAUDE.md. Leftover scratch dir `n8n/only07/` (untracked) awaits Vishal's OK to delete.
+
+## Zippy distance wording (2026-10-03, branch `zippy-distance-wording`)
+
+- Merged: PR #4 (Z2) and PR #5 (limits + mobile pin), both by regular merge via `gh` (Vishal's browser account `aigeneralisttrainingvishal-arch` has no write access, so it cannot merge). Branches `ask-zippy-z2` and `zippy-limits-and-mobile-pin` and the Z2 worktree deleted; Z2 build ledger copied to `md_version/z2-sdd-ledger/` (git-ignored).
+- Knowledge re-ingest after the mobile-pin wording: `{total:149, embedded:1, unchanged:148, deleted:0}`. Eval re-run: not reported by Vishal.
+- Phone check (iPhone, Vishal in New Jersey, USA): no permission popup (Expo Go already had location from the delivery screen), but Zippy ranked stores by real distance (~12,559 km to the Mumbai seed stores), so the mobile GPS path works. Defect found: Zippy wrongly blamed "the default location" for the huge distances and told him to allow location again. Fix: new prompt rule in `lib/zippy/prompt.ts` (large distance = user is far from the stores; never guess "default location" on mobile; chat cannot change the delivery location) + test; live-verified with an NJ location.
+
