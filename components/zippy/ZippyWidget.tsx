@@ -13,14 +13,18 @@ import {
 import {
   listConversations,
   loadConversation,
-  streamChat,
+  sendChat,
   ZippyError,
   type ChatMessage,
   type ConversationSummary,
 } from "@/lib/zippy/client-api";
 import { resolveLocation } from "@/lib/zippy/client-location";
+import { useOptionalCart } from "@/lib/cart-store";
+import { snapshotCart } from "@/lib/zippy/client-cart";
+import { ActionCards } from "./ActionCards";
+import type { ActionCard } from "@/lib/zippy/action-types";
 
-type LocalMessage = ChatMessage & { isError?: boolean };
+type LocalMessage = ChatMessage & { isError?: boolean; actions?: ActionCard[] };
 
 export function ZippyWidget() {
   const [open, setOpen] = useState(false);
@@ -31,6 +35,7 @@ export function ZippyWidget() {
   const [busy, setBusy] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [conversations, setConversations] = useState<ConversationSummary[]>([]);
+  const cart = useOptionalCart();
   const listRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
   const userIdRef = useRef<string | null | undefined>(undefined);
@@ -106,23 +111,21 @@ export function ZippyWidget() {
       setInput("");
       setBusy(true);
       try {
-        const result = await streamChat({
+        const result = await sendChat({
           message: question,
           conversationId,
           history,
           signal: controller.signal,
           location: resolveLocation((key) => window.localStorage.getItem(key), window.location.pathname),
-          onDelta: (delta) => {
-            if (controller.signal.aborted) return;
-            setMessages((current) => {
-              const copy = [...current];
-              const last = copy[copy.length - 1];
-              copy[copy.length - 1] = { ...last, content: last.content + delta };
-              return copy;
-            });
-          },
+          cart: cart ? snapshotCart(cart) : null,
         });
-        if (!controller.signal.aborted && result.conversationId) setConversationId(result.conversationId);
+        if (controller.signal.aborted) return;
+        setMessages((current) => {
+          const copy = [...current];
+          copy[copy.length - 1] = { role: "assistant", content: result.reply, actions: result.actions };
+          return copy;
+        });
+        if (result.conversationId) setConversationId(result.conversationId);
       } catch (error) {
         if (controller.signal.aborted) return;
         const message = error instanceof ZippyError ? error.message : ZIPPY_ERROR_MESSAGE;
@@ -138,7 +141,7 @@ export function ZippyWidget() {
         }
       }
     },
-    [busy, conversationId, messages]
+    [busy, cart, conversationId, messages]
   );
 
   const openHistory = async () => {
@@ -216,16 +219,18 @@ export function ZippyWidget() {
                   </div>
                 )}
                 {messages.map((m, i) => (
-                  <p
-                    key={i}
-                    className={
-                      m.role === "user"
-                        ? "ml-auto max-w-[85%] whitespace-pre-wrap break-words rounded-2xl bg-brand-ink px-3 py-2 text-sm text-white"
-                        : "max-w-[85%] whitespace-pre-wrap break-words rounded-2xl bg-brand-surface px-3 py-2 text-sm text-brand-ink"
-                    }
-                  >
-                    {m.content || (busy && i === messages.length - 1 ? "…" : "")}
-                  </p>
+                  <div key={i} className="flex flex-col gap-2">
+                    <p
+                      className={
+                        m.role === "user"
+                          ? "ml-auto max-w-[85%] whitespace-pre-wrap break-words rounded-2xl bg-brand-ink px-3 py-2 text-sm text-white"
+                          : "max-w-[85%] whitespace-pre-wrap break-words rounded-2xl bg-brand-surface px-3 py-2 text-sm text-brand-ink"
+                      }
+                    >
+                      {m.content || (busy && i === messages.length - 1 ? "…" : "")}
+                    </p>
+                    {m.role === "assistant" && m.actions && m.actions.length > 0 && <ActionCards cards={m.actions} cart={cart} />}
+                  </div>
                 ))}
               </>
             )}
