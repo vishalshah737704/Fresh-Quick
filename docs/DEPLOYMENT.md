@@ -176,6 +176,15 @@ per-minute trip says to wait N seconds, a per-person daily trip says today's lim
 per-minute trip says Zippy is very busy and a global daily trip (or the overall ceiling) says Zippy has reached its limit for today. Request bodies over 200,000 bytes get 413 before parsing. Each trip writes one
 server log line with the class only (no user id, IP or message text).
 
+### Google Maps key
+
+The web app's address picker, checkout address search and order tracking map use one Google Maps key, `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY`. It is a browser key, so it is public by design: anyone can read it in the page source. Its protection is the restrictions set on it in the Google Cloud console, not secrecy.
+
+- Restrict it by HTTP referrer. Today only `localhost:3000` to `localhost:3003` are listed (local use). Before any public launch, add the real domain to the referrer list.
+- Restrict it by API to Maps JavaScript API, Places API (New) and Geocoding API only.
+- Set daily quotas on those APIs and a budget alert in the Google Cloud console, so a leaked key cannot run up a large bill.
+- Keep the key in `.env.local` only, never in a committed file. The mobile app does not use it.
+
 ### Trusted proxy hops (`ZIPPY_TRUSTED_PROXY_HOPS`)
 
 The client IP is taken from the `x-forwarded-for` header: it is the entry this many positions from the right,

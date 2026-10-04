@@ -53,4 +53,10 @@ Take a screenshot into a file:
 cmd /c "`"$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe`" exec-out screencap -p > shot.png"
 ```
 
-Note: with a hardware keyboard attached the emulator's Gboard can show as a small floating keyboard, which floats over the app and does not push the layout up. That is an emulator quirk; real phones use a docked keyboard, so check keyboard behaviour on the real phone.
+Vishal has no Android phone, so this emulator is the Android test device.
+
+Tips for the emulator on this PC:
+
+- If the emulator window is larger than your screen (this PC is 3840x2160 at 225% scaling), click the emulator window and press Ctrl+Down once or twice to zoom out, then drag it fully on screen.
+- The docked on-screen keyboard was verified: the login form moves up and Log In and Sign up stay visible.
+- With a hardware keyboard attached the emulator's Gboard can show as a small floating keyboard, which floats over the app and does not push the layout up. That is an emulator quirk, not an app bug.

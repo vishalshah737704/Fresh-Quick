@@ -64,4 +64,22 @@ Yes. An email goes to the address you entered at checkout when the store accepts
 
 ## What does the order page show besides the tracker?
 
-The order page shows who the order is delivered to, the items with photos and prices, the subtotal, delivery fee and total, how it was paid, and a timeline with the time each stage was reached. Once a delivery partner is assigned, their last reported location is shown as coordinates rather than a live map.
+The order page shows who the order is delivered to, the items with photos and prices, the subtotal, delivery fee and total, how it was paid, and a timeline with the time each stage was reached. Once a delivery partner is assigned, a live map also appears (see the delivery partner map answer).
+
+## How do I change my delivery location?
+
+Your delivery location is the pin used to show nearby stores and delivery fees. It is the address line at the top of the website, for example "Home (19.0760, 72.8777)". Select it to open the location picker, then choose one of these ways:
+
+1. Search: type your address in "Search for your address" and pick a result. The location is applied at once.
+2. Current location: select "Use my current location" and allow the browser to share your position. It is applied at once when it is found. If you deny permission or your position cannot be found, a message explains why and your location stays as it was.
+3. Move the pin: click the map or drag the pin. Then select Save location to keep it.
+4. Coordinates: open "Enter coordinates manually", type a label, a latitude (-90 to 90) and a longitude (-180 to 180), then select Save location.
+
+If Google Maps cannot load, the map and search are hidden and the manual coordinates box opens by itself, so you can still set a location. At checkout you can also search for your address to fill the address fields, or select "Use my pinned location" to fill them from your pin. Those checkout address fields are not saved for later; you fill them in again next time.
+
+## Can I see where my delivery partner is?
+
+Yes, on the website. Open your order from Orders. Once a delivery partner is assigned, a map appears on the order page showing the store (S), your delivery address (H) and, when the partner has reported a position, the partner (D). It moves as new locations arrive and shows when it was last updated and roughly how far the partner is from your address. While you are waiting for the first location it says so. The map stays on screen after delivery as a final route from the store to your address. Before a partner is assigned there is no map.
+
+The dashed line on the map is a straight line and the distance is approximate; it is not the road route, and there is no arrival time estimate. If the map cannot load, the partner's coordinates are shown as text instead. The phone app does not show this map; it is on the website only.
+
