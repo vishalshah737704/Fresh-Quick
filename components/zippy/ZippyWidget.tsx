@@ -24,7 +24,7 @@ import { snapshotCart } from "@/lib/zippy/client-cart";
 import { ActionCards } from "./ActionCards";
 import type { ActionCard } from "@/lib/zippy/action-types";
 
-type LocalMessage = ChatMessage & { isError?: boolean; actions?: ActionCard[] };
+type LocalMessage = ChatMessage & { isError?: boolean; actions?: ActionCard[]; id?: number };
 
 export function ZippyWidget() {
   const [open, setOpen] = useState(false);
@@ -36,6 +36,7 @@ export function ZippyWidget() {
   const [showHistory, setShowHistory] = useState(false);
   const [conversations, setConversations] = useState<ConversationSummary[]>([]);
   const cart = useOptionalCart();
+  const nextIdRef = useRef(1);
   const listRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
   const userIdRef = useRef<string | null | undefined>(undefined);
@@ -98,16 +99,23 @@ export function ZippyWidget() {
     async (text: string) => {
       const question = text.trim();
       if (!question || busy) return;
-      const history: ChatMessage[] = messages
-        .filter((m) => !m.isError && m.content.trim() !== "")
-        .map(({ role, content }) => ({ role, content }))
+      // Retained messages keep their action cards for display; only role/content is ever sent as history.
+      const retained = messages
+        .filter((m) => !m.isError && (m.content.trim() !== "" || (m.actions?.length ?? 0) > 0))
         .slice(-MAX_HISTORY_MESSAGES);
+      const history: ChatMessage[] = retained
+        .filter((m) => m.content.trim() !== "")
+        .map(({ role, content }) => ({ role, content }));
       abortRef.current?.abort();
       const controller = new AbortController();
       abortRef.current = controller;
       tokenRef.current += 1;
       setShowHistory(false);
-      setMessages([...history, { role: "user", content: question }, { role: "assistant", content: "" }]);
+      setMessages([
+        ...retained.map((m) => (m.id === undefined ? { ...m, id: nextIdRef.current++ } : m)),
+        { role: "user", content: question, id: nextIdRef.current++ },
+        { role: "assistant", content: "", id: nextIdRef.current++ },
+      ]);
       setInput("");
       setBusy(true);
       try {
@@ -122,7 +130,7 @@ export function ZippyWidget() {
         if (controller.signal.aborted) return;
         setMessages((current) => {
           const copy = [...current];
-          copy[copy.length - 1] = { role: "assistant", content: result.reply, actions: result.actions };
+          copy[copy.length - 1] = { ...copy[copy.length - 1], role: "assistant", content: result.reply, actions: result.actions };
           return copy;
         });
         if (result.conversationId) setConversationId(result.conversationId);
@@ -131,7 +139,7 @@ export function ZippyWidget() {
         const message = error instanceof ZippyError ? error.message : ZIPPY_ERROR_MESSAGE;
         setMessages((current) => {
           const copy = [...current];
-          copy[copy.length - 1] = { role: "assistant", content: message, isError: true };
+          copy[copy.length - 1] = { id: copy[copy.length - 1]?.id, role: "assistant", content: message, isError: true };
           return copy;
         });
       } finally {
@@ -219,7 +227,8 @@ export function ZippyWidget() {
                   </div>
                 )}
                 {messages.map((m, i) => (
-                  <div key={i} className="flex flex-col gap-2">
+                  <div key={m.id ?? `i${i}`} className="flex flex-col gap-2">
+                    {(m.content !== "" || m.role === "user" || !m.actions?.length || (busy && i === messages.length - 1)) && (
                     <p
                       className={
                         m.role === "user"
@@ -229,6 +238,7 @@ export function ZippyWidget() {
                     >
                       {m.content || (busy && i === messages.length - 1 ? "…" : "")}
                     </p>
+                    )}
                     {m.role === "assistant" && m.actions && m.actions.length > 0 && <ActionCards cards={m.actions} cart={cart} />}
                   </div>
                 ))}

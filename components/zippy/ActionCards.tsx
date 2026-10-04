@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
 import type { ActionCard, CartApi } from "@/lib/zippy/action-types";
 import { executeAction } from "@/lib/zippy/action-exec";
@@ -10,11 +10,17 @@ type CardState = { status: "idle" } | { status: "done" | "failed"; message: stri
 // One tap runs one card, once. `cart` is null outside /customer/* (the cart provider is not mounted there).
 export function ActionCards({ cards, cart }: { cards: ActionCard[]; cart: CartApi | null }) {
   const [states, setStates] = useState<Record<string, CardState>>({});
+  const executed = useRef<Set<string>>(new Set());
 
   const confirm = (card: ActionCard) => {
-    if (!cart || (states[card.id] && states[card.id].status !== "idle")) return;
-    const result = executeAction(card, cart);
-    setStates((current) => ({ ...current, [card.id]: { status: result.ok ? "done" : "failed", message: result.message } }));
+    if (!cart || executed.current.has(card.id) || (states[card.id] && states[card.id].status !== "idle")) return;
+    executed.current.add(card.id);
+    try {
+      const result = executeAction(card, cart);
+      setStates((current) => ({ ...current, [card.id]: { status: result.ok ? "done" : "failed", message: result.message } }));
+    } catch {
+      setStates((current) => ({ ...current, [card.id]: { status: "failed", message: "Something went wrong, try again." } }));
+    }
   };
   const dismiss = (card: ActionCard) => setStates((current) => ({ ...current, [card.id]: { status: "dismissed" } }));
 
