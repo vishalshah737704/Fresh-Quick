@@ -25,7 +25,7 @@ import {
   ZippyError,
   listConversations,
   loadConversation,
-  sendChat,
+  streamChat,
   type ConversationSummary,
 } from "../lib/zippy";
 import { getChatLocation } from "../lib/zippy-location";
@@ -53,6 +53,9 @@ export function ZippyFab() {
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
+  // True once the first streamed text is on screen (the thinking indicator then hides).
+  const [streaming, setStreaming] = useState(false);
+  const abortRef = useRef<AbortController | null>(null);
   const [showHistory, setShowHistory] = useState(false);
   const [conversations, setConversations] = useState<ConversationSummary[]>([]);
   const [loadingList, setLoadingList] = useState(false);
@@ -72,7 +75,10 @@ export function ZippyFab() {
 
   const invalidatePending = useCallback(() => {
     requestToken.current += 1;
+    abortRef.current?.abort();
+    abortRef.current = null;
     setBusy(false);
+    setStreaming(false);
     setLoadingList(false);
     setNotice(null);
     return requestToken.current;
@@ -117,18 +123,62 @@ export function ZippyFab() {
     ]);
     setInput("");
     setBusy(true);
+    const controller = new AbortController();
+    abortRef.current = controller;
+    let streamId: number | null = null;
     try {
       const location = await getChatLocation(question);
-      const result = await sendChat({ message: question, conversationId, history, location, cart: snapshotCart(cart) });
       if (token !== requestToken.current) return;
-      setMessages((current) => [...current, { role: "assistant", content: result.reply, actions: result.actions, id: nextId.current++ }]);
+      const result = await streamChat({
+        message: question,
+        conversationId,
+        history,
+        location,
+        cart: snapshotCart(cart),
+        signal: controller.signal,
+        onDelta: (delta) => {
+          if (token !== requestToken.current) return;
+          if (streamId === null) {
+            const id = nextId.current++;
+            streamId = id;
+            setStreaming(true);
+            setMessages((current) => [...current, { role: "assistant", content: delta, id }]);
+          } else {
+            const id = streamId;
+            setMessages((current) => current.map((m) => (m.id === id ? { ...m, content: m.content + delta } : m)));
+          }
+        },
+        onReset: () => {
+          if (token !== requestToken.current) return;
+          const id = streamId;
+          streamId = null;
+          setStreaming(false);
+          if (id !== null) setMessages((current) => current.filter((m) => m.id !== id));
+        },
+      });
+      if (token !== requestToken.current) return;
+      const finalId = streamId;
+      if (finalId !== null) {
+        setMessages((current) => current.map((m) => (m.id === finalId ? { ...m, content: result.reply, actions: result.actions } : m)));
+      } else {
+        setMessages((current) => [...current, { role: "assistant", content: result.reply, actions: result.actions, id: nextId.current++ }]);
+      }
       if (result.conversationId) setConversationId(result.conversationId);
     } catch (error) {
       if (token !== requestToken.current) return;
       const message = error instanceof ZippyError ? error.message : ZIPPY_ERROR_MESSAGE;
-      setMessages((current) => [...current, { role: "assistant", content: message, isError: true, id: nextId.current++ }]);
+      const failedId = streamId;
+      if (failedId !== null) {
+        setMessages((current) => current.map((m) => (m.id === failedId ? { ...m, content: message, isError: true } : m)));
+      } else {
+        setMessages((current) => [...current, { role: "assistant", content: message, isError: true, id: nextId.current++ }]);
+      }
     } finally {
-      if (token === requestToken.current) setBusy(false);
+      if (token === requestToken.current) {
+        setBusy(false);
+        setStreaming(false);
+        abortRef.current = null;
+      }
     }
   };
 
@@ -293,7 +343,7 @@ export function ZippyFab() {
                   {item.role === "assistant" && item.actions && item.actions.length > 0 && <ZippyActionCards cards={item.actions} cart={cart} onNavigate={() => setOpen(false)} states={cardStates} setStates={setCardStates} executed={executedCards} />}
                 </View>
               )}
-              ListFooterComponent={busy ? <ActivityIndicator color={BRAND.colors.primary} style={{ alignSelf: "flex-start", margin: 8 }} /> : null}
+              ListFooterComponent={busy && !streaming ? <ActivityIndicator color={BRAND.colors.primary} style={{ alignSelf: "flex-start", margin: 8 }} /> : null}
             />
           )}
 
