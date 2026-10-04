@@ -305,6 +305,7 @@ Don't trust this file's description of a component's *current*
 behavior without grepping the live code first — MEMORY.md and CLAUDE.md
 are snapshots, not standing guarantees (an existing gotcha below already
 warns about this for `<a href>` tags; it applies here too).
+**Android (2026-10-04):** Android Studio was installed via winget and an Android emulator set up on this PC (SDK in `%LOCALAPPDATA%AndroidSdk`, device `Pixel_API_35`, Expo Go 57.0.9; start it with `& "$env:LOCALAPPDATAAndroidSdkemulatoremulator.exe" -avd Pixel_API_35`, open the app with `adb shell am start -a android.intent.action.VIEW -d "exp://10.0.2.2:8081"`). The customer app was walked through on it: sign-in, home feed, Zippy chat with incremental streaming, the add-to-cart Confirm card, the Go to checkout card (opens Checkout; Place order was not tapped) and the hardware Back button all work. Fixed in the same branch: the white strip above the Zippy chat header on Android (statusBarTranslucent plus the header carrying the top inset, light status bar icons) and keyboard-aware customer/delivery login and sign-up screens and checkout (KeyboardAvoidingView plus ScrollView with keyboardShouldPersistTaps). Not verifiable on the emulator: a docked on-screen keyboard (its Gboard floats because a hardware keyboard is attached), so confirm login with the keyboard on a real Android phone. Left for a standalone build: app.json android.package/permissions and a branded adaptive icon. Checklist for a real Android phone: docs/ANDROID_TESTING.md.
 
 ## Stack
 
