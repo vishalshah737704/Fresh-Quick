@@ -3,8 +3,8 @@ import type { OrderStatus } from "./order-status";
 // `addresses!delivery_address_id` pins the embed to the orders->addresses FK.
 export const ORDER_DETAIL_SELECT =
   "id, status, subtotal, delivery_fee, total, placed_at, accepted_at, picked_up_at, delivered_at, delivery_note, recipient_name, recipient_email, recipient_phone, delivery_partner_id, " +
-  "stores(name, store_address:addresses!address_id(label, line1, line2, city, state, pincode)), " +
-  "address:addresses!delivery_address_id(label, line1, line2, city, state, pincode), " +
+  "stores(name, lat, lng, store_address:addresses!address_id(label, line1, line2, city, state, pincode)), " +
+  "address:addresses!delivery_address_id(label, line1, line2, city, state, pincode, lat, lng), " +
   "payments(status, method), " +
   "order_items(id, quantity, unit_price, special_instructions, products(name, image_url), order_item_options(id, group_name, option_name))";
 
@@ -20,6 +20,8 @@ type RawAddress = {
   city: string | null;
   state: string | null;
   pincode: string | null;
+  lat?: number | string | null;
+  lng?: number | string | null;
 };
 
 export type RawOrderDetail = {
@@ -37,7 +39,7 @@ export type RawOrderDetail = {
   recipient_email: string;
   recipient_phone: string;
   delivery_partner_id: string | null;
-  stores: OneOrMany<{ name: string; store_address?: OneOrMany<RawAddress> }>;
+  stores: OneOrMany<{ name: string; lat?: number | string | null; lng?: number | string | null; store_address?: OneOrMany<RawAddress> }>;
   address: OneOrMany<RawAddress>;
   payments: OneOrMany<{ status: string; method: string }>;
   order_items: {
@@ -91,6 +93,9 @@ export type OrderDetail = {
   deliveredAt: string | null;
   deliveryPartnerId: string | null;
   address: { label: string | null; lines: string[] } | null;
+  // Coordinates for the tracking map; null when missing or not numeric.
+  storePoint: { lat: number; lng: number } | null;
+  deliveryPoint: { lat: number; lng: number } | null;
   payment: { status: string; method: string } | null;
   items: OrderDetailItem[];
 };
@@ -104,6 +109,20 @@ export type OrderListRow = {
   itemCount: number;
   items: { id: string; name: string; imageUrl: string | null }[];
 };
+
+function toPoint(lat: unknown, lng: unknown): { lat: number; lng: number } | null {
+  const parse = (value: unknown): number | null => {
+    if (value === null || value === undefined) return null;
+    if (typeof value === "string" && value.trim() === "") return null;
+    const n = Number(value);
+    return Number.isFinite(n) ? n : null;
+  };
+  const la = parse(lat);
+  const ln = parse(lng);
+  if (la === null || ln === null) return null;
+  if (la < -90 || la > 90 || ln < -180 || ln > 180) return null;
+  return { lat: la, lng: ln };
+}
 
 function first<T>(value: OneOrMany<T> | undefined): T | null {
   if (Array.isArray(value)) return value[0] ?? null;
@@ -179,6 +198,8 @@ export function normalizeOrderDetail(raw: RawOrderDetail): OrderDetail {
     deliveredAt: raw.delivered_at ?? null,
     deliveryPartnerId: raw.delivery_partner_id,
     address: address ? formatAddress(address) : null,
+    storePoint: toPoint(store?.lat, store?.lng),
+    deliveryPoint: address ? toPoint(address.lat, address.lng) : null,
     payment: payment ? { status: payment.status, method: payment.method } : null,
     items: raw.order_items.map((item) => {
       const product = first(item.products);
