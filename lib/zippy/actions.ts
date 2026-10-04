@@ -292,6 +292,49 @@ export function buildClearCartCard(
   };
 }
 
+// A cart lineId is `<menuItemId>::<sorted option ids>` (lib/cart-line.ts buildLineId); this is its inverse for the id part.
+export const menuItemIdOfLine = (lineId: string): string => lineId.split("::")[0].toLowerCase();
+
+// The dish ids a checkout card must re-check live. Anything that is not a uuid is left out (it can never be found).
+export function cartDishIds(cart: CartSnapshot | null | undefined): string[] {
+  if (!cart) return [];
+  return [...new Set(cart.items.map((line) => menuItemIdOfLine(line.lineId)).filter((id) => UUID.test(id)))];
+}
+
+// Opens the checkout page for the cart as it is now; the customer enters their own details and pays there.
+export function buildCheckoutCard(
+  cart: CartSnapshot | null | undefined,
+  products: Map<string, ProductForCart>,
+  deps: ActionShapeDeps
+): { ok: true; card: ActionCard } | { ok: false; error: string } {
+  if (!cart || cart.items.length === 0 || cart.storeId === null) return { ok: false, error: "The cart is empty" };
+  let storeName: string | null = null;
+  for (const line of cart.items) {
+    const product = products.get(menuItemIdOfLine(line.lineId));
+    const lineName = deps.sanitize(line.name, 80);
+    if (!product || product.storeId !== cart.storeId) return { ok: false, error: `${lineName === "" ? "An item" : lineName} is no longer available` };
+    const cleanStoreName = deps.sanitize(product.storeName, 80);
+    const problem = storeProblem(product, cleanStoreName);
+    if (problem) return { ok: false, error: problem };
+    if (!product.isAvailable) return { ok: false, error: `${deps.sanitize(product.name, 80)} is unavailable right now` };
+    storeName = cleanStoreName;
+  }
+  if (storeName === null) return { ok: false, error: "The cart is empty" };
+  const itemCount = cart.items.reduce((sum, line) => sum + line.quantity, 0);
+  return {
+    ok: true,
+    card: {
+      kind: "go_to_checkout",
+      id: deps.newId(),
+      title: "Go to checkout",
+      description: `Open checkout for ${itemCount} ${itemCount === 1 ? "item" : "items"} from ${storeName}. You enter your details and pay yourself; Zippy does not place the order.`,
+      storeId: cart.storeId,
+      storeName,
+      itemCount,
+    },
+  };
+}
+
 export function shapeCartForModel(snapshot: CartSnapshot | null, deps: Pick<ActionShapeDeps, "sanitize" | "toPaise" | "formatRupees">) {
   if (!snapshot || snapshot.items.length === 0) return { store: null, lines: [], empty: true };
   return {
@@ -362,6 +405,13 @@ export const ACTION_TOOLS: Anthropic.Tool[] = [
   {
     name: "propose_clear_cart",
     description: "Propose emptying the whole cart. Nothing changes until the customer taps Confirm. Use only when the user asked to clear or empty the cart.",
+    strict: true,
+    input_schema: { type: "object", properties: {}, additionalProperties: false },
+  },
+  {
+    name: "propose_go_to_checkout",
+    description:
+      "Prepare a card that opens the checkout page for the customer's current cart (no input). Use only when the user asked to check out or place the order. It does not place or pay for anything: the customer enters their own details and pays on the checkout page.",
     strict: true,
     input_schema: { type: "object", properties: {}, additionalProperties: false },
   },

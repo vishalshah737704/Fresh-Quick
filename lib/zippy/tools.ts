@@ -17,6 +17,8 @@ import { loadProductsForCart } from "./actions-data";
 import {
   buildAddItemCard,
   buildCartChangeCard,
+  buildCheckoutCard,
+  cartDishIds,
   buildClearCartCard,
   buildReorderCard,
   parseProposeAddInput,
@@ -227,6 +229,14 @@ export async function runTool(
       const parsed = parseProposeClearInput(rawInput);
       if (!parsed.ok) return bad(parsed.error);
       return pushCard(ctx, buildClearCartCard(ctx.cart, actionDeps));
+    }
+    case "propose_go_to_checkout": {
+      if (!actionsAllowed(ctx)) return bad("Cart actions are only available to a signed-in customer");
+      const parsed = parseProposeClearInput(rawInput);
+      if (!parsed.ok) return bad(parsed.error);
+      if (ctx.actions.some((card) => card.kind === "go_to_checkout")) return bad("A checkout card is already prepared in this reply");
+      const products = await loadProductsForCart(cartDishIds(ctx.cart));
+      return pushCard(ctx, buildCheckoutCard(ctx.cart, products, actionDeps));
     }
     default:
       return bad(`unknown tool ${name}`);

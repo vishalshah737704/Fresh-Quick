@@ -329,3 +329,17 @@ test("with order lookups off, the action rules never mention reorder or point at
   assert.match(on, /propose_add_to_cart, propose_reorder, propose_cart_change/);
   assert.match(on, /dish or reorder is from a different store/);
 });
+
+test("actions on: the checkout rule is present in both orders states, never asks for details, and is absent with actions off", () => {
+  for (const ordersEnabled of [true, false]) {
+    const p = buildSystemPrompt({ brandName: "B", role: "customer", chunks: [], toolsEnabled: true, ordersEnabled, actionsEnabled: true });
+    assert.match(p, /propose_go_to_checkout/);
+    assert.match(p, /only opens checkout, where they enter their own details and pay themselves/i);
+    assert.match(p, /never ask for or repeat recipient details, an address or payment details/i);
+    assert.match(p, /cannot place or pay for the order/i);
+    assert.doesNotMatch(p, /for checkout, explain the cart and checkout pages/i);
+  }
+  for (const args of [{ ordersEnabled: true }, { ordersEnabled: true, actionsEnabled: false }, { ordersEnabled: true, toolsEnabled: false, actionsEnabled: true }]) {
+    assert.doesNotMatch(buildSystemPrompt({ brandName: "B", role: "customer", chunks: [], ...args }), /propose_go_to_checkout/);
+  }
+});

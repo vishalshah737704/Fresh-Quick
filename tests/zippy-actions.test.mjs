@@ -4,7 +4,7 @@ import { sanitizeText, toPaise, formatRupees } from "../lib/zippy/catalog.ts";
 import { MAX_LINE_QUANTITY, MAX_CARDS_PER_REPLY } from "../lib/zippy/action-types.ts";
 import {
   parseProposeAddInput, parseProposeReorderInput, parseProposeCartChangeInput, parseProposeClearInput,
-  selectOptions, buildAddItemCard, buildReorderCard, buildCartChangeCard, buildClearCartCard,
+  selectOptions, buildAddItemCard, buildReorderCard, buildCartChangeCard, buildClearCartCard, buildCheckoutCard, cartDishIds, menuItemIdOfLine,
   shapeCartForModel, ACTION_TOOLS, ACTION_TOOL_NAMES, selectActionTools, LIMITS,
 } from "../lib/zippy/actions.ts";
 
@@ -162,8 +162,8 @@ test("cart shown to the model is sanitized, in rupees, and says when empty", () 
   assert.deepEqual(shapeCartForModel(null, deps), { store: null, lines: [], empty: true });
 });
 
-test("tool definitions: five strict tools, offered only to a verified customer with actions on", () => {
-  assert.deepEqual(ACTION_TOOL_NAMES, ["get_my_cart", "propose_add_to_cart", "propose_reorder", "propose_cart_change", "propose_clear_cart"]);
+test("tool definitions: six strict tools, offered only to a verified customer with actions on", () => {
+  assert.deepEqual(ACTION_TOOL_NAMES, ["get_my_cart", "propose_add_to_cart", "propose_reorder", "propose_cart_change", "propose_clear_cart", "propose_go_to_checkout"]);
   for (const tool of ACTION_TOOLS) assert.equal(tool.strict, true);
   assert.deepEqual(ACTION_TOOLS.find((t) => t.name === "propose_add_to_cart").input_schema.required, ["product_id"]);
   const base = [{ name: "find_stores" }];
@@ -261,7 +261,7 @@ test("propose_reorder is offered only when order lookups are also on", () => {
   for (const ordersEnabled of [false, undefined]) {
     const list = names({ customerId: "c1", actionsEnabled: true, ordersEnabled });
     assert.equal(list.includes("propose_reorder"), false);
-    assert.deepEqual(list, ["find_stores", "get_my_cart", "propose_add_to_cart", "propose_cart_change", "propose_clear_cart"]);
+    assert.deepEqual(list, ["find_stores", "get_my_cart", "propose_add_to_cart", "propose_cart_change", "propose_clear_cart", "propose_go_to_checkout"]);
   }
 });
 
@@ -300,4 +300,63 @@ test("cards record the store the cart snapshot had (null for an empty or missing
     assert.equal(buildReorderCard(source([line()]), products, deps, cart).card.cartStoreId, null);
   }
   assert.equal(buildReorderCard(source([line()]), products, deps, cartOf("s1", "D", [1])).card.cartStoreId, "s1");
+});
+
+const cartLine = (id, quantity = 1, name = "Masala Dosa") => ({ lineId: `${id}::o1,o3`, name, quantity, price: 130, options: [] });
+const checkoutCart = (lines = [cartLine(U1, 2), cartLine(U2, 3, "Idli")], storeId = "s1") => ({ storeId, storeName: "Dosa Corner", items: lines });
+const liveProducts = (over = {}) => new Map([[U1, product(over)], [U2, product({ id: U2, name: "Idli", ...over })]]);
+
+test("checkout card: success sums line quantities and says the customer pays", () => {
+  const r = buildCheckoutCard(checkoutCart(), liveProducts(), deps);
+  assert.equal(r.ok, true);
+  assert.equal(r.card.kind, "go_to_checkout");
+  assert.equal(r.card.title, "Go to checkout");
+  assert.equal(r.card.itemCount, 5);
+  assert.equal(r.card.storeId, "s1");
+  assert.equal(r.card.storeName, "Dosa Corner");
+  assert.equal(r.card.description, "Open checkout for 5 items from Dosa Corner. You enter your details and pay yourself; Zippy does not place the order.");
+  assert.match(buildCheckoutCard(checkoutCart([cartLine(U1, 1)]), liveProducts(), deps).card.description, /for 1 item from/);
+  assert.equal(r.card.description.length <= LIMITS.maxDescriptionChars, true);
+});
+
+test("checkout card: empty, null and storeless carts are refused", () => {
+  for (const cart of [null, undefined, { storeId: "s1", storeName: "x", items: [] }, checkoutCart(undefined, null)]) {
+    assert.deepEqual(buildCheckoutCard(cart, liveProducts(), deps), { ok: false, error: "The cart is empty" });
+  }
+});
+
+test("checkout card: closed and suspended stores, unavailable and missing dishes are refused and named", () => {
+  assert.match(buildCheckoutCard(checkoutCart(), liveProducts({ storeOpen: false }), deps).error, /Dosa Corner is closed/);
+  assert.equal(buildCheckoutCard(checkoutCart(), liveProducts({ storeSuspended: true }), deps).error, "not found");
+  assert.match(buildCheckoutCard(checkoutCart(), new Map([[U1, product({ isAvailable: false })], [U2, product({ id: U2 })]]), deps).error, /Masala Dosa is unavailable/);
+  assert.match(buildCheckoutCard(checkoutCart(), new Map([[U1, product()]]), deps).error, /Idli is no longer available/);
+  assert.match(buildCheckoutCard(checkoutCart(), liveProducts({ storeId: "other" }), deps).error, /no longer available/);
+});
+
+test("checkout card: store and dish names are sanitized", () => {
+  const r = buildCheckoutCard(checkoutCart(), liveProducts({ storeName: "Dosa <b>Corner</b>" }), deps);
+  assert.equal(r.card.storeName, "Dosa Corner");
+  assert.equal(/<b>/.test(r.card.description), false);
+  const long = buildCheckoutCard(checkoutCart(), liveProducts({ storeName: "S".repeat(500) }), deps);
+  assert.equal(long.card.description.length <= LIMITS.maxDescriptionChars, true);
+  assert.match(buildCheckoutCard(checkoutCart([cartLine(U1, 1, "Dish <i>x</i>")]), new Map(), deps).error, /^Dish x is no longer/);
+});
+
+test("checkout card ids come from the lineId before '::', uuid-only and deduped", () => {
+  assert.equal(menuItemIdOfLine(`${U1.toUpperCase()}::o1`), U1);
+  assert.deepEqual(cartDishIds(checkoutCart([cartLine(U1), { ...cartLine(U1), lineId: `${U1}::o9` }, cartLine("junk"), cartLine(U2)])), [U1, U2]);
+  assert.deepEqual(cartDishIds(null), []);
+});
+
+test("propose_go_to_checkout: strict no-input tool offered only to a customer with actions on", () => {
+  const tool = ACTION_TOOLS.find((t) => t.name === "propose_go_to_checkout");
+  assert.equal(tool.strict, true);
+  assert.deepEqual(tool.input_schema, { type: "object", properties: {}, additionalProperties: false });
+  const base = [{ name: "find_stores" }];
+  for (const ctx of [{ customerId: null, actionsEnabled: true }, { customerId: "c1", actionsEnabled: false }]) {
+    assert.equal(selectActionTools(base, ctx).some((t) => t.name === "propose_go_to_checkout"), false);
+  }
+  for (const ordersEnabled of [true, false]) {
+    assert.equal(selectActionTools(base, { customerId: "c1", actionsEnabled: true, ordersEnabled }).some((t) => t.name === "propose_go_to_checkout"), true);
+  }
 });
