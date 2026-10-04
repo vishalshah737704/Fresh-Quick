@@ -285,7 +285,7 @@ export function ZippyFab() {
                       <Text style={{ color: item.role === "user" ? "#fff" : BRAND.colors.ink, fontFamily: BRAND.fonts.body }}>{item.content}</Text>
                     </View>
                   )}
-                  {item.role === "assistant" && item.actions && item.actions.length > 0 && <ZippyActionCards cards={item.actions} cart={cart} />}
+                  {item.role === "assistant" && item.actions && item.actions.length > 0 && <ZippyActionCards cards={item.actions} cart={cart} onNavigate={() => setOpen(false)} />}
                 </View>
               )}
               ListFooterComponent={busy ? <ActivityIndicator color={BRAND.colors.primary} style={{ alignSelf: "flex-start", margin: 8 }} /> : null}

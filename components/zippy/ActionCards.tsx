@@ -2,21 +2,36 @@
 
 import { useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import type { ActionCard, CartApi } from "@/lib/zippy/action-types";
 import { executeAction } from "@/lib/zippy/action-exec";
 
 type CardState = { status: "idle" } | { status: "done" | "failed"; message: string } | { status: "dismissed" };
 
 // One tap runs one card, once. `cart` comes from the cart bridge (lib/cart-bridge.ts); it is null outside /customer/* because the provider unmounts there.
-export function ActionCards({ cards, cart }: { cards: ActionCard[]; cart: CartApi | null }) {
+export function ActionCards({ cards, cart, onNavigate }: { cards: ActionCard[]; cart: CartApi | null; onNavigate?: () => void }) {
+  const router = useRouter();
   const [states, setStates] = useState<Record<string, CardState>>({});
   const executed = useRef<Set<string>>(new Set());
 
   const confirm = (card: ActionCard) => {
-    if (!cart || executed.current.has(card.id) || (states[card.id] && states[card.id].status !== "idle")) return;
+    const isCheckout = card.kind === "go_to_checkout";
+    if ((!cart && !isCheckout) || executed.current.has(card.id) || (states[card.id] && states[card.id].status !== "idle")) return;
     executed.current.add(card.id);
     try {
-      const result = executeAction(card, cart);
+      // Checkout is navigation only: with no cart provider (outside /customer) the store check is skipped.
+      const result = cart ? executeAction(card, cart) : { ok: true, message: "Opening checkout." };
+      if (isCheckout && !result.ok) {
+        executed.current.delete(card.id);
+        setStates((current) => ({ ...current, [card.id]: { status: "failed", message: result.message } }));
+        return;
+      }
+      if (isCheckout) {
+        setStates((current) => ({ ...current, [card.id]: { status: "done", message: result.message } }));
+        router.push("/customer/checkout");
+        onNavigate?.();
+        return;
+      }
       setStates((current) => ({ ...current, [card.id]: { status: result.ok ? "done" : "failed", message: result.message } }));
     } catch {
       setStates((current) => ({ ...current, [card.id]: { status: "failed", message: "Something went wrong, try again." } }));
@@ -34,14 +49,14 @@ export function ActionCards({ cards, cart }: { cards: ActionCard[]; cart: CartAp
             <p className="font-semibold">{card.title}</p>
             <p className="mt-1 break-words">{card.description}</p>
             {state.status === "idle" ? (
-              cart ? (
+              cart || card.kind === "go_to_checkout" ? (
                 <div className="mt-2 flex gap-2">
                   <button
                     type="button"
                     onClick={() => confirm(card)}
                     className="rounded-full bg-brand-primary-text-safe px-4 py-1.5 text-sm font-medium text-white"
                   >
-                    Confirm
+                    {card.kind === "go_to_checkout" ? "Go to checkout" : "Confirm"}
                   </button>
                   <button
                     type="button"

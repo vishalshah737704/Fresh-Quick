@@ -239,7 +239,7 @@ export function ZippyWidget() {
                       {m.content || (busy && i === messages.length - 1 ? "…" : "")}
                     </p>
                     )}
-                    {m.role === "assistant" && m.actions && m.actions.length > 0 && <ActionCards cards={m.actions} cart={cart} />}
+                    {m.role === "assistant" && m.actions && m.actions.length > 0 && <ActionCards cards={m.actions} cart={cart} onNavigate={() => setOpen(false)} />}
                   </div>
                 ))}
               </>
