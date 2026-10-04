@@ -3,6 +3,7 @@
 import { createContext, useContext, useEffect, useRef, useState, ReactNode } from "react";
 import { supabase } from "@/lib/supabase";
 import { useSession } from "@/lib/auth";
+import { buildLineId, mergeCartLines } from "./cart-line";
 
 export type SelectedOption = {
   groupId: string;
@@ -50,6 +51,7 @@ type CartContextValue = {
   pendingConflict: PendingConflict;
   checkoutHandler: CheckoutHandler;
   addItem: (storeId: string, storeName: string, item: NewCartItem) => void;
+  addItems: (storeId: string, storeName: string, items: NewCartItem[], replace: boolean) => void;
   updateQuantity: (lineId: string, quantity: number) => void;
   removeItem: (lineId: string) => void;
   setSpecialInstructions: (lineId: string, text: string) => void;
@@ -62,10 +64,7 @@ type CartContextValue = {
 
 const CartContext = createContext<CartContextValue | null>(null);
 
-export function buildLineId(menuItemId: string, selectedOptions: SelectedOption[]): string {
-  const optionIds = selectedOptions.map((o) => o.optionId).sort();
-  return `${menuItemId}::${optionIds.join(",")}`;
-}
+export { buildLineId };
 
 type ServerCart = {
   storeId: string | null;
@@ -223,6 +222,20 @@ export function CartProvider({ children }: { children: ReactNode }) {
     });
   }
 
+  // Atomic bulk add used by Zippy's confirmed cards. `replace` empties the cart first. It sets state directly, so it
+  // cannot trigger the "clear cart?" conflict modal that addItem opens when the render-time storeId differs.
+  function addItems(sId: string, sName: string, newItems: NewCartItem[], replace: boolean) {
+    if (newItems.length === 0) return;
+    const lines = newItems.map((item) => ({ ...item, lineId: buildLineId(item.menuItemId, item.selectedOptions) }));
+    if (replace) {
+      setOrderNoteState("");
+      setPendingConflict(null);
+    }
+    setStoreId(sId);
+    setStoreName(sName);
+    setItems((prev) => mergeCartLines(replace ? [] : prev, lines));
+  }
+
   function addItem(sId: string, sName: string, item: NewCartItem) {
     if (storeId !== null && storeId !== sId) {
       setPendingConflict({ storeId: sId, storeName: sName, item });
@@ -297,6 +310,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         pendingConflict,
         checkoutHandler,
         addItem,
+        addItems,
         updateQuantity,
         removeItem,
         setSpecialInstructions,
@@ -316,4 +330,9 @@ export function useCart(): CartContextValue {
   const ctx = useContext(CartContext);
   if (!ctx) throw new Error("useCart must be used within CartProvider");
   return ctx;
+}
+
+// Null outside CartProvider (the provider only wraps /customer/*), for UI that lives in the root layout.
+export function useOptionalCart(): CartContextValue | null {
+  return useContext(CartContext);
 }
