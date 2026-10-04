@@ -17,29 +17,43 @@ export function parseBearer(
 
 type ChatTurn = { role: "user" | "assistant"; content: string };
 
-function parseCartSnapshot(raw: unknown): CartSnapshot | null | "invalid" {
+// The cart snapshot is a hint for the cart tools, never a reason to fail a chat: the cart itself allows long line ids
+// (one uuid per option) and quantities above the card limit. So over-limit values are clamped or the line dropped, and
+// only a snapshot that is not shaped like a cart at all becomes null (logged without content).
+const MAX_SNAPSHOT_LINE_ID_CHARS = 38 + 37 * 20;
+const MAX_SNAPSHOT_LINES = 50;
+const MAX_SNAPSHOT_QUANTITY = 20;
+
+function parseCartSnapshot(raw: unknown): CartSnapshot | null {
   if (raw === undefined || raw === null) return null;
-  if (typeof raw !== "object" || Array.isArray(raw)) return "invalid";
   const c = raw as { storeId?: unknown; storeName?: unknown; items?: unknown };
-  const text = (v: unknown, max: number) => v === null || (typeof v === "string" && v.length <= max);
-  if (!text(c.storeId, 100) || !text(c.storeName, 200) || c.storeId === undefined || c.storeName === undefined) return "invalid";
-  if (!Array.isArray(c.items) || c.items.length > 50) return "invalid";
+  if (
+    typeof raw !== "object" || Array.isArray(raw) ||
+    !(c.storeId === null || (typeof c.storeId === "string" && c.storeId.length <= 100)) ||
+    !Array.isArray(c.items)
+  ) {
+    console.error("zippy: ignoring a cart snapshot that is not a cart");
+    return null;
+  }
+  const storeName = typeof c.storeName === "string" ? c.storeName.slice(0, 200) : null;
   const items: CartSnapshot["items"] = [];
-  for (const entry of c.items) {
-    if (typeof entry !== "object" || entry === null) return "invalid";
+  for (const entry of c.items.slice(0, MAX_SNAPSHOT_LINES)) {
+    if (typeof entry !== "object" || entry === null) continue;
     const line = entry as { lineId?: unknown; name?: unknown; quantity?: unknown; price?: unknown; options?: unknown };
     if (
-      typeof line.lineId !== "string" || line.lineId === "" || line.lineId.length > 200 ||
-      typeof line.name !== "string" || line.name.length > 200 ||
-      typeof line.quantity !== "number" || !Number.isInteger(line.quantity) || line.quantity < 1 || line.quantity > 20 ||
-      typeof line.price !== "number" || !Number.isFinite(line.price) || line.price < 0 || line.price > 1_000_000 ||
-      !Array.isArray(line.options) || line.options.length > 20 || !line.options.every((o) => typeof o === "string" && o.length <= 100)
+      typeof line.lineId !== "string" || line.lineId === "" || line.lineId.length > MAX_SNAPSHOT_LINE_ID_CHARS ||
+      typeof line.name !== "string" ||
+      typeof line.quantity !== "number" || !Number.isInteger(line.quantity) || line.quantity < 1 ||
+      typeof line.price !== "number" || !Number.isFinite(line.price) || line.price < 0 || line.price > 1_000_000
     ) {
-      return "invalid";
+      continue;
     }
-    items.push({ lineId: line.lineId, name: line.name, quantity: line.quantity, price: line.price, options: line.options as string[] });
+    const options = Array.isArray(line.options)
+      ? line.options.filter((o): o is string => typeof o === "string").slice(0, 20).map((o) => o.slice(0, 100))
+      : [];
+    items.push({ lineId: line.lineId, name: line.name.slice(0, 200), quantity: Math.min(line.quantity, MAX_SNAPSHOT_QUANTITY), price: line.price, options });
   }
-  return { storeId: c.storeId as string | null, storeName: c.storeName as string | null, items };
+  return { storeId: c.storeId as string | null, storeName, items };
 }
 
 export function parseChatRequest(
@@ -112,7 +126,6 @@ export function parseChatRequest(
     location = { lat: loc.lat, lng: loc.lng };
   }
   const cart = parseCartSnapshot(b.cart);
-  if (cart === "invalid") return { ok: false, error: "Invalid cart" };
   const stream = b.stream === undefined ? true : b.stream === true;
   return { ok: true, value: { message, conversationId, history, stream, location, cart } };
 }

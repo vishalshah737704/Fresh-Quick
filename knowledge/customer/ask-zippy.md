@@ -22,7 +22,7 @@ Zippy can look up your own orders when you are signed in as a customer: the stat
 
 ## Can Zippy add things to my cart?
 
-Yes, when you are signed in as a customer. Ask Zippy to add a dish, add the items from a past order again, change a quantity, remove an item or clear the cart. Zippy shows a card describing exactly what it will do, and nothing changes until you tap Confirm. You can tap Dismiss instead. Zippy cannot add dishes from a closed store or dishes that are unavailable, and each item can be added up to 20 at a time. Zippy does not place or pay for the order: when your cart is ready, open the Cart and Checkout pages yourself. In the phone app the Confirm button always works. On the website it works on the customer pages; on other pages the card shows a link to the customer area instead, so open your cart from there.
+Yes, when you are signed in as a customer. Ask Zippy to add a dish, add the items from a past order again, change a quantity, remove an item or clear the cart. Zippy shows a card describing exactly what it will do, and nothing changes until you tap Confirm. You can tap Dismiss instead. Zippy cannot add dishes from a closed store or dishes that are unavailable, and each item can be added up to 20 at a time. If a card adds a dish from a different store than the one in your cart, confirming it replaces the items currently in the cart (the card says so). Zippy does not place or pay for the order: when your cart is ready, open the Cart and Checkout pages yourself. In the phone app the Confirm button always works. On the website it works on the customer pages; on other pages the card shows a link to the customer area instead, so open your cart from there.
 
 ## Why does Zippy take a few seconds to answer a store question?
 

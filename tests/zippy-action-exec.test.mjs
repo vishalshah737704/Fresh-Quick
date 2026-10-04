@@ -20,11 +20,11 @@ function fakeCart(storeId = null, lineIds = []) {
     clearCart: () => calls.push(["clearCart"]),
   };
 }
-const addCard = { kind: "add_item", id: "c1", title: "t", description: "d", storeId: "s1", storeName: "Dosa Corner", item: item() };
+const addCard = { kind: "add_item", id: "c1", title: "t", description: "d", storeId: "s1", storeName: "Dosa Corner", cartStoreId: null, item: item() };
 
 test("add_item into an empty cart or the same store does not replace", () => {
-  for (const cart of [fakeCart(null), fakeCart("s1", ["x"])]) {
-    const out = executeAction(addCard, cart);
+  for (const [card, cart] of [[addCard, fakeCart(null)], [{ ...addCard, cartStoreId: "s1" }, fakeCart("s1", ["x"])]]) {
+    const out = executeAction(card, cart);
     assert.equal(out.ok, true);
     assert.deepEqual(cart.calls, [["addItems", "s1", "Dosa Corner", [addCard.item], false]]);
   }
@@ -32,19 +32,19 @@ test("add_item into an empty cart or the same store does not replace", () => {
 
 test("add_item into another store replaces the cart atomically (never clearCart then addItem)", () => {
   const cart = fakeCart("s2", ["x"]);
-  const out = executeAction(addCard, cart);
+  const out = executeAction({ ...addCard, cartStoreId: "s2" }, cart);
   assert.equal(out.ok, true);
   assert.deepEqual(cart.calls, [["addItems", "s1", "Dosa Corner", [addCard.item], true]]);
   assert.match(out.message, /replaced/i);
 });
 
 test("reorder adds every kept line, replacing only for another store; an empty reorder fails", () => {
-  const card = { kind: "reorder", id: "c2", title: "t", description: "d", storeId: "s1", storeName: "Dosa Corner", items: [item("m1", 1), item("m2", 2)], skipped: [] };
+  const card = { kind: "reorder", id: "c2", title: "t", description: "d", storeId: "s1", storeName: "Dosa Corner", cartStoreId: null, items: [item("m1", 1), item("m2", 2)], skipped: [] };
   const same = fakeCart("s1", []);
   assert.equal(executeAction(card, same).ok, true);
   assert.deepEqual(same.calls, [["addItems", "s1", "Dosa Corner", card.items, false]]);
   const other = fakeCart("s9", []);
-  executeAction(card, other);
+  executeAction({ ...card, cartStoreId: "s9" }, other);
   assert.equal(other.calls[0][4], true);
   const empty = fakeCart(null);
   assert.equal(executeAction({ ...card, items: [] }, empty).ok, false);
@@ -99,4 +99,21 @@ test("limits are the agreed values and the mobile copies are byte-identical", ()
   ]) {
     assert.equal(read(mobile), read(web), mobile);
   }
+});
+
+test("a card whose replace notice no longer matches the live cart does nothing and says the cart changed", () => {
+  const reorder = { kind: "reorder", id: "c2", title: "t", description: "d", storeId: "s1", storeName: "Dosa Corner", cartStoreId: null, items: [item("m1", 1)], skipped: [] };
+  const cases = [
+    [addCard, fakeCart("s2", ["x"])],
+    [{ ...addCard, cartStoreId: "s2" }, fakeCart(null)],
+    [{ ...addCard, cartStoreId: "s2" }, fakeCart("s1", ["x"])],
+    [reorder, fakeCart("s2", ["x"])],
+    [{ ...reorder, cartStoreId: "s2" }, fakeCart("s1", ["x"])],
+  ];
+  for (const [card, cart] of cases) {
+    assert.deepEqual(executeAction(card, cart), { ok: false, message: CART_CHANGED_MESSAGE });
+    assert.deepEqual(cart.calls, []);
+  }
+  const still = fakeCart("s3", ["x"]);
+  assert.equal(executeAction({ ...addCard, cartStoreId: "s2" }, still).ok, true);
 });

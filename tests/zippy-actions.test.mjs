@@ -52,7 +52,7 @@ test("reorder input: latest, uuid, and everything else is 'not found'", () => {
 test("cart change input: 0 removes, 1..20 sets, others rejected", () => {
   assert.deepEqual(parseProposeCartChangeInput({ line_id: "m1::o1", quantity: 0 }), { ok: true, value: { line_id: "m1::o1", quantity: 0 } });
   assert.deepEqual(parseProposeCartChangeInput({ line_id: "m1::", quantity: 20 }), { ok: true, value: { line_id: "m1::", quantity: 20 } });
-  for (const bad of [{}, { line_id: "", quantity: 1 }, { line_id: "a", quantity: 21 }, { line_id: "a", quantity: -1 }, { line_id: "a", quantity: 1.5 }, { line_id: "a" }, { line_id: "x".repeat(201), quantity: 1 }]) {
+  for (const bad of [{}, { line_id: "", quantity: 1 }, { line_id: "a", quantity: 21 }, { line_id: "a", quantity: -1 }, { line_id: "a", quantity: 1.5 }, { line_id: "a" }, { line_id: "x".repeat(801), quantity: 1 }]) {
     assert.equal(parseProposeCartChangeInput(bad).ok, false, JSON.stringify(bad));
   }
   assert.equal(parseProposeClearInput({}).ok, true);
@@ -170,7 +170,7 @@ test("tool definitions: five strict tools, offered only to a verified customer w
   assert.deepEqual(selectActionTools(base, { customerId: null, actionsEnabled: true }), base);
   assert.deepEqual(selectActionTools(base, { customerId: "", actionsEnabled: true }), base);
   assert.deepEqual(selectActionTools(base, { customerId: "c1", actionsEnabled: false }), base);
-  assert.equal(selectActionTools(base, { customerId: "c1", actionsEnabled: true }).length, 1 + ACTION_TOOLS.length);
+  assert.equal(selectActionTools(base, { customerId: "c1", actionsEnabled: true, ordersEnabled: true }).length, 1 + ACTION_TOOLS.length);
 });
 
 test("dirty product, store, group, and option names are sanitized in add card and closed-store error", () => {
@@ -252,4 +252,52 @@ test("reorder card discloses cart replacement only for a different store", () =>
   assert.equal(/replaces/i.test(run(cartOf("s1", "Dosa Corner", [2]))), false);
   assert.equal(/replaces/i.test(run(cartOf(null, null, []))), false);
   assert.equal(/replaces/i.test(run(null)), false);
+});
+
+test("propose_reorder is offered only when order lookups are also on", () => {
+  const base = [{ name: "find_stores" }];
+  const names = (ctx) => selectActionTools(base, ctx).map((t) => t.name);
+  assert.equal(names({ customerId: "c1", actionsEnabled: true, ordersEnabled: true }).includes("propose_reorder"), true);
+  for (const ordersEnabled of [false, undefined]) {
+    const list = names({ customerId: "c1", actionsEnabled: true, ordersEnabled });
+    assert.equal(list.includes("propose_reorder"), false);
+    assert.deepEqual(list, ["find_stores", "get_my_cart", "propose_add_to_cart", "propose_cart_change", "propose_clear_cart"]);
+  }
+});
+
+test("a cart change accepts the long line ids a cart can produce", () => {
+  assert.equal(parseProposeCartChangeInput({ line_id: "x".repeat(LIMITS.maxLineIdChars), quantity: 1 }).ok, true);
+  assert.equal(parseProposeCartChangeInput({ line_id: "u".repeat(38) + "::" + "o".repeat(300), quantity: 1 }).ok, true);
+});
+
+test("add card shows the sanitized note it will send, and no note text when there is none", () => {
+  const withNote = buildAddItemCard({ product: product(), quantity: 1, optionIds: ["o1"], note: 'no <b>onions</b> "please"' }, deps).card;
+  assert.match(withNote.description, /; note: "no onions 'please'"/);
+  assert.equal(withNote.item.specialInstructions, 'no onions "please"');
+  const none = buildAddItemCard({ product: product(), quantity: 1, optionIds: ["o1"], note: undefined }, deps).card.description;
+  assert.equal(/note/.test(none), false);
+});
+
+test("reorder card lists names, quantities and notes, caps at 5 then 'and N more', and stays within the limit", () => {
+  const products = new Map([[U1, product()]]);
+  const one = buildReorderCard(source([line({ quantity: 3, note: "extra <i>crispy</i>" })]), products, deps).card.description;
+  assert.match(one, /: 3 × Masala Dosa \(note: "extra crispy"\), /);
+  const many = buildReorderCard(source(Array.from({ length: 8 }, (_, i) => line({ quantity: i + 1, note: i === 0 ? "n".repeat(200) : null }))), products, deps).card;
+  assert.match(many.description, /8 items from Dosa Corner: /);
+  assert.match(many.description, /and 3 more/);
+  assert.equal((many.description.match(/ × Masala Dosa/g) ?? []).length, 5);
+  assert.equal(many.items.length, 8);
+  assert.ok(many.description.length <= LIMITS.maxDescriptionChars, String(many.description.length));
+  assert.equal(/note: "n{61}/.test(many.description), false);
+});
+
+test("cards record the store the cart snapshot had (null for an empty or missing cart)", () => {
+  const products = new Map([[U1, product()]]);
+  const ok = { quantity: 1, optionIds: ["o1"], note: undefined };
+  assert.equal(buildAddItemCard({ product: product(), ...ok, cart: cartOf("s2", "P", [1]) }, deps).card.cartStoreId, "s2");
+  for (const cart of [cartOf("s2", "P", []), cartOf(null, null, []), null, undefined]) {
+    assert.equal(buildAddItemCard({ product: product(), ...ok, cart }, deps).card.cartStoreId, null);
+    assert.equal(buildReorderCard(source([line()]), products, deps, cart).card.cartStoreId, null);
+  }
+  assert.equal(buildReorderCard(source([line()]), products, deps, cartOf("s1", "D", [1])).card.cartStoreId, "s1");
 });

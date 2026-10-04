@@ -11,7 +11,7 @@ export type ActionShapeDeps = {
   newId(): string;
 };
 
-export const LIMITS = { maxLineQuantity: 20, maxCardsPerReply: 3, maxOptionIds: 20, maxNoteChars: 200, maxLineIdChars: 200 } as const;
+export const LIMITS = { maxLineQuantity: 20, maxCardsPerReply: 3, maxOptionIds: 20, maxNoteChars: 200, maxLineIdChars: 38 + 37 * 20, maxDescriptionChars: 900, maxListedReorderItems: 5, maxNoteShown: 60 } as const;
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const asObject = (raw: unknown): Record<string, unknown> | null =>
@@ -130,6 +130,12 @@ export function replaceNotice(cart: CartSnapshot | null | undefined, cardStoreId
   return `. Confirming replaces the ${count} ${count === 1 ? "item" : "items"}${current === "" ? "" : ` from ${current}`} in your cart.`;
 }
 
+// What the card assumed about the cart: the store of the (non-empty) snapshot, checked again at tap time.
+export const cartStoreIdOf = (cart: CartSnapshot | null | undefined): string | null =>
+  cart && cart.items.length > 0 ? cart.storeId : null;
+
+const noteText = (note: string, max: number) => ` (note: "${note.replace(/"/g, "'").slice(0, max)}")`;
+
 export function buildAddItemCard(
   args: { product: ProductForCart; quantity: number; optionIds: string[]; note: string | undefined; cart?: CartSnapshot | null },
   deps: ActionShapeDeps
@@ -159,8 +165,9 @@ export function buildAddItemCard(
       kind: "add_item",
       id: deps.newId(),
       title: "Add to cart",
-      description: `Add ${quantity} × ${name}${optionText(chosen.selected)} from ${storeName}, ${deps.formatRupees(totalPaise)}${replaceNotice(args.cart, product.storeId, deps)}`,
+      description: `Add ${quantity} × ${name}${optionText(chosen.selected)} from ${storeName}, ${deps.formatRupees(totalPaise)}${cleanNote === "" ? "" : `; note: "${cleanNote.replace(/"/g, "'")}"`}${replaceNotice(args.cart, product.storeId, deps)}`,
       storeId: product.storeId,
+      cartStoreId: cartStoreIdOf(args.cart),
       storeName,
       item,
     },
@@ -222,15 +229,25 @@ export function buildReorderCard(
   }
   if (items.length === 0 || storeName === null) return { ok: false, error: "None of the items can be reordered right now" };
   const count = items.length;
+  const itemText = (line: CartLineData) =>
+    `${line.quantity} × ${line.name}${line.specialInstructions === null ? "" : noteText(line.specialInstructions, LIMITS.maxNoteShown)}`;
   const skippedText = skipped.length > 0 ? `; skipped ${skipped.map((s) => `${s.name} (${s.reason})`).join(", ")}` : "";
+  const describe = (listed: number) => {
+    const more = count - listed;
+    const list = items.slice(0, listed).map(itemText).join(", ") + (more > 0 ? ` and ${more} more` : "");
+    return `Add ${count} ${count === 1 ? "item" : "items"} from ${storeName}: ${list}, ${deps.formatRupees(totalPaise)}${skippedText}${replaceNotice(cart, source.store_id, deps)}`;
+  };
+  let listed = Math.min(count, LIMITS.maxListedReorderItems);
+  while (listed > 1 && describe(listed).length > LIMITS.maxDescriptionChars) listed -= 1;
   return {
     ok: true,
     card: {
       kind: "reorder",
       id: deps.newId(),
       title: "Reorder",
-      description: `Add ${count} ${count === 1 ? "item" : "items"} from ${storeName}, ${deps.formatRupees(totalPaise)}${skippedText}${replaceNotice(cart, source.store_id, deps)}`,
+      description: describe(listed),
       storeId: source.store_id,
+      cartStoreId: cartStoreIdOf(cart),
       storeName,
       items,
       skipped,
@@ -355,7 +372,9 @@ export const ACTION_TOOL_NAMES = ACTION_TOOLS.map((tool) => tool.name);
 // Action tools exist only for a verified customer with actions switched on; every other caller never sees them.
 export function selectActionTools(
   base: Anthropic.Tool[],
-  ctx: { customerId: string | null; actionsEnabled: boolean }
+  ctx: { customerId: string | null; actionsEnabled: boolean; ordersEnabled?: boolean }
 ): Anthropic.Tool[] {
-  return ctx.customerId && ctx.actionsEnabled ? [...base, ...ACTION_TOOLS] : base;
+  if (!ctx.customerId || !ctx.actionsEnabled) return base;
+  // propose_reorder reads the customer's own order, so it needs order lookups on too (ZIPPY_ORDERS=off hides it).
+  return [...base, ...ACTION_TOOLS.filter((tool) => tool.name !== "propose_reorder" || ctx.ordersEnabled === true)];
 }

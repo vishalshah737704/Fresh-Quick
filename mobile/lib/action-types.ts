@@ -25,7 +25,7 @@ export type CartLineData = {
 };
 
 export type ActionCard =
-  | { kind: "add_item"; id: string; title: string; description: string; storeId: string; storeName: string; item: CartLineData }
+  | { kind: "add_item"; id: string; title: string; description: string; storeId: string; storeName: string; cartStoreId: string | null; item: CartLineData }
   | {
       kind: "reorder";
       id: string;
@@ -33,6 +33,7 @@ export type ActionCard =
       description: string;
       storeId: string;
       storeName: string;
+      cartStoreId: string | null;
       items: CartLineData[];
       skipped: { name: string; reason: string }[];
     }

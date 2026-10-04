@@ -208,7 +208,7 @@ export async function runTool(
       return pushCard(ctx, buildAddItemCard({ product, quantity: parsed.value.quantity, optionIds: parsed.value.option_ids, note: parsed.value.note, cart: ctx.cart }, actionDeps));
     }
     case "propose_reorder": {
-      if (!actionsAllowed(ctx) || !ctx.customerId) return bad("Cart actions are only available to a signed-in customer");
+      if (!actionsAllowed(ctx) || !ctx.customerId || !ctx.ordersEnabled) return bad("Cart actions are only available to a signed-in customer");
       const parsed = parseProposeReorderInput(rawInput);
       if (!parsed.ok) return bad(parsed.error);
       const source = await ordersReader.getReorderSource(ctx.customerId, parsed.value);

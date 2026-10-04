@@ -318,3 +318,14 @@ test("action rules say a different-store add replaces the cart on confirm and ne
   assert.match(prompt, /confirming the card replaces the current cart/);
   assert.match(prompt, /Do not ask the customer to clear the cart first and never say the app will ask/);
 });
+
+test("with order lookups off, the action rules never mention reorder or point at order tools", () => {
+  const off = buildSystemPrompt({ brandName: "B", role: "customer", chunks: [], toolsEnabled: true, ordersEnabled: false, actionsEnabled: true });
+  assert.match(off, /get_my_cart, propose_add_to_cart, propose_cart_change and propose_clear_cart/);
+  assert.equal(/propose_reorder|reorder/i.test(off), false);
+  assert.equal(/list_my_orders|get_my_order/.test(off), false);
+  assert.match(off, /If the dish is from a different store/);
+  const on = buildSystemPrompt({ brandName: "B", role: "customer", chunks: [], toolsEnabled: true, ordersEnabled: true, actionsEnabled: true });
+  assert.match(on, /propose_add_to_cart, propose_reorder, propose_cart_change/);
+  assert.match(on, /dish or reorder is from a different store/);
+});

@@ -4,15 +4,25 @@ export const CART_CHANGED_MESSAGE = "Your cart changed, ask me again.";
 
 // Runs ONE confirmed card against the live cart. `replace` is decided here, at tap time, from the live cart, and the
 // store's atomic addItems is used so the "clear cart?" modal (which reads render-time state) can never open.
+// Whether adding from this card's store would replace the live cart differs from what the card said (it was built
+// from an older snapshot): then nothing runs and the user is asked to ask again.
+const replaceChanged = (card: { storeId: string; cartStoreId: string | null }, cart: CartApi) => {
+  const assumed = card.cartStoreId !== null && card.cartStoreId !== card.storeId;
+  const now = cart.storeId !== null && cart.storeId !== card.storeId;
+  return assumed !== now;
+};
+
 export function executeAction(card: ActionCard, cart: CartApi): { ok: boolean; message: string } {
   switch (card.kind) {
     case "add_item": {
+      if (replaceChanged(card, cart)) return { ok: false, message: CART_CHANGED_MESSAGE };
       const replace = cart.storeId !== null && cart.storeId !== card.storeId;
       cart.addItems(card.storeId, card.storeName, [card.item], replace);
       return { ok: true, message: replace ? "Cart replaced and item added." : "Added to your cart." };
     }
     case "reorder": {
       if (card.items.length === 0) return { ok: false, message: "Nothing to add." };
+      if (replaceChanged(card, cart)) return { ok: false, message: CART_CHANGED_MESSAGE };
       const replace = cart.storeId !== null && cart.storeId !== card.storeId;
       cart.addItems(card.storeId, card.storeName, card.items, replace);
       const count = card.items.length;

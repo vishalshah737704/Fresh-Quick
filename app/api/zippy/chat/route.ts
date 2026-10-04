@@ -87,7 +87,8 @@ export async function POST(request: NextRequest) {
     // Orders are visible only to a verified customer; the id comes from the session token, never from the request body.
     const customerId = caller.role === "customer" ? caller.userId : null;
     const ordersEnabled = toolsEnabled && customerId !== null && process.env.ZIPPY_ORDERS !== "off";
-    const actionsEnabled = toolsEnabled && customerId !== null && process.env.ZIPPY_ACTIONS !== "off";
+    // Cards travel only in the non-streaming JSON reply, so a streaming request gets no action tools (it could not show their cards).
+    const actionsEnabled = toolsEnabled && customerId !== null && process.env.ZIPPY_ACTIONS !== "off" && !stream;
     const actions: ActionCard[] = [];
     const embedding = await embedQuestion(message);
     const chunks = selectContext(await retrieveChunks(embedding, caller.role));
