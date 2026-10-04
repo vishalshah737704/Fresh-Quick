@@ -18,6 +18,17 @@ export function clientIpFromForwarded(header: string | null, hops: number): stri
   if (hops < 1 || !header) return null;
   const entries = header.split(",").map((entry) => entry.trim());
   if (entries.length < hops) return null;
-  const ip = entries[entries.length - hops];
+  const ip = normalizeIp(entries[entries.length - hops]);
   return ip ? ip : null;
+}
+
+// So one client cannot get several buckets by varying the spelling: strip a port, unwrap
+// "[v6]:port", lowercase, and turn an IPv4-mapped IPv6 address (::ffff:a.b.c.d) into plain IPv4.
+function normalizeIp(entry: string): string {
+  let ip = entry.toLowerCase();
+  const bracketed = /^\[([^\]]*)\](?::\d+)?$/.exec(ip);
+  if (bracketed) ip = bracketed[1];
+  else if (/^\d{1,3}(?:\.\d{1,3}){3}:\d+$/.test(ip)) ip = ip.slice(0, ip.lastIndexOf(":"));
+  const mapped = /^::ffff:(\d{1,3}(?:\.\d{1,3}){3})$/.exec(ip);
+  return mapped ? mapped[1] : ip;
 }

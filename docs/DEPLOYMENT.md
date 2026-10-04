@@ -147,7 +147,7 @@ when you specifically want to return to a clean seeded state.
 ## Public deployment checklist
 
 Read this before exposing the app (and so Ask Zippy) to the public internet. Every Zippy message costs
-real money: one OpenAI embedding plus one to five Claude calls (up to 4 tool rounds and a final answer).
+real money: an OpenAI embedding (plus one more per catalog search the model runs) and one to five Claude calls (up to 4 tool rounds and a final answer, up to 7 calls if `ZIPPY_MAX_TOOL_ROUNDS` is raised to 6).
 The limits below bound the worst-case daily spend. All are env vars, read at call time, each an integer
 from 1 to 1,000,000; anything else (0, text, empty) falls back to the default, so a typo can never switch
 a limit off. Counts are per fixed window (a minute or a calendar day, UTC).
@@ -171,7 +171,7 @@ of bad tokens costs no auth or database lookups), then the per-person buckets, t
 that kind of caller, then the overall ceiling. The first bucket over its limit stops the request with HTTP
 429 and a `Retry-After` header (seconds until that window resets). The message depends on the class: a
 per-minute trip says to wait N seconds, a per-person daily trip says today's limit is reached, and a global
-trip says Zippy is very busy. Request bodies over 200,000 bytes get 413 before parsing. Each trip writes one
+per-minute trip says Zippy is very busy and a global daily trip (or the overall ceiling) says Zippy has reached its limit for today. Request bodies over 200,000 bytes get 413 before parsing. Each trip writes one
 server log line with the class only (no user id, IP or message text).
 
 ### Trusted proxy hops (`ZIPPY_TRUSTED_PROXY_HOPS`)
@@ -180,27 +180,35 @@ The client IP is taken from the `x-forwarded-for` header: it is the entry this m
 because each trusted proxy appends the address it received the request from, so entries further left are
 written by the client and cannot be trusted. Set it to the number of proxies you control in front of the app:
 
-- `0`: no proxy (app exposed directly). The header is ignored and every visitor shares one "unknown" IP
-  bucket (strict, but it never trusts a spoofable value).
+- `0`: no proxy (app exposed directly). The header is ignored, so the IP is always unknown and EVERY caller
+  shares the pre-auth burst bucket `ipburst:unknown:min`, signed-in users included: one anonymous client
+  sending 40 requests a minute locks everyone out of Zippy. Visitors also share a single 5 per minute and
+  20 per day allowance in total. Always front a public deployment with a proxy (hops 1 or more); use 0 only
+  for a private or test instance.
 - `1` (default): one proxy, for example Caddy or nginx on the same host, or a single platform proxy.
 - `2`: two proxies, for example a CDN in front of a load balancer.
 
 A wrong value breaks things in one of two ways. Too low (say 1 behind a CDN plus a proxy): the "client" is
 actually a proxy address, so all visitors share one bucket and the first heavy user locks everyone out.
-Too high, or 1 with no proxy at all: the chosen entry is client-controlled, so an attacker can send a
-different fake address on every request and get a fresh visitor bucket each time. Verify after deploying:
+Too high, or 1 with no proxy at all: the chosen entry is client-controlled (Next fills `x-forwarded-for`
+with the socket address only when the header is absent, so a client-supplied value is kept), so an attacker
+can send a different fake address on every request and get a fresh visitor bucket each time. Locally, with
+no header sent, the IP is `::1` or `127.0.0.1`, not unknown. Verify after deploying:
 send the same request twice with a made-up leftmost `x-forwarded-for` entry and confirm the count still
 accumulates against your own address.
 
 ### Cost ceiling arithmetic
 
 Worst-case spend per day is `ZIPPY_LIMIT_ALL_PER_DAY` times the model calls one message can make: 1
-embedding, up to 4 tool rounds and 1 final answer, so up to 5 Claude calls plus 1 embedding per message.
-At the default ceiling of 8000 that is up to 40,000 Claude calls and 8,000 embeddings a day. Price that
+embedding for the question, up to 4 tool rounds (up to 6 if `ZIPPY_MAX_TOOL_ROUNDS` is raised) and 1 final
+answer, so up to 5 Claude calls (7 at 6 rounds). Each tool round can run up to 6 tool calls and each
+`search_catalog` call embeds again, so up to about 25 embeddings per message (1 + 6 x 4). At the default
+ceiling of 8000 that is up to 40,000 Claude calls (56,000 at 6 rounds) and about 200,000 embeddings a day. Price that
 with your current model rates (long conversations and tool results make the Claude calls larger than a
 typical question) and lower the ceiling, or `ZIPPY_MAX_TOOL_ROUNDS`, until the number is one you accept.
-The per-class global buckets sit below the ceiling on purpose, so a flood of visitors cannot use up the
-signed-in users' share.
+At the defaults 1000 (visitors) + 5000 (signed-in) is less than 8000, so the overall ceiling only bites once
+you raise the global buckets; until then the per-class buckets are the real limit, and a flood of visitors
+cannot use up the signed-in users' share.
 
 ### Not covered by these limits
 

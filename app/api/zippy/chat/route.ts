@@ -5,7 +5,7 @@ import { resolveCaller } from "@/lib/zippy/caller";
 import { parseChatRequest } from "@/lib/zippy/validate";
 import { limitMessage, preAuthPlan, rateLimitPlan, retryAfterSeconds, type Limit } from "@/lib/zippy/rate-limit";
 import { clientIpFromForwarded, parseTrustedHops } from "@/lib/zippy/client-ip";
-import { MAX_BODY_BYTES, declaredLengthTooLarge } from "@/lib/zippy/body-cap";
+import { MAX_BODY_BYTES, declaredLengthTooLarge, readTextWithCap } from "@/lib/zippy/body-cap";
 import { embedQuestion, retrieveCatalogHits, retrieveChunks } from "@/lib/zippy/retrieve";
 import { selectContext, buildSystemPrompt, normalizeHistory } from "@/lib/zippy/prompt";
 import { runAgent } from "@/lib/zippy/agent";
@@ -75,9 +75,9 @@ export async function POST(request: NextRequest) {
   if (declaredLengthTooLarge(request.headers.get("content-length"))) return fail(BODY_TOO_LARGE_MESSAGE, 413);
   let raw: unknown;
   try {
-    const text = await request.text();
-    if (Buffer.byteLength(text, "utf8") > MAX_BODY_BYTES) return fail(BODY_TOO_LARGE_MESSAGE, 413);
-    raw = JSON.parse(text);
+    const body = await readTextWithCap(request.body, MAX_BODY_BYTES);
+    if (!body.ok) return fail(BODY_TOO_LARGE_MESSAGE, 413);
+    raw = JSON.parse(body.text);
   } catch {
     return fail("Invalid request body", 400);
   }

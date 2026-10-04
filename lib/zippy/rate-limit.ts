@@ -2,12 +2,13 @@ import { createHash } from "node:crypto";
 // Message texts live here (not in constants.ts) because node's test runner cannot resolve
 // extensionless relative imports between .ts files.
 export const LIMIT_DAY_MESSAGE = "You've reached today's Zippy limit. Please try again tomorrow.";
+export const LIMIT_GLOBAL_DAY_MESSAGE = "Zippy has reached its limit for today. Please try again later today.";
 export const LIMIT_BUSY_MESSAGE = "Zippy is very busy right now. Please try again in a few minutes.";
 function limitMinuteMessage(seconds: number): string {
   return `You're asking a little too fast. Please wait ${seconds} seconds and try again.`;
 }
 
-export type LimitKind = "minute" | "day" | "global";
+export type LimitKind = "minute" | "day" | "global" | "globalDay";
 export type Limit = { bucket: string; windowSeconds: number; limit: number; kind: LimitKind };
 
 export const MINUTE_SECONDS = 60;
@@ -78,13 +79,13 @@ export function preAuthPlan(ip: string | null): Limit[] {
 export function rateLimitPlan(args: { userId: string | null; ip: string | null }): Limit[] {
   const { userId, ip } = args;
   const limits = readLimits(process.env);
-  const ceiling: Limit = { bucket: "all:day", windowSeconds: DAY_SECONDS, limit: limits.allPerDay, kind: "global" };
+  const ceiling: Limit = { bucket: "all:day", windowSeconds: DAY_SECONDS, limit: limits.allPerDay, kind: "globalDay" };
   if (userId) {
     return [
       { bucket: `user:${userId}:min`, windowSeconds: MINUTE_SECONDS, limit: limits.userPerMin, kind: "minute" },
       { bucket: `user:${userId}:day`, windowSeconds: DAY_SECONDS, limit: limits.userPerDay, kind: "day" },
       { bucket: "users:all:min", windowSeconds: MINUTE_SECONDS, limit: limits.globalUsersPerMin, kind: "global" },
-      { bucket: "users:all:day", windowSeconds: DAY_SECONDS, limit: limits.globalUsersPerDay, kind: "global" },
+      { bucket: "users:all:day", windowSeconds: DAY_SECONDS, limit: limits.globalUsersPerDay, kind: "globalDay" },
       ceiling,
     ];
   }
@@ -93,7 +94,7 @@ export function rateLimitPlan(args: { userId: string | null; ip: string | null }
     { bucket: `ip:${id}:min`, windowSeconds: MINUTE_SECONDS, limit: limits.visitorPerMin, kind: "minute" },
     { bucket: `ip:${id}:day`, windowSeconds: DAY_SECONDS, limit: limits.visitorPerDay, kind: "day" },
     { bucket: "visitors:all:min", windowSeconds: MINUTE_SECONDS, limit: limits.globalVisitorsPerMin, kind: "global" },
-    { bucket: "visitors:all:day", windowSeconds: DAY_SECONDS, limit: limits.globalVisitorsPerDay, kind: "global" },
+    { bucket: "visitors:all:day", windowSeconds: DAY_SECONDS, limit: limits.globalVisitorsPerDay, kind: "globalDay" },
     ceiling,
   ];
 }
@@ -108,5 +109,6 @@ export function retryAfterSeconds(windowSeconds: number, nowMs: number): number 
 export function limitMessage(kind: LimitKind, retryAfter: number): string {
   if (kind === "minute") return limitMinuteMessage(retryAfter);
   if (kind === "day") return LIMIT_DAY_MESSAGE;
+  if (kind === "globalDay") return LIMIT_GLOBAL_DAY_MESSAGE;
   return LIMIT_BUSY_MESSAGE;
 }
