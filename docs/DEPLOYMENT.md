@@ -144,6 +144,82 @@ path yet — see the "No automated test suite" / migration tooling notes
 in `MEMORY.md`. Only run it when you're prepared to lose current data, or
 when you specifically want to return to a clean seeded state.
 
+## Public deployment checklist
+
+Read this before exposing the app (and so Ask Zippy) to the public internet. Every Zippy message costs
+real money: one OpenAI embedding plus one to five Claude calls (up to 4 tool rounds and a final answer).
+The limits below bound the worst-case daily spend. All are env vars, read at call time, each an integer
+from 1 to 1,000,000; anything else (0, text, empty) falls back to the default, so a typo can never switch
+a limit off. Counts are per fixed window (a minute or a calendar day, UTC).
+
+| Env var | Default | What it limits |
+| --- | --- | --- |
+| `ZIPPY_LIMIT_USER_PER_MIN` | 10 | one signed-in user, per minute |
+| `ZIPPY_LIMIT_USER_PER_DAY` | 60 | one signed-in user, per day |
+| `ZIPPY_LIMIT_VISITOR_PER_MIN` | 5 | one visitor IP, per minute |
+| `ZIPPY_LIMIT_VISITOR_PER_DAY` | 20 | one visitor IP, per day |
+| `ZIPPY_LIMIT_GLOBAL_VISITORS_PER_MIN` | 60 | all visitors together, per minute |
+| `ZIPPY_LIMIT_GLOBAL_VISITORS_PER_DAY` | 1000 | all visitors together, per day |
+| `ZIPPY_LIMIT_GLOBAL_USERS_PER_MIN` | 120 | all signed-in users together, per minute |
+| `ZIPPY_LIMIT_GLOBAL_USERS_PER_DAY` | 5000 | all signed-in users together, per day |
+| `ZIPPY_LIMIT_ALL_PER_DAY` | 8000 | overall ceiling, every caller, per day |
+| `ZIPPY_LIMIT_IP_BURST_PER_MIN` | 40 | any request from one IP, per minute, checked before sign-in is verified |
+| `ZIPPY_TRUSTED_PROXY_HOPS` | 1 | trusted proxies in front of the app (0 to 5) |
+
+Order of checks: the IP burst bucket first (before the body is read or the token is verified, so a flood
+of bad tokens costs no auth or database lookups), then the per-person buckets, then the global bucket for
+that kind of caller, then the overall ceiling. The first bucket over its limit stops the request with HTTP
+429 and a `Retry-After` header (seconds until that window resets). The message depends on the class: a
+per-minute trip says to wait N seconds, a per-person daily trip says today's limit is reached, and a global
+trip says Zippy is very busy. Request bodies over 200,000 bytes get 413 before parsing. Each trip writes one
+server log line with the class only (no user id, IP or message text).
+
+### Trusted proxy hops (`ZIPPY_TRUSTED_PROXY_HOPS`)
+
+The client IP is taken from the `x-forwarded-for` header: it is the entry this many positions from the right,
+because each trusted proxy appends the address it received the request from, so entries further left are
+written by the client and cannot be trusted. Set it to the number of proxies you control in front of the app:
+
+- `0`: no proxy (app exposed directly). The header is ignored and every visitor shares one "unknown" IP
+  bucket (strict, but it never trusts a spoofable value).
+- `1` (default): one proxy, for example Caddy or nginx on the same host, or a single platform proxy.
+- `2`: two proxies, for example a CDN in front of a load balancer.
+
+A wrong value breaks things in one of two ways. Too low (say 1 behind a CDN plus a proxy): the "client" is
+actually a proxy address, so all visitors share one bucket and the first heavy user locks everyone out.
+Too high, or 1 with no proxy at all: the chosen entry is client-controlled, so an attacker can send a
+different fake address on every request and get a fresh visitor bucket each time. Verify after deploying:
+send the same request twice with a made-up leftmost `x-forwarded-for` entry and confirm the count still
+accumulates against your own address.
+
+### Cost ceiling arithmetic
+
+Worst-case spend per day is `ZIPPY_LIMIT_ALL_PER_DAY` times the model calls one message can make: 1
+embedding, up to 4 tool rounds and 1 final answer, so up to 5 Claude calls plus 1 embedding per message.
+At the default ceiling of 8000 that is up to 40,000 Claude calls and 8,000 embeddings a day. Price that
+with your current model rates (long conversations and tool results make the Claude calls larger than a
+typical question) and lower the ceiling, or `ZIPPY_MAX_TOOL_ROUNDS`, until the number is one you accept.
+The per-class global buckets sit below the ceiling on purpose, so a flood of visitors cannot use up the
+signed-in users' share.
+
+### Not covered by these limits
+
+- Public sign-up is not throttled and has no CAPTCHA, so an attacker can create many accounts. The global
+  signed-in buckets and the overall ceiling bound the spend, but one attacker can still use up the daily
+  budget and make Zippy say it is busy for everyone.
+- There is no per-user cap on concurrent requests (the limits count requests, not how many run at once).
+- Provider-side spend limits: set a monthly budget and alerts in the Anthropic console and the OpenAI
+  console. They are the last line of defense if the limits above are set too high or a key leaks.
+
+### Testing the limits safely
+
+Do it on a spare local instance, never on production. Start it with tiny env limits (for example
+`ZIPPY_LIMIT_VISITOR_PER_MIN=2`, `ZIPPY_LIMIT_VISITOR_PER_DAY=3`, `ZIPPY_LIMIT_IP_BURST_PER_MIN=8`) and send
+visitor requests to `POST /api/zippy/chat`: calls 1 and 2 return 200, call 3 returns 429 with `Retry-After`
+and no model call is made (only the passing requests spend anything). Use a different `x-forwarded-for` address
+to confirm a different client gets its own bucket. The counters live in the `zippy_usage` table under real
+bucket names, so delete the rows for your test IP hash afterwards.
+
 ## Things this guide deliberately does not cover
 
 - **Hosted/cloud Supabase** — explicitly out of scope; this project's

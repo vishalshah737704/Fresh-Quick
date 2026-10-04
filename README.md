@@ -206,6 +206,12 @@ cart's store changed after the card was made, the tap says "Your cart changed, a
 delivery partners and admins never get it; one checkout card per reply. Kill switch: `ZIPPY_ACTIONS=off`. After
 merge, re-ingest `knowledge/` and re-run the eval (two new cases).
 
+**Rate limits and abuse guards (2026-10-04).** Zippy's limits are env-tunable (defaults: signed-in 10/min and
+60/day, visitors 5/min and 20/day per IP, plus global buckets for visitors and signed-in users and an overall
+8000/day ceiling). A burst check runs before sign-in is verified, oversized bodies get 413, and a limit trip
+returns 429 with `Retry-After`. Set `ZIPPY_TRUSTED_PROXY_HOPS` to the number of proxies in front of the app.
+See the "Public deployment checklist" in `docs/DEPLOYMENT.md` before exposing the app publicly.
+
 **Build caveat:** in a git worktree with a `node_modules` junction, Turbopack
 rejects the build; use `npx next build --webpack` there and run the real
 `npm run build` once merged to `main`.

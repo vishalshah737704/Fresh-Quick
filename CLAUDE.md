@@ -154,7 +154,7 @@ data in `catalog.ts` (pure) / `catalog-data.ts`; index sync in `catalog-sync.ts`
 (env `ZIPPY_MAX_TOOL_ROUNDS`, 1-6). **The answer now arrives in one piece, not word by word.** Kill
 switch: `ZIPPY_TOOLS=off` (no tools, no catalog = Z1 content). Web sends the delivery pin
 (`lib/zippy/client-location.ts`: stored pin, or the default pin on `/customer*` only); mobile sends the phone's foreground GPS fix
-(`mobile/lib/zippy-location.ts`; permission is asked only when the question is about nearby stores; denied = no location, so "nearest" is unavailable). Rate limits as of 2026-10-03: signed-in 10/min + 60/day, visitors 5/min + 20/day per IP (global backstop unchanged). The location is never saved or logged. Keep the index
+(`mobile/lib/zippy-location.ts`; permission is asked only when the question is about nearby stores; denied = no location, so "nearest" is unavailable). Rate limits are env-tunable (defaults: signed-in 10/min + 60/day, visitors 5/min + 20/day per IP; see the rate-limit paragraph below). The location is never saved or logged. Keep the index
 fresh with `POST /api/internal/zippy/catalog-sync` (n8n workflow 07, webhook
 `foodhub/zippy-catalog-sync`, nightly; imported and published in the local n8n 2026-10-03, webhook verified: `embedded: 0`). Developer routes: `POST /api/internal/zippy/tool` (run
 one tool) and `/search` (returns `{matches, catalog}`). Checks: `scripts/zippy-eval.mjs` (46/47) and
@@ -243,6 +243,17 @@ a Modal). Open for Vishal: after merge re-ingest `knowledge/` and re-run `node s
 cases: "can zippy check out for me", "take me to checkout"); phone check. See MEMORY.md's "Ask Zippy Z4b"
 entry and `docs/superpowers/specs/2026-10-04-ask-zippy-z4b-design.md`. Manuals: web v3.5, mobile v4.6, edited in
 place (no page start changed, so the static TOCs were untouched).
+**Ask Zippy rate limits and abuse guards (2026-10-04, branch `zippy-rate-limits`):**
+every limit is an env var with a validated default (`lib/zippy/rate-limit.ts`; bad values fall back to the default,
+never off): per user 10/min + 60/day, per visitor IP 5/min + 20/day, global visitors 60/min + 1000/day, global
+signed-in users 120/min + 5000/day, an overall ceiling of 8000/day, and a pre-auth burst of 40/min per IP that runs
+before the body is read or the token is verified. `ZIPPY_TRUSTED_PROXY_HOPS` (default 1, 0 to 5) says how many
+trusted proxies sit in front of the app (`lib/zippy/client-ip.ts`: the client is the `x-forwarded-for` entry that
+many positions from the right; 0 ignores the header). Bodies over 200,000 bytes get 413 (`body-cap.ts`). A trip
+returns 429 with `Retry-After` and a message by class (minute / day / busy) and logs the class only. Full table,
+proxy examples, cost arithmetic and what is NOT covered (sign-up throttling, CAPTCHA, concurrency caps, provider
+monthly budgets) are in `docs/DEPLOYMENT.md` "Public deployment checklist"; spec
+`docs/superpowers/specs/2026-10-04-zippy-rate-limits-design.md`.
 **Gotcha for demos/tests:** workflow 04 auto-assigns a `ready` order within
 ~10 s to the NEAREST ONLINE partner by stored lat/lng, so it never reaches the
 "Available" list while any online partner has coordinates — a leftover online
@@ -756,6 +767,11 @@ See [MEMORY.md](MEMORY.md) for phase-by-phase progress and decisions.
   nodes off again (n8n UI: select node, press `D`, Publish) and verify from n8n's
   execution record instead. A fresh n8n imported from the repo JSON has them on.
 
+- **Every new capability that spends money or calls a provider needs an abuse-gap audit before the app is
+  exposed publicly:** check the limits for a global bucket for EVERY identity class (a per-user limit alone is
+  unbounded when sign-up is public), a cheap pre-auth check, proxy trust (how the client IP is derived and what
+  happens with the wrong number of proxies), and a request body cap. The Zippy limits had per-user buckets but no
+  signed-in global bucket, no overall ceiling, a hard-wired IP rule and no body cap until this audit.
 - **Claude Sonnet 5.5 API: omit `thinking` and it runs adaptive thinking at
   effort high, which eats `max_tokens`** (Zippy replies came back truncated or
   empty). Send `thinking: {type: "between_tools"}`. Never send
