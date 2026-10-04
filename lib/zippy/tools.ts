@@ -100,7 +100,7 @@ export const ZIPPY_TOOLS: Anthropic.Tool[] = [
   {
     name: "get_item_options",
     description:
-      "Get a dish's option groups (such as size or add-ons), how many can be chosen, and each option's extra price. The product_id must come from an earlier tool result or the catalog block.",
+      "Get a dish's option groups (such as size or add-ons), how many can be chosen, each option's extra price, and each option's id (pass the chosen ids as option_ids to propose_add_to_cart). The product_id must come from an earlier tool result or the catalog block.",
     strict: true,
     input_schema: {
       type: "object",
