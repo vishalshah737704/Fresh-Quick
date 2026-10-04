@@ -38,7 +38,7 @@ A delivery partner takes your order once it is Ready. Orders go automatically to
 
 ## Can I track the delivery partner on a live map?
 
-Yes, on the website. Once your order is assigned or on the way, the order page shows a map with the store, your delivery address and the delivery partner. The dashed line between the store and your address is an approximate straight line, not the road route, and the distance shown is approximate too. The map refreshes by itself with the latest reported location of the partner. The phone app does not show this map.
+Yes, on the website. Once your order is assigned or on the way, the order page shows a map with the store, your delivery address and the delivery partner. While the partner is on the way, a solid line follows the roads to your address and the page shows an estimated time and road distance, for example "About 23 min · 8.3 km by road". The time is the usual driving time without live traffic, so treat it as an estimate. If the road route cannot be loaded, a dashed approximate straight line is shown instead, with no time estimate. The map refreshes by itself with the latest reported location of the partner. The phone app does not show this map.
 
 ## How long will my order take?
 

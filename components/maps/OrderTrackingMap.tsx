@@ -5,7 +5,19 @@ import MapCanvas from "@/components/maps/MapCanvas";
 import { BRAND } from "@/lib/branding";
 import { haversineDistanceKm } from "@/lib/geo";
 import { formatDistanceKm, interpolateLatLng } from "@/lib/maps/geo-math";
-import { loadMapClasses, useGoogleMaps, type MapClasses } from "@/lib/maps/loader";
+import {
+  loadMapClasses,
+  loadRoutesLibrary,
+  useGoogleMaps,
+  type MapClasses,
+} from "@/lib/maps/loader";
+import {
+  formatEta,
+  formatRouteDistance,
+  parseRoute,
+  shouldRequestRoute,
+  type RouteRequestState,
+} from "@/lib/maps/route";
 import {
   fitKey,
   formatUpdatedAt,
@@ -47,11 +59,17 @@ type Scene = {
   destination: GMarker | null;
   partner: GMarker | null;
   line: GPolyline | null;
+  // Solid road route; when set, the dashed straight line is hidden.
+  route: GPolyline | null;
   lastFitKey: string | null;
+  routeFitKey: string | null;
   frame: number | null;
 };
 
+type RouteInfo = { durationSeconds: number; distanceMeters: number; destKey: string };
+
 const ANIMATION_MS = 1000;
+const ROUTE_CHECK_MS = 5000;
 
 function circle(path: number, fill: string, scale: number) {
   // A symbol (path from core SymbolPath.CIRCLE) needs no google.maps.Size object.
@@ -77,6 +95,13 @@ export default function OrderTrackingMap({ status, store, destination, partnerLo
   viewRef.current = view;
   const sceneRef = useRef<Scene | null>(null);
   const [broken, setBroken] = useState(false);
+  const [storedRoute, setRouteInfo] = useState<RouteInfo | null>(null);
+  // Request bookkeeping lives in a ref: it must not trigger renders.
+  const routeCtl = useRef<{
+    last: RouteRequestState["last"];
+    inFlight: boolean;
+    kind?: "partner" | "store";
+  }>({ last: null, inFlight: false });
 
   const mountedRef = useRef(true);
   useEffect(() => {
@@ -138,7 +163,7 @@ export default function OrderTrackingMap({ status, store, destination, partnerLo
         })
     );
 
-    if (v.store && v.destination) {
+    if (v.store && v.destination && !scene.route) {
       const path = [v.store, v.destination];
       if (scene.line) {
         scene.line.setPath(path);
@@ -232,13 +257,135 @@ export default function OrderTrackingMap({ status, store, destination, partnerLo
     view.final,
   ]);
 
+  // Requests a road route when shouldRequestRoute says so. Never throws: any
+  // failure keeps the dashed straight line and backs off 60 s.
+  const checkRoute = useCallback(
+    (scene: Scene) => {
+      const v = viewRef.current;
+      const origin = v.partner ?? (v.final ? v.store : null);
+      const destination = v.destination;
+      if (!origin || !destination) return;
+      const originKind = v.partner ? "partner" : "store";
+      const ctl = routeCtl.current;
+      if (ctl.kind !== undefined && ctl.kind !== originKind) {
+        // Live route -> delivered: the old route started at the partner, so drop it.
+        if (scene.route) {
+          scene.route.setMap(null);
+          scene.route = null;
+          scene.routeFitKey = null;
+        }
+        ctl.last = null;
+        setRouteInfo(null);
+        apply();
+      }
+      ctl.kind = originKind;
+      const now = Date.now();
+      const ok = shouldRequestRoute(
+        { origin, destination, last: ctl.last, inFlight: ctl.inFlight, repeat: !v.final },
+        now
+      );
+      if (!ok) return;
+      const attempt = { origin, destination, at: now };
+      ctl.inFlight = true;
+      // Ignore a late answer if the scene went away, the destination changed or
+      // the origin switched kind (for example the order was delivered meanwhile).
+      const stale = () => {
+        const cur = viewRef.current;
+        return (
+          sceneRef.current !== scene ||
+          !mountedRef.current ||
+          cur.destination?.lat !== destination.lat ||
+          cur.destination?.lng !== destination.lng ||
+          (cur.partner ? "partner" : "store") !== originKind
+        );
+      };
+      void (async () => {
+        try {
+          const Route = await loadRoutesLibrary();
+          const response = await Route.computeRoutes({
+            origin,
+            destination,
+            travelMode: "DRIVING",
+            routingPreference: "TRAFFIC_UNAWARE",
+            fields: ["path", "durationMillis", "distanceMeters"],
+          });
+          if (stale()) return;
+          const parsed = parseRoute(response.routes?.[0]);
+          if (!parsed) throw new Error("No usable route in the Routes response");
+          routeCtl.current.last = attempt;
+          if (scene.route) scene.route.setPath(parsed.path);
+          else {
+            scene.route = new scene.Polyline({
+              map: scene.map,
+              path: parsed.path,
+              strokeColor: BRAND.theme.ink,
+              strokeOpacity: 0.85,
+              strokeWeight: 4,
+            });
+          }
+          const key = fitKey(viewRef.current);
+          if (scene.routeFitKey !== key) {
+            scene.routeFitKey = key;
+            const bounds = new scene.LatLngBounds();
+            const cur = viewRef.current;
+            for (const p of [cur.store, cur.destination, cur.partner, ...parsed.path]) {
+              if (p) bounds.extend(p);
+            }
+            scene.map.fitBounds(bounds, 48);
+          }
+          setRouteInfo({
+            durationSeconds: parsed.durationSeconds,
+            distanceMeters: parsed.distanceMeters,
+            destKey: `${destination.lat},${destination.lng}`,
+          });
+          apply();
+        } catch (error) {
+          if (stale()) return;
+          console.warn("Road route unavailable, showing the straight line", error);
+          // A failed refresh must not leave an outdated route on the map.
+          if (scene.route) {
+            scene.route.setMap(null);
+            scene.route = null;
+          }
+          scene.routeFitKey = null;
+          setRouteInfo(null);
+          apply();
+          routeCtl.current.last = { ...attempt, failedAt: Date.now() };
+        } finally {
+          routeCtl.current.inFlight = false;
+        }
+      })();
+    },
+    [apply]
+  );
+
+  // A new destination invalidates the displayed route.
+  const destLat = view.destination?.lat;
+  const destLng = view.destination?.lng;
+  useEffect(() => {
+    const scene = sceneRef.current;
+    if (scene?.route) {
+      scene.route.setMap(null);
+      scene.route = null;
+      scene.routeFitKey = null;
+    }
+    routeCtl.current.last = null;
+    routeCtl.current.kind = undefined;
+    const live = sceneRef.current;
+    if (live) {
+      apply();
+      checkRoute(live);
+    }
+  }, [destLat, destLng, apply, checkRoute]);
+
   const onReady = useCallback(
     (map: GMap, google: GoogleNs) => {
       let disposed = false;
+      let timer: number | null = null;
       void loadMapClasses()
         .then((classes) => {
           if (disposed) return;
-          sceneRef.current = {
+          const scene: Scene = {
             map,
             google,
             ...classes,
@@ -246,25 +393,33 @@ export default function OrderTrackingMap({ status, store, destination, partnerLo
             destination: null,
             partner: null,
             line: null,
+            route: null,
             lastFitKey: null,
+            routeFitKey: null,
             frame: null,
           };
+          sceneRef.current = scene;
           apply();
+          checkRoute(scene);
+          timer = window.setInterval(() => checkRoute(scene), ROUTE_CHECK_MS);
         })
         .catch(fail);
       return () => {
         disposed = true;
+        if (timer !== null) window.clearInterval(timer);
         const scene = sceneRef.current;
         sceneRef.current = null;
+        routeCtl.current = { last: null, inFlight: false };
         if (!scene) return;
         if (scene.frame !== null) cancelAnimationFrame(scene.frame);
         scene.store?.setMap(null);
         scene.destination?.setMap(null);
         scene.partner?.setMap(null);
         scene.line?.setMap(null);
+        scene.route?.setMap(null);
       };
     },
-    [apply, fail]
+    [apply, checkRoute, fail]
   );
 
   const first = view.store ?? view.destination ?? view.partner;
@@ -276,6 +431,15 @@ export default function OrderTrackingMap({ status, store, destination, partnerLo
       ? formatDistanceKm(
           haversineDistanceKm(view.partner.lat, view.partner.lng, view.destination.lat, view.destination.lng)
         )
+      : "";
+  // A route for a previous destination is never shown.
+  const routeInfo =
+    storedRoute && view.destination && storedRoute.destKey === `${view.destination.lat},${view.destination.lng}`
+      ? storedRoute
+      : null;
+  const roadText =
+    routeInfo && view.partner
+      ? `${formatEta(routeInfo.durationSeconds)} · ${formatRouteDistance(routeInfo.distanceMeters)} by road`
       : "";
   const mapFailed = maps.status === "error" || broken;
 
@@ -311,13 +475,20 @@ export default function OrderTrackingMap({ status, store, destination, partnerLo
         {view.partner && (
           <p>
             {updated}
-            {distance && ` · about ${distance} from your address`}
+            {roadText
+              ? ` · ${roadText}`
+              : distance && ` · about ${distance} from your address`}
           </p>
         )}
-        {view.final && <p>Final route from the store to your address.</p>}
+        {view.final && (
+          <p>
+            Final route from the store to your address.
+            {routeInfo && ` ${formatRouteDistance(routeInfo.distanceMeters)} by road.`}
+          </p>
+        )}
         {!first && <p>Location details are not available for this order.</p>}
       </div>
-      {!mapFailed && (view.partner || view.final) && (
+      {!mapFailed && !routeInfo && (view.partner || view.final) && (
         <p className="text-xs text-brand-ink-muted">
           The dashed line is a straight line and the distance is approximate, not the road route.
         </p>

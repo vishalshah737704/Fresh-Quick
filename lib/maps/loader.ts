@@ -9,6 +9,7 @@ import type {
   GoogleNs, MapsErrorKind, MapsStatus,
   MarkerOptions,
   PolylineOptions,
+  RouteClass,
 } from "./types";
 
 export class MapsError extends Error {
@@ -131,6 +132,14 @@ export async function loadMapClasses(): Promise<MapClasses> {
     // SymbolPath.CIRCLE is 0 in the API.
     circlePath: typeof symbols?.CIRCLE === "number" ? symbols.CIRCLE : 0,
   };
+}
+
+// The Routes library (Route.computeRoutes). Rejects with a plain Error if the
+// library or class is unavailable, so the caller keeps its straight-line fallback.
+export async function loadRoutesLibrary(): Promise<RouteClass> {
+  const google = await loadGoogleMaps();
+  const routes = await google.maps.importLibrary("routes");
+  return pickClass<RouteClass>("Route", routes.Route, google.maps.routes?.Route);
 }
 
 export function useGoogleMaps(): MapsStatus {
