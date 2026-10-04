@@ -7,6 +7,7 @@ import { rateLimitPlan } from "@/lib/zippy/rate-limit";
 import { embedQuestion, retrieveCatalogHits, retrieveChunks } from "@/lib/zippy/retrieve";
 import { selectContext, buildSystemPrompt, normalizeHistory } from "@/lib/zippy/prompt";
 import { runAgent } from "@/lib/zippy/agent";
+import { encodeEvent, type StreamEvent } from "@/lib/zippy/stream-events";
 import type { ActionCard } from "@/lib/zippy/action-types";
 import { hydrateHits, loadCuisineLabels } from "@/lib/zippy/catalog-data";
 import { formatCatalogBlock } from "@/lib/zippy/catalog";
@@ -87,8 +88,8 @@ export async function POST(request: NextRequest) {
     // Orders are visible only to a verified customer; the id comes from the session token, never from the request body.
     const customerId = caller.role === "customer" ? caller.userId : null;
     const ordersEnabled = toolsEnabled && customerId !== null && process.env.ZIPPY_ORDERS !== "off";
-    // Cards travel only in the non-streaming JSON reply, so a streaming request gets no action tools (it could not show their cards).
-    const actionsEnabled = toolsEnabled && customerId !== null && process.env.ZIPPY_ACTIONS !== "off" && !stream;
+    // Cards travel in the JSON reply (stream:false) or in the final `done` event (streaming).
+    const actionsEnabled = toolsEnabled && customerId !== null && process.env.ZIPPY_ACTIONS !== "off";
     const actions: ActionCard[] = [];
     const embedding = await embedQuestion(message);
     const chunks = selectContext(await retrieveChunks(embedding, caller.role));
@@ -109,7 +110,11 @@ export async function POST(request: NextRequest) {
     const messages: ChatTurn[] = [...history, { role: "user", content: message }];
     const sourceIds = chunks.map((c) => c.id);
     const savedConversationId = conversationId;
-    const agentArgs = { system, messages, location, toolsEnabled, customerId, ordersEnabled, actionsEnabled, cart, actions, signal: request.signal };
+    // Aborts the model call when the client disconnects (request.signal) or cancels the response body.
+    const aborter = new AbortController();
+    if (request.signal.aborted) aborter.abort();
+    else request.signal.addEventListener("abort", () => aborter.abort(), { once: true });
+    const agentArgs = { system, messages, location, toolsEnabled, customerId, ordersEnabled, actionsEnabled, cart, actions, signal: aborter.signal };
 
     if (!stream) {
       let reply = "";
@@ -128,37 +133,39 @@ export async function POST(request: NextRequest) {
     const encoder = new TextEncoder();
     const body = new ReadableStream<Uint8Array>({
       async start(controller) {
-        let full = "";
-        let failed = false;
-        try {
-          for await (const event of runAgent(agentArgs)) {
-            if (event.type !== "final") continue; // Task 2 streams deltas; until then one piece, as before
-            const piece = event.text;
-            full += piece;
-            controller.enqueue(encoder.encode(piece));
-          }
-          if (full.trim() === "") {
-            failed = true;
-            console.error("zippy: model returned an empty reply");
-            controller.enqueue(encoder.encode(ZIPPY_ERROR_MESSAGE));
-          }
-        } catch (error) {
-          failed = true;
-          if (!request.signal.aborted) console.error("zippy: model stream failed", error);
+        const send = (event: StreamEvent) => {
+          if (aborter.signal.aborted) return;
           try {
-            controller.enqueue(encoder.encode(full ? `
-
-${ZIPPY_ERROR_MESSAGE}` : ZIPPY_ERROR_MESSAGE));
+            controller.enqueue(encoder.encode(encodeEvent(event)));
           } catch {
             // client already disconnected
           }
-        }
-        if (!failed && savedConversationId && full) {
-          try {
-            await saveMessage({ conversationId: savedConversationId, role: "assistant", content: full, sourceIds });
-          } catch (error) {
-            console.error("zippy: saving reply failed", error);
+        };
+        let reply = "";
+        let failed = false;
+        try {
+          for await (const event of runAgent(agentArgs)) {
+            if (aborter.signal.aborted) break;
+            if (event.type === "delta") send({ t: "delta", text: event.text });
+            else if (event.type === "reset") send({ t: "reset" });
+            else reply = event.text;
           }
+          if (!aborter.signal.aborted && reply.trim() === "") throw new Error("Model returned an empty reply");
+        } catch (error) {
+          failed = true;
+          if (!aborter.signal.aborted) console.error("zippy: model stream failed", error);
+          // Partial deltas may already be on screen; the client replaces them with this message.
+          send({ t: "error", message: ZIPPY_ERROR_MESSAGE });
+        }
+        if (!failed && !aborter.signal.aborted) {
+          if (savedConversationId) {
+            try {
+              await saveMessage({ conversationId: savedConversationId, role: "assistant", content: reply, sourceIds });
+            } catch (error) {
+              console.error("zippy: saving reply failed", error);
+            }
+          }
+          send({ t: "done", reply, conversationId: savedConversationId, actions });
         }
         try {
           controller.close();
@@ -166,10 +173,17 @@ ${ZIPPY_ERROR_MESSAGE}` : ZIPPY_ERROR_MESSAGE));
           // already closed or cancelled
         }
       },
+      cancel() {
+        aborter.abort();
+      },
     });
-    const headers: Record<string, string> = { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" };
-    if (savedConversationId) headers["X-Zippy-Conversation-Id"] = savedConversationId;
-    return new Response(body, { headers });
+    return new Response(body, {
+      headers: {
+        "Content-Type": "application/x-ndjson; charset=utf-8",
+        "Cache-Control": "no-store",
+        "X-Accel-Buffering": "no",
+      },
+    });
   } catch (error) {
     console.error("zippy: chat failed", error);
     return fail(ZIPPY_ERROR_MESSAGE, 502);
