@@ -3047,3 +3047,10 @@ plan `docs/superpowers/plans/2026-10-03-ask-zippy-z2.md`. Subagent-driven develo
 - Docs: both manuals' Ask Zippy chapters edited in place with python-docx (web v3.3 chapter 8, mobile v4.4 chapter 6: own-order lookup paragraph with "Where is my order?", the capability sentence, and a privacy sentence); PDFs regenerated, page counts (49 / 31) and every chapter/appendix start page unchanged so the static TOCs were not touched. No screenshot added. README, CLAUDE.md and this file updated; no AGENTS.md or HISTORY.md exist.
 - Deferred minors: `orders.ts` address casts bypass typing; the reader has no id tiebreaker on equal `placed_at` and the test fake cannot detect limit-before-order; the `runTool` order-case gating has no unit test (`tools.ts` is server-only; covered by live checks); prompt fallback lists do not mention orders; the privacy sentence "does not read your orders for other questions" is intent-absolute.
 - Open items for Vishal: (1) re-ingest `knowledge/` (`POST` the n8n webhook `foodhub/zippy-ingest`) and re-run `node scripts/zippy-eval.mjs`; (2) phone check of order questions; (3) Z4 (actions) is next and needs its own prompt-injection review; (4) a signed-in Vendor/Delivery/Admin asking about orders gets "cannot see orders" by design. Earlier entries above that say "Z3 is next" are history.
+
+## Z3 eval result and fixture fix (2026-10-03, branch `eval-fixture-order-case`)
+
+- Z3 merged (PR #7, `2cd0a4f`); knowledge re-ingested by Vishal. `node scripts/zippy-eval.mjs`: **48/50 (96 %)**, passes the 90 % bar.
+- Misses: "how do i start getting deliveries" (same defensible miss as before) and "can the assistant tell me where my order is", a badly chosen case of mine: that question is correctly answered by the track-my-order chunks, not by "Can Zippy see my orders or place an order for me". Replaced it with "can zippy look up my order for me"; Vishal re-runs the eval to confirm 49/50.
+- Still open: phone check of order questions in the mobile chat; Z4 (actions) next.
+
