@@ -146,6 +146,8 @@ when you specifically want to return to a clean seeded state.
 
 ## Public deployment checklist
 
+> **LOCAL ONLY (Vishal's decision, 2026-10-04).** Nothing in this checklist is needed today. It is kept for the day he decides to go public; going public requires every item here to be done first.
+
 Read this before exposing the app (and so Ask Zippy) to the public internet. Every Zippy message costs
 real money: an OpenAI embedding (plus one more per catalog search the model runs) and one to five Claude calls (up to 4 tool rounds and a final answer, up to 7 calls if `ZIPPY_MAX_TOOL_ROUNDS` is raised to 6).
 The limits below bound the worst-case daily spend. All are env vars, read at call time, each an integer
