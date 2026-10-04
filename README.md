@@ -128,6 +128,14 @@ delivery-completion fallback in workflow 05 only exists while n8n is running
 with 05 active; see `docs/n8n-webhook-setup.md` for recovering a stuck
 `picked_up` order.)
 
+## Google Maps (web customer app, 2026-10-04)
+
+The web Customer app uses Google Maps in three places: a location picker (the header address opens a dropdown with address search, a map with a draggable pin, "Use my current location" and a manual coordinates box), address search plus "Use my pinned location" on the checkout address form, and a live tracking map on the order page (store, delivery address and partner; shown when the order is assigned or picked up, and as a final route once delivered). The route is a straight dashed line with an approximate distance, not a road route. The mobile app is unchanged.
+
+- Key: one public browser key in `.env.local` as `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` (placeholder in `.env.example`), restricted in the Google Cloud console by HTTP referrer (`localhost:3000` to `3003` for now) and to Maps JavaScript, Places (New) and Geocoding. See "Google Maps key" in `docs/DEPLOYMENT.md`.
+- No new npm packages: the Maps JavaScript API is loaded at runtime by `lib/maps/loader.ts`.
+- If Maps cannot load, search and the map hide and the manual coordinates fields (and the partner's coordinates as text) still work.
+
 ## Ask Zippy (in-app assistant, Z1 built 2026-10-03)
 
 Zippy is a floating chat bubble on every web portal (and a chat button in the

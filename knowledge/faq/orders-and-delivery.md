@@ -38,7 +38,7 @@ A delivery partner takes your order once it is Ready. Orders go automatically to
 
 ## Can I track the delivery partner on a live map?
 
-No. Once a partner is assigned, the order page shows their last reported location as coordinates, not as a live map.
+Yes, on the website. Once your order is assigned or on the way, the order page shows a map with the store, your delivery address and the delivery partner. The dashed line between the store and your address is an approximate straight line, not the road route, and the distance shown is approximate too. The map refreshes by itself with the latest reported location of the partner. The phone app does not show this map.
 
 ## How long will my order take?
 

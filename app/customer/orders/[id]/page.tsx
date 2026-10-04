@@ -6,6 +6,9 @@ import { supabase } from "@/lib/supabase";
 import { useRoleGuard } from "@/lib/auth";
 import { OrderStatusTimeline } from "@/components/OrderStatusTimeline";
 import { OrderDetailView } from "@/components/OrderDetailView";
+import MapErrorBoundary from "@/components/maps/MapErrorBoundary";
+import OrderTrackingMap from "@/components/maps/OrderTrackingMap";
+import { showTrackingMap } from "@/lib/maps/tracking";
 import { DeliveryAnimationDialog } from "@/components/DeliveryAnimationDialog";
 import {
   ORDER_DETAIL_SELECT,
@@ -141,21 +144,15 @@ export default function OrderConfirmationPage() {
               )}
             </section>
 
-            {partnerLocation?.current_lat != null && partnerLocation?.current_lng != null && (
-              <div className="flex flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-brand-ink-muted/25 bg-brand-ink-muted/5 px-4 py-8 text-center">
-                <span className="text-2xl">📍</span>
-                <p className="text-sm font-medium text-brand-ink">
-                  {partnerLocation.current_lat.toFixed(4)}, {partnerLocation.current_lng.toFixed(4)}
-                </p>
-                {partnerLocation.last_ping_at && (
-                  <p className="text-xs text-brand-ink-muted">
-                    Updated {new Date(partnerLocation.last_ping_at).toLocaleTimeString()}
-                  </p>
-                )}
-                <p className="mt-1 text-xs text-brand-ink-muted/70">
-                  Live map coming soon — showing raw coordinates for now.
-                </p>
-              </div>
+            {showTrackingMap(order.status) && (
+              <MapErrorBoundary>
+                <OrderTrackingMap
+                  status={order.status}
+                  store={order.storePoint}
+                  destination={order.deliveryPoint}
+                  partnerLocation={partnerLocation}
+                />
+              </MapErrorBoundary>
             )}
 
             <OrderDetailView order={order} />

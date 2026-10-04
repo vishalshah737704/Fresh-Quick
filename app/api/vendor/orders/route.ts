@@ -21,6 +21,10 @@ export async function GET(request: NextRequest) {
   if (error) {
     return NextResponse.json({ error: "Failed to load orders" }, { status: 500 });
   }
-  const orders = (data as unknown as RawOrderDetail[]).map(normalizeOrderDetail);
+  // The vendor UI shows address lines only; never hand out exact drop-off coordinates.
+  const orders = (data as unknown as RawOrderDetail[]).map((row) => ({
+    ...normalizeOrderDetail(row),
+    deliveryPoint: null,
+  }));
   return NextResponse.json({ orders });
 }
