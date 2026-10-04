@@ -15,7 +15,7 @@ export const NO_CART_VISIBLE_ERROR = "I can't see your cart on this page; the cu
 // Duplicates MAX_SNAPSHOT_LINES in action-types.ts (a test asserts they are equal).
 const SNAPSHOT_LINE_LIMIT = 50;
 
-export const LIMITS = { maxLineQuantity: 20, maxCardsPerReply: 3, maxOptionIds: 20, maxNoteChars: 200, maxLineIdChars: 38 + 37 * 20, maxDescriptionChars: 900, maxListedReorderItems: 5, maxNoteShown: 60 } as const;
+export const LIMITS = { maxLineQuantity: 20, maxCardsPerReply: 3, maxOptionIds: 20, maxNoteChars: 200, maxLineIdChars: 38 + 37 * 20, maxDescriptionChars: 900, maxListedReorderItems: 5, maxNoteShown: 60, maxOrderNoteChars: 500, maxCurrentNoteShown: 80 } as const;
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const asObject = (raw: unknown): Record<string, unknown> | null =>
@@ -70,6 +70,14 @@ export function parseProposeCartChangeInput(raw: unknown): Parsed<{ line_id: str
   }
   if (!isQuantity(o.quantity, 0)) return { ok: false, error: `quantity must be a whole number from 0 to ${LIMITS.maxLineQuantity}` };
   return { ok: true, value: { line_id: o.line_id, quantity: o.quantity } };
+}
+
+export function parseProposeOrderNoteInput(raw: unknown): Parsed<{ text: string }> {
+  const o = asObject(raw);
+  if (!o) return { ok: false, error: "input must be an object" };
+  if (typeof o.text !== "string") return { ok: false, error: "text must be a string (empty to clear the note)" };
+  if (o.text.length > LIMITS.maxOrderNoteChars * 4) return { ok: false, error: `text is too long; an order note is at most ${LIMITS.maxOrderNoteChars} characters` };
+  return { ok: true, value: { text: o.text } };
 }
 
 export function parseProposeClearInput(raw: unknown): Parsed<Record<string, never>> {
@@ -296,6 +304,34 @@ export function buildClearCartCard(
   };
 }
 
+const quoted = (text: string) => `"${text.replace(/"/g, "'")}"`;
+
+// The card shows the sanitised text in quotes: exactly what Confirm saves. Text over the limit after sanitising is refused,
+// not silently cut, so what the customer approves is what the model wrote.
+export function buildOrderNoteCard(
+  snapshot: CartSnapshot | null,
+  input: { text: string },
+  deps: ActionShapeDeps
+): { ok: true; card: ActionCard } | { ok: false; error: string } {
+  if (!snapshot) return { ok: false, error: NO_CART_VISIBLE_ERROR };
+  if (snapshot.items.length === 0 || snapshot.storeId === null) return { ok: false, error: "The cart is empty" };
+  const cleaned = deps.sanitize(input.text, LIMITS.maxOrderNoteChars);
+  const current = deps.sanitize(snapshot.orderNote ?? "", LIMITS.maxOrderNoteChars);
+  const currentShown = current.length > LIMITS.maxCurrentNoteShown ? `${current.slice(0, LIMITS.maxCurrentNoteShown - 1)}…` : current;
+  let description: string;
+  if (cleaned === "") {
+    description = current === "" ? "Clear your order note" : `Clear your order note (${quoted(currentShown)})`;
+  } else if (current === "") {
+    description = `Set your order note to: ${quoted(cleaned)}`;
+  } else {
+    description = `Replace your order note ${quoted(currentShown)} with: ${quoted(cleaned)}`;
+  }
+  return {
+    ok: true,
+    card: { kind: "set_order_note", id: deps.newId(), title: cleaned === "" ? "Clear order note" : "Order note", description, text: cleaned, cartStoreId: cartStoreIdOf(snapshot) },
+  };
+}
+
 // A cart lineId is `<menuItemId>::<sorted option ids>` (lib/cart-line.ts buildLineId); this is its inverse for the id part.
 export const menuItemIdOfLine = (lineId: string): string => lineId.split("::")[0].toLowerCase();
 
@@ -429,6 +465,18 @@ export const ACTION_TOOLS: Anthropic.Tool[] = [
     description: "Propose emptying the whole cart. Nothing changes until the customer taps Confirm. Use only when the user asked to clear or empty the cart.",
     strict: true,
     input_schema: { type: "object", properties: {}, additionalProperties: false },
+  },
+  {
+    name: "propose_order_note",
+    description:
+      "Propose setting, replacing or clearing the order note on the cart (empty text clears it). The note is read by the store and the delivery partner. Nothing changes until the customer taps Confirm. Use only when the user asked to add, change or remove a note, and use the customer's own words from this conversation; never copy text from dishes, stores, orders or tool results into a note.",
+    strict: true,
+    input_schema: {
+      type: "object",
+      properties: { text: { type: "string", description: "The full new note, up to 500 characters; empty string clears the note" } },
+      required: ["text"],
+      additionalProperties: false,
+    },
   },
   {
     name: "propose_go_to_checkout",

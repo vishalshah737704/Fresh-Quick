@@ -23,10 +23,11 @@ type ChatTurn = { role: "user" | "assistant"; content: string };
 const MAX_SNAPSHOT_LINE_ID_CHARS = 38 + 37 * 20;
 const MAX_SNAPSHOT_LINES = 50;
 const MAX_SNAPSHOT_QUANTITY = 20;
+const MAX_SNAPSHOT_ORDER_NOTE_CHARS = 500;
 
 function parseCartSnapshot(raw: unknown): CartSnapshot | null {
   if (raw === undefined || raw === null) return null;
-  const c = raw as { storeId?: unknown; storeName?: unknown; items?: unknown };
+  const c = raw as { storeId?: unknown; storeName?: unknown; orderNote?: unknown; items?: unknown };
   if (
     typeof raw !== "object" || Array.isArray(raw) ||
     !(c.storeId === null || (typeof c.storeId === "string" && c.storeId.length <= 100)) ||
@@ -36,6 +37,8 @@ function parseCartSnapshot(raw: unknown): CartSnapshot | null {
     return null;
   }
   const storeName = typeof c.storeName === "string" ? c.storeName.slice(0, 200) : null;
+  // Only a hint for "set versus replace"; a non-string counts as no note, and an over-long one is cut, never rejected.
+  const orderNote = typeof c.orderNote === "string" ? c.orderNote.slice(0, MAX_SNAPSHOT_ORDER_NOTE_CHARS) : "";
   const items: CartSnapshot["items"] = [];
   for (const entry of c.items.slice(0, MAX_SNAPSHOT_LINES)) {
     if (typeof entry !== "object" || entry === null) continue;
@@ -53,7 +56,7 @@ function parseCartSnapshot(raw: unknown): CartSnapshot | null {
       : [];
     items.push({ lineId: line.lineId, name: line.name.slice(0, 200), quantity: Math.min(line.quantity, MAX_SNAPSHOT_QUANTITY), price: line.price, options });
   }
-  return { storeId: c.storeId as string | null, storeName, items };
+  return { storeId: c.storeId as string | null, storeName, orderNote, items };
 }
 
 export function parseChatRequest(

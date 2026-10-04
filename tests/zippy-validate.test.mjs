@@ -80,7 +80,7 @@ test("parseChatRequest location: absent is null, valid is kept, anything else is
   }
 });
 
-const cartOk = { storeId: "s1", storeName: "Dosa Corner", items: [{ lineId: "m1::o1", name: "Masala Dosa", quantity: 2, price: 130, options: ["Regular"] }] };
+const cartOk = { storeId: "s1", storeName: "Dosa Corner", orderNote: "", items: [{ lineId: "m1::o1", name: "Masala Dosa", quantity: 2, price: 130, options: ["Regular"] }] };
 
 test("cart snapshot is optional and defaults to null", () => {
   assert.equal(parseChatRequest({ message: "hi" }).value.cart, null);
@@ -89,7 +89,7 @@ test("cart snapshot is optional and defaults to null", () => {
 
 test("a valid cart snapshot passes through", () => {
   assert.deepEqual(parseChatRequest({ message: "hi", cart: cartOk }).value.cart, cartOk);
-  assert.deepEqual(parseChatRequest({ message: "hi", cart: { storeId: null, storeName: null, items: [] } }).value.cart, { storeId: null, storeName: null, items: [] });
+  assert.deepEqual(parseChatRequest({ message: "hi", cart: { storeId: null, storeName: null, items: [] } }).value.cart, { storeId: null, storeName: null, orderNote: "", items: [] });
 });
 
 test("a snapshot that is not a cart is ignored (null), never a 400", () => {
@@ -134,4 +134,11 @@ test("an over-limit or malformed cart never fails the chat: values are clamped o
   assert.equal(mixed.items[0].options.length, 20);
   assert.equal(mixed.items[0].options[0].length, 100);
   assert.equal(mixed.storeName.length, 200);
+});
+
+test("snapshot orderNote: kept when a string, cut at 500, missing or non-string becomes empty", () => {
+  const note = (value) => parseChatRequest({ message: "hi", cart: { ...cartOk, orderNote: value } }).value.cart.orderNote;
+  assert.equal(note("no onions"), "no onions");
+  assert.equal(note("x".repeat(900)).length, 500);
+  for (const bad of [undefined, null, 5, {}, ["a"], true]) assert.equal(note(bad), "");
 });

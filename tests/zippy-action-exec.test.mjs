@@ -18,6 +18,7 @@ function fakeCart(storeId = null, lineIds = []) {
     updateQuantity: (...args) => calls.push(["updateQuantity", ...args]),
     removeItem: (...args) => calls.push(["removeItem", ...args]),
     clearCart: () => calls.push(["clearCart"]),
+    setOrderNote: (...args) => calls.push(["setOrderNote", ...args]),
   };
 }
 const addCard = { kind: "add_item", id: "c1", title: "t", description: "d", storeId: "s1", storeName: "Dosa Corner", cartStoreId: null, item: item() };
@@ -96,7 +97,7 @@ test("snapshotCart keeps ids, names, quantities, prices and option names, capped
   const snap = snapshotCart({ storeId: "s1", storeName: "Dosa Corner", items: Array.from({ length: 60 }, (_, n) => line(n)) });
   assert.equal(snap.items.length, MAX_SNAPSHOT_LINES);
   assert.deepEqual(snap.items[0], { lineId: "L0", name: "Dish 0", quantity: 1, price: 10, options: ["Large"] });
-  assert.deepEqual(snapshotCart({ storeId: null, storeName: null, items: [] }), { storeId: null, storeName: null, items: [] });
+  assert.deepEqual(snapshotCart({ storeId: null, storeName: null, items: [] }), { storeId: null, storeName: null, orderNote: "", items: [] });
 });
 
 test("limits are the agreed values and the mobile copies are byte-identical", () => {
@@ -127,4 +128,32 @@ test("a card whose replace notice no longer matches the live cart does nothing a
   }
   const still = fakeCart("s3", ["x"]);
   assert.equal(executeAction({ ...addCard, cartStoreId: "s2" }, still).ok, true);
+});
+
+const noteCard = { kind: "set_order_note", id: "n1", title: "Order note", description: "d", text: "no onions", cartStoreId: "s1" };
+
+test("set_order_note saves the card text on a matching non-empty cart", () => {
+  const cart = fakeCart("s1", ["x"]);
+  assert.deepEqual(executeAction(noteCard, cart), { ok: true, message: "Order note saved." });
+  assert.deepEqual(cart.calls, [["setOrderNote", "no onions"]]);
+});
+
+test("set_order_note with empty text clears and says so", () => {
+  const cart = fakeCart("s1", ["x"]);
+  assert.deepEqual(executeAction({ ...noteCard, text: "" }, cart), { ok: true, message: "Order note cleared." });
+  assert.deepEqual(cart.calls, [["setOrderNote", ""]]);
+});
+
+test("set_order_note refuses an empty cart, a different store and a null card store", () => {
+  for (const [card, cart] of [[noteCard, fakeCart("s1", [])], [noteCard, fakeCart("s2", ["x"])], [noteCard, fakeCart(null, ["x"])], [{ ...noteCard, cartStoreId: null }, fakeCart("s1", ["x"])]]) {
+    assert.deepEqual(executeAction(card, cart), { ok: false, message: CART_CHANGED_MESSAGE });
+    assert.deepEqual(cart.calls, []);
+  }
+});
+
+test("snapshotCart carries the order note, capped at 500, and defaults to empty", () => {
+  const base = { storeId: "s1", storeName: "S", items: [] };
+  assert.equal(snapshotCart({ ...base, orderNote: "no onions" }).orderNote, "no onions");
+  assert.equal(snapshotCart({ ...base, orderNote: "x".repeat(900) }).orderNote.length, 500);
+  assert.equal(snapshotCart(base).orderNote, "");
 });

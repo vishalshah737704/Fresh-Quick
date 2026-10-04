@@ -24,6 +24,8 @@ import {
   cartChangeConflict,
   proposalStatus,
   buildClearCartCard,
+  buildOrderNoteCard,
+  parseProposeOrderNoteInput,
   buildReorderCard,
   parseProposeAddInput,
   parseProposeCartChangeInput,
@@ -236,6 +238,12 @@ export async function runTool(
       const parsed = parseProposeClearInput(rawInput);
       if (!parsed.ok) return bad(parsed.error);
       return pushCard(ctx, buildClearCartCard(ctx.cart, actionDeps));
+    }
+    case "propose_order_note": {
+      if (!actionsAllowed(ctx)) return bad("Cart actions are only available to a signed-in customer");
+      const parsed = parseProposeOrderNoteInput(rawInput);
+      if (!parsed.ok) return bad(parsed.error);
+      return pushCard(ctx, buildOrderNoteCard(ctx.cart, parsed.value, actionDeps));
     }
     case "propose_go_to_checkout": {
       if (!actionsAllowed(ctx)) return bad("Cart actions are only available to a signed-in customer");
