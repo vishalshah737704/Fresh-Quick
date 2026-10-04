@@ -248,11 +248,11 @@ export function createOrdersReader(config: { db: OrdersDb; listSelect: string; d
       return {
         order_id: row.id,
         store_id: row.store_id,
-        lines: row.order_items.map((item) => ({
+        lines: (row.order_items ?? []).map((item) => ({
           product_id: item.product_id,
           quantity: item.quantity,
           note: item.special_instructions === null || item.special_instructions.trim() === "" ? null : item.special_instructions.trim(),
-          option_ids: item.order_item_options.map((option) => option.menu_item_option_id),
+          option_ids: (item.order_item_options ?? []).map((option) => option.menu_item_option_id),
         })),
       };
     },

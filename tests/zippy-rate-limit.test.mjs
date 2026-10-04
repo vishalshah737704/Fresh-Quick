@@ -1,4 +1,5 @@
 import test from "node:test";
+import { createHash } from "node:crypto";
 import assert from "node:assert/strict";
 import {
   rateLimitPlan,
@@ -128,8 +129,8 @@ test("client IP extraction by trusted hops", () => {
   assert.equal(clientIpFromForwarded("1.2.3.4", 2), null);
   assert.equal(clientIpFromForwarded("  1.2.3.4  ,   5.6.7.8  ", 1), "5.6.7.8");
   assert.equal(clientIpFromForwarded("1.2.3.4,", 1), null);
-  assert.equal(clientIpFromForwarded("::1", 1), "::1");
-  assert.equal(clientIpFromForwarded("evil, 2001:db8::1", 1), "2001:db8::1");
+  assert.equal(clientIpFromForwarded("::1", 1), "0:0:0:0::/64");
+  assert.equal(clientIpFromForwarded("evil, 2001:db8::1", 1), "2001:db8:0:0::/64");
 });
 
 test("a spoofed leftmost entry does not change the identified client (hops 1)", () => {
@@ -148,12 +149,55 @@ test("body cap", () => {
 
 test("client IP is normalised before use", () => {
   assert.equal(clientIpFromForwarded("1.2.3.4:5678", 1), "1.2.3.4");
-  assert.equal(clientIpFromForwarded("[2001:DB8::1]:443", 1), "2001:db8::1");
-  assert.equal(clientIpFromForwarded("[::1]", 1), "::1");
+  assert.equal(clientIpFromForwarded("[2001:DB8::1]:443", 1), "2001:db8:0:0::/64");
+  assert.equal(clientIpFromForwarded("[::1]", 1), "0:0:0:0::/64");
   assert.equal(clientIpFromForwarded("::ffff:1.2.3.4", 1), "1.2.3.4");
   assert.equal(clientIpFromForwarded("::FFFF:1.2.3.4", 1), "1.2.3.4");
-  assert.equal(clientIpFromForwarded("2001:DB8::ABCD", 1), "2001:db8::abcd");
-  assert.equal(clientIpFromForwarded("2001:db8::1", 1), "2001:db8::1");
+  assert.equal(clientIpFromForwarded("::ffff:102:304", 1), "1.2.3.4");
+  assert.equal(clientIpFromForwarded("2001:DB8::ABCD", 1), "2001:db8:0:0::/64");
+});
+
+test("IPv6 addresses collapse to their /64 prefix, whatever the spelling", () => {
+  const prefix = "2001:db8:1:2::/64";
+  for (const ip of ["2001:db8:1:2::1", "2001:DB8:1:2:0:0:0:1", "2001:db8:1:2:aaaa:bbbb:cccc:dddd", "2001:0db8:0001:0002::", "[2001:db8:1:2::9]:443", "2001:db8:1:2:3:4:5:6"]) {
+    assert.equal(clientIpFromForwarded(ip, 1), prefix, ip);
+  }
+  assert.notEqual(clientIpFromForwarded("2001:db8:1:3::1", 1), prefix);
+  assert.equal(clientIpFromForwarded("::1", 1), "0:0:0:0::/64");
+  assert.equal(clientIpFromForwarded("fe80::1", 1), "fe80:0:0:0::/64");
+  assert.equal(clientIpFromForwarded("fe80::abcd%eth0", 1), "fe80:0:0:0::/64");
+  assert.equal(clientIpFromForwarded("FE80::1", 1), clientIpFromForwarded("fe80:0:0:0:9::2", 1));
+});
+
+test("IPv4 and IPv4-mapped IPv6 are unchanged by the /64 rule; unparseable text is left as it was", () => {
+  assert.equal(clientIpFromForwarded("203.0.113.7", 1), "203.0.113.7");
+  assert.equal(clientIpFromForwarded("::ffff:203.0.113.7", 1), "203.0.113.7");
+  assert.equal(clientIpFromForwarded("gg::1", 1), "gg::1");
+  assert.equal(clientIpFromForwarded("1::2::3", 1), "1::2::3");
+});
+
+test("the bucket hash is salted by ZIPPY_IP_HASH_SALT read at call time; unset or empty keeps today's hash", () => {
+  const saved = process.env.ZIPPY_IP_HASH_SALT;
+  const bucket = () => rateLimitPlan({ userId: null, ip: "203.0.113.7" })[0].bucket;
+  try {
+    delete process.env.ZIPPY_IP_HASH_SALT;
+    const unsalted = bucket();
+    assert.equal(unsalted, "ip:" + createHash("sha256").update("203.0.113.7").digest("hex").slice(0, 16) + ":min");
+    process.env.ZIPPY_IP_HASH_SALT = "";
+    assert.equal(bucket(), unsalted);
+    process.env.ZIPPY_IP_HASH_SALT = "pepper";
+    const salted = bucket();
+    assert.notEqual(salted, unsalted);
+    assert.notEqual(preAuthPlan("203.0.113.7")[0].bucket, "ipburst:" + unsalted.split(":")[1] + ":min");
+    process.env.ZIPPY_IP_HASH_SALT = "other";
+    assert.notEqual(bucket(), salted);
+    process.env.ZIPPY_IP_HASH_SALT = "pepper";
+    assert.equal(bucket(), salted);
+    assert.equal(rateLimitPlan({ userId: null, ip: null })[0].bucket, "ip:unknown:min");
+  } finally {
+    if (saved === undefined) delete process.env.ZIPPY_IP_HASH_SALT;
+    else process.env.ZIPPY_IP_HASH_SALT = saved;
+  }
 });
 
 function fakeStream(chunks) {

@@ -5,7 +5,7 @@ import { MAX_LINE_QUANTITY, MAX_CARDS_PER_REPLY, MAX_SNAPSHOT_LINES } from "../l
 import {
   parseProposeAddInput, parseProposeReorderInput, parseProposeCartChangeInput, parseProposeClearInput, parseProposeOrderNoteInput, buildOrderNoteCard,
   selectOptions, checkoutConflict, cartChangeConflict, cartCardPrepared, NO_CART_VISIBLE_ERROR, CHECKOUT_AFTER_CART_ERROR, CART_AFTER_CHECKOUT_ERROR, buildAddItemCard, buildReorderCard, buildCartChangeCard, buildClearCartCard, buildCheckoutCard, cartDishIds, menuItemIdOfLine, checkoutAlreadyPrepared, proposalStatus,
-  shapeCartForModel, ACTION_TOOLS, ACTION_TOOL_NAMES, selectActionTools, LIMITS,
+  shapeCartForModel, ACTION_TOOLS, ACTION_TOOL_NAMES, selectActionTools, LIMITS, uuidsOnly,
 } from "../lib/zippy/actions.ts";
 
 let n = 0;
@@ -281,7 +281,7 @@ test("add card shows the sanitized note it will send, and no note text when ther
 test("reorder card lists names, quantities and notes, caps at 5 then 'and N more', and stays within the limit", () => {
   const products = new Map([[U1, product()]]);
   const one = buildReorderCard(source([line({ quantity: 3, note: "extra <i>crispy</i>" })]), products, deps).card.description;
-  assert.match(one, /: 3 × Masala Dosa \(note: "extra crispy"\), /);
+  assert.match(one, /: 3 × Masala Dosa \(Size: Regular\) \(note: "extra crispy"\), /);
   const many = buildReorderCard(source(Array.from({ length: 8 }, (_, i) => line({ quantity: i + 1, note: i === 0 ? "n".repeat(200) : null }))), products, deps).card;
   assert.match(many.description, /8 items from Dosa Corner: /);
   assert.match(many.description, /and 3 more/);
@@ -504,4 +504,95 @@ test("order note card: whitespace-only text is a clear card; it is a cart card f
   assert.equal(checkoutConflict([note]), CHECKOUT_AFTER_CART_ERROR);
   assert.equal(cartChangeConflict([note]), null);
   assert.equal(cartChangeConflict([{ kind: "go_to_checkout" }]), CART_AFTER_CHECKOUT_ERROR);
+});
+
+test("add card shows each chosen option with its extra price; free options get no price", () => {
+  const out = buildAddItemCard({ product: product(), quantity: 1, optionIds: ["o2", "o3"], note: undefined }, deps);
+  assert.match(out.card.description, /\(Size: Large \(\+₹20\), Extras: Cheese \(\+₹15\)\)/);
+  const free = buildAddItemCard({ product: product(), quantity: 1, optionIds: ["o1"], note: undefined }, deps);
+  assert.match(free.card.description, /\(Size: Regular\)/);
+  assert.doesNotMatch(free.card.description, /\+₹/);
+  const odd = product({ groups: [{ id: "g", name: "Spice", minSelect: 0, maxSelect: 2, options: [{ id: "a", name: "Extra", priceDeltaPaise: 2050 }, { id: "b", name: "Mild", priceDeltaPaise: -500 }] }] });
+  const d = buildAddItemCard({ product: odd, quantity: 1, optionIds: ["a", "b"], note: undefined }, deps).card.description;
+  assert.match(d, /Spice: Extra \(\+₹20\.50\), Spice: Mild \(-₹5\)/);
+});
+
+test("reorder card lists each line's options with their extra prices", () => {
+  const out = buildReorderCard(source([line({ option_ids: ["o2", "o4"], quantity: 2 })]), new Map([[U1, product()]]), deps);
+  assert.match(out.card.description, /2 × Masala Dosa \(Size: Large \(\+₹20\), Extras: Butter \(\+₹10\)\)/);
+});
+
+test("reorder description shrinks its item list so option text still fits the limit; names cap at one shared length", () => {
+  const options = Array.from({ length: 20 }, (_, i) => ({ id: "x" + i, name: "Topping" + i + "y".repeat(60), priceDeltaPaise: 100 }));
+  const big = product({ groups: [{ id: "g", name: "Toppings " + "z".repeat(60), minSelect: 0, maxSelect: 20, options }] });
+  const ids = options.map((o) => o.id);
+  const out = buildReorderCard(source(Array.from({ length: 5 }, () => line({ option_ids: ids }))), new Map([[U1, big]]), deps);
+  assert.equal(out.ok, true);
+  assert.ok(out.card.description.length <= LIMITS.maxDescriptionChars, String(out.card.description.length));
+  assert.equal(out.card.items.length, 5);
+  assert.match(out.card.description, /5 items from Dosa Corner/);
+  const longName = buildAddItemCard({ product: product({ name: "N".repeat(200) }), quantity: 1, optionIds: ["o1"], note: undefined }, deps);
+  assert.equal(longName.card.item.name.length, LIMITS.maxNameChars);
+  assert.equal(shapeCartForModel({ storeId: "s", storeName: "S", items: [{ lineId: "l", name: "n", quantity: 1, price: 1, options: ["o".repeat(200)] }] }, deps).lines[0].options[0].length, LIMITS.maxNameChars);
+});
+
+test("reorder skips a line with an unreadable quantity or price, with a reason, and never builds NaN", () => {
+  const products = new Map([[U1, product()]]);
+  for (const quantity of [Number.NaN, Infinity, -Infinity]) {
+    const out = buildReorderCard(source([line(), line({ quantity })]), products, deps);
+    assert.equal(out.ok, true);
+    assert.equal(out.card.items.length, 1);
+    assert.deepEqual(out.card.skipped.map((s) => s.reason), ["quantity unreadable"]);
+  }
+  const badPrice = new Map([[U1, product({ price: "abc" })]]);
+  const out = buildReorderCard(source([line()]), badPrice, deps);
+  assert.match(out.error, /none of the items/i);
+  const mixed = buildReorderCard(source([line()]), new Map([[U1, product({ price: Infinity })]]), deps);
+  assert.equal(mixed.ok, false);
+  const fractional = product({ groups: [{ id: "g", name: "G", minSelect: 0, maxSelect: 1, options: [{ id: "f", name: "F", priceDeltaPaise: 1.5 }] }] });
+  assert.equal(buildReorderCard(source([line({ option_ids: ["f"] })]), new Map([[U1, fractional]]), deps).ok, false);
+  const clamp = buildReorderCard(source([line({ quantity: 0.2 })]), products, deps);
+  assert.equal(clamp.card.items[0].quantity, 1);
+});
+
+test("uuidsOnly keeps only well-formed ids so nothing else is ever queried", () => {
+  assert.deepEqual(uuidsOnly([U1, "x", "", U2.toUpperCase(), "11111111-1111-4111-8111-11111111111", "1) or (1=1", U1 + "x"]), [U1, U2.toUpperCase()]);
+  assert.deepEqual(uuidsOnly([]), []);
+  assert.deepEqual(uuidsOnly([5, null, undefined]), []);
+});
+
+test("quantity boundaries 1 and 20 are accepted and 0 or 21 refused, in every input and card", () => {
+  for (const quantity of [1, 20]) {
+    assert.equal(parseProposeAddInput({ product_id: U1, quantity }).value.quantity, quantity);
+    assert.equal(parseProposeCartChangeInput({ line_id: "a", quantity }).ok, true);
+    assert.match(buildAddItemCard({ product: product(), quantity, optionIds: ["o1"], note: undefined }, deps).card.description, new RegExp("Add " + quantity + " × "));
+    assert.equal(buildReorderCard(source([line({ quantity })]), new Map([[U1, product()]]), deps).card.items[0].quantity, quantity);
+  }
+  assert.equal(parseProposeAddInput({ product_id: U1, quantity: 0 }).ok, false);
+  assert.equal(parseProposeAddInput({ product_id: U1, quantity: 21 }).ok, false);
+  assert.equal(parseProposeCartChangeInput({ line_id: "a", quantity: 21 }).ok, false);
+  assert.equal(parseProposeCartChangeInput({ line_id: "a", quantity: 0 }).ok, true);
+});
+
+test("duplicate cart lines: each is kept, quantities add up at checkout, and a change targets the first match", () => {
+  const dup = checkoutCart([cartLine(U1, 2), cartLine(U1, 3)]);
+  assert.equal(buildCheckoutCard(dup, liveProducts(), deps).card.itemCount, 5);
+  assert.equal(shapeCartForModel({ ...dup, items: dup.items }, deps).lines.length, 2);
+  const change = buildCartChangeCard(dup, { line_id: dup.items[0].lineId, quantity: 7 }, deps);
+  assert.equal(change.card.description, "Change Masala Dosa from 2 to 7");
+});
+
+test("a snapshot of 50 lines at quantity 20 gives a checkout card with no item count", () => {
+  const lines = Array.from({ length: MAX_SNAPSHOT_LINES }, () => cartLine(U1, LIMITS.maxLineQuantity));
+  const card = buildCheckoutCard(checkoutCart(lines), liveProducts(), deps).card;
+  assert.match(card.description, /^Open checkout for your cart from/);
+  assert.equal(card.itemCount, MAX_SNAPSHOT_LINES * LIMITS.maxLineQuantity);
+});
+
+test("vendor, delivery and admin callers never get action tools, even with actions and orders on", () => {
+  const base = [{ name: "find_stores" }];
+  // The chat route passes customerId only for a verified customer; every other role arrives as null.
+  for (const ctx of [{ customerId: null, actionsEnabled: true, ordersEnabled: true }, { customerId: undefined, actionsEnabled: true, ordersEnabled: true }]) {
+    assert.deepEqual(selectActionTools(base, ctx), base);
+  }
 });

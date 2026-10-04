@@ -15,7 +15,7 @@ export const NO_CART_VISIBLE_ERROR = "I can't see your cart on this page; the cu
 // Duplicates MAX_SNAPSHOT_LINES in action-types.ts (a test asserts they are equal).
 const SNAPSHOT_LINE_LIMIT = 50;
 
-export const LIMITS = { maxLineQuantity: 20, maxCardsPerReply: 3, maxOptionIds: 20, maxNoteChars: 200, maxLineIdChars: 38 + 37 * 20, maxDescriptionChars: 900, maxListedReorderItems: 5, maxNoteShown: 60, maxOrderNoteChars: 500, maxCurrentNoteShown: 80 } as const;
+export const LIMITS = { maxLineQuantity: 20, maxCardsPerReply: 3, maxOptionIds: 20, maxNoteChars: 200, maxLineIdChars: 38 + 37 * 20, maxDescriptionChars: 900, maxListedReorderItems: 5, maxNoteShown: 60, maxOrderNoteChars: 500, maxCurrentNoteShown: 80, maxNameChars: 80 } as const;
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const asObject = (raw: unknown): Record<string, unknown> | null =>
@@ -125,7 +125,17 @@ export function selectOptions(
 const unitPaise = (product: ProductForCart, options: CartOption[], deps: ActionShapeDeps) =>
   deps.toPaise(product.price) + options.reduce((sum, option) => sum + option.priceDeltaPaise, 0);
 
-const optionText = (options: CartOption[]) => (options.length > 0 ? ` (${options.map((o) => `${o.groupName}: ${o.optionName}`).join(", ")})` : "");
+// Each chosen option with its extra price (integer paise, formatted by the injected formatter) when it is not zero.
+const optionLabel = (option: CartOption, deps: Pick<ActionShapeDeps, "formatRupees">) => {
+  const delta = option.priceDeltaPaise;
+  const price = delta === 0 || !Number.isInteger(delta) ? "" : ` (${delta > 0 ? "+" : ""}${deps.formatRupees(delta)})`;
+  return `${option.groupName}: ${option.optionName}${price}`;
+};
+const optionText = (options: CartOption[], deps: Pick<ActionShapeDeps, "formatRupees">) =>
+  options.length > 0 ? ` (${options.map((option) => optionLabel(option, deps)).join(", ")})` : "";
+
+// Only well-formed dish ids are ever sent to the database.
+export const uuidsOnly = (ids: string[]): string[] => ids.filter((id) => typeof id === "string" && UUID.test(id));
 
 // The same checks the app's store pages make: a closed or suspended store cannot be ordered from.
 function storeProblem(product: ProductForCart, cleanStoreName: string): string | null {
@@ -138,7 +148,7 @@ function storeProblem(product: ProductForCart, cleanStoreName: string): string |
 export function replaceNotice(cart: CartSnapshot | null | undefined, cardStoreId: string, deps: Pick<ActionShapeDeps, "sanitize">): string {
   if (!cart || cart.items.length === 0 || cart.storeId === null || cart.storeId === cardStoreId) return "";
   const count = cart.items.reduce((sum, line) => sum + line.quantity, 0);
-  const current = cart.storeName === null ? "" : deps.sanitize(cart.storeName, 80);
+  const current = cart.storeName === null ? "" : deps.sanitize(cart.storeName, LIMITS.maxNameChars);
   return `. Confirming replaces the ${count} ${count === 1 ? "item" : "items"}${current === "" ? "" : ` from ${current}`} in your cart.`;
 }
 
@@ -153,13 +163,13 @@ export function buildAddItemCard(
   deps: ActionShapeDeps
 ): { ok: true; card: ActionCard } | { ok: false; error: string } {
   const { product, quantity, optionIds, note } = args;
-  const storeName = deps.sanitize(product.storeName, 80);
+  const storeName = deps.sanitize(product.storeName, LIMITS.maxNameChars);
   const problem = storeProblem(product, storeName);
   if (problem) return { ok: false, error: problem };
-  if (!product.isAvailable) return { ok: false, error: `${deps.sanitize(product.name, 80)} is unavailable right now` };
-  const chosen = selectOptions(product.groups, optionIds, (v) => deps.sanitize(v, 80));
+  if (!product.isAvailable) return { ok: false, error: `${deps.sanitize(product.name, LIMITS.maxNameChars)} is unavailable right now` };
+  const chosen = selectOptions(product.groups, optionIds, (v) => deps.sanitize(v, LIMITS.maxNameChars));
   if (!chosen.ok) return { ok: false, error: chosen.error };
-  const name = deps.sanitize(product.name, 80);
+  const name = deps.sanitize(product.name, LIMITS.maxNameChars);
   const cleanNote = note === undefined ? "" : deps.sanitize(note, LIMITS.maxNoteChars);
   const item: CartLineData = {
     menuItemId: product.id,
@@ -177,7 +187,7 @@ export function buildAddItemCard(
       kind: "add_item",
       id: deps.newId(),
       title: "Add to cart",
-      description: `Add ${quantity} × ${name}${optionText(chosen.selected)} from ${storeName}, ${deps.formatRupees(totalPaise)}${cleanNote === "" ? "" : `; note: "${cleanNote.replace(/"/g, "'")}"`}${replaceNotice(args.cart, product.storeId, deps)}`,
+      description: `Add ${quantity} × ${name}${optionText(chosen.selected, deps)} from ${storeName}, ${deps.formatRupees(totalPaise)}${cleanNote === "" ? "" : `; note: "${cleanNote.replace(/"/g, "'")}"`}${replaceNotice(args.cart, product.storeId, deps)}`,
       storeId: product.storeId,
       cartStoreId: cartStoreIdOf(args.cart),
       storeName,
@@ -208,11 +218,11 @@ export function buildReorderCard(
       skipped.push({ name: "An item", reason: "no longer on the menu" });
       continue;
     }
-    const cleanStoreName = deps.sanitize(product.storeName, 80);
+    const cleanStoreName = deps.sanitize(product.storeName, LIMITS.maxNameChars);
     const problem = storeProblem(product, cleanStoreName);
     if (problem) return { ok: false, error: problem };
     storeName = cleanStoreName;
-    const name = deps.sanitize(product.name, 80);
+    const name = deps.sanitize(product.name, LIMITS.maxNameChars);
     if (!product.isAvailable) {
       skipped.push({ name, reason: "unavailable now" });
       continue;
@@ -221,9 +231,17 @@ export function buildReorderCard(
       skipped.push({ name, reason: "options changed" });
       continue;
     }
-    const chosen = selectOptions(product.groups, line.option_ids as string[], (v) => deps.sanitize(v, 80));
+    const chosen = selectOptions(product.groups, line.option_ids as string[], (v) => deps.sanitize(v, LIMITS.maxNameChars));
     if (!chosen.ok) {
       skipped.push({ name, reason: "options changed" });
+      continue;
+    }
+    if (!Number.isFinite(line.quantity)) {
+      skipped.push({ name, reason: "quantity unreadable" });
+      continue;
+    }
+    if (!Number.isFinite(Number(product.price)) || chosen.selected.some((option) => !Number.isInteger(option.priceDeltaPaise))) {
+      skipped.push({ name, reason: "price unavailable" });
       continue;
     }
     const quantity = Math.min(LIMITS.maxLineQuantity, Math.max(1, Math.trunc(line.quantity)));
@@ -242,15 +260,15 @@ export function buildReorderCard(
   if (items.length === 0 || storeName === null) return { ok: false, error: "None of the items can be reordered right now" };
   const count = items.length;
   const itemText = (line: CartLineData) =>
-    `${line.quantity} × ${line.name}${line.specialInstructions === null ? "" : noteText(line.specialInstructions, LIMITS.maxNoteShown)}`;
+    `${line.quantity} × ${line.name}${optionText(line.selectedOptions, deps)}${line.specialInstructions === null ? "" : noteText(line.specialInstructions, LIMITS.maxNoteShown)}`;
   const skippedText = skipped.length > 0 ? `; skipped ${skipped.map((s) => `${s.name} (${s.reason})`).join(", ")}` : "";
   const describe = (listed: number) => {
     const more = count - listed;
-    const list = items.slice(0, listed).map(itemText).join(", ") + (more > 0 ? ` and ${more} more` : "");
+    const list = listed === 0 ? "items not listed to fit" : items.slice(0, listed).map(itemText).join(", ") + (more > 0 ? ` and ${more} more` : "");
     return `Add ${count} ${count === 1 ? "item" : "items"} from ${storeName}: ${list}, ${deps.formatRupees(totalPaise)}${skippedText}${replaceNotice(cart, source.store_id, deps)}`;
   };
   let listed = Math.min(count, LIMITS.maxListedReorderItems);
-  while (listed > 1 && describe(listed).length > LIMITS.maxDescriptionChars) listed -= 1;
+  while (listed > 0 && describe(listed).length > LIMITS.maxDescriptionChars) listed -= 1;
   return {
     ok: true,
     card: {
@@ -275,7 +293,7 @@ export function buildCartChangeCard(
   if (!snapshot || snapshot.items.length === 0) return { ok: false, error: "The cart is empty" };
   const line = snapshot.items.find((candidate) => candidate.lineId === input.line_id);
   if (!line) return { ok: false, error: "not found" };
-  const name = deps.sanitize(line.name, 80);
+  const name = deps.sanitize(line.name, LIMITS.maxNameChars);
   if (input.quantity === 0) {
     return { ok: true, card: { kind: "remove_line", id: deps.newId(), title: "Remove from cart", description: `Remove ${name} from your cart`, lineId: line.lineId } };
   }
@@ -359,12 +377,12 @@ export function buildCheckoutCard(
   let storeName: string | null = null;
   for (const line of cart.items) {
     const product = products.get(menuItemIdOfLine(line.lineId));
-    const lineName = deps.sanitize(line.name, 80);
+    const lineName = deps.sanitize(line.name, LIMITS.maxNameChars);
     if (!product || product.storeId !== cart.storeId) return { ok: false, error: `${lineName === "" ? "An item" : lineName} is no longer available` };
-    const cleanStoreName = deps.sanitize(product.storeName, 80);
+    const cleanStoreName = deps.sanitize(product.storeName, LIMITS.maxNameChars);
     const problem = storeProblem(product, cleanStoreName);
     if (problem) return { ok: false, error: problem };
-    if (!product.isAvailable) return { ok: false, error: `${deps.sanitize(product.name, 80)} is unavailable right now` };
+    if (!product.isAvailable) return { ok: false, error: `${deps.sanitize(product.name, LIMITS.maxNameChars)} is unavailable right now` };
     storeName = cleanStoreName;
   }
   if (storeName === null) return { ok: false, error: "The cart is empty" };
@@ -403,13 +421,13 @@ export const proposalStatus = (card: ActionCard): string =>
 export function shapeCartForModel(snapshot: CartSnapshot | null, deps: Pick<ActionShapeDeps, "sanitize" | "toPaise" | "formatRupees">) {
   if (!snapshot || snapshot.items.length === 0) return { store: null, lines: [], empty: true };
   return {
-    store: snapshot.storeName === null ? null : deps.sanitize(snapshot.storeName, 80),
+    store: snapshot.storeName === null ? null : deps.sanitize(snapshot.storeName, LIMITS.maxNameChars),
     lines: snapshot.items.map((line) => ({
       line_id: line.lineId,
-      name: deps.sanitize(line.name, 80),
+      name: deps.sanitize(line.name, LIMITS.maxNameChars),
       quantity: line.quantity,
       unit_price: deps.formatRupees(deps.toPaise(line.price)),
-      options: line.options.map((option) => deps.sanitize(option, 60)),
+      options: line.options.map((option) => deps.sanitize(option, LIMITS.maxNameChars)),
     })),
     empty: false,
   };

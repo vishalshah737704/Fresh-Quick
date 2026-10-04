@@ -388,3 +388,10 @@ test("order note rule: on request only, own words, never copied data, tap Confir
     assert.doesNotMatch(buildSystemPrompt({ brandName: "B", role: "customer", chunks: [], ...args }), /propose_order_note/);
   }
 });
+
+test("tools off with knowledge chunks present: no catalog, tool, order or action language leaks in even when those flags are set", () => {
+  const p = buildSystemPrompt({ brandName: "B", role: "customer", chunks: [match("x", 0.9), match("y", 0.8)], catalogBlock: "Store: Z", toolsEnabled: false, ordersEnabled: true, actionsEnabled: true });
+  assert.match(p, /<knowledge>/);
+  assert.match(p, /Answer using only the knowledge below/);
+  assert.doesNotMatch(p, /<catalog>|propose_|get_my_cart|list_my_orders|get_my_order|find_stores|search_catalog/);
+});
