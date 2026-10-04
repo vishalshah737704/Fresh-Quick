@@ -14,7 +14,7 @@ The Dashboard has an Online or Offline button, a section called "Your active del
 
 ## How do I go online or offline?
 
-Choose the button that reads "Offline — tap to toggle" or "Online — tap to toggle". You only receive orders and see available orders while you are online.
+Choose the button that reads "Offline — tap to toggle" or "Online — tap to toggle". To start getting deliveries, go online with this button: you only receive orders and see available orders while you are online.
 
 ## Why do I see no available orders?
 
