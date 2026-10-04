@@ -1,6 +1,6 @@
 import "server-only";
 import Anthropic from "@anthropic-ai/sdk";
-import { hasToolBlocks, runAgentLoop, type Block, type LoopMessage, type Round } from "./agent-loop";
+import { hasToolBlocks, runAgentLoop, type AgentEvent, type Block, type LoopMessage, type Round } from "./agent-loop";
 import { runTool, toolsFor } from "./tools";
 import type { Point } from "./catalog";
 import type { ActionCard, CartSnapshot } from "./action-types";
@@ -34,7 +34,7 @@ export async function* runAgent(args: {
   actions: ActionCard[];
   toolsEnabled: boolean;
   signal?: AbortSignal;
-}): AsyncGenerator<string> {
+}): AsyncGenerator<AgentEvent> {
   const anthropic = getClient();
   const context = {
     location: args.location,
@@ -45,7 +45,7 @@ export async function* runAgent(args: {
     actions: args.actions,
   };
   const tools = toolsFor(context);
-  const runRound = async (messages: LoopMessage[], withTools: boolean): Promise<Round> => {
+  const runRound = async (messages: LoopMessage[], withTools: boolean, onDelta: (text: string) => void): Promise<Round> => {
     try {
       // thinking "between_tools" turns thinking off on Sonnet 5.5; omitting it runs adaptive thinking at
       // effort high whose tokens count against max_tokens. The cast keeps this compiling on SDK versions
@@ -64,6 +64,7 @@ export async function* runAgent(args: {
             : {}),
       } as unknown as Anthropic.MessageStreamParams;
       const stream = anthropic.messages.stream(params, { signal: args.signal });
+      stream.on("text", (delta: string) => onDelta(delta));
       const message = await stream.finalMessage();
       const text = message.content
         .filter((b): b is Anthropic.TextBlock => b.type === "text")
@@ -71,7 +72,7 @@ export async function* runAgent(args: {
         .join("");
       return { stopReason: message.stop_reason, content: message.content as unknown as Block[], text };
     } catch (error) {
-      if (error instanceof Anthropic.APIError) {
+      if (error instanceof Anthropic.APIError && !(error instanceof Anthropic.APIUserAbortError) && !args.signal?.aborted) {
         // Provider error bodies are logged server-side only (billing and key problems show up here).
         console.error("zippy: Anthropic request failed", error.status, JSON.stringify(error.error)?.slice(0, 500));
       }

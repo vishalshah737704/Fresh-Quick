@@ -161,7 +161,7 @@ retrieval. Target is at least 90 % hits; the last run scored 35/36 (superseded b
 **Z2: live store and menu lookups (built 2026-10-03, branch `ask-zippy-z2`).** Zippy also answers
 store, dish, price, option and open/closed questions from live data using four read-only tools
 (`search_catalog`, `find_stores`, `get_store_menu`, `get_item_options`). It cannot place orders; Z3 (below)
-added looking up your own. The answer arrives in one piece. "Nearest" works on the website (it sends your delivery
+added looking up your own. The answer appears word by word (restored by the streaming work, see the Zippy streaming section). "Nearest" works on the website (it sends your delivery
 location) but not in the mobile app. Spec: `docs/superpowers/specs/2026-10-03-ask-zippy-z2-design.md`.
 - **Database:** migration 31 (catalog index), applied with `npx supabase migration up --local`.
 - **Catalog sync:** `POST /api/internal/zippy/catalog-sync` (header `X-Internal-Secret`) re-embeds changed

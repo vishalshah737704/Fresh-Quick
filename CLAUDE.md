@@ -151,7 +151,7 @@ prices, fees or open status); hits are hydrated live into a `<catalog>` prompt b
 Claude tool loop runs on `@anthropic-ai/sdk` (`lib/zippy/agent.ts` + pure `agent-loop.ts`; four
 read-only tools in `tools.ts`: `search_catalog`, `find_stores`, `get_store_menu`, `get_item_options`;
 data in `catalog.ts` (pure) / `catalog-data.ts`; index sync in `catalog-sync.ts`). Max 4 tool rounds, max 6 tool calls per round (extras get an error result)
-(env `ZIPPY_MAX_TOOL_ROUNDS`, 1-6). **The answer now arrives in one piece, not word by word.** Kill
+(env `ZIPPY_MAX_TOOL_ROUNDS`, 1-6). The answer streams word by word again (see the streaming paragraph after Z4b). Kill
 switch: `ZIPPY_TOOLS=off` (no tools, no catalog = Z1 content). Web sends the delivery pin
 (`lib/zippy/client-location.ts`: stored pin, or the default pin on `/customer*` only); mobile sends the phone's foreground GPS fix
 (`mobile/lib/zippy-location.ts`; permission is asked only when the question is about nearby stores; denied = no location, so "nearest" is unavailable). Rate limits are env-tunable (defaults: signed-in 10/min + 60/day, visitors 5/min + 20/day per IP; see the rate-limit paragraph below). The location is never saved or logged. Keep the index
@@ -243,6 +243,22 @@ a Modal). Open for Vishal: after merge re-ingest `knowledge/` and re-run `node s
 cases: "can zippy check out for me", "take me to checkout"); phone check. See MEMORY.md's "Ask Zippy Z4b"
 entry and `docs/superpowers/specs/2026-10-04-ask-zippy-z4b-design.md`. Manuals: web v3.5, mobile v4.6, edited in
 place (no page start changed, so the static TOCs were untouched).
+**Ask Zippy streaming (2026-10-04, branch `zippy-streaming`, built and live-verified on web, phone check pending, not yet merged to `main`):**
+answers appear word by word on web and mobile again, including answers that use live lookups and the cart and
+checkout cards. `POST /api/zippy/chat` with `stream: true` (the default) now returns NDJSON, one event per line:
+`delta` (answer text), `reset` (discard what streamed so far), `done` (full final `reply`, `conversationId`,
+`actions`, always last on success) and `error` (friendly message). `stream: false` still returns one JSON reply.
+The old plain-text stream and its header are gone. `runAgentLoop` yields `delta` / `reset` / `final` events, one
+streamed model round at a time; a round that streams text and then ends in tool calls emits `reset`, because
+that text was only a lead-in. The client replaces its streamed text with `done.reply`, so a lost delta cannot
+corrupt the final text. Cards appear when the answer finishes. The assistant message is saved once, at the end;
+starting a New chat, opening History, switching account or leaving the page/app mid-answer aborts the model call (through `request.signal`) and saves nothing, but closing the chat panel does not abort: the reply finishes and is saved. Web:
+`lib/zippy/stream-events.ts` (pure line parser) and `ZippyWidget`; mobile uses `expo/fetch` with a
+byte-identical parser copy under `mobile/lib/` (parity-tested); phone check pending. `knowledge/customer/
+ask-zippy.md` changed, so re-ingest `knowledge/` (`foodhub/zippy-ingest`). Spec
+`docs/superpowers/specs/2026-10-04-zippy-streaming-design.md`. Manuals: web v3.6, mobile v4.7, edited in place
+(web Appendix A-D start pages moved by one, so the static TOC was renumbered). See MEMORY.md's "Ask Zippy
+streaming" entry.
 **Ask Zippy rate limits and abuse guards (2026-10-04, branch `zippy-rate-limits`):**
 every limit is an env var with a validated default (`lib/zippy/rate-limit.ts`; bad values fall back to the default,
 never off): per user 10/min + 60/day, per visitor IP 5/min + 20/day, global visitors 60/min + 1000/day, global
@@ -871,6 +887,16 @@ See [MEMORY.md](MEMORY.md) for phase-by-phase progress and decisions.
   and they run concurrently (`Promise.all`), so a "one card per reply" guard checked before an await can pass
   twice and produce duplicate cards. Re-check the shared state after the await, before pushing the result.
 
+- **A streaming model round that ends in tool calls needs a `reset` event for its preamble.** The model often
+  writes a lead-in ("Let me check...") before calling a tool; streamed live, that text would stay in the
+  customer's bubble in front of the real answer. Emit `reset` when such a round ends, and always let the
+  `done` event's full text replace whatever streamed, so the stream is never the source of truth.
+- **A Node/Next route handler that streams a model response needs an abort path.** Wire `request.signal` to
+  the model stream (and stop writing to the response once it aborts), or a closed tab keeps a paid model call
+  running and may still save a partial answer. Save the assistant message once, from the final text only.
+- **React Native's global `fetch` does not expose a streaming body.** Use `import { fetch } from "expo/fetch"`
+  for the streaming call only (Expo SDK 57); keep the parser shared byte-for-byte with web and guard it with a
+  parity test. A streaming client also needs a non-streaming fallback path.
 - **Retention/purge functions are tested inside a rolled-back transaction with fake rows, never against
   real data; a destructive scheduled job needs a dry-run default on its manual trigger.** The Zippy purge
   was verified with `begin; ... rollback;` on fabricated conversations, and its webhook only deletes when

@@ -13,7 +13,7 @@ import {
 import {
   listConversations,
   loadConversation,
-  sendChat,
+  streamChat,
   ZippyError,
   type ChatMessage,
   type ConversationSummary,
@@ -47,13 +47,17 @@ export function ZippyWidget() {
   const executedCards = useRef<Set<string>>(new Set());
 
   const cancelStream = useCallback(() => {
+    // abortRef is only set while a stream has not finished; an aborted reply is partial and never saved, so drop it.
+    const inFlight = abortRef.current !== null;
     abortRef.current?.abort();
     abortRef.current = null;
     setBusy(false);
-    setMessages((current) => {
-      const last = current[current.length - 1];
-      return last && last.role === "assistant" && last.content === "" && !last.isError ? current.slice(0, -1) : current;
-    });
+    if (inFlight) {
+      setMessages((current) => {
+        const last = current[current.length - 1];
+        return last && last.role === "assistant" && !last.isError ? current.slice(0, -1) : current;
+      });
+    }
   }, []);
 
   // Drops any in-flight stream so late deltas can never land in a fresh chat.
@@ -85,8 +89,15 @@ export function ZippyWidget() {
     return () => sub.subscription.unsubscribe();
   }, [reset]);
 
+  // Streaming updates the last message many times a second; only follow it while the reader is near the bottom.
+  const lastCountRef = useRef(0);
   useEffect(() => {
-    listRef.current?.scrollTo({ top: listRef.current.scrollHeight });
+    const el = listRef.current;
+    if (!el) return;
+    const added = messages.length !== lastCountRef.current;
+    lastCountRef.current = messages.length;
+    const nearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
+    if (added || nearBottom || !open || showHistory) el.scrollTo({ top: el.scrollHeight });
   }, [messages, open, showHistory]);
 
   useEffect(() => {
@@ -124,11 +135,27 @@ export function ZippyWidget() {
       setInput("");
       setBusy(true);
       try {
-        const result = await sendChat({
+        const result = await streamChat({
           message: question,
           conversationId,
           history,
           signal: controller.signal,
+          onDelta: (delta) => {
+            if (controller.signal.aborted) return;
+            setMessages((current) => {
+              const last = current[current.length - 1];
+              if (!last || last.role !== "assistant") return current;
+              return [...current.slice(0, -1), { ...last, content: last.content + delta }];
+            });
+          },
+          onReset: () => {
+            if (controller.signal.aborted) return;
+            setMessages((current) => {
+              const last = current[current.length - 1];
+              if (!last || last.role !== "assistant") return current;
+              return [...current.slice(0, -1), { ...last, content: "" }];
+            });
+          },
           location: resolveLocation((key) => window.localStorage.getItem(key), window.location.pathname),
           cart: cart ? snapshotCart(cart) : null,
         });
@@ -208,7 +235,7 @@ export function ZippyWidget() {
             </button>
           </header>
 
-          <div ref={listRef} aria-live="polite" className="flex-1 space-y-3 overflow-y-auto bg-brand-bg p-3">
+          <div ref={listRef} aria-live="polite" aria-busy={busy} className="flex-1 space-y-3 overflow-y-auto bg-brand-bg p-3">
             {showHistory ? (
               conversations.length === 0 ? (
                 <p className="text-sm text-brand-ink-muted">No saved chats yet.</p>
