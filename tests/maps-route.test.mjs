@@ -120,17 +120,17 @@ test("shouldRequestRoute: waits 60 s after a failure, then retries", () => {
 });
 
 test("formatEta", () => {
-  assert.equal(formatEta(0), "less than 1 min");
-  assert.equal(formatEta(59), "less than 1 min");
-  assert.equal(formatEta(60), "1 min");
-  assert.equal(formatEta(89), "1 min");
-  assert.equal(formatEta(90), "2 min");
-  assert.equal(formatEta(59 * 60), "59 min");
-  assert.equal(formatEta(62 * 60), "1 h 2 min");
-  assert.equal(formatEta(3600), "1 h");
-  assert.equal(formatEta(65 * 60), "1 h 5 min");
-  assert.equal(formatEta(2 * 3600), "2 h");
-  assert.equal(formatEta(59 * 60 + 31), "1 h");
+  assert.equal(formatEta(0), "Less than 1 min away");
+  assert.equal(formatEta(59), "Less than 1 min away");
+  assert.equal(formatEta(60), "About 1 min");
+  assert.equal(formatEta(89), "About 1 min");
+  assert.equal(formatEta(90), "About 2 min");
+  assert.equal(formatEta(59 * 60), "About 59 min");
+  assert.equal(formatEta(62 * 60), "About 1 h 2 min");
+  assert.equal(formatEta(3600), "About 1 h");
+  assert.equal(formatEta(65 * 60), "About 1 h 5 min");
+  assert.equal(formatEta(2 * 3600), "About 2 h");
+  assert.equal(formatEta(59 * 60 + 31), "About 1 h");
 });
 
 test("formatRouteDistance", () => {

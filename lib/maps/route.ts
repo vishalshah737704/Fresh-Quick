@@ -87,12 +87,12 @@ export function shouldRequestRoute(state: RouteRequestState, now: number): boole
 }
 
 export function formatEta(seconds: number): string {
-  if (!(seconds >= 60)) return "less than 1 min";
+  if (!(seconds >= 60)) return "Less than 1 min away";
   const total = Math.round(seconds / 60);
-  if (total < 60) return `${total} min`;
+  if (total < 60) return `About ${total} min`;
   const hours = Math.floor(total / 60);
   const minutes = total % 60;
-  return minutes === 0 ? `${hours} h` : `${hours} h ${minutes} min`;
+  return minutes === 0 ? `About ${hours} h` : `About ${hours} h ${minutes} min`;
 }
 
 export function formatRouteDistance(meters: number): string {

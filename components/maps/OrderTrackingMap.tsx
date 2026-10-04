@@ -342,6 +342,14 @@ export default function OrderTrackingMap({ status, store, destination, partnerLo
         } catch (error) {
           if (stale()) return;
           console.warn("Road route unavailable, showing the straight line", error);
+          // A failed refresh must not leave an outdated route on the map.
+          if (scene.route) {
+            scene.route.setMap(null);
+            scene.route = null;
+          }
+          scene.routeFitKey = null;
+          setRouteInfo(null);
+          apply();
           routeCtl.current.last = { ...attempt, failedAt: Date.now() };
         } finally {
           routeCtl.current.inFlight = false;
@@ -468,7 +476,7 @@ export default function OrderTrackingMap({ status, store, destination, partnerLo
           <p>
             {updated}
             {roadText
-              ? ` · About ${roadText}`
+              ? ` · ${roadText}`
               : distance && ` · about ${distance} from your address`}
           </p>
         )}
