@@ -39,7 +39,8 @@ export type ActionCard =
     }
   | { kind: "update_quantity"; id: string; title: string; description: string; lineId: string; quantity: number }
   | { kind: "remove_line"; id: string; title: string; description: string; lineId: string }
-  | { kind: "clear_cart"; id: string; title: string; description: string };
+  | { kind: "clear_cart"; id: string; title: string; description: string }
+  | { kind: "go_to_checkout"; id: string; title: string; description: string; storeId: string; storeName: string; itemCount: number };
 
 // What the client tells the server about its own cart (the cart is client state; mobile's is per-device).
 export type CartSnapshot = {
