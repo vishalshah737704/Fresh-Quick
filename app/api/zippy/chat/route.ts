@@ -113,7 +113,7 @@ export async function POST(request: NextRequest) {
 
     if (!stream) {
       let reply = "";
-      for await (const piece of runAgent(agentArgs)) reply += piece;
+      for await (const event of runAgent(agentArgs)) if (event.type === "final") reply = event.text;
       if (reply.trim() === "") throw new Error("Model returned an empty reply");
       if (savedConversationId) {
         try {
@@ -131,7 +131,9 @@ export async function POST(request: NextRequest) {
         let full = "";
         let failed = false;
         try {
-          for await (const piece of runAgent(agentArgs)) {
+          for await (const event of runAgent(agentArgs)) {
+            if (event.type !== "final") continue; // Task 2 streams deltas; until then one piece, as before
+            const piece = event.text;
             full += piece;
             controller.enqueue(encoder.encode(piece));
           }
