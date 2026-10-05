@@ -136,6 +136,7 @@ The web Customer app uses Google Maps in three places: a location picker (the he
 - Key: one public browser key in `.env.local` as `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` (placeholder in `.env.example`), restricted in the Google Cloud console by HTTP referrer (`localhost:3000` to `3003` for now) and to Maps JavaScript, Places (New) and Geocoding. See "Google Maps key" in `docs/DEPLOYMENT.md`.
 - No new npm packages: the Maps JavaScript API is loaded at runtime by `lib/maps/loader.ts`.
 - If Maps cannot load, search and the map hide and the manual coordinates fields (and the partner's coordinates as text) still work.
+- Phone app delivery location (2026-10-05): the Customer app's Home pill opens a "Delivery location" sheet (Google address search, tap or drag the pin, GPS), the choice is saved on the account (`users.saved_lat/saved_lng/saved_label`, `/api/customer/location`, migration 33) and orders Home nearest first; Checkout gains address search and "Use my saved location". Search calls Google directly with the Android key (`GOOGLE_MAPS_ANDROID_API_KEY` in `mobile/.env`, and `GOOGLE_MAPS_ANDROID_CERT_SHA1` is its signing-certificate fingerprint in `mobile/.env.example`), so it needs Places API (New) and Geocoding API on that key and works only in the native Android build. See `docs/ANDROID_TESTING.md`.
 
 ## Ask Zippy (in-app assistant, Z1 built 2026-10-03)
 

@@ -80,3 +80,22 @@ Prerequisites on this PC (all installed): Android Studio SDK with platform 36, N
 2. `npx expo prebuild --platform android --no-install --no-clean` (use `--no-clean` when `mobile/android` exists; a plain prebuild fails with EBUSY while VS Code's Java tooling or Gradle has the folder open). It rewrites the `android` and `ios` scripts in `package.json`; restore them to `expo start --android` and `expo start --ios`. Create `mobile/android/local.properties` with `sdk.dir=C:/Users/visha/AppData/Local/Android/Sdk` and `cmake.dir=C:/Users/visha/AppData/Local/Android/Sdk/cmake/3.31.6` (use forward slashes).
 3. With `JAVA_HOME` set to the JDK 21 folder (only for this command), run in `mobile/android`: `gradlew.bat assembleDebug -x lint -PreactNativeArchitectures=x86_64`. About 8 minutes the first time. The debug app is `mobile/android/app/build/outputs/apk/debug/app-debug.apk`.
 4. Start Metro in `mobile` (`npx expo start`, port 8081), run `adb reverse tcp:8081 tcp:8081`, install with `adb install -r <apk>` and start `com.freshquick.app`. Sign in as a customer and open an order that is assigned or on the way. A debug build needs Metro running; an app for a real phone away from the PC needs a release build (`assembleRelease`, add `arm64-v8a` to `reactNativeArchitectures`), which bundles the JavaScript.
+
+## Delivery location and address search
+
+The Customer app's delivery location picker (Home pill, and the address search at Checkout) calls Google's Places API (New) and Geocoding API directly with the Android key (no server proxy; Vishal's choice). Verified on the emulator's native build on 2026-10-05.
+
+### One-time Google Cloud Console setup (done)
+Enable **Places API (New)** and **Geocoding API** in the same project, and add both to the API restrictions of the Android key (it already allows Maps SDK for Android; Routes API is enabled too). The key's Android-app restriction (package `com.freshquick.app` plus SHA-1) stays as is. A build signed with another keystore needs its own SHA-1 on the key, otherwise search quietly stops working and the sheet shows that search is unavailable.
+
+### Native build only
+Search and reverse geocoding only work where Google accepts the Android key, which is the native Android build. Expo Go on the emulator is rejected for the same reason as the map. On an iPhone in Expo Go this is unverified: the Expo manifest also carries the key and the Android headers, so it may or may not work. When search is unavailable the sheet says so, and the pin and "Use my current location" still work.
+
+### How to test
+1. Install the native debug build and start Metro (see "Build and install on the emulator"), then sign in as a customer. Sign-in matters: the saved location is stored on the account.
+2. Home: tap the location pill. The full-screen "Delivery location" sheet opens.
+3. Type 3 or more characters (for example `Bandra`): live suggestions appear; tapping one saves and closes the sheet, and Home reorders restaurants nearest first.
+4. Tap the map or drag the pin: the footer shows an address (or coordinates if the lookup fails) and "Confirm location" saves it.
+5. "Use my current location": `adb emu geo fix <longitude> <latitude>` (longitude first) sets a mock fix, but on 2026-10-05 the fix never reached the app on this emulator, so the button timed out after 15 seconds with its friendly message. Treat GPS as not verified on the emulator; check it on a real phone.
+6. Checkout: "Search for your address" fills Address 1, City and State (type the Pincode when it is blank); "Use my saved location" fills from the saved pin.
+7. Restart the app, or sign out and back in: the saved location comes back from the account (and the device cache). Signing in as a different customer on the same emulator must not show the previous account's location.

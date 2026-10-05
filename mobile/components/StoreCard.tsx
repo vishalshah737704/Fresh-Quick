@@ -13,6 +13,8 @@ export type StoreCardData = {
   banner_url: string | null;
   delivery_fee_paise: number;
   promo_text: string | null;
+  lat?: number | string | null;
+  lng?: number | string | null;
 };
 
 // UberEats-style restaurant card: 16:9 image, rounded corners, favorite

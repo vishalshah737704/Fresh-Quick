@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -16,6 +16,11 @@ import { useCart } from "../../../lib/cart-store";
 import { BRAND } from "../../../theme";
 import { useRequireSession } from "../../../lib/use-require-session";
 import { validateRecipientPhone } from "../../../lib/phone";
+import { AddressSearchBox } from "../../../components/AddressSearchBox";
+import { useDeliveryLocation } from "../../../lib/location-store";
+import { reverseGeocode } from "../../../lib/places-api";
+import { toAddressFormFields } from "../../../lib/place";
+import type { PlaceDetails } from "../../../lib/places-parse";
 
 type PaymentMethod = "mock_card" | "mock_upi" | "mock_cod";
 
@@ -109,6 +114,14 @@ export default function CheckoutScreen() {
   const [cardholderName, setCardholderName] = useState("");
   const [upiId, setUpiId] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const { location: savedLocation } = useDeliveryLocation();
+  // Point chosen through address search; kept when Address 1 is edited.
+  const [pickedPoint, setPickedPoint] = useState<{ lat: number; lng: number } | null>(null);
+  // The saved point, only while the fields still hold what "Use my saved location" filled in.
+  const [savedPoint, setSavedPoint] = useState<{ lat: number; lng: number } | null>(null);
+  // Bumped on every pick or manual address edit so a late reverse geocode cannot overwrite newer input.
+  const fillSeq = useRef(0);
+  const [savedBusy, setSavedBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Which row is currently expanded — only one at a time, UberEats-style.
@@ -138,6 +151,47 @@ export default function CheckoutScreen() {
       cancelled = true;
     };
   }, []);
+
+  function applyFields(fields: { line1: string; city: string; state: string; pincode: string }) {
+    setLine1(fields.line1);
+    setCity(fields.city);
+    setStateField(fields.state);
+    setPincode(fields.pincode);
+  }
+
+  function handlePlacePicked(place: PlaceDetails) {
+    // Address 2 stays as typed; a geocoder cannot know a flat number or landmark.
+    applyFields(toAddressFormFields(place.components, place.formattedAddress));
+    fillSeq.current += 1;
+    setPickedPoint({ lat: place.lat, lng: place.lng });
+    setSavedPoint(null);
+  }
+
+  function editAddressField(setter: (value: string) => void) {
+    return (value: string) => {
+      fillSeq.current += 1;
+      setSavedPoint(null);
+      setter(value);
+    };
+  }
+
+  async function handleUseSavedLocation() {
+    if (!savedLocation || savedBusy) return;
+    setSavedBusy(true);
+    const point = { lat: savedLocation.lat, lng: savedLocation.lng };
+    const mine = ++fillSeq.current;
+    setPickedPoint(null);
+    setSavedPoint(point);
+    try {
+      const result = await reverseGeocode(point.lat, point.lng);
+      if (mine === fillSeq.current) applyFields(toAddressFormFields(result.components, savedLocation.label));
+    } catch {
+      // Reverse geocoding is Android-native only: fill just the label and keep the point.
+      if (mine === fillSeq.current) setLine1(savedLocation.label);
+    } finally {
+      setSavedBusy(false);
+    }
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -242,11 +296,10 @@ export default function CheckoutScreen() {
             })),
             deliveryAddress: {
               label: "Delivery address",
-              // No Google Maps key available (matches web's stub) — send a
-              // fixed placeholder lat/lng; the API only requires finite
-              // numbers, it doesn't validate real-world plausibility.
-              lat: 0,
-              lng: 0,
+              // Picked point, else the saved point only if the fields were filled from it, else
+              // 0/0 (the API only requires finite numbers).
+              lat: (pickedPoint ?? savedPoint)?.lat ?? 0,
+              lng: (pickedPoint ?? savedPoint)?.lng ?? 0,
               line1: line1.trim(),
               line2: line2.trim() === "" ? null : line2.trim(),
               city: city.trim(),
@@ -317,16 +370,33 @@ export default function CheckoutScreen() {
           onToggle={() => toggleRow("address")}
           error={addressFieldError}
         >
+          <Text style={styles.label}>Search for your address</Text>
+          <AddressSearchBox onPick={handlePlacePicked} />
+          {savedLocation && (
+            <Pressable
+              style={styles.savedButton}
+              onPress={() => void handleUseSavedLocation()}
+              disabled={savedBusy}
+              accessibilityRole="button"
+            >
+              {savedBusy ? (
+                <ActivityIndicator size="small" color={BRAND.colors.primary} />
+              ) : (
+                <Ionicons name="navigate" size={16} color={BRAND.colors.primary} />
+              )}
+              <Text style={styles.savedButtonText}>Use my saved location</Text>
+            </Pressable>
+          )}
           <Text style={styles.label}>Address 1</Text>
-          <TextInput style={styles.input} value={line1} onChangeText={setLine1} placeholder="House/flat no., building, street" />
+          <TextInput style={styles.input} value={line1} onChangeText={editAddressField(setLine1)} placeholder="House/flat no., building, street" />
           <Text style={styles.label}>Address 2</Text>
           <TextInput style={styles.input} value={line2} onChangeText={setLine2} placeholder="Landmark, area (optional)" />
           <Text style={styles.label}>City</Text>
-          <TextInput style={styles.input} value={city} onChangeText={setCity} />
+          <TextInput style={styles.input} value={city} onChangeText={editAddressField(setCity)} />
           <Text style={styles.label}>State</Text>
           <TextInput style={styles.input} value={stateField} onChangeText={setStateField} />
           <Text style={styles.label}>Pincode</Text>
-          <TextInput style={styles.input} value={pincode} onChangeText={setPincode} keyboardType="number-pad" />
+          <TextInput style={styles.input} value={pincode} onChangeText={editAddressField(setPincode)} keyboardType="number-pad" />
         </CheckoutRow>
 
         <CheckoutRow
@@ -464,6 +534,8 @@ const styles = StyleSheet.create({
     fontFamily: BRAND.fonts.body,
     color: BRAND.colors.ink,
   },
+  savedButton: { flexDirection: "row", alignItems: "center", gap: 8, alignSelf: "flex-start", paddingVertical: 4 },
+  savedButtonText: { fontFamily: BRAND.fonts.bodySemiBold, fontSize: 14, color: BRAND.colors.primaryTextSafe },
   textArea: { minHeight: 72, textAlignVertical: "top" },
   inputSmall: { width: 96 },
   inputFlex: { flex: 1 },

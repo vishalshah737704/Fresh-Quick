@@ -38,11 +38,28 @@ The cart is its own screen titled Cart. It has quantity buttons, Remove, a note 
 
 1. In the cart, tap Checkout.
 2. Check your contact details. Name and email may be filled in from your account. The phone number is required: a 10-digit Indian mobile number starting with 6, 7, 8 or 9, with optional +91, 91 or 0 in front.
-3. Open Delivery address and fill in Address line 1, City, State and Pincode (Address line 2 is optional). There is no map picker; you type the address.
+3. Open Delivery address and fill in Address line 1, City, State and Pincode (Address line 2 is optional). You can type the address, or use "Search for your address" or "Use my saved location" to fill it in (see the questions below).
 4. Optionally open Delivery instructions and add a note.
 5. Open Payment method and choose Mock Card, Mock UPI or Cash on Delivery. All are simulated and no real payment is taken.
 6. Tap Place order. The button stays disabled until all required fields are valid.
 7. You are taken to the order screen to follow it.
+
+## How do I set my delivery location in the mobile app?
+
+1. On the Home tab, tap the location pill at the top ("Set delivery location" until you choose one). A full-screen "Delivery location" sheet opens.
+2. Type at least 3 characters of your address in "Search for your address" and tap a suggestion. It is saved and the sheet closes.
+3. Or tap the map, or drag the pin, to place it. The app looks up an address for that spot (if it cannot, it shows the coordinates) and you tap "Confirm location" to save it.
+4. Or tap "Use my current location" to use your phone's GPS. If your phone cannot find a position within about 15 seconds, the sheet says so and you can search or move the pin instead.
+
+If address search is not available on your phone, the sheet says so; the pin and your current location still work. Once a location is set, Home lists restaurants nearest first.
+
+## Is my delivery location remembered?
+
+Yes. It is saved on your account and kept on your phone, so it is still there after you sign in again or restart the app. You can change it any time from the Home pill. Ask Zippy also uses it for "nearby" questions, without asking for location permission again.
+
+## How do I fill in my address faster at checkout?
+
+On the Checkout screen, under Delivery address, type in "Search for your address" and choose a suggestion: it fills Address line 1, City and State. The Pincode is often blank for roads, so check it and type it if needed. If you have a saved delivery location, tap "Use my saved location" to fill the address from it. The checkout fields themselves are not saved for next time. When you choose a searched address or your saved location, the order uses that point as the delivery location; if you only type the address, no map point is attached to the order.
 
 ## How do I see my orders in the mobile app?
 
