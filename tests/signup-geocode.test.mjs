@@ -27,8 +27,9 @@ const okResponse = {
   status: "OK",
   results: [
     {
+      types: ["street_address"],
       address_components: [{ types: ["country", "political"], short_name: "IN" }],
-      geometry: { location: { lat: 19.06, lng: 72.83 } },
+      geometry: { location: { lat: 19.06, lng: 72.83 }, location_type: "ROOFTOP" },
     },
   ],
 };
@@ -77,6 +78,23 @@ test("parseGeocodeResponse", () => {
   const nan = structuredClone(okResponse);
   nan.results[0].geometry.location.lat = "19";
   assert.equal(parseGeocodeResponse(nan).kind, "not_found");
+});
+
+test("parseGeocodeResponse rejects approximate, partial and area-only results", () => {
+  const variant = (patch) => {
+    const r = structuredClone(okResponse);
+    patch(r.results[0]);
+    return parseGeocodeResponse(r).kind;
+  };
+  assert.equal(variant((x) => { x.geometry.location_type = "APPROXIMATE"; }), "not_found");
+  assert.equal(variant((x) => { x.partial_match = true; }), "not_found");
+  assert.equal(variant((x) => { x.types = ["postal_code"]; }), "not_found");
+  assert.equal(variant((x) => { x.types = ["locality", "political"]; }), "not_found");
+  assert.equal(variant((x) => { x.types = ["administrative_area_level_1", "political"]; }), "not_found");
+  assert.equal(variant((x) => { delete x.types; }), "not_found");
+  assert.equal(variant((x) => { x.types = ["route"]; x.geometry.location_type = "GEOMETRIC_CENTER"; }), "found");
+  assert.equal(variant((x) => { x.types = ["premise"]; x.geometry.location_type = "RANGE_INTERPOLATED"; }), "found");
+  assert.equal(variant((x) => { x.types = ["street_address"]; x.geometry.location_type = "ROOFTOP"; }), "found");
 });
 
 test("buildGeocodeQuery and buildSavedLabel", () => {

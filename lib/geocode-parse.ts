@@ -32,7 +32,26 @@ export function buildSavedLabel(a: GeocodeAddress): string {
   return `${a.line1.trim()}, ${a.city.trim()}`.slice(0, 200);
 }
 
-type Component = { types?: unknown; short_name?: unknown };
+const PRECISE_TYPES = new Set([
+  "street_address",
+  "route",
+  "premise",
+  "subpremise",
+  "establishment",
+  "point_of_interest",
+  "intersection",
+  "neighborhood",
+  "sublocality",
+  "sublocality_level_1",
+  "sublocality_level_2",
+  "sublocality_level_3",
+  "plus_code",
+  "park",
+  "shopping_mall",
+  "transit_station",
+]);
+
+type Component ={ types?: unknown; short_name?: unknown };
 
 export function parseGeocodeResponse(json: unknown): GeocodeResult {
   if (!json || typeof json !== "object") return { kind: "unavailable" };
@@ -42,8 +61,20 @@ export function parseGeocodeResponse(json: unknown): GeocodeResult {
   if (!Array.isArray(body.results) || body.results.length === 0) return { kind: "not_found" };
   const first = body.results[0] as {
     address_components?: unknown;
-    geometry?: { location?: { lat?: unknown; lng?: unknown } };
+    types?: unknown;
+    partial_match?: unknown;
+    geometry?: { location?: { lat?: unknown; lng?: unknown }; location_type?: unknown };
   } | null;
+  // Gibberish street names still geocode to the pincode/city centroid as an approximate,
+  // partial or area-only result; accept only precise matches.
+  const resultTypes: unknown[] = Array.isArray(first?.types) ? first.types : [];
+  if (
+    first?.partial_match === true ||
+    first?.geometry?.location_type === "APPROXIMATE" ||
+    !resultTypes.some((t) => typeof t === "string" && PRECISE_TYPES.has(t))
+  ) {
+    return { kind: "not_found" };
+  }
   const components: Component[] = Array.isArray(first?.address_components)
     ? (first.address_components as Component[])
     : [];
