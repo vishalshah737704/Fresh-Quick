@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Dimensions,
   FlatList,
+  Keyboard,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -49,6 +51,25 @@ const headerButton = { minHeight: 44, minWidth: 44, alignItems: "center", justif
 export function ZippyFab() {
   const insets = useSafeAreaInsets();
   const [open, setOpen] = useState(false);
+  // Android only: lift the chat box above a DOCKED keyboard. A floating keyboard (the emulator's
+  // hardware-keyboard toolbar, split or floating Gboard) does not take up screen space, and letting
+  // KeyboardAvoidingView react to it made the layout jump between two heights, which looked like flicker.
+  const [dockedKeyboardHeight, setDockedKeyboardHeight] = useState(0);
+  useEffect(() => {
+    if (Platform.OS !== "android") return;
+    const show = Keyboard.addListener("keyboardDidShow", (event) => {
+      const { screenY, height } = event.endCoordinates;
+      // Docked = the keyboard reaches (almost) the bottom edge. The margin covers the status and
+      // navigation bars; the floating variants end well above that (about 40% to 65% of the screen).
+      const docked = screenY + height >= Dimensions.get("screen").height * 0.85;
+      setDockedKeyboardHeight(docked ? height : 0);
+    });
+    const hide = Keyboard.addListener("keyboardDidHide", () => setDockedKeyboardHeight(0));
+    return () => {
+      show.remove();
+      hide.remove();
+    };
+  }, []);
   const [userId, setUserId] = useState<string | null>(null);
   const [messages, setMessages] = useState<LocalMessage[]>([]);
   const [conversationId, setConversationId] = useState<string | null>(null);
@@ -267,9 +288,9 @@ export function ZippyFab() {
 
       <Modal visible={open} animationType="slide" statusBarTranslucent onRequestClose={() => setOpen(false)}>
         <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
           keyboardVerticalOffset={0}
-          style={{ flex: 1, backgroundColor: BRAND.colors.background }}
+          style={{ flex: 1, backgroundColor: BRAND.colors.background, paddingBottom: dockedKeyboardHeight }}
         >
           <StatusBar style="light" />
           <View style={{ flexDirection: "row", alignItems: "center", backgroundColor: BRAND.colors.primaryTextSafe, padding: 12, paddingTop: insets.top + 12, gap: 12 }}>
