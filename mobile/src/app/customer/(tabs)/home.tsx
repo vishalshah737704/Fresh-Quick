@@ -8,7 +8,6 @@ import {
   ScrollView,
   Image,
   RefreshControl,
-  Alert,
   StyleSheet,
 } from "react-native";
 import { useRouter } from "expo-router";
@@ -19,6 +18,10 @@ import { FloatingCartPill } from "../../../../components/FloatingCartPill";
 import { StoreCard, type StoreCardData } from "../../../../components/StoreCard";
 import { SkeletonCard, SkeletonRow } from "../../../../components/SkeletonCard";
 import { useRequireSession } from "../../../../lib/use-require-session";
+import { LocationSheet } from "../../../../components/LocationSheet";
+import { useDeliveryLocation } from "../../../../lib/location-store";
+import { haversineDistanceKm } from "../../../../lib/geo";
+import { sortNearestFirst } from "../../../../lib/nearest";
 
 type Store = StoreCardData;
 
@@ -57,13 +60,15 @@ export default function CustomerHomeScreen() {
   const [searchQuery, setSearchQuery] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [locationOpen, setLocationOpen] = useState(false);
+  const { location } = useDeliveryLocation();
 
   const load = useCallback(async () => {
     const [storesRes, cuisinesRes, productsRes, sessionRes] = await Promise.all([
       supabase
         .from("stores")
         .select(
-          "id, name, cuisine_tags, rating, avg_prep_minutes, is_open, banner_url, delivery_fee_paise, promo_text"
+          "id, name, cuisine_tags, rating, avg_prep_minutes, is_open, banner_url, delivery_fee_paise, promo_text, lat, lng"
         )
         .eq("is_open", true)
         .eq("is_suspended", false),
@@ -136,7 +141,7 @@ export default function CustomerHomeScreen() {
   }, [products]);
 
   const query = searchQuery.trim().toLowerCase();
-  const filtered = (stores ?? []).filter((s) => {
+  const matching = (stores ?? []).filter((s) => {
     if (selectedCuisine !== null && !s.cuisine_tags.includes(selectedCuisine)) return false;
     if (query === "") return true;
     if (s.name.toLowerCase().includes(query)) return true;
@@ -144,6 +149,11 @@ export default function CustomerHomeScreen() {
     const productNames = productNamesByStore.get(s.id) ?? [];
     return productNames.some((n) => n.toLowerCase().includes(query));
   });
+  const filtered = useMemo(
+    () => sortNearestFirst(matching, location, haversineDistanceKm),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [stores, selectedCuisine, query, productNamesByStore, location]
+  );
 
   const promoStores = useMemo(
     () => (stores ?? []).filter((s) => !!s.promo_text).slice(0, 6),
@@ -177,13 +187,13 @@ export default function CustomerHomeScreen() {
         <View style={styles.heroSection}>
           <Pressable
             style={styles.addressPill}
-            onPress={() =>
-              Alert.alert("Coming soon", "Address selection isn't available in this demo yet.")
-            }
+            onPress={() => setLocationOpen(true)}
+            accessibilityRole="button"
+            accessibilityLabel="Set delivery location"
           >
             <Ionicons name="location-sharp" size={16} color={BRAND.colors.primary} />
             <Text style={styles.addressPillText} numberOfLines={1}>
-              Deliver now · Current location
+              {location ? location.label : "Set delivery location"}
             </Text>
             <Ionicons name="chevron-down" size={14} color={BRAND.colors.inkMuted} />
           </Pressable>
@@ -350,6 +360,7 @@ export default function CustomerHomeScreen() {
       </ScrollView>
 
       <FloatingCartPill />
+      <LocationSheet visible={locationOpen} onClose={() => setLocationOpen(false)} />
     </View>
   );
 }

@@ -6,6 +6,7 @@ import { Poppins_700Bold } from "@expo-google-fonts/poppins";
 import { View, ActivityIndicator } from "react-native";
 import { BRAND } from "../../theme";
 import { CartProvider } from "../../lib/cart-store";
+import { LocationProvider } from "../../lib/location-store";
 import { supabase } from "../../lib/supabase";
 import { ZippyFab } from "../../components/ZippyFab";
 
@@ -46,6 +47,7 @@ export default function RootLayout() {
 
   return (
     <CartProvider>
+      <LocationProvider>
       <StatusBar style="dark" />
       <Stack
         screenOptions={{
@@ -70,6 +72,7 @@ export default function RootLayout() {
         <Stack.Screen name="delivery/history" options={{ title: "History" }} />
       </Stack>
       <ZippyFab />
+      </LocationProvider>
     </CartProvider>
   );
 }

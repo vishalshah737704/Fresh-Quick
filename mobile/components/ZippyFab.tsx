@@ -32,6 +32,7 @@ import {
   type ConversationSummary,
 } from "../lib/zippy";
 import { getChatLocation } from "../lib/zippy-location";
+import { useDeliveryLocation } from "../lib/location-store";
 import { useCart } from "../lib/cart-store";
 import { snapshotCart } from "../lib/client-cart";
 import type { ActionCard, CardState } from "../lib/action-types";
@@ -83,6 +84,7 @@ export function ZippyFab() {
   const [loadingList, setLoadingList] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const cart = useCart();
+  const { location: savedLocation } = useDeliveryLocation();
   const nextId = useRef(1);
   const streamIdRef = useRef<number | null>(null);
   const listRef = useRef<FlatList<LocalMessage>>(null);
@@ -162,7 +164,7 @@ export function ZippyFab() {
     // Snapshot what the user saw when asking, before the permission prompt can take seconds; confirm re-checks the live cart (CART_CHANGED).
     const cartSnapshot = snapshotCart({ ...cart, orderNote: cart.orderNote });
     try {
-      const location = await getChatLocation(question);
+      const location = await getChatLocation(question, savedLocation);
       if (token !== requestToken.current) return;
       const result = await streamChat({
         message: question,

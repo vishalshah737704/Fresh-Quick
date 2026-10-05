@@ -13,7 +13,11 @@ export function asksAboutNearby(question: string): boolean {
 // Foreground device location for one chat message, or null. Never stored or
 // logged; the server uses it only to rank stores for that question. Any
 // failure (denied, services off, timeout) returns null so chat still works.
-export async function getChatLocation(question: string): Promise<Point | null> {
+export async function getChatLocation(question: string, saved?: Point | null): Promise<Point | null> {
+  // A saved delivery location answers "nearest" questions without any permission prompt.
+  if (saved && asksAboutNearby(question) && Number.isFinite(saved.lat) && Number.isFinite(saved.lng)) {
+    return { lat: saved.lat, lng: saved.lng };
+  }
   try {
     let { status } = await Location.getForegroundPermissionsAsync();
     if (status !== "granted") {

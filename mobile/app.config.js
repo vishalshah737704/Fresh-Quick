@@ -6,6 +6,13 @@
 // `npx expo prebuild --platform android` followed by a Gradle build.
 module.exports = ({ config }) => ({
   ...config,
+  extra: {
+    ...config.extra,
+    // Read at runtime by lib/places-api.ts via expo-constants. The cert SHA-1 is the public Expo
+    // debug certificate (not a secret); the key itself comes from mobile/.env.
+    googleMapsAndroidKey: process.env.GOOGLE_MAPS_ANDROID_API_KEY ?? null,
+    googleMapsAndroidCertSha1: process.env.GOOGLE_MAPS_ANDROID_CERT_SHA1 ?? "5E8F16062EA3CD2C4A0D547876BAA6F38CABF625",
+  },
   android: {
     ...config.android,
     package: "com.freshquick.app",
