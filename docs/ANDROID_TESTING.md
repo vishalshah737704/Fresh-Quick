@@ -35,11 +35,15 @@ For anything that looks wrong, send a screenshot and tell us: the screen, what y
 
 Android Studio was installed with winget. The SDK is at `%LOCALAPPDATA%\Android\Sdk` and the virtual device is `Pixel_API_35` (Pixel 7, API 35, with Expo Go 57 installed).
 
-Start it from PowerShell:
+Start it from PowerShell, in the project folder. This script starts the emulator and then centres and resizes its window, because on its own the emulator opens partly off-screen on this PC (it is 2136 px tall and the usable screen is 2052 px):
 
 ```
-& "$env:LOCALAPPDATA\Android\Sdk\emulator\emulator.exe" -avd Pixel_API_35
+.\scripts\start-emulator.ps1
 ```
+
+Add `-OpenApp` to also open the app in Expo Go once the phone has booted (Metro must be running on port 8081). Running the script again while the emulator is open just moves the window back into place.
+
+Stop it with `.\scripts\stop-emulator.ps1`. It asks the phone to shut down and, if that does not finish within about 15 seconds, stops it by force. It does not touch Metro, Docker or the web app.
 
 Open the app in Expo Go (Vishal's Metro on port 8081; 10.0.2.2 is the emulator's name for the PC):
 
@@ -57,6 +61,6 @@ Vishal has no Android phone, so this emulator is the Android test device.
 
 Tips for the emulator on this PC:
 
-- If the emulator window is larger than your screen (this PC is 3840x2160 at 225% scaling), click the emulator window and press Ctrl+Down once or twice to zoom out, then drag it fully on screen.
+- If the emulator window is ever off-screen or cut off (this PC is 3840x2160 at 225% scaling), run `.\scripts\start-emulator.ps1` again; it repositions the window without restarting the phone.
 - The docked on-screen keyboard was verified: the login form moves up and Log In and Sign up stay visible.
 - With a hardware keyboard attached the emulator's Gboard can show as a small floating keyboard, which floats over the app and does not push the layout up. That is an emulator quirk, not an app bug.
