@@ -1,0 +1,541 @@
+{
+  "Barrel & Bottle": {
+    "line1": "Shop 12, Shivsagar Estate, Dr Annie Besant Road",
+    "line2": "Worli",
+    "pincode": "400018",
+    "city": "Mumbai",
+    "state": "Maharashtra"
+  },
+  "Craft Beer Co.": {
+    "line1": "Atria Mall, Dr Annie Besant Road",
+    "line2": "Worli",
+    "pincode": "400018",
+    "city": "Mumbai",
+    "state": "Maharashtra"
+  },
+  "Spirits & More": {
+    "line1": "Shop 11, Colaba Causeway, near Electric House",
+    "line2": "Colaba",
+    "pincode": "400005",
+    "city": "Mumbai",
+    "state": "Maharashtra"
+  },
+  "The Bottle Shop": {
+    "line1": "Shop 5, Cawasji Patel Street",
+    "line2": "Fort",
+    "pincode": "400001",
+    "city": "Mumbai",
+    "state": "Maharashtra"
+  },
+  "The Liquor Loft": {
+    "line1": "Shop 6, Linking Road, near 14th Road Junction",
+    "line2": "Khar West",
+    "pincode": "400052",
+    "city": "Mumbai",
+    "state": "Maharashtra"
+  },
+  "The Wine Cellar": {
+    "line1": "Kamala Mills Compound, Senapati Bapat Marg",
+    "line2": "Lower Parel",
+    "pincode": "400013",
+    "city": "Mumbai",
+    "state": "Maharashtra"
+  },
+  "BabyCare Hub": {
+    "line1": "Nirmal Lifestyle Mall, LBS Marg",
+    "line2": "Mulund West",
+    "pincode": "400080",
+    "city": "Mumbai",
+    "state": "Maharashtra"
+  },
+  "Cuddle & Co.": {
+    "line1": "Shop 8, Station Road",
+    "line2": "Govandi",
+    "pincode": "400043",
+    "city": "Mumbai",
+    "state": "Maharashtra"
+  },
+  "Little Nest Baby": {
+    "line1": "Shop 5, Kannamwar Nagar 1",
+    "line2": "Vikhroli East",
+    "pincode": "400083",
+    "city": "Mumbai",
+    "state": "Maharashtra"
+  },
+  "Little Steps": {
+    "line1": "R City Mall, LBS Marg",
+    "line2": "Ghatkopar West",
+    "pincode": "400086",
+    "city": "Mumbai",
+    "state": "Maharashtra"
+  },
+  "Tiny Tots Store": {
+    "line1": "Shop 14, Sion Circle, near Sion Hospital, Dr Babasaheb Ambedkar Road",
+    "line2": "Sion",
+    "pincode": "400022",
+    "city": "Mumbai",
+    "state": "Maharashtra"
+  },
+  "Tiny Treasures": {
+    "line1": "Shop 6, Chandavarkar Road, near Borivali Station",
+    "line2": "Borivali West",
+    "pincode": "400092",
+    "city": "Mumbai",
+    "state": "Maharashtra"
+  },
+  "24/7 Shop": {
+    "line1": "Shop 4, Mahavir Nagar, S V Road",
+    "line2": "Kandivali West",
+    "pincode": "400067",
+    "city": "Mumbai",
+    "state": "Maharashtra"
+  },
+  "24Seven Store": {
+    "line1": "Shop 2, Pushpa Park, Daftary Road",
+    "line2": "Malad East",
+    "pincode": "400097",
+    "city": "Mumbai",
+    "state": "Maharashtra"
+  },
+  "Corner Store": {
+    "line1": "Shop 7, Chincholi Bunder Road, near Evershine Nagar",
+    "line2": "Malad West",
+    "pincode": "400064",
+    "city": "Mumbai",
+    "state": "Maharashtra"
+  },
+  "Metro Mart Express": {
+    "line1": "Shop 3, Gokhale Road, near Kabutar Khana",
+    "line2": "Dadar West",
+    "pincode": "400028",
+    "city": "Mumbai",
+    "state": "Maharashtra"
+  },
+  "QuickBite Mart": {
+    "line1": "Shop 5, Galleria, Central Avenue, Hiranandani Gardens",
+    "line2": "Powai",
+    "pincode": "400076",
+    "city": "Mumbai",
+    "state": "Maharashtra"
+  },
+  "QuickStop": {
+    "line1": "Shop 10, Saki Vihar Road",
+    "line2": "Powai",
+    "pincode": "400072",
+    "city": "Mumbai",
+    "state": "Maharashtra"
+  },
+  "ByteWorks": {
+    "line1": "Shop 21, Solitaire Corporate Park, Andheri-Ghatkopar Link Road",
+    "line2": "Chakala, Andheri East",
+    "pincode": "400093",
+    "city": "Mumbai",
+    "state": "Maharashtra"
+  },
+  "Circuit City Store": {
+    "line1": "Growel's 101 Mall, Akurli Road",
+    "line2": "Kandivali East",
+    "pincode": "400101",
+    "city": "Mumbai",
+    "state": "Maharashtra"
+  },
+  "CircuitPoint": {
+    "line1": "Godrej One, Pirojshanagar, Eastern Express Highway",
+    "line2": "Vikhroli East",
+    "pincode": "400079",
+    "city": "Mumbai",
+    "state": "Maharashtra"
+  },
+  "Digital Hub": {
+    "line1": "Shop 9, Jawahar Road",
+    "line2": "Ghatkopar East",
+    "pincode": "400077",
+    "city": "Mumbai",
+    "state": "Maharashtra"
+  },
+  "Gadget World": {
+    "line1": "Inorbit Mall, Link Road",
+    "line2": "Malad West",
+    "pincode": "400064",
+    "city": "Mumbai",
+    "state": "Maharashtra"
+  },
+  "TechZone": {
+    "line1": "Shop 12, Adi Shankaracharya Marg, near IIT Bombay Main Gate",
+    "line2": "Powai",
+    "pincode": "400076",
+    "city": "Mumbai",
+    "state": "Maharashtra"
+  },
+  "Bloom & Blossom": {
+    "line1": "Shop 2, Tagore Nagar",
+    "line2": "Vikhroli East",
+    "pincode": "400083",
+    "city": "Mumbai",
+    "state": "Maharashtra"
+  },
+  "Bloom Street": {
+    "line1": "Stall 14, Dadar Flower Market, Senapati Bapat Marg",
+    "line2": "Dadar West",
+    "pincode": "400028",
+    "city": "Mumbai",
+    "state": "Maharashtra"
+  },
+  "Fresh Petals Co.": {
+    "line1": "Shop 5, Sion-Trombay Road, near Chembur Naka",
+    "line2": "Chembur",
+    "pincode": "400071",
+    "city": "Mumbai",
+    "state": "Maharashtra"
+  },
+  "Petal & Vine": {
+    "line1": "Shop 4, Juhu Tara Road",
+    "line2": "Juhu",
+    "pincode": "400049",
+    "city": "Mumbai",
+    "state": "Maharashtra"
+  },
+  "Petal Bloom": {
+    "line1": "Shop 6, Veera Desai Road",
+    "line2": "Andheri West",
+    "pincode": "400053",
+    "city": "Mumbai",
+    "state": "Maharashtra"
+  },
+  "The Flower Basket": {
+    "line1": "Shop 3, Thakur Village, Western Express Highway",
+    "line2": "Kandivali East",
+    "pincode": "400101",
+    "city": "Mumbai",
+    "state": "Maharashtra"
+  },
+  "Daily Basket": {
+    "line1": "Shop 4, Kalanagar Junction",
+    "line2": "Bandra East",
+    "pincode": "400051",
+    "city": "Mumbai",
+    "state": "Maharashtra"
+  },
+  "Fresh Mart": {
+    "line1": "Shop 2, Lokhandwala Market, Lokhandwala Complex",
+    "line2": "Andheri West",
+    "pincode": "400053",
+    "city": "Mumbai",
+    "state": "Maharashtra"
+  },
+  "Green Grocer": {
+    "line1": "Shop 7, Orchard Avenue, Hiranandani Gardens",
+    "line2": "Powai",
+    "pincode": "400076",
+    "city": "Mumbai",
+    "state": "Maharashtra"
+  },
+  "Harvest Greens": {
+    "line1": "Shop 6, Pali Market, Pali Naka",
+    "line2": "Bandra West",
+    "pincode": "400050",
+    "city": "Mumbai",
+    "state": "Maharashtra"
+  },
+  "Metro Grocery": {
+    "line1": "Shop 4, S V Road, near Malad Station",
+    "line2": "Malad West",
+    "pincode": "400064",
+    "city": "Mumbai",
+    "state": "Maharashtra"
+  },
+  "Pantry Post": {
+    "line1": "Shop 6, Gandhi Market",
+    "line2": "Sion West",
+    "pincode": "400022",
+    "city": "Mumbai",
+    "state": "Maharashtra"
+  },
+  "Care & Cure": {
+    "line1": "Phoenix Marketcity, LBS Marg",
+    "line2": "Kurla West",
+    "pincode": "400070",
+    "city": "Mumbai",
+    "state": "Maharashtra"
+  },
+  "HealthFirst Pharmacy": {
+    "line1": "Shop 3, Shell Colony Road",
+    "line2": "Chembur",
+    "pincode": "400071",
+    "city": "Mumbai",
+    "state": "Maharashtra"
+  },
+  "MedPlus Pharmacy": {
+    "line1": "Shop 1, R C Marg",
+    "line2": "Chembur",
+    "pincode": "400071",
+    "city": "Mumbai",
+    "state": "Maharashtra"
+  },
+  "Nature Cure Clinic": {
+    "line1": "Shop 3, Gokhale Road, Naupada",
+    "line2": "Thane West",
+    "pincode": "400602",
+    "city": "Thane",
+    "state": "Maharashtra"
+  },
+  "Vitamin Shop": {
+    "line1": "Oberoi Mall, Western Express Highway",
+    "line2": "Goregaon East",
+    "pincode": "400063",
+    "city": "Mumbai",
+    "state": "Maharashtra"
+  },
+  "WellnessRx": {
+    "line1": "Shop 5, Nehru Road",
+    "line2": "Vile Parle East",
+    "pincode": "400057",
+    "city": "Mumbai",
+    "state": "Maharashtra"
+  },
+  "Beauty Bar": {
+    "line1": "Shop 2, 16th Road",
+    "line2": "Khar West",
+    "pincode": "400052",
+    "city": "Mumbai",
+    "state": "Maharashtra"
+  },
+  "Glow Beauty": {
+    "line1": "Shop 8, Gulmohar Road, JVPD Scheme",
+    "line2": "Juhu",
+    "pincode": "400049",
+    "city": "Mumbai",
+    "state": "Maharashtra"
+  },
+  "Grooming Co.": {
+    "line1": "Shop 3, S V Road, near Santacruz Station",
+    "line2": "Santacruz West",
+    "pincode": "400054",
+    "city": "Mumbai",
+    "state": "Maharashtra"
+  },
+  "Pure Skin": {
+    "line1": "Shop 5, Hill Road",
+    "line2": "Bandra West",
+    "pincode": "400050",
+    "city": "Mumbai",
+    "state": "Maharashtra"
+  },
+  "Radiant Skin Lab": {
+    "line1": "Shop 9, Juhu Road",
+    "line2": "Santacruz West",
+    "pincode": "400054",
+    "city": "Mumbai",
+    "state": "Maharashtra"
+  },
+  "Shine & Glow": {
+    "line1": "Peninsula Business Park, Ganpatrao Kadam Marg",
+    "line2": "Lower Parel",
+    "pincode": "400013",
+    "city": "Mumbai",
+    "state": "Maharashtra"
+  },
+  "Furry Friends Mart": {
+    "line1": "Shop 3, Carter Road",
+    "line2": "Bandra West",
+    "pincode": "400050",
+    "city": "Mumbai",
+    "state": "Maharashtra"
+  },
+  "Happy Paws Supply": {
+    "line1": "Shop 5, Devidayal Road",
+    "line2": "Mulund West",
+    "pincode": "400080",
+    "city": "Mumbai",
+    "state": "Maharashtra"
+  },
+  "Paws & Claws": {
+    "line1": "Shop 4, Eastern Express Highway, near Amar Mahal Junction",
+    "line2": "Chembur",
+    "pincode": "400071",
+    "city": "Mumbai",
+    "state": "Maharashtra"
+  },
+  "The Pet Corner": {
+    "line1": "Shop 2, Chandivali Studio Road",
+    "line2": "Powai",
+    "pincode": "400072",
+    "city": "Mumbai",
+    "state": "Maharashtra"
+  },
+  "Wagging Tails": {
+    "line1": "Shop 4, Aarey Road",
+    "line2": "Goregaon East",
+    "pincode": "400063",
+    "city": "Mumbai",
+    "state": "Maharashtra"
+  },
+  "Whiskers & Wags": {
+    "line1": "Shop 7, I C Colony Road",
+    "line2": "Borivali West",
+    "pincode": "400103",
+    "city": "Mumbai",
+    "state": "Maharashtra"
+  },
+  "Bangkok Bites": {
+    "line1": "Shop 3, Veer Nariman Road",
+    "line2": "Churchgate",
+    "pincode": "400020",
+    "city": "Mumbai",
+    "state": "Maharashtra"
+  },
+  "Bella Italia": {
+    "line1": "Shop 4, Turner Road",
+    "line2": "Bandra West",
+    "pincode": "400050",
+    "city": "Mumbai",
+    "state": "Maharashtra"
+  },
+  "Burger Barn": {
+    "line1": "Shop 6, Four Bungalows, J P Road",
+    "line2": "Andheri West",
+    "pincode": "400053",
+    "city": "Mumbai",
+    "state": "Maharashtra"
+  },
+  "Demo Kitchen": {
+    "line1": "Shop 1, Netaji Subhash Chandra Bose Road, Marine Drive",
+    "line2": "Churchgate",
+    "pincode": "400020",
+    "city": "Mumbai",
+    "state": "Maharashtra"
+  },
+  "Dosa Corner": {
+    "line1": "Shop 3, Bhandarkar Road",
+    "line2": "Matunga East",
+    "pincode": "400019",
+    "city": "Mumbai",
+    "state": "Maharashtra"
+  },
+  "El Sombrero": {
+    "line1": "Shop 2, Yari Road",
+    "line2": "Versova, Andheri West",
+    "pincode": "400061",
+    "city": "Mumbai",
+    "state": "Maharashtra"
+  },
+  "Fresh Fit": {
+    "line1": "Shop 5, Veer Savarkar Marg",
+    "line2": "Prabhadevi",
+    "pincode": "400025",
+    "city": "Mumbai",
+    "state": "Maharashtra"
+  },
+  "Golden Dragon": {
+    "line1": "Shop 4, Mahatma Gandhi Road, near Kala Ghoda",
+    "line2": "Fort",
+    "pincode": "400001",
+    "city": "Mumbai",
+    "state": "Maharashtra"
+  },
+  "Green Bowl": {
+    "line1": "Shop 3, G Block, Bandra Kurla Complex",
+    "line2": "Bandra East",
+    "pincode": "400051",
+    "city": "Mumbai",
+    "state": "Maharashtra"
+  },
+  "Juice Junction": {
+    "line1": "Shop 2, Chowpatty Seaface, Girgaum Chowpatty",
+    "line2": "Girgaon",
+    "pincode": "400007",
+    "city": "Mumbai",
+    "state": "Maharashtra"
+  },
+  "Pasta Palace": {
+    "line1": "Shop 3, Merewether Road",
+    "line2": "Apollo Bunder, Colaba",
+    "pincode": "400001",
+    "city": "Mumbai",
+    "state": "Maharashtra"
+  },
+  "Punjabi Dhaba": {
+    "line1": "Shop 2, Mulund Check Naka, Eastern Express Highway",
+    "line2": "Mulund East",
+    "pincode": "400081",
+    "city": "Mumbai",
+    "state": "Maharashtra"
+  },
+  "Spice Route": {
+    "line1": "Shop 3, Khan Abdul Gaffar Khan Road, Worli Sea Face",
+    "line2": "Worli",
+    "pincode": "400030",
+    "city": "Mumbai",
+    "state": "Maharashtra"
+  },
+  "Sweet Tooth": {
+    "line1": "Shop 2, Mahim Causeway",
+    "line2": "Mahim",
+    "pincode": "400016",
+    "city": "Mumbai",
+    "state": "Maharashtra"
+  },
+  "Taco Fiesta": {
+    "line1": "Shop 3, Marol Maroshi Road",
+    "line2": "Andheri East",
+    "pincode": "400059",
+    "city": "Mumbai",
+    "state": "Maharashtra"
+  },
+  "The Bread Basket": {
+    "line1": "Shop 2, Peddar Road",
+    "line2": "Cumballa Hill",
+    "pincode": "400026",
+    "city": "Mumbai",
+    "state": "Maharashtra"
+  },
+  "Wok This Way": {
+    "line1": "Shop 4, Bangur Nagar",
+    "line2": "Goregaon West",
+    "pincode": "400104",
+    "city": "Mumbai",
+    "state": "Maharashtra"
+  },
+  "Fashion Hub": {
+    "line1": "Shop 12, Shimpoli Road",
+    "line2": "Borivali West",
+    "pincode": "400092",
+    "city": "Mumbai",
+    "state": "Maharashtra"
+  },
+  "Home Essentials": {
+    "line1": "Shop 3, Mahakali Caves Road",
+    "line2": "Andheri East",
+    "pincode": "400093",
+    "city": "Mumbai",
+    "state": "Maharashtra"
+  },
+  "Style Bazaar": {
+    "line1": "R Mall, LBS Marg",
+    "line2": "Mulund West",
+    "pincode": "400080",
+    "city": "Mumbai",
+    "state": "Maharashtra"
+  },
+  "Trend Corner": {
+    "line1": "Shop 6, Kohinoor City, Kirol Road",
+    "line2": "Kurla West",
+    "pincode": "400070",
+    "city": "Mumbai",
+    "state": "Maharashtra"
+  },
+  "Urban Living": {
+    "line1": "Viviana Mall, Eastern Express Highway",
+    "line2": "Thane West",
+    "pincode": "400601",
+    "city": "Thane",
+    "state": "Maharashtra"
+  },
+  "Urban Nest": {
+    "line1": "Shop 5, Rajawadi Road",
+    "line2": "Ghatkopar East",
+    "pincode": "400077",
+    "city": "Mumbai",
+    "state": "Maharashtra"
+  }
+}

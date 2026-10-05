@@ -1,6 +1,8 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { supabase } from "@/lib/supabase";
+import { reconcileWebLocation } from "@/lib/location-reconcile";
 
 export type DeliveryDetails = {
   line1: string;
@@ -70,6 +72,54 @@ function writeStoredLocation(loc: StoredLocation) {
   }
 }
 
+// Account sync for a signed-in customer. Every failure is ignored: the local pin keeps working.
+async function accountToken(): Promise<string | null> {
+  try {
+    const { data } = await supabase.auth.getSession();
+    return data.session?.access_token ?? null;
+  } catch {
+    return null;
+  }
+}
+
+async function putAccountLocation(loc: StoredLocation) {
+  const token = await accountToken();
+  if (!token) return;
+  try {
+    await fetch("/api/customer/location", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify(loc),
+    });
+  } catch {
+    // ignored
+  }
+}
+
+async function getAccountLocation(): Promise<{ known: boolean; location: StoredLocation | null }> {
+  const token = await accountToken();
+  if (!token) return { known: false, location: null };
+  try {
+    const res = await fetch("/api/customer/location", {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) return { known: false, location: null };
+    const json = await res.json();
+    const loc = json?.location;
+    if (
+      loc &&
+      typeof loc.lat === "number" &&
+      typeof loc.lng === "number" &&
+      typeof loc.label === "string"
+    ) {
+      return { known: true, location: loc };
+    }
+    return { known: true, location: null };
+  } catch {
+    return { known: false, location: null };
+  }
+}
+
 export function AddressProvider({ children }: { children: ReactNode }) {
   // Always start from the SSR-safe default (matches server render); the
   // stored location, if any, is applied after mount to avoid a hydration
@@ -89,6 +139,33 @@ export function AddressProvider({ children }: { children: ReactNode }) {
       setLng(stored.lng);
       setLabel(stored.label);
     }
+    // For a signed-in customer the account's saved location (e.g. the sign-up address) wins over the
+    // browser pin; with none on the server, the local pin is pushed up. Visitors keep the local pin.
+    let cancelled = false;
+    async function syncWithAccount() {
+      const account = await getAccountLocation();
+      if (cancelled) return;
+      const { use, pushToServer } = reconcileWebLocation(
+        readStoredLocation(),
+        account.location,
+        account.known
+      );
+      if (use) {
+        setLat(use.lat);
+        setLng(use.lng);
+        setLabel(use.label);
+        writeStoredLocation(use);
+      }
+      if (pushToServer) void putAccountLocation(pushToServer);
+    }
+    void syncWithAccount();
+    const { data: sub } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "SIGNED_IN") void syncWithAccount();
+    });
+    return () => {
+      cancelled = true;
+      sub.subscription.unsubscribe();
+    };
   }, []);
 
   function setAddress(newLat: number, newLng: number, newLabel: string) {
@@ -96,6 +173,7 @@ export function AddressProvider({ children }: { children: ReactNode }) {
     setLng(newLng);
     setLabel(newLabel);
     writeStoredLocation({ lat: newLat, lng: newLng, label: newLabel });
+    void putAccountLocation({ lat: newLat, lng: newLng, label: newLabel });
   }
 
   function setDeliveryDetails(details: DeliveryDetails) {

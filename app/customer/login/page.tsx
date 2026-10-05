@@ -3,6 +3,8 @@
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { validateRecipientPhone } from "@/lib/phone";
+import { validateSignupAddress, MIN_PASSWORD_LENGTH } from "@/lib/signup-validation";
 
 function getSafeRedirect(raw: string): string {
   try {
@@ -22,6 +24,12 @@ function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [line1, setLine1] = useState("");
+  const [line2, setLine2] = useState("");
+  const [city, setCity] = useState("");
+  const [state, setState] = useState("");
+  const [pincode, setPincode] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -41,14 +49,24 @@ function LoginForm() {
   }
 
   async function handleSignup() {
-    setSubmitting(true);
     setError(null);
+    if (!fullName.trim()) return setError("Please enter your full name");
+    if (!email.trim() || !email.includes("@")) return setError("Please enter a valid email address");
+    if (password.length < MIN_PASSWORD_LENGTH) {
+      return setError(`Password must be at least ${MIN_PASSWORD_LENGTH} characters`);
+    }
+    const phoneError = validateRecipientPhone(phone);
+    if (phoneError) return setError(phoneError);
+    const address = { line1, line2, city, state, pincode };
+    const addressResult = validateSignupAddress(address);
+    if (!addressResult.ok) return setError(addressResult.error);
+    setSubmitting(true);
     const res = await fetch("/api/auth/signup", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password, fullName }),
+      body: JSON.stringify({ email, password, fullName, phone, address }),
     });
-    const body = await res.json();
+    const body = await res.json().catch(() => ({}));
     if (!res.ok) {
       setSubmitting(false);
       setError(body.error ?? "Signup failed");
@@ -85,6 +103,24 @@ function LoginForm() {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
         />
+        {mode === "signup" &&
+          [
+            { placeholder: "Phone (10-digit mobile)", value: phone, set: setPhone, type: "tel" },
+            { placeholder: "Address line 1", value: line1, set: setLine1, type: "text" },
+            { placeholder: "Address line 2 (optional)", value: line2, set: setLine2, type: "text" },
+            { placeholder: "City", value: city, set: setCity, type: "text" },
+            { placeholder: "State", value: state, set: setState, type: "text" },
+            { placeholder: "Pincode (6 digits)", value: pincode, set: setPincode, type: "text" },
+          ].map((field) => (
+            <input
+              key={field.placeholder}
+              className="rounded-lg border border-brand-ink-muted/20 px-2 py-1 focus:border-brand-primary focus:outline-none"
+              placeholder={field.placeholder}
+              type={field.type}
+              value={field.value}
+              onChange={(e) => field.set(e.target.value)}
+            />
+          ))}
         {error && <p className="text-sm text-red-600">{error}</p>}
         <button
           disabled={submitting}
