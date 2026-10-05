@@ -84,7 +84,13 @@ test("parseGeocodeResponse accepts OK and rejects bad bodies", () => {
 
 test("checkStoreResult enforces partial match, approximate and bounding box", () => {
   assert.equal(checkStoreResult(parseGeocodeResponse(okBody())).ok, true);
-  assert.equal(checkStoreResult(parseGeocodeResponse(okBody({ result: { partial_match: true } }))).reason, "partial match");
+  const partial = checkStoreResult(parseGeocodeResponse(okBody({ result: { partial_match: true } })));
+  assert.equal(partial.ok, false);
+  assert.ok(/^partial match( -> .{1,120})?$/.test(partial.reason));
+  const longPartial = checkStoreResult(
+    parseGeocodeResponse(okBody({ result: { partial_match: true, formatted_address: "A".repeat(300) } })),
+  );
+  assert.equal(longPartial.reason, `partial match -> ${"A".repeat(120)}`);
   assert.equal(
     checkStoreResult(parseGeocodeResponse(okBody({ geometry: { location_type: "APPROXIMATE" } }))).reason,
     "approximate location",
@@ -192,6 +198,26 @@ test("geocode-stores.mjs runs end to end against a stub, reports failures, never
       assert.equal(urls.length, 8, "--force redoes every store");
     },
   );
+});
+
+test("geocode-stores.mjs shows Google's error_message (redacted, truncated) plus a REQUEST_DENIED hint", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "geo-"));
+  const addrFile = join(dir, "addr.json");
+  writeFileSync(addrFile, JSON.stringify({ Only: { line1: "1 Good Road", line2: "Area", city: "Mumbai", state: "Maharashtra", pincode: "400001" } }));
+  const message = `API keys with referer restrictions cannot be used with this API. dummy-test-key and key=abc123 ${"x".repeat(300)}`;
+  await withStub(() => ({ status: 200, body: { status: "REQUEST_DENIED", error_message: message, results: [] } }), async (base) => {
+    const result = await runGeocode(["--base-url", base, "--addresses", addrFile, "--out", join(dir, "o.json")]);
+    assert.equal(result.code, 1);
+    assert.ok(result.out.includes("status REQUEST_DENIED: API keys with referer restrictions"));
+    assert.ok(result.err.includes("Google said (REQUEST_DENIED)"));
+    assert.ok(result.err.includes("Application restriction must be None"));
+    assert.ok(result.err.includes("Geocoding API") && result.err.includes("billing"));
+    const all = result.out + result.err;
+    assert.ok(!all.includes("dummy-test-key") && !all.includes("abc123"));
+    assert.ok(all.includes("[redacted]"));
+    assert.ok(!all.includes("x".repeat(201)));
+  });
+  assert.equal(parseGeocodeResponse({ status: "OVER_QUERY_LIMIT" }).reason, "status OVER_QUERY_LIMIT");
 });
 
 test("geocode-stores.mjs exits 0 when every store passes and 1 on HTTP errors or a missing key", async () => {

@@ -60,6 +60,7 @@ async function main() {
   const resolved = new Map(saved.map((store) => [store.name, store]));
 
   const rows = [];
+  let firstProviderError = null;
   for (const [name, entry] of Object.entries(addresses)) {
     if (resolved.has(name)) {
       rows.push({ name, status: "skipped", note: "already resolved" });
@@ -73,7 +74,10 @@ async function main() {
       url.searchParams.set("key", key);
       const response = await fetch(url);
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const parsed = parseGeocodeResponse(await response.json());
+      const parsed = parseGeocodeResponse(await response.json(), key);
+      if (!parsed.ok && parsed.errorMessage && !firstProviderError) {
+        firstProviderError = { status: parsed.status, message: parsed.errorMessage };
+      }
       const verdict = checkStoreResult(parsed);
       if (!verdict.ok) {
         rows.push({ name, status: "FAIL", note: verdict.reason });
@@ -109,6 +113,14 @@ async function main() {
   if (failed.length > 0) {
     console.error(`Failed stores (fix their entries in ${args.addresses}, then run again; passing stores are kept):`);
     for (const row of failed) console.error(`  - ${row.name}: ${row.note}`);
+    if (firstProviderError) {
+      let line = `Google said (${firstProviderError.status}): ${firstProviderError.message}`;
+      if (firstProviderError.status === "REQUEST_DENIED") {
+        line +=
+          " | Hint: the key's Application restriction must be None (or IP addresses); HTTP referrer and Android app restrictions are rejected by the Geocoding web service. The API restriction list must include Geocoding API, and billing must be enabled.";
+      }
+      console.error(line);
+    }
     process.exitCode = 1;
   }
 }

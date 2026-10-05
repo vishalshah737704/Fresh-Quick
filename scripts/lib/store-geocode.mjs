@@ -31,9 +31,24 @@ export function buildAddressQuery(entry) {
 }
 
 // Reduces a Google Geocoding response to the fields we use, or a failure reason.
-export function parseGeocodeResponse(body) {
+// Provider text shown to the operator: key value and "key=..." removed, then cut to 200 chars.
+export function sanitizeProviderMessage(message, key = "") {
+  let text = String(message);
+  if (key) text = text.split(key).join("[redacted]");
+  text = text.replace(/key=\S*/gi, "[redacted]");
+  return text.slice(0, 200);
+}
+
+export function parseGeocodeResponse(body, key = "") {
   if (!body || typeof body !== "object") return { ok: false, reason: "invalid response" };
-  if (body.status !== "OK") return { ok: false, reason: `status ${String(body.status)}` };
+  if (body.status !== "OK") {
+    const status = String(body.status);
+    if (typeof body.error_message === "string" && body.error_message) {
+      const errorMessage = sanitizeProviderMessage(body.error_message, key);
+      return { ok: false, reason: `status ${status}: ${errorMessage}`, status, errorMessage };
+    }
+    return { ok: false, reason: `status ${status}`, status };
+  }
   const first = Array.isArray(body.results) ? body.results[0] : null;
   const lat = first?.geometry?.location?.lat;
   const lng = first?.geometry?.location?.lng;
@@ -51,7 +66,10 @@ export function parseGeocodeResponse(body) {
 // Applies the spec's acceptance rules to a parsed result.
 export function checkStoreResult(parsed, bbox = MUMBAI_BBOX) {
   if (!parsed.ok) return { ok: false, reason: parsed.reason };
-  if (parsed.partialMatch) return { ok: false, reason: "partial match" };
+  if (parsed.partialMatch) {
+    const matched = String(parsed.formatted ?? "").slice(0, 120);
+    return { ok: false, reason: matched ? `partial match -> ${matched}` : "partial match" };
+  }
   if (parsed.locationType === "APPROXIMATE") return { ok: false, reason: "approximate location" };
   const inside =
     parsed.lat >= bbox.minLat && parsed.lat <= bbox.maxLat && parsed.lng >= bbox.minLng && parsed.lng <= bbox.maxLng;

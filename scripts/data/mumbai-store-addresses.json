@@ -1,8 +1,8 @@
 {
   "Barrel & Bottle": {
-    "line1": "Shop 12, Shivsagar Estate, Dr Annie Besant Road",
-    "line2": "Worli",
-    "pincode": "400018",
+    "line1": "462, Senapati Bapat Marg",
+    "line2": "Lower Parel",
+    "pincode": "400013",
     "city": "Mumbai",
     "state": "Maharashtra"
   },
@@ -28,16 +28,16 @@
     "state": "Maharashtra"
   },
   "The Liquor Loft": {
-    "line1": "Shop 6, Linking Road, near 14th Road Junction",
-    "line2": "Khar West",
-    "pincode": "400052",
+    "line1": "Linking Road",
+    "line2": "Bandra West",
+    "pincode": "400050",
     "city": "Mumbai",
     "state": "Maharashtra"
   },
   "The Wine Cellar": {
-    "line1": "Kamala Mills Compound, Senapati Bapat Marg",
-    "line2": "Lower Parel",
-    "pincode": "400013",
+    "line1": "Mahalaxmi Racecourse, Keshavrao Khadye Marg",
+    "line2": "Mahalaxmi",
+    "pincode": "400034",
     "city": "Mumbai",
     "state": "Maharashtra"
   },
@@ -63,22 +63,22 @@
     "state": "Maharashtra"
   },
   "Little Steps": {
-    "line1": "R City Mall, LBS Marg",
+    "line1": "Lal Bahadur Shastri Marg, Amrut Nagar",
     "line2": "Ghatkopar West",
     "pincode": "400086",
     "city": "Mumbai",
     "state": "Maharashtra"
   },
   "Tiny Tots Store": {
-    "line1": "Shop 14, Sion Circle, near Sion Hospital, Dr Babasaheb Ambedkar Road",
+    "line1": "Sion Hospital, Dr Babasaheb Ambedkar Road",
     "line2": "Sion",
     "pincode": "400022",
     "city": "Mumbai",
     "state": "Maharashtra"
   },
   "Tiny Treasures": {
-    "line1": "Shop 6, Chandavarkar Road, near Borivali Station",
-    "line2": "Borivali West",
+    "line1": "Gorai Road, Borivali West",
+    "line2": "Gorai",
     "pincode": "400092",
     "city": "Mumbai",
     "state": "Maharashtra"
@@ -91,9 +91,9 @@
     "state": "Maharashtra"
   },
   "24Seven Store": {
-    "line1": "Shop 2, Pushpa Park, Daftary Road",
-    "line2": "Malad East",
-    "pincode": "400097",
+    "line1": "Lamington Rd, Marzban Parsi Colony, Dalal Estate",
+    "line2": "Mumbai Central",
+    "pincode": "400008",
     "city": "Mumbai",
     "state": "Maharashtra"
   },
@@ -112,9 +112,9 @@
     "state": "Maharashtra"
   },
   "QuickBite Mart": {
-    "line1": "Shop 5, Galleria, Central Avenue, Hiranandani Gardens",
-    "line2": "Powai",
-    "pincode": "400076",
+    "line1": "Chhatrapati Shivaji Maharaj Terminus, Dr Dadabhai Naoroji Road",
+    "line2": "Fort",
+    "pincode": "400001",
     "city": "Mumbai",
     "state": "Maharashtra"
   },
@@ -126,16 +126,16 @@
     "state": "Maharashtra"
   },
   "ByteWorks": {
-    "line1": "Shop 21, Solitaire Corporate Park, Andheri-Ghatkopar Link Road",
-    "line2": "Chakala, Andheri East",
-    "pincode": "400093",
+    "line1": "Lamington Road",
+    "line2": "Grant Road",
+    "pincode": "400007",
     "city": "Mumbai",
     "state": "Maharashtra"
   },
   "Circuit City Store": {
-    "line1": "Growel's 101 Mall, Akurli Road",
-    "line2": "Kandivali East",
-    "pincode": "400101",
+    "line1": "Infiniti Mall, New Link Road",
+    "line2": "Andheri West",
+    "pincode": "400053",
     "city": "Mumbai",
     "state": "Maharashtra"
   },
@@ -154,9 +154,9 @@
     "state": "Maharashtra"
   },
   "Gadget World": {
-    "line1": "Inorbit Mall, Link Road",
-    "line2": "Malad West",
-    "pincode": "400064",
+    "line1": "Bhulabhai Desai Road",
+    "line2": "Haji Ali, Tardeo",
+    "pincode": "400026",
     "city": "Mumbai",
     "state": "Maharashtra"
   },
@@ -175,7 +175,7 @@
     "state": "Maharashtra"
   },
   "Bloom Street": {
-    "line1": "Stall 14, Dadar Flower Market, Senapati Bapat Marg",
+    "line1": "Dadar Flower Market, Senapati Bapat Marg",
     "line2": "Dadar West",
     "pincode": "400028",
     "city": "Mumbai",
@@ -203,9 +203,9 @@
     "state": "Maharashtra"
   },
   "The Flower Basket": {
-    "line1": "Shop 3, Thakur Village, Western Express Highway",
-    "line2": "Kandivali East",
-    "pincode": "400101",
+    "line1": "SK Bole Road",
+    "line2": "Prabhadevi",
+    "pincode": "400028",
     "city": "Mumbai",
     "state": "Maharashtra"
   },
@@ -217,8 +217,8 @@
     "state": "Maharashtra"
   },
   "Fresh Mart": {
-    "line1": "Shop 2, Lokhandwala Market, Lokhandwala Complex",
-    "line2": "Andheri West",
+    "line1": "Lokhandwala Market",
+    "line2": "Lokhandwala Complex, Andheri West",
     "pincode": "400053",
     "city": "Mumbai",
     "state": "Maharashtra"
@@ -245,9 +245,9 @@
     "state": "Maharashtra"
   },
   "Pantry Post": {
-    "line1": "Shop 6, Gandhi Market",
-    "line2": "Sion West",
-    "pincode": "400022",
+    "line1": "Crawford Market, Dr Dadabhai Naoroji Road",
+    "line2": "Fort",
+    "pincode": "400001",
     "city": "Mumbai",
     "state": "Maharashtra"
   },
@@ -280,9 +280,9 @@
     "state": "Maharashtra"
   },
   "Vitamin Shop": {
-    "line1": "Oberoi Mall, Western Express Highway",
-    "line2": "Goregaon East",
-    "pincode": "400063",
+    "line1": "8-12, Swatantryaveer Savarkar Road",
+    "line2": "Mahim West",
+    "pincode": "400016",
     "city": "Mumbai",
     "state": "Maharashtra"
   },
@@ -357,9 +357,9 @@
     "state": "Maharashtra"
   },
   "The Pet Corner": {
-    "line1": "Shop 2, Chandivali Studio Road",
-    "line2": "Powai",
-    "pincode": "400072",
+    "line1": "Bandra Bandstand, Bandstand Promenade",
+    "line2": "Bandra West",
+    "pincode": "400050",
     "city": "Mumbai",
     "state": "Maharashtra"
   },
@@ -399,9 +399,9 @@
     "state": "Maharashtra"
   },
   "Demo Kitchen": {
-    "line1": "Shop 1, Netaji Subhash Chandra Bose Road, Marine Drive",
-    "line2": "Churchgate",
-    "pincode": "400020",
+    "line1": "Gateway of India, Apollo Bunder",
+    "line2": "Colaba",
+    "pincode": "400001",
     "city": "Mumbai",
     "state": "Maharashtra"
   },
@@ -455,9 +455,9 @@
     "state": "Maharashtra"
   },
   "Punjabi Dhaba": {
-    "line1": "Shop 2, Mulund Check Naka, Eastern Express Highway",
-    "line2": "Mulund East",
-    "pincode": "400081",
+    "line1": "Mulund Railway Station, Station Road",
+    "line2": "Mulund West",
+    "pincode": "400080",
     "city": "Mumbai",
     "state": "Maharashtra"
   },
@@ -518,9 +518,9 @@
     "state": "Maharashtra"
   },
   "Trend Corner": {
-    "line1": "Shop 6, Kohinoor City, Kirol Road",
-    "line2": "Kurla West",
-    "pincode": "400070",
+    "line1": "Fashion Street, Mahatma Gandhi Road",
+    "line2": "Churchgate",
+    "pincode": "400020",
     "city": "Mumbai",
     "state": "Maharashtra"
   },
@@ -532,9 +532,9 @@
     "state": "Maharashtra"
   },
   "Urban Nest": {
-    "line1": "Shop 5, Rajawadi Road",
-    "line2": "Ghatkopar East",
-    "pincode": "400077",
+    "line1": "206, Mutton Street",
+    "line2": "Kumbharwada",
+    "pincode": "400003",
     "city": "Mumbai",
     "state": "Maharashtra"
   }
