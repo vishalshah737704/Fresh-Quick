@@ -3,6 +3,7 @@ import { KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, Pressable,
 import { useRouter } from "expo-router";
 import { supabase } from "../../../lib/supabase";
 import { apiPostPublic, ApiError } from "../../../lib/api";
+import { validateRecipientPhone } from "../../../lib/phone";
 import { BRAND } from "../../../theme";
 
 // Mirrors the server rule in lib/signup-validation.ts and supabase config.
@@ -19,6 +20,12 @@ export default function CustomerLoginScreen() {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [phone, setPhone] = useState("");
+  const [line1, setLine1] = useState("");
+  const [line2, setLine2] = useState("");
+  const [city, setCity] = useState("");
+  const [state, setState] = useState("");
+  const [pincode, setPincode] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -56,6 +63,19 @@ export default function CustomerLoginScreen() {
         setError(`Password must be at least ${MIN_PASSWORD_LENGTH} characters`);
         return;
       }
+      const phoneError = validateRecipientPhone(phone);
+      if (phoneError) {
+        setError(phoneError);
+        return;
+      }
+      if (!line1.trim() || !city.trim() || !state.trim()) {
+        setError("Address line 1, city and state are required");
+        return;
+      }
+      if (!/^d{6}$/.test(pincode.trim())) {
+        setError("Pincode must be 6 digits");
+        return;
+      }
     }
     setSubmitting(true);
     setError(null);
@@ -66,6 +86,14 @@ export default function CustomerLoginScreen() {
             email: trimmedEmail,
             password,
             fullName: trimmedName,
+            phone: phone.trim(),
+            address: {
+              line1: line1.trim(),
+              line2: line2.trim(),
+              city: city.trim(),
+              state: state.trim(),
+              pincode: pincode.trim(),
+            },
           });
         } catch (signupError) {
           if (signupError instanceof ApiError) {
@@ -119,6 +147,59 @@ export default function CustomerLoginScreen() {
         value={password}
         onChangeText={setPassword}
       />
+      {mode === "signup" && (
+        <>
+          <TextInput
+            style={styles.input}
+            placeholder="Phone (10-digit mobile)"
+            placeholderTextColor={BRAND.colors.inkMuted}
+            keyboardType="phone-pad"
+            autoComplete="tel"
+            value={phone}
+            onChangeText={setPhone}
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Address line 1"
+            placeholderTextColor={BRAND.colors.inkMuted}
+            autoComplete="address-line1"
+            value={line1}
+            onChangeText={setLine1}
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Address line 2 (optional)"
+            placeholderTextColor={BRAND.colors.inkMuted}
+            autoComplete="address-line2"
+            value={line2}
+            onChangeText={setLine2}
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="City"
+            placeholderTextColor={BRAND.colors.inkMuted}
+            value={city}
+            onChangeText={setCity}
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="State"
+            placeholderTextColor={BRAND.colors.inkMuted}
+            value={state}
+            onChangeText={setState}
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Pincode (6 digits)"
+            placeholderTextColor={BRAND.colors.inkMuted}
+            keyboardType="number-pad"
+            maxLength={6}
+            autoComplete="postal-code"
+            value={pincode}
+            onChangeText={setPincode}
+          />
+        </>
+      )}
       {error && <Text style={styles.error}>{error}</Text>}
       <Pressable style={styles.button} onPress={handleSubmit} disabled={submitting}>
         {submitting ? (

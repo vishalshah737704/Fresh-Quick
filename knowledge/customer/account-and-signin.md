@@ -11,16 +11,28 @@ No. You can browse every store and category without an account. You need an acco
 ## How do I create a customer account on the website?
 
 1. On the customer sign-in page, tap "Need an account? Sign up".
-2. Enter your Full name, Email and Password. The password must be at least 6 characters.
+2. Enter your Full name, Email and Password (at least 6 characters), then your Phone (a 10-digit mobile number) and your address: Address line 1, Address line 2 (optional), City, State and Pincode (6 digits).
 3. Tap the Sign up button.
 
 Tap "Have an account? Log in" to go back to signing in.
+
+## Why does sign-up ask for my phone and address?
+
+The phone number and address are required to create a customer account. The address becomes your saved Home address and your starting delivery location, so the store list is sorted nearest first from the moment you sign in. You can change your delivery location at any time.
+
+## Why does sign-up say it could not find my address?
+
+The app checks your address with Google before creating the account. If it cannot find a precise match (for example a misspelled street, a missing Address line 1, or only a pincode that matches), you see "We could not find that address. Check the details and try again." Correct the details and try again; no account is created until the address is found. If you see "Address lookup is unavailable right now. Try again later.", the lookup service is down or not set up; try again later.
+
+## Can I change my delivery location after sign-up?
+
+Yes. Your sign-up address is only the starting delivery location. On the website, open the delivery address at the top of the page; in the mobile app, tap the location pill on Home. Search for an address, move the pin or use your current location. The choice is saved on your account.
 
 ## How do I create a customer account in the mobile app?
 
 1. Open the app and choose Customer on the first screen.
 2. Tap "Need an account? Sign up".
-3. Enter your full name, your email and a password of at least 6 characters.
+3. Enter your full name, your email and a password of at least 6 characters, then your phone (10-digit mobile number) and your address: Address line 1, Address line 2 (optional), City, State and Pincode (6 digits).
 4. Tap Sign Up. You are signed in automatically.
 
 Tap "Have an account? Log in" to go back to signing in.

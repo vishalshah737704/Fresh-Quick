@@ -4,7 +4,7 @@ import MapView, { Marker, Polyline } from "react-native-maps";
 import { BRAND } from "../theme";
 import { haversineDistanceKm } from "../lib/geo";
 import { formatDistanceKm } from "../lib/geo-math";
-import { fitKey, formatUpdatedAt, toTrackPoint, trackingView, type TrackPoint } from "../lib/tracking";
+import { fitKey, formatUpdatedAt, isStalePing, toTrackPoint, trackingView, type TrackPoint } from "../lib/tracking";
 
 type PartnerLocation = {
   current_lat: number | null;
@@ -151,12 +151,19 @@ class MapBoundary extends Component<{ fallback: ReactNode; children: ReactNode }
 }
 
 export function OrderTrackingMap({ status, store, destination, partnerLocation }: Props) {
+  // Re-render every 30 s so a ping that ages past 5 minutes flips to the stale text.
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setTick((n) => n + 1), 30000);
+    return () => clearInterval(id);
+  }, []);
   const partnerPoint = toTrackPoint(partnerLocation?.current_lat, partnerLocation?.current_lng);
   const view = trackingView({ status, store, destination, partner: partnerPoint });
   const first = view.store ?? view.destination ?? view.partner;
   const updated = formatUpdatedAt(partnerLocation?.last_ping_at);
+  const pingStale = view.partner !== null && isStalePing(partnerLocation?.last_ping_at);
   const distance =
-    view.partner && view.destination
+    view.partner && view.destination && !pingStale
       ? formatDistanceKm(
           haversineDistanceKm(view.partner.lat, view.partner.lng, view.destination.lat, view.destination.lng)
         )
@@ -187,7 +194,7 @@ export function OrderTrackingMap({ status, store, destination, partnerLocation }
             address ·{" "}
             <Text style={{ color: BRAND.colors.ink, fontFamily: BRAND.fonts.bodySemiBold }}>D</Text> Delivery partner
           </Text>
-          {(view.partner || view.final) && (
+          {((view.partner && !pingStale) || view.final) && (
             <Text style={styles.small}>
               The dashed line is a straight line and the distance is approximate, not the road route.
             </Text>
@@ -198,7 +205,7 @@ export function OrderTrackingMap({ status, store, destination, partnerLocation }
         {view.waiting && <Text style={styles.value}>Waiting for the delivery partner&apos;s location…</Text>}
         {view.partner && (
           <Text style={styles.value}>
-            {updated}
+            {pingStale ? updated || "Last seen unknown (location may be out of date)" : updated}
             {distance ? ` · about ${distance} from your address` : ""}
           </Text>
         )}

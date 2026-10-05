@@ -9,6 +9,7 @@
 //
 // Requires Docker Desktop running.
 import { spawnSync } from "node:child_process";
+import { existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
@@ -20,5 +21,15 @@ const result = spawnSync("npx supabase db reset", { stdio: "inherit", shell: tru
 if (result.status !== 0) {
   console.error("Seed failed. Is Docker Desktop running? Try 'npx supabase status' to check.");
   process.exit(1);
+}
+
+// Real Mumbai store addresses (made by scripts/geocode-stores.mjs). Skipped until that file exists.
+if (existsSync(join(root, "supabase/data/store-locations.json"))) {
+  console.log("Applying real store addresses (supabase/data/store-locations.json)...");
+  const applied = spawnSync(process.execPath, ["scripts/apply-store-locations.mjs", "--apply"], { stdio: "inherit" });
+  if (applied.status !== 0) {
+    console.error("Applying store addresses failed. Fix the error above and run: node scripts/apply-store-locations.mjs --apply");
+    process.exit(1);
+  }
 }
 console.log("Seed complete.");

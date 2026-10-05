@@ -138,6 +138,13 @@ The web Customer app uses Google Maps in three places: a location picker (the he
 - If Maps cannot load, search and the map hide and the manual coordinates fields (and the partner's coordinates as text) still work.
 - Phone app delivery location (2026-10-05): the Customer app's Home pill opens a "Delivery location" sheet (Google address search, tap or drag the pin, GPS), the choice is saved on the account (`users.saved_lat/saved_lng/saved_label`, `/api/customer/location`, migration 33) and orders Home nearest first; Checkout gains address search and "Use my saved location". Search calls Google directly with the Android key (`GOOGLE_MAPS_ANDROID_API_KEY` in `mobile/.env`, and `GOOGLE_MAPS_ANDROID_CERT_SHA1` is its signing-certificate fingerprint in `mobile/.env.example`), so it needs Places API (New) and Geocoding API on that key and works only in the native Android build. See `docs/ANDROID_TESTING.md`.
 
+## Sign-up address and store addresses (2026-10-05)
+
+Customer sign-up (web and phone) asks for a 10-digit mobile number and an address (Address 1, optional Address 2, City, State, 6-digit Pincode). The server looks the address up with Google's Geocoding API before creating the account: an address it cannot find precisely gives "We could not find that address..." (400), and a missing key or provider outage gives "Address lookup is unavailable right now" (503) with no account created. The address becomes the account's default "Home" address and the starting delivery location, which the customer can change at any time.
+
+- Env var: `GOOGLE_MAPS_SERVER_API_KEY` in `.env.local` (placeholder in `.env.example`). A separate server-only key: restrict it by API to Geocoding only, set its Application restriction to None (the Geocoding web service rejects referrer- and Android-restricted keys), and never prefix it `NEXT_PUBLIC` or put it in the phone app. Without it, sign-up returns 503.
+- All 77 stores have real geocoded Mumbai addresses (many are landmarks, 2 are in Thane). Source addresses: `scripts/data/mumbai-store-addresses.json`. `node scripts/geocode-stores.mjs` (needs the key; resumable, `--force` redoes all) writes `supabase/data/store-locations.json`; `node scripts/apply-store-locations.mjs --apply` writes it to the local database (dry run without `--apply`). `npm run app:seed` applies it automatically after a reset.
+
 ## Ask Zippy (in-app assistant, Z1 built 2026-10-03)
 
 Zippy is a floating chat bubble on every web portal (and a chat button in the

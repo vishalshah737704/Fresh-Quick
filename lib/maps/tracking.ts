@@ -64,6 +64,16 @@ export function fitKey(view: TrackingView): string {
 }
 
 const STALE_PING_MS = 5 * 60 * 1000;
+
+// True when a ping is older than 5 minutes, or missing/unparseable. Callers use it
+// only while a partner position exists, to stop showing distance/ETA from old data.
+export function isStalePing(iso: string | null | undefined, now: number = Date.now()): boolean {
+  if (!iso) return true;
+  const time = new Date(iso).getTime();
+  if (Number.isNaN(time)) return true;
+  return now - time > STALE_PING_MS;
+}
+
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 // "Updated hh:mm:ss" for a fresh ping; a ping older than 5 minutes shows its
