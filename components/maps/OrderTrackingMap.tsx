@@ -21,6 +21,7 @@ import {
 import {
   fitKey,
   formatUpdatedAt,
+  isStalePing,
   toTrackPoint,
   trackingView,
   type TrackPoint,
@@ -70,6 +71,7 @@ type RouteInfo = { durationSeconds: number; distanceMeters: number; destKey: str
 
 const ANIMATION_MS = 1000;
 const ROUTE_CHECK_MS = 5000;
+const STALE_TICK_MS = 30000;
 
 function circle(path: number, fill: string, scale: number) {
   // A symbol (path from core SymbolPath.CIRCLE) needs no google.maps.Size object.
@@ -93,6 +95,14 @@ export default function OrderTrackingMap({ status, store, destination, partnerLo
   const view = trackingView({ status, store, destination, partner: partnerPoint });
   const viewRef = useRef<TrackingView>(view);
   viewRef.current = view;
+  const pingRef = useRef<string | null>(partnerLocation?.last_ping_at ?? null);
+  pingRef.current = partnerLocation?.last_ping_at ?? null;
+  // Re-render periodically so a ping that ages past 5 minutes flips to the stale text.
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const id = window.setInterval(() => setTick((n) => n + 1), STALE_TICK_MS);
+    return () => window.clearInterval(id);
+  }, []);
   const sceneRef = useRef<Scene | null>(null);
   const [broken, setBroken] = useState(false);
   const [storedRoute, setRouteInfo] = useState<RouteInfo | null>(null);
@@ -262,6 +272,18 @@ export default function OrderTrackingMap({ status, store, destination, partnerLo
   const checkRoute = useCallback(
     (scene: Scene) => {
       const v = viewRef.current;
+      // A live route from a stale ping is never requested, and one already drawn is removed.
+      if (v.partner && !v.final && isStalePing(pingRef.current)) {
+        if (scene.route) {
+          scene.route.setMap(null);
+          scene.route = null;
+          scene.routeFitKey = null;
+          apply();
+        }
+        routeCtl.current.last = null;
+        setRouteInfo(null);
+        return;
+      }
       const origin = v.partner ?? (v.final ? v.store : null);
       const destination = v.destination;
       if (!origin || !destination) return;
@@ -296,6 +318,7 @@ export default function OrderTrackingMap({ status, store, destination, partnerLo
           !mountedRef.current ||
           cur.destination?.lat !== destination.lat ||
           cur.destination?.lng !== destination.lng ||
+          (!cur.final && cur.partner !== null && isStalePing(pingRef.current)) ||
           (cur.partner ? "partner" : "store") !== originKind
         );
       };
@@ -426,8 +449,9 @@ export default function OrderTrackingMap({ status, store, destination, partnerLo
   const coordinateText =
     partnerPoint !== null ? `${partnerPoint.lat.toFixed(4)}, ${partnerPoint.lng.toFixed(4)}` : null;
   const updated = formatUpdatedAt(partnerLocation?.last_ping_at);
+  const pingStale = view.partner !== null && isStalePing(partnerLocation?.last_ping_at);
   const distance =
-    view.partner && view.destination
+    view.partner && view.destination && !pingStale
       ? formatDistanceKm(
           haversineDistanceKm(view.partner.lat, view.partner.lng, view.destination.lat, view.destination.lng)
         )
@@ -438,7 +462,7 @@ export default function OrderTrackingMap({ status, store, destination, partnerLo
       ? storedRoute
       : null;
   const roadText =
-    routeInfo && view.partner
+    routeInfo && view.partner && !pingStale
       ? `${formatEta(routeInfo.durationSeconds)} · ${formatRouteDistance(routeInfo.distanceMeters)} by road`
       : "";
   const mapFailed = maps.status === "error" || broken;
@@ -474,7 +498,7 @@ export default function OrderTrackingMap({ status, store, destination, partnerLo
         {view.waiting && <p>Waiting for the delivery partner&apos;s location…</p>}
         {view.partner && (
           <p>
-            {updated}
+            {pingStale ? updated || "Last seen unknown (location may be out of date)" : updated}
             {roadText
               ? ` · ${roadText}`
               : distance && ` · about ${distance} from your address`}
@@ -488,7 +512,7 @@ export default function OrderTrackingMap({ status, store, destination, partnerLo
         )}
         {!first && <p>Location details are not available for this order.</p>}
       </div>
-      {!mapFailed && !routeInfo && (view.partner || view.final) && (
+      {!mapFailed && !routeInfo && ((view.partner && !pingStale) || view.final) && (
         <p className="text-xs text-brand-ink-muted">
           The dashed line is a straight line and the distance is approximate, not the road route.
         </p>

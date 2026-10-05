@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {
   fitKey,
   formatUpdatedAt,
+  isStalePing,
   showTrackingMap,
   toTrackPoint,
   trackingView,
@@ -82,4 +83,17 @@ test("order detail carries store and delivery coordinates, null when missing", (
   assert.deepEqual(order.storePoint, { lat: 19.07, lng: 72.87 });
   assert.equal(order.deliveryPoint, null);
   assert.equal(normalizeOrderDetail({ ...raw, address: null }).deliveryPoint, null);
+});
+
+test("isStalePing: fresh, 5 minute boundary, stale, missing and garbage", () => {
+  const now = Date.parse("2026-10-05T12:00:00Z");
+  const ago = (ms) => new Date(now - ms).toISOString();
+  assert.equal(isStalePing(ago(10_000), now), false);
+  assert.equal(isStalePing(ago(5 * 60 * 1000), now), false);
+  assert.equal(isStalePing(ago(5 * 60 * 1000 + 1), now), true);
+  assert.equal(isStalePing(ago(3 * 60 * 60 * 1000), now), true);
+  assert.equal(isStalePing(null, now), true);
+  assert.equal(isStalePing(undefined, now), true);
+  assert.equal(isStalePing("", now), true);
+  assert.equal(isStalePing("not a date", now), true);
 });
