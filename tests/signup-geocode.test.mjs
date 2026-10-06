@@ -7,6 +7,7 @@ import {
 import {
   parseGeocodeResponse,
   geocodeWith,
+  buildFallbackAddresses,
   buildGeocodeQuery,
   buildSavedLabel,
   GEOCODE_NOT_FOUND_MESSAGE,
@@ -118,6 +119,87 @@ test("geocodeWith: request shape, missing key, http error, thrown fetch", async 
   assert.equal((await geocodeWith(async () => ({ ok: false, json: async () => ({}) }), "K", address)).kind, "unavailable");
   assert.equal((await geocodeWith(async () => { throw new Error("net KEY"); }, "K", address)).kind, "unavailable");
   assert.equal((await geocodeWith(async () => ({ ok: true, json: async () => { throw new Error("bad"); } }), "K", address)).kind, "unavailable");
+});
+
+const precise = (pincode) => ({
+  status: "OK",
+  results: [
+    {
+      types: ["establishment"],
+      geometry: { location: { lat: 19.01, lng: 72.82 }, location_type: "ROOFTOP" },
+      address_components: [
+        { types: ["country"], short_name: "IN", long_name: "India" },
+        ...(pincode ? [{ types: ["postal_code"], short_name: pincode, long_name: pincode }] : []),
+      ],
+    },
+  ],
+});
+const partial = { status: "OK", results: [{ ...precise("400030").results[0], partial_match: true }] };
+const mumbaiAddress = {
+  line1: "1329 MIG Adarsh Nagar, Bldg No 45",
+  line2: "Near DY Patil International School",
+  city: "Mumbai",
+  state: "Maharashtra",
+  pincode: "400030",
+};
+
+test("buildFallbackAddresses: no line 2, no unit details, landmark only, deduplicated", () => {
+  const lines = buildFallbackAddresses(mumbaiAddress).map((a) => `${a.line1}|${a.line2 ?? ""}`);
+  assert.deepEqual(lines, [
+    "1329 MIG Adarsh Nagar, Bldg No 45|",
+    "MIG Adarsh Nagar|",
+    "DY Patil International School|",
+  ]);
+  assert.deepEqual(
+    buildFallbackAddresses({ ...mumbaiAddress, line1: "MG Road", line2: "" }),
+    []
+  );
+});
+
+test("geocodeWith retries simpler forms and accepts a precise result in the same pincode", async () => {
+  const urls = [];
+  const fetchSeq = async (url) => {
+    urls.push(decodeURIComponent(url));
+    return { ok: true, json: async () => (urls.length < 3 ? partial : precise("400030")) };
+  };
+  const result = await geocodeWith(fetchSeq, "K", mumbaiAddress);
+  assert.equal(result.kind, "found");
+  assert.equal(urls.length, 3);
+  assert.doesNotMatch(urls[1], /DY Patil/);
+  assert.doesNotMatch(urls[2], /Bldg|1329/);
+});
+
+test("geocodeWith: a fallback result in another pincode, or all partial, is not found", async () => {
+  assert.equal(
+    (await geocodeWith(async () => ({ ok: true, json: async () => partial }), "K", mumbaiAddress)).kind,
+    "not_found"
+  );
+  const wrongPin = async (url) => ({
+    ok: true,
+    json: async () => (decodeURIComponent(url).includes("Bldg") ? partial : precise("400001")),
+  });
+  assert.equal((await geocodeWith(wrongPin, "K", mumbaiAddress)).kind, "not_found");
+  const noPin = async (url) => ({
+    ok: true,
+    json: async () => (decodeURIComponent(url).includes("Bldg") ? partial : precise(null)),
+  });
+  assert.equal((await geocodeWith(noPin, "K", mumbaiAddress)).kind, "not_found");
+});
+
+test("geocodeWith: provider failure during a retry stops at once as unavailable", async () => {
+  let n = 0;
+  const flaky = async () => {
+    n += 1;
+    return n === 1 ? { ok: true, json: async () => partial } : { ok: false, json: async () => ({}) };
+  };
+  assert.equal((await geocodeWith(flaky, "K", mumbaiAddress)).kind, "unavailable");
+  assert.equal(n, 2);
+});
+
+test("geocodeWith: a good first answer makes exactly one request", async () => {
+  let n = 0;
+  await geocodeWith(async () => { n += 1; return { ok: true, json: async () => precise("400030") }; }, "K", mumbaiAddress);
+  assert.equal(n, 1);
 });
 
 function makeDeps(overrides = {}) {

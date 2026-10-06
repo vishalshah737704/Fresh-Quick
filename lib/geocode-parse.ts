@@ -51,9 +51,43 @@ const PRECISE_TYPES = new Set([
   "transit_station",
 ]);
 
-type Component ={ types?: unknown; short_name?: unknown };
+type Component = { types?: unknown; short_name?: unknown; long_name?: unknown };
 
-export function parseGeocodeResponse(json: unknown): GeocodeResult {
+// Building/flat words and house numbers that Google often cannot match to a street, which turns
+// the whole result into a partial match.
+const UNIT_WORDS = /\b(bldg|building|flat|room|wing|plot|house|h\.?\s*no|door|unit|floor)\b/i;
+const LANDMARK_PREFIX = /^(near|opp\.?|opposite|behind|beside|next to|adjacent to)\s+/i;
+
+function stripUnitDetails(line1: string): string {
+  const parts = line1
+    .split(",")
+    .map((part) => part.trim())
+    .filter((part) => part.length > 0 && !UNIT_WORDS.test(part));
+  if (parts.length === 0) return "";
+  parts[0] = parts[0].replace(/^[\w\-\/]*\d[\w\-\/]*\s+/, "").trim();
+  return parts.filter((part) => part.length > 0).join(", ");
+}
+
+// Simpler forms of the same address, tried in order when the full one is not found.
+// Each is still checked for a precise result inside the customer's own pincode.
+export function buildFallbackAddresses(a: GeocodeAddress): GeocodeAddress[] {
+  const base = { city: a.city, state: a.state, pincode: a.pincode };
+  const candidates: GeocodeAddress[] = [];
+  if ((a.line2 ?? "").trim()) candidates.push({ ...base, line1: a.line1 });
+  const stripped = stripUnitDetails(a.line1);
+  if (stripped && stripped !== a.line1.trim()) candidates.push({ ...base, line1: stripped });
+  const landmark = (a.line2 ?? "").trim().replace(LANDMARK_PREFIX, "").trim();
+  if (landmark) candidates.push({ ...base, line1: landmark });
+  const seen = new Set<string>([buildGeocodeQuery(a)]);
+  return candidates.filter((c) => {
+    const key = buildGeocodeQuery(c);
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+export function parseGeocodeResponse(json: unknown, expectPincode?: string): GeocodeResult {
   if (!json || typeof json !== "object") return { kind: "unavailable" };
   const body = json as { status?: unknown; results?: unknown };
   if (body.status === "ZERO_RESULTS") return { kind: "not_found" };
@@ -96,6 +130,15 @@ export function parseGeocodeResponse(json: unknown): GeocodeResult {
   ) {
     return { kind: "not_found" };
   }
+  if (expectPincode !== undefined) {
+    const matchesPincode = components.some(
+      (c) =>
+        Array.isArray(c?.types) &&
+        c.types.includes("postal_code") &&
+        (c.short_name === expectPincode || c.long_name === expectPincode)
+    );
+    if (!matchesPincode) return { kind: "not_found" };
+  }
   return { kind: "found", lat, lng };
 }
 
@@ -108,14 +151,24 @@ export async function geocodeWith(
   address: GeocodeAddress
 ): Promise<GeocodeResult> {
   if (!apiKey) return { kind: "unavailable" };
-  try {
-    const url =
-      `${GEOCODE_URL}?address=${encodeURIComponent(buildGeocodeQuery(address))}` +
-      `&components=country:IN&region=in&key=${encodeURIComponent(apiKey)}`;
-    const res = await fetchImpl(url);
-    if (!res.ok) return { kind: "unavailable" };
-    return parseGeocodeResponse(await res.json());
-  } catch {
-    return { kind: "unavailable" };
+  async function lookup(candidate: GeocodeAddress, expectPincode?: string): Promise<GeocodeResult> {
+    try {
+      const url =
+        `${GEOCODE_URL}?address=${encodeURIComponent(buildGeocodeQuery(candidate))}` +
+        `&components=country:IN&region=in&key=${encodeURIComponent(apiKey as string)}`;
+      const res = await fetchImpl(url);
+      if (!res.ok) return { kind: "unavailable" };
+      return parseGeocodeResponse(await res.json(), expectPincode);
+    } catch {
+      return { kind: "unavailable" };
+    }
   }
+  const full = await lookup(address);
+  if (full.kind !== "not_found") return full;
+  // Provider trouble stops the loop at once; only a clean "not found" tries simpler forms.
+  for (const fallback of buildFallbackAddresses(address)) {
+    const result = await lookup(fallback, address.pincode.trim());
+    if (result.kind !== "not_found") return result;
+  }
+  return { kind: "not_found" };
 }

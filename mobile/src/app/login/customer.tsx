@@ -4,10 +4,8 @@ import { useRouter } from "expo-router";
 import { supabase } from "../../../lib/supabase";
 import { apiPostPublic, ApiError } from "../../../lib/api";
 import { validateRecipientPhone } from "../../../lib/phone";
+import { MIN_PASSWORD_LENGTH, validateSignupAddress } from "../../../lib/signup-validation";
 import { BRAND } from "../../../theme";
-
-// Mirrors the server rule in lib/signup-validation.ts and supabase config.
-const MIN_PASSWORD_LENGTH = 6;
 
 // Mirrors app/customer/login/page.tsx on the web: email/password sign-in
 // against Supabase Auth, plus a Sign up mode that posts to the public
@@ -68,12 +66,9 @@ export default function CustomerLoginScreen() {
         setError(phoneError);
         return;
       }
-      if (!line1.trim() || !city.trim() || !state.trim()) {
-        setError("Address line 1, city and state are required");
-        return;
-      }
-      if (!/^d{6}$/.test(pincode.trim())) {
-        setError("Pincode must be 6 digits");
+      const addressCheck = validateSignupAddress({ line1, line2, city, state, pincode });
+      if (!addressCheck.ok) {
+        setError(addressCheck.error);
         return;
       }
     }
