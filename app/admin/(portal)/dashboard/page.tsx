@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { overviewStats, type AdminOrderRow } from "@/lib/admin-order-view";
 import { formatPaise } from "@/lib/order-detail";
+import AutoOrderCard from "@/components/AutoOrderCard";
 
 async function authHeader() {
   const { data } = await supabase.auth.getSession();
@@ -50,6 +51,8 @@ export default function AdminOverviewPage() {
       </div>
 
       {error && <p className="mb-4 text-sm text-red-600">{error}</p>}
+
+      <AutoOrderCard />
 
       <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
         <div className="rounded-[var(--radius-card)] bg-brand-primary-text-safe p-4">

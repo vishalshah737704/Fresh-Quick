@@ -1,0 +1,123 @@
+{
+  "name": "09 - Auto Order Flow",
+  "nodes": [
+    {
+      "id": "webhook-auto-step",
+      "name": "Webhook: order status or payment changed",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 200],
+      "webhookId": "f47ac10b-58cc-4372-a567-0e02b2c3d009",
+      "parameters": { "httpMethod": "POST", "path": "foodhub/auto-order-step", "responseMode": "onReceived" },
+      "notes": "Fired by Postgres triggers n8n_auto_order_step_orders and n8n_auto_order_step_payments (migration 35)."
+    },
+    {
+      "id": "filter-auto-step",
+      "name": "Filter: payment success or status accepted/preparing/assigned",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [460, 200],
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{String($json[\"body\"][\"table\"] === 'payments' ? $json[\"body\"][\"record\"][\"status\"] === 'success' : ['accepted','preparing','assigned'].includes($json[\"body\"][\"record\"][\"status\"]))}}",
+              "value2": "true"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "wait-3s",
+      "name": "Wait 3 s",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [680, 200],
+      "webhookId": "f47ac10b-58cc-4372-a567-0e02b2c3d00a",
+      "parameters": { "resume": "timeInterval", "amount": 3, "unit": "seconds" },
+      "notes": "Workflow must stay active for the wait to resume."
+    },
+    {
+      "id": "post-auto-step",
+      "name": "POST auto-step (after 3 s)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [900, 200],
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.APP_BASE_URL}}/api/internal/orders/{{$('Webhook: order status or payment changed').item.json[\"body\"][\"table\"] === 'payments' ? $('Webhook: order status or payment changed').item.json[\"body\"][\"record\"][\"order_id\"] : $('Webhook: order status or payment changed').item.json[\"body\"][\"record\"][\"id\"]}}/auto-step",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [{ "name": "X-Internal-Secret", "value": "={{$env.N8N_INTERNAL_SECRET}}" }] },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "expectedStatus",
+              "value": "={{$('Webhook: order status or payment changed').item.json[\"body\"][\"table\"] === 'payments' ? 'placed' : $('Webhook: order status or payment changed').item.json[\"body\"][\"record\"][\"status\"]}}"
+            }
+          ]
+        },
+        "options": { "response": { "response": { "neverError": true } } }
+      },
+      "notes": "The route re-checks the setting and the order's current status; skips (setting off, order moved, payment pending) return 200."
+    },
+    {
+      "id": "webhook-auto-sweep",
+      "name": "Webhook: sweep (Admin ticked the box)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 440],
+      "webhookId": "f47ac10b-58cc-4372-a567-0e02b2c3d00b",
+      "parameters": { "httpMethod": "POST", "path": "foodhub/auto-order-sweep", "responseMode": "onReceived" },
+      "notes": "Called by PUT /api/admin/settings/auto-order when the box is ticked."
+    },
+    {
+      "id": "get-open-orders",
+      "name": "GET open orders",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [460, 440],
+      "parameters": {
+        "method": "GET",
+        "url": "={{$env.APP_BASE_URL}}/api/internal/auto-order/open",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [{ "name": "X-Internal-Secret", "value": "={{$env.N8N_INTERNAL_SECRET}}" }] }
+      }
+    },
+    {
+      "id": "split-orders",
+      "name": "Split orders",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [680, 440],
+      "parameters": { "fieldToSplitOut": "orders", "options": {} }
+    },
+    {
+      "id": "post-auto-step-sweep",
+      "name": "POST auto-step (sweep)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [900, 440],
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.APP_BASE_URL}}/api/internal/orders/{{$json[\"id\"]}}/auto-step",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [{ "name": "X-Internal-Secret", "value": "={{$env.N8N_INTERNAL_SECRET}}" }] },
+        "sendBody": true,
+        "bodyParameters": { "parameters": [{ "name": "expectedStatus", "value": "={{$json[\"status\"]}}" }] },
+        "options": { "response": { "response": { "neverError": true } } }
+      },
+      "notes": "One nudge per open order; the status change it causes fires the normal chain, which supplies the later 3 s waits."
+    }
+  ],
+  "connections": {
+    "Webhook: order status or payment changed": { "main": [[{ "node": "Filter: payment success or status accepted/preparing/assigned", "type": "main", "index": 0 }]] },
+    "Filter: payment success or status accepted/preparing/assigned": { "main": [[{ "node": "Wait 3 s", "type": "main", "index": 0 }], []] },
+    "Wait 3 s": { "main": [[{ "node": "POST auto-step (after 3 s)", "type": "main", "index": 0 }]] },
+    "Webhook: sweep (Admin ticked the box)": { "main": [[{ "node": "GET open orders", "type": "main", "index": 0 }]] },
+    "GET open orders": { "main": [[{ "node": "Split orders", "type": "main", "index": 0 }]] },
+    "Split orders": { "main": [[{ "node": "POST auto-step (sweep)", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" }
+}
