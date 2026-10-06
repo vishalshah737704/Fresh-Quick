@@ -518,3 +518,33 @@ is real. Orders, accounts and everything else are never touched.
   recovered.
 - **Needs migration 32** (`purge_zippy_chats`) applied first. Import and
   publish this file on its own; it does not touch workflows 01-07.
+
+## Workflow 09: Auto Order Flow (demo mode)
+
+`n8n/workflows/09-auto-order-flow.json` runs the Admin's "Automatic order
+acceptance (demo mode)" checkbox. It does nothing while the checkbox is off.
+
+- **Triggers:** the Webhook `POST /webhook/foodhub/auto-order-step`, called by the
+  Postgres triggers `n8n_auto_order_step_orders` (orders UPDATE OF status) and
+  `n8n_auto_order_step_payments` (payments INSERT or UPDATE OF status), both from
+  migration 35; and the Webhook `POST /webhook/foodhub/auto-order-sweep`, called by
+  `PUT /api/admin/settings/auto-order` when the box is ticked.
+- **Step branch:** a payment success, or an order reaching accepted, preparing or
+  assigned, waits 2 s (about 3 s between visible status changes once the webhook
+  delay is added) and calls `POST {APP_BASE_URL}/api/internal/orders/:id/auto-step`
+  with `{expectedStatus}` and the `X-Internal-Secret` header. The app re-checks the
+  setting and the order's current status, then moves it one step: placed to
+  accepted to preparing to ready; assigned to picked_up. Ready orders are assigned
+  by workflow 04. A skip (setting off, order already moved, payment pending) is
+  returned as 200 so n8n treats it as done.
+- **Sweep branch:** `GET /api/internal/auto-order/open` (empty when the setting is
+  off), split per order, `auto-step` called once for each; a ready order with no
+  partner gets its assignment re-triggered.
+- **Import and publish:** `docker cp` the file into the n8n container and run
+  `n8n import:workflow --input=...` (the file carries `id` and `active: false`; the
+  import deactivates it), then PUBLISH IN THE n8n UI. The CLI `publish:workflow`
+  only takes effect after an n8n restart, and the container runs with `--rm`, so
+  never restart it. Re-importing deactivates the workflow again, so publish again
+  after every re-import. Needs migration 35 applied first.
+- **Test it:** tick the box, then insert a paid order (or place one) and watch
+  `orders.status`. Real Gmail: workflows 03 and 05 mail the order's recipient.

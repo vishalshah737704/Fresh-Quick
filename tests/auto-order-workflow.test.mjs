@@ -10,11 +10,11 @@ test("workflow 09 has the step and sweep webhooks", () => {
   assert.deepEqual(paths, ["foodhub/auto-order-step", "foodhub/auto-order-sweep"]);
 });
 
-test("the step branch waits exactly 3 seconds before calling auto-step", () => {
-  const wait = byName("Wait 3 s");
-  assert.equal(wait.parameters.amount, 3);
+test("the step branch waits 2 seconds (3 s observed with webhook delay) before calling auto-step", () => {
+  const wait = byName("Wait 2 s");
+  assert.equal(wait.parameters.amount, 2);
   assert.equal(wait.parameters.unit, "seconds");
-  assert.ok(wf.connections["Wait 3 s"].main[0].some((c) => c.node === "POST auto-step (after 3 s)"));
+  assert.ok(wf.connections["Wait 2 s"].main[0].some((c) => c.node === "POST auto-step (after 3 s)"));
 });
 
 test("the step filter accepts payment success or accepted/preparing/assigned, wrapped in String()", () => {

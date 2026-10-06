@@ -1,4 +1,5 @@
 {
+  "id": "autoOrderFlow09",
   "name": "09 - Auto Order Flow",
   "nodes": [
     {
@@ -30,12 +31,12 @@
     },
     {
       "id": "wait-3s",
-      "name": "Wait 3 s",
+      "name": "Wait 2 s",
       "type": "n8n-nodes-base.wait",
       "typeVersion": 1.1,
       "position": [680, 200],
       "webhookId": "f47ac10b-58cc-4372-a567-0e02b2c3d00a",
-      "parameters": { "resume": "timeInterval", "amount": 3, "unit": "seconds" },
+      "parameters": { "resume": "timeInterval", "amount": 2, "unit": "seconds" },
       "notes": "Workflow must stay active for the wait to resume."
     },
     {
@@ -113,11 +114,12 @@
   ],
   "connections": {
     "Webhook: order status or payment changed": { "main": [[{ "node": "Filter: payment success or status accepted/preparing/assigned", "type": "main", "index": 0 }]] },
-    "Filter: payment success or status accepted/preparing/assigned": { "main": [[{ "node": "Wait 3 s", "type": "main", "index": 0 }], []] },
-    "Wait 3 s": { "main": [[{ "node": "POST auto-step (after 3 s)", "type": "main", "index": 0 }]] },
+    "Filter: payment success or status accepted/preparing/assigned": { "main": [[{ "node": "Wait 2 s", "type": "main", "index": 0 }], []] },
+    "Wait 2 s": { "main": [[{ "node": "POST auto-step (after 3 s)", "type": "main", "index": 0 }]] },
     "Webhook: sweep (Admin ticked the box)": { "main": [[{ "node": "GET open orders", "type": "main", "index": 0 }]] },
     "GET open orders": { "main": [[{ "node": "Split orders", "type": "main", "index": 0 }]] },
     "Split orders": { "main": [[{ "node": "POST auto-step (sweep)", "type": "main", "index": 0 }]] }
   },
+  "active": false,
   "settings": { "executionOrder": "v1" }
 }

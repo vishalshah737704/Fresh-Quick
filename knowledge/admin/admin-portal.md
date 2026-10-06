@@ -14,7 +14,7 @@ The left menu has Overview, Orders, Vendors and Delivery Partners. It also shows
 
 ## What does the Overview page show?
 
-Three cards: Active orders (orders not yet Delivered, Cancelled or Rejected), Vendors (the number of stores) and Revenue (the total of all orders except Cancelled and Rejected ones).
+Above the cards is the Automatic order acceptance (demo mode) checkbox (see the questions below). Three cards: Active orders (orders not yet Delivered, Cancelled or Rejected), Vendors (the number of stores) and Revenue (the total of all orders except Cancelled and Rejected ones).
 
 ## How do I find and filter orders?
 
@@ -53,3 +53,11 @@ On the Vendors page choose Suspend or Unsuspend in the vendor's row. Suspending 
 3. Choose "Create delivery partner". Share the temporary password with the partner, who can change it from their profile.
 
 The table lists each partner's Name, Online or Offline status and Vehicle.
+
+## What is Automatic order acceptance (demo mode)?
+
+On the Overview page there is a checkbox called Automatic order acceptance (demo mode). When it is ticked, every paid order moves by itself so the whole journey can be shown with nobody clicking: Accepted, Preparing, Ready, then Partner assigned (the nearest online delivery partner, as usual), then Picked up, each step about 3 seconds after the previous one. The customer's courier animation then delivers the order. Vendors do not have to accept or prepare anything and delivery partners do not have to mark an order picked up. It applies to orders from the website and the phone app. It is off by default.
+
+## How do I turn Automatic order acceptance on or off?
+
+Open Overview and tick or clear the checkbox Automatic order acceptance (demo mode); it saves at once. Ticking it also starts every order that is already open (placed and paid, accepted, preparing, ready or assigned). Clearing it stops further automatic steps; orders already in progress stay where they are and the vendor and delivery partner handle them by hand. If a message says n8n did not respond, the setting is saved but open orders were not started, so check that n8n is running. If no delivery partner is online, an order waits at Ready until one is assigned and is then picked up about 3 seconds later.
