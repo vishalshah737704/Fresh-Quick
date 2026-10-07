@@ -241,7 +241,7 @@ rejects the build; use `npx next build --webpack` there and run the real
 `npm run build` once merged to `main`.
 
 ## Favorites and reorder (2026-10-07, PR #23, merged into `main`)
-Signed-in customers can heart stores (web and phone, saved on the account via migration 36 `favorite_stores`, so they sync) and use "Order again" / Reorder to refill the cart from a past order at today's prices. Reorder never places the order. Routes: `/api/customer/favorites`, `/api/customer/reorder-options`, `/api/customer/orders/[id]/reorder`. Apply the migration with `npx supabase migration up --local`.
+Signed-in customers can heart stores (web and phone, saved on the account via migration 36 `favorite_stores`, so they sync) and use "Order again" / Reorder to refill the cart from a past order at today's prices. Reorder never places the order. Routes: `/api/customer/favorites`, `/api/customer/reorder-options`, `/api/customer/orders/[id]/reorder`. Apply the migration with `npx supabase migration up --local`. Verified after merge on 2026-10-07: knowledge re-ingested, Zippy eval 58/58, a live reordered-cart checkout with Gmail (accepted and delivered emails sent by n8n workflows 03 and 05) and an iPhone Expo Go check.
 
 ## Usage guide
 
