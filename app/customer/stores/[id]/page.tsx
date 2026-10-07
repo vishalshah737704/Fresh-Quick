@@ -1,5 +1,6 @@
 "use client";
 
+import { FavoriteHeart } from "@/components/FavoriteHeart";
 import { useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import Image from "next/image";
@@ -236,9 +237,12 @@ export default function RestaurantMenuPage() {
         <div className="absolute inset-0 bg-gradient-to-t from-brand-ink/90 via-brand-ink/20 to-transparent" />
         <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-3 p-5">
           <h1 className="font-heading text-2xl text-white">{restaurant.name}</h1>
-          <span className="shrink-0 rounded-[var(--radius-card)] bg-brand-surface px-3 py-1.5 text-sm font-semibold text-brand-ink">
-            ⭐ {restaurant.rating.toFixed(1)}
-          </span>
+          <div className="flex shrink-0 items-center gap-2">
+            <FavoriteHeart storeId={restaurant.id} />
+            <span className="shrink-0 rounded-[var(--radius-card)] bg-brand-surface px-3 py-1.5 text-sm font-semibold text-brand-ink">
+              ⭐ {restaurant.rating.toFixed(1)}
+            </span>
+          </div>
         </div>
       </div>
       <p className="mb-4 text-sm text-brand-ink-muted">

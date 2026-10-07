@@ -1,3 +1,4 @@
+import { FavoriteHeart } from "@/components/FavoriteHeart";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -42,6 +43,7 @@ export function RestaurantCard({
         ) : (
           <div className="flex h-full w-full items-center justify-center text-4xl">🍽️</div>
         )}
+        <FavoriteHeart storeId={restaurant.id} className="absolute right-2 top-2" />
       </div>
       <div className="p-4">
         {restaurant.promo_text && (
