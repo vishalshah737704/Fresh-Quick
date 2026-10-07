@@ -83,3 +83,19 @@ Yes, on the website. Open your order from Orders. Once a delivery partner is ass
 
 While the partner is on the way, the map draws a solid line along the roads from the partner to your address and the page says something like "About 23 min · 8.3 km by road". That time is an estimate of the usual driving time for the route; it does not include live traffic, so the real arrival can differ. The route refreshes as the partner moves, not on every location update. After delivery the final route from the store to your address and its road distance are shown, with no time estimate. If the road route cannot be loaded, the map falls back to a dashed straight line between the points; that line and the distance shown with it are approximate, and there is no arrival time. If the map cannot load, the partner's coordinates are shown as text instead. The phone app shows a simpler version of this map (see the phone app guide): no road route and no arrival time.
 
+
+## How do I save a favorite store on the website?
+
+Sign in, then click the heart on a store card or on the store page. A filled heart means the store is saved; click it again to remove it. Favorites are saved on your account, so they also show on the phone app, and the other way round. Visitors who are not signed in cannot save favorites.
+
+## How do I see my favorite stores on the website?
+
+On the customer Home page, click the "♥ Favorites" chip (it appears only when you are signed in). The list then shows only your favorite stores; click the chip again to see all stores. If you have none yet, it says so.
+
+## How do I order the same thing again on the website?
+
+There are three places. On Home, an "Order again" row shows up to three stores you ordered from most recently, each with a Reorder button. On the Orders page, every order has a Reorder button, and so does the order page. Reorder is not shown for cancelled or rejected orders.
+
+## What does Reorder do on the website?
+
+Reorder fills your cart with the items of that earlier order, including the options and notes you chose, at today's prices. It does not place the order: open the cart and go to Checkout as usual. Items that are no longer available are skipped and listed in the message after "Skipped:". If the store is closed right now, the Reorder button on Home is disabled and says "Closed right now", and on the Orders pages a message says the store is closed. If your cart already holds items from the same store, the quantities are added together. If it holds items from a different store, the cart is replaced and the message says how many items were replaced.

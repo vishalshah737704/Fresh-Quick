@@ -240,6 +240,9 @@ See the "Public deployment checklist" in `docs/DEPLOYMENT.md` before exposing th
 rejects the build; use `npx next build --webpack` there and run the real
 `npm run build` once merged to `main`.
 
+## Favorites and reorder (2026-10-07, branch `c3-favorites-reorder`)
+Signed-in customers can heart stores (web and phone, saved on the account via migration 36 `favorite_stores`, so they sync) and use "Order again" / Reorder to refill the cart from a past order at today's prices. Reorder never places the order. Routes: `/api/customer/favorites`, `/api/customer/reorder-options`, `/api/customer/orders/[id]/reorder`. Apply the migration with `npx supabase migration up --local`.
+
 ## Usage guide
 
 `docs/Usage_Guide.docx` is a screenshot-illustrated walkthrough of the

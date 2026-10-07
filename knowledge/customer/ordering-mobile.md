@@ -86,3 +86,19 @@ Yes. An email goes to the address you entered at checkout when the store accepts
 ## What is the Account tab for?
 
 It shows your name and email, a Reset password link, Wallet (a read-only list of the payment methods available), Help (a short FAQ) and Sign out.
+
+## How do I save a favorite store in the mobile app?
+
+Sign in, then tap the heart on a store card. A filled heart means the store is saved; tap it again to remove it. Favorites are saved on your account, so they also show on the website, and the other way round.
+
+## How do I see my favorite stores in the mobile app?
+
+On the Home tab, tap the Favorites chip. The feed then shows only your favorite stores; tap the chip again to see all stores. With none saved it says "No favorite stores here yet. Tap the heart on a store."
+
+## How do I order the same thing again in the mobile app?
+
+On the Home tab, the "Order again" row shows up to three stores you ordered from most recently, each with a Reorder button. The Orders tab and an order's screen also have a Reorder button. Reorder is not shown for cancelled or rejected orders.
+
+## What does Reorder do in the mobile app?
+
+Reorder fills your cart with the items of that earlier order, including the options and notes you chose, at today's prices. It does not place the order: open your cart and go to Checkout as usual. Items that are no longer available are skipped and listed in the message after "Skipped:". A store that is closed right now shows "Closed" on its Home button and cannot be reordered. If your cart already holds items from the same store, the quantities are added together. If it holds items from a different store, the cart is replaced and the message says how many items were replaced.
