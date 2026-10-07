@@ -13,6 +13,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { supabase } from "../../../../lib/supabase";
 import { BRAND } from "../../../../theme";
 import { useCart } from "../../../../lib/cart-store";
+import { useFavorites } from "../../../../lib/favorites-store";
 import { FloatingCartPill } from "../../../../components/FloatingCartPill";
 import { ItemCustomizationModal } from "../../../../components/ItemCustomizationModal";
 import { useRequireSession } from "../../../../lib/use-require-session";
@@ -98,7 +99,7 @@ export default function StoreDetailScreen() {
   const [menuItems, setMenuItems] = useState<MenuItem[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [modalItem, setModalItem] = useState<MenuItem | null>(null);
-  const [isFavorite, setIsFavorite] = useState(false); // local UI-only toggle, no backend
+  const { isFavorite, toggle } = useFavorites();
   const scrollRef = useRef<ScrollView>(null);
   const sectionOffsets = useRef<Record<string, number>>({});
   // onLayout's y is relative to the IMMEDIATE PARENT, not the ScrollView's
@@ -217,10 +218,10 @@ export default function StoreDetailScreen() {
             </Pressable>
             <Pressable
               style={[styles.chip, styles.chipFavorite]}
-              onPress={() => setIsFavorite((v) => !v)}
+              onPress={() => void toggle(store.id)}
               hitSlop={8}
             >
-              <Text style={styles.chipIcon}>{isFavorite ? "♥" : "♡"}</Text>
+              <Text style={styles.chipIcon}>{isFavorite(store.id) ?"♥" : "♡"}</Text>
             </Pressable>
           </View>
           <View style={styles.infoBlock}>

@@ -1,7 +1,7 @@
-import { useState } from "react";
 import { View, Text, Pressable, Image, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { BRAND } from "../theme";
+import { useFavorites } from "../lib/favorites-store";
 
 export type StoreCardData = {
   id: string;
@@ -18,11 +18,11 @@ export type StoreCardData = {
 };
 
 // UberEats-style restaurant card: 16:9 image, rounded corners, favorite
-// heart overlay (local-only toggle, no backend — favorites aren't a real
-// feature yet, per spec's honest-scope note), name + single grey metadata
-// line "★rating · time · fee".
+// heart overlay (saved on the customer's account), name + single grey
+// metadata line "★rating · time · fee".
 export function StoreCard({ store, onPress }: { store: StoreCardData; onPress: () => void }) {
-  const [favorited, setFavorited] = useState(false);
+  const { isFavorite, toggle } = useFavorites();
+  const favorited = isFavorite(store.id);
   const feeLabel = store.delivery_fee_paise === 0 ? "Free delivery" : `₹${(store.delivery_fee_paise / 100).toFixed(0)} delivery`;
 
   return (
@@ -40,7 +40,7 @@ export function StoreCard({ store, onPress }: { store: StoreCardData; onPress: (
           hitSlop={8}
           onPress={(e) => {
             e.stopPropagation();
-            setFavorited((f) => !f);
+            void toggle(store.id);
           }}
         >
           <Ionicons
