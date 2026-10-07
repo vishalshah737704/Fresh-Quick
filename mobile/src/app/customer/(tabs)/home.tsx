@@ -22,6 +22,10 @@ import { LocationSheet } from "../../../../components/LocationSheet";
 import { useDeliveryLocation } from "../../../../lib/location-store";
 import { haversineDistanceKm } from "../../../../lib/geo";
 import { sortNearestFirst } from "../../../../lib/nearest";
+import { apiFetch } from "../../../../lib/api";
+import { REORDER_OPTIONS_PATH, type ReorderOption } from "../../../../lib/favorites-model";
+import { useFavorites } from "../../../../lib/favorites-store";
+import { useReorder } from "../../../../lib/use-reorder";
 
 type Store = StoreCardData;
 
@@ -31,8 +35,6 @@ type Cuisine = { slug: string; label: string };
 // the mobile home-screen requirement (web's HeaderSearchBox only matches
 // store name/cuisine tags; this adds product-name matching on top of that).
 type ProductLite = { store_id: string; name: string };
-
-type ReorderStore = { id: string; name: string; banner_url: string | null };
 
 // Category chips reuse cuisine icon names where a sensible Ionicons match
 // exists; falls back to a generic restaurant icon otherwise.
@@ -55,7 +57,10 @@ export default function CustomerHomeScreen() {
   const [stores, setStores] = useState<Store[] | null>(null);
   const [cuisines, setCuisines] = useState<Cuisine[]>([]);
   const [products, setProducts] = useState<ProductLite[]>([]);
-  const [reorderStores, setReorderStores] = useState<ReorderStore[] | null>(null);
+  const [reorderStores, setReorderStores] = useState<ReorderOption[] | null>(null);
+  const [favoritesOnly, setFavoritesOnly] = useState(false);
+  const { ids: favoriteIds } = useFavorites();
+  const { busyOrderId, notice, error: reorderError, reorder } = useReorder();
   const [selectedCuisine, setSelectedCuisine] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -84,24 +89,13 @@ export default function CustomerHomeScreen() {
     setCuisines(cuisinesRes.data ?? []);
     setProducts(productsRes.data ?? []);
 
-    const userId = sessionRes.data.session?.user.id;
-    if (userId) {
-      const { data: ordersData } = await supabase
-        .from("orders")
-        .select("placed_at, stores(id, name, banner_url)")
-        .eq("customer_id", userId)
-        .order("placed_at", { ascending: false })
-        .limit(30);
-      const seen = new Set<string>();
-      const distinct: ReorderStore[] = [];
-      for (const row of (ordersData as unknown as { stores: ReorderStore | null }[] | null) ?? []) {
-        const s = row.stores;
-        if (!s || seen.has(s.id)) continue;
-        seen.add(s.id);
-        distinct.push(s);
-        if (distinct.length >= 10) break;
+    if (sessionRes.data.session) {
+      try {
+        const res = await apiFetch<{ options: ReorderOption[] }>(REORDER_OPTIONS_PATH);
+        setReorderStores(res.options);
+      } catch {
+        setReorderStores([]);
       }
-      setReorderStores(distinct);
     } else {
       setReorderStores([]);
     }
@@ -143,6 +137,7 @@ export default function CustomerHomeScreen() {
   const query = searchQuery.trim().toLowerCase();
   const matching = (stores ?? []).filter((s) => {
     if (selectedCuisine !== null && !s.cuisine_tags.includes(selectedCuisine)) return false;
+    if (favoritesOnly && !favoriteIds.has(s.id)) return false;
     if (query === "") return true;
     if (s.name.toLowerCase().includes(query)) return true;
     if (s.cuisine_tags.some((t) => t.toLowerCase().includes(query))) return true;
@@ -152,7 +147,7 @@ export default function CustomerHomeScreen() {
   const filtered = useMemo(
     () => sortNearestFirst(matching, location, haversineDistanceKm),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [stores, selectedCuisine, query, productNamesByStore, location]
+    [stores, selectedCuisine, query, productNamesByStore, location, favoritesOnly, favoriteIds]
   );
 
   const promoStores = useMemo(
@@ -211,6 +206,16 @@ export default function CustomerHomeScreen() {
             </View>
           </View>
         </View>
+
+        <Pressable
+          onPress={() => setFavoritesOnly((v) => !v)}
+          style={[styles.favoritesChip, favoritesOnly && styles.favoritesChipActive]}
+          accessibilityRole="button"
+          accessibilityState={{ selected: favoritesOnly }}
+        >
+          <Ionicons name={favoritesOnly ? "heart" : "heart-outline"} size={14} color={favoritesOnly ? BRAND.colors.surface : BRAND.colors.ink} />
+          <Text style={[styles.favoritesChipLabel, favoritesOnly && styles.favoritesChipLabelActive]}>Favorites</Text>
+        </Pressable>
 
         {loading ? (
           <View style={styles.chipRow}>
@@ -301,27 +306,34 @@ export default function CustomerHomeScreen() {
           reorderStores.length > 0 && (
             <View>
               <Text style={styles.sectionHeading}>Order again</Text>
+              {notice && <Text style={styles.reorderNotice}>{notice}</Text>}
+              {reorderError && <Text style={[styles.errorText, styles.reorderNotice]}>{reorderError}</Text>}
               <FlatList
                 horizontal
                 data={reorderStores}
-                keyExtractor={(s) => `reorder-${s.id}`}
+                keyExtractor={(s) => `reorder-${s.storeId}`}
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={styles.reorderRow}
                 renderItem={({ item }) => (
                   <View style={styles.reorderCard}>
-                    {item.banner_url ? (
-                      <Image source={{ uri: item.banner_url }} style={styles.reorderImage} />
-                    ) : (
-                      <View style={[styles.reorderImage, styles.promoImageFallback]} />
-                    )}
-                    <Text style={styles.reorderName} numberOfLines={1}>
-                      {item.name}
-                    </Text>
+                    <Pressable onPress={() => router.push(`/customer/store/${item.storeId}`)}>
+                      {item.imageUrl ? (
+                        <Image source={{ uri: item.imageUrl }} style={styles.reorderImage} />
+                      ) : (
+                        <View style={[styles.reorderImage, styles.promoImageFallback]} />
+                      )}
+                      <Text style={styles.reorderName} numberOfLines={1}>
+                        {item.storeName}
+                      </Text>
+                    </Pressable>
                     <Pressable
-                      style={styles.reorderButton}
-                      onPress={() => router.push(`/customer/store/${item.id}`)}
+                      style={[styles.reorderButton, (busyOrderId !== null || !item.isOpen) && { opacity: 0.5 }]}
+                      disabled={busyOrderId !== null || !item.isOpen}
+                      onPress={() => reorder(item.lastOrderId)}
                     >
-                      <Text style={styles.reorderButtonText}>Reorder</Text>
+                      <Text style={styles.reorderButtonText}>
+                        {busyOrderId === item.lastOrderId ? "Adding…" : item.isOpen ? "Reorder" : "Closed"}
+                      </Text>
                     </Pressable>
                   </View>
                 )}
@@ -341,9 +353,11 @@ export default function CustomerHomeScreen() {
         ) : filtered.length === 0 ? (
           <View style={styles.center}>
             <Text style={styles.mutedText}>
-              {query !== ""
-                ? `No restaurants or dishes match "${searchQuery}".`
-                : "No open restaurants near you right now."}
+              {favoritesOnly
+                ? "No favorite stores here yet. Tap the heart on a store."
+                : query !== ""
+                  ? `No restaurants or dishes match "${searchQuery}".`
+                  : "No open restaurants near you right now."}
             </Text>
           </View>
         ) : (
@@ -566,6 +580,39 @@ const styles = StyleSheet.create({
     fontFamily: BRAND.fonts.bodyMedium,
     fontSize: 11,
     color: BRAND.colors.primary,
+  },
+  reorderNotice: {
+    fontFamily: BRAND.fonts.body,
+    fontSize: 12,
+    color: BRAND.colors.inkMuted,
+    paddingHorizontal: 16,
+    paddingBottom: 6,
+  },
+  favoritesChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    alignSelf: "flex-start",
+    marginHorizontal: 16,
+    marginTop: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: BRAND.colors.inkMuted + "33",
+    backgroundColor: BRAND.colors.surface,
+  },
+  favoritesChipActive: {
+    backgroundColor: BRAND.colors.primaryTextSafe,
+    borderColor: BRAND.colors.primary,
+  },
+  favoritesChipLabel: {
+    fontFamily: BRAND.fonts.bodyMedium,
+    fontSize: 12,
+    color: BRAND.colors.ink,
+  },
+  favoritesChipLabelActive: {
+    color: BRAND.colors.surface,
   },
   listContent: {
     paddingHorizontal: 16,

@@ -13,6 +13,7 @@ import { BRAND } from "../../../../theme";
 import { useRequireSession } from "../../../../lib/use-require-session";
 import { OrderStatusPill } from "../../../../components/OrderStatusPill";
 import { ItemThumb } from "../../../../components/ItemThumb";
+import { useReorder } from "../../../../lib/use-reorder";
 
 const MAX_THUMBS = 3;
 
@@ -21,6 +22,7 @@ export default function CustomerOrdersScreen() {
   const router = useRouter();
   const [orders, setOrders] = useState<OrderListRow[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const { busyOrderId, notice, error: reorderError, reorder } = useReorder();
 
   // Refetch every time this tab/screen regains focus, not just on first
   // mount, so orders placed since the last visit show up without a
@@ -62,6 +64,8 @@ export default function CustomerOrdersScreen() {
   return (
     <View style={styles.container}>
       <Text style={styles.heading}>Your orders</Text>
+      {notice && <Text style={styles.mutedText}>{notice}</Text>}
+      {reorderError && <Text style={styles.errorText}>{reorderError}</Text>}
       {error && <Text style={styles.errorText}>{error}</Text>}
       {orders === null && !error && (
         <View style={styles.centered}>
@@ -94,6 +98,15 @@ export default function CustomerOrdersScreen() {
                 </View>
                 <Text style={styles.total}>{formatPaise(Math.round(item.total * 100))}</Text>
               </View>
+              {item.status !== "cancelled" && item.status !== "rejected" && (
+                <Pressable
+                  style={[styles.reorderButton, busyOrderId !== null && { opacity: 0.5 }]}
+                  disabled={busyOrderId !== null}
+                  onPress={() => reorder(item.id)}
+                >
+                  <Text style={styles.reorderButtonText}>{busyOrderId === item.id ? "Adding…" : "Reorder"}</Text>
+                </Pressable>
+              )}
             </Pressable>
           );
         }}
@@ -122,4 +135,6 @@ const styles = StyleSheet.create({
   thumbs: { flexDirection: "row", alignItems: "center", gap: 8, flexShrink: 1 },
   storeName: { fontFamily: BRAND.fonts.bodySemiBold, color: BRAND.colors.ink },
   total: { fontFamily: BRAND.fonts.bodySemiBold, color: BRAND.colors.ink },
+  reorderButton: { alignSelf: "flex-start", borderWidth: 1, borderColor: BRAND.colors.primary, borderRadius: 999, paddingHorizontal: 16, paddingVertical: 6 },
+  reorderButtonText: { fontFamily: BRAND.fonts.bodySemiBold, color: BRAND.colors.primaryTextSafe },
 });

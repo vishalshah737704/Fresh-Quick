@@ -27,6 +27,7 @@ import { OrderItemsList } from "../../../../components/OrderItemsList";
 import { CourierCard } from "../../../../components/CourierCard";
 import { OrderTrackingMap } from "../../../../components/OrderTrackingMap";
 import { showTrackingMap } from "../../../../lib/tracking";
+import { useReorder } from "../../../../lib/use-reorder";
 
 type PartnerLocation = {
   current_lat: number | null;
@@ -83,6 +84,7 @@ export default function OrderDetailScreen() {
   const [celebrating, setCelebrating] = useState(false);
   const [dismissed, setDismissed] = useState(false);
   const [sawPickedUp, setSawPickedUp] = useState(false);
+  const { busyOrderId, notice: reorderNotice, error: reorderError, reorder } = useReorder();
 
   const postComplete = useCallback(async (): Promise<number> => {
     try {
@@ -194,6 +196,17 @@ export default function OrderDetailScreen() {
       ) : (
         <>
           <Text style={styles.etaText}>{STATUS_MESSAGE[order.status]}</Text>
+          {reorderNotice && <Text style={styles.mutedText}>{reorderNotice}</Text>}
+          {reorderError && <Text style={styles.errorText}>{reorderError}</Text>}
+          {order.status !== "cancelled" && order.status !== "rejected" && (
+            <Pressable
+              style={[styles.reorderButton, busyOrderId !== null && { opacity: 0.5 }]}
+              disabled={busyOrderId !== null}
+              onPress={() => reorder(order.id)}
+            >
+              <Text style={styles.reorderButtonText}>{busyOrderId === order.id ? "Adding…" : "Reorder"}</Text>
+            </Pressable>
+          )}
 
           <View style={styles.section}>
             <OrderTimeline status={order.status} />
@@ -285,6 +298,8 @@ const styles = StyleSheet.create({
     padding: 16,
     gap: 4,
   },
+  reorderButton: { alignSelf: "flex-start", borderWidth: 1, borderColor: BRAND.colors.primary, borderRadius: 999, paddingHorizontal: 16, paddingVertical: 6 },
+  reorderButtonText: { fontFamily: BRAND.fonts.bodySemiBold, color: BRAND.colors.primaryTextSafe },
   etaText: { fontFamily: BRAND.fonts.heading, fontSize: 20, color: BRAND.colors.ink },
   bannerError: { borderWidth: 1, borderColor: "#fecaca", backgroundColor: "#fef2f2", borderRadius: BRAND.radius, padding: 12 },
   bannerErrorText: { fontFamily: BRAND.fonts.bodyMedium, color: "#b91c1c" },
