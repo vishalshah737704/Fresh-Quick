@@ -294,7 +294,7 @@ Scheduled runs happen only while Docker, n8n and the app are up (n8n does not ca
 **Phone delivery location (2026-10-05, branch `mobile-location-picker`, built and live-verified on the Android emulator; PR pending):** the Customer phone app now has a real delivery-location picker. The Home pill opens a full-screen "Delivery location" sheet (`mobile/components/LocationSheet.tsx`, `AddressSearchBox.tsx`): 3+ characters show live Google suggestions (Places API (New) over direct REST with the Android key, `mobile/lib/places-api.ts`; choosing one saves and closes), tapping the map or dragging the pin reverse-geocodes to an address label (falls back to coordinates) and needs "Confirm location", and "Use my current location" uses GPS (15 s timeout with a friendly message). The location is stored on the account (migration 33: `users.saved_lat/saved_lng/saved_label`; `app/api/customer/location/route.ts` GET/PUT/DELETE, customers only; `lib/saved-location.ts`) with a device cache and reconcile rules (`mobile/lib/location-store.tsx`, `location-reconcile.ts`), so it survives sign-in and restart and never shows to a different account on the same phone. Home lists restaurants nearest first (`mobile/lib/nearest.ts`). Checkout has "Search for your address" (fills Address 1, City, State; pincode is often blank and must be typed) and "Use my saved location"; the checkout fields themselves are still not saved. The order's lat/lng use the picked point, else the saved pin only if the fields were filled from "Use my saved location", else 0/0 as before. Ask Zippy uses the saved location for "nearby" questions without asking for permission. Decisions (Vishal): call Google directly with the Android key rather than via a server proxy; store on the account; include the pin. Limits: search works only where Google accepts the Android key (the native Android build; Places API (New), Geocoding API and Routes were enabled on that key); unverified on iPhone Expo Go, whose manifest also carries the key and Android headers, so it may or may not work (if search is unavailable the sheet says so and the pin and GPS still work). Open items: Vishal's iPhone Expo Go check; GPS could not be verified on the emulator (the mock fix never arrived, so it timed out); optional release APK for a real Android phone; mobile manual section and figures not written yet; re-ingest `knowledge/` (`ordering-mobile.md` changed) and re-run `node scripts/zippy-eval.mjs`. Spec `docs/superpowers/specs/2026-10-05-mobile-location-picker-design.md`; setup and test steps in `docs/ANDROID_TESTING.md` ("Delivery location and address search").
 **Sign-up address and real store addresses (2026-10-05, branch `signup-address-geocoding`, live-verified on web and phone; not merged):** customer sign-up (web `app/customer/login/page.tsx`, phone `mobile/src/app/login/customer.tsx`) now also requires a 10-digit Indian mobile and an address (Address 1, optional Address 2, City, State, 6-digit Pincode). `POST /api/auth/signup` runs `lib/signup-pipeline.ts` (pure, dependencies injected): validate, then geocode with `GOOGLE_MAPS_SERVER_API_KEY` (`lib/geocode-server.ts`, parsing in `lib/geocode-parse.ts`) BEFORE creating the account. Address not found, vague, partial or approximate gives 400 "We could not find that address..."; key missing or provider down gives 503 and no account. On success the address is the default "Home" `addresses` row (migration 34: one default per user) and `users.phone` plus `users.saved_lat/lng/label` hold the starting delivery location; if a later insert fails the auth user is deleted (500). The web location store lets the account's saved location win at sign-in (`lib/location-reconcile.ts`); the phone shows it after first sign-in (pill "Linking Road, Mumbai", feed nearest-first). The server key is a separate Geocoding-API-only key with Application restriction None, never `NEXT_PUBLIC`, never in the browser or phone app. All 77 stores now have real geocoded Mumbai addresses: `scripts/data/mumbai-store-addresses.json` -> `node scripts/geocode-stores.mjs` (Vishal runs it with the key; resumable, `--force` redoes all) -> `supabase/data/store-locations.json` -> `node scripts/apply-store-locations.mjs --apply` (dry run without `--apply`); `npm run app:seed` re-applies it after a reset. Many addresses are well-known landmarks (malls, markets, stations) because invented street numbers came back as partial matches; 2 stores are in Thane. The demo delivery partners were moved to Mumbai. Open items: OrderTrackingMap still shows a distance from a stale partner ping (see the rule below); re-ingest `knowledge/` after merge (`account-and-signin.md` changed) and re-run `node scripts/zippy-eval.mjs`; manuals not updated. Spec `docs/superpowers/specs/2026-10-05-signup-address-and-store-geocoding-design.md`. See MEMORY.md's "Sign-up address and store geocoding" entry.
 **Close-out 2026-10-05 (PR #22 merged to `main` as `506f25f`, branches removed):** the stale-partner-ping bug is FIXED on web and phone (`isStalePing` in `lib/maps/tracking.ts`, byte-identical `mobile/lib/tracking.ts`: a ping over 5 minutes old shows only "Last seen ... (location may be out of date)", no km/min figure, no Routes request; unit-tested, not driven live). Knowledge re-ingested (160 chunks). Manuals refreshed: web v3.9 (sign-up fields, registration address as delivery location, real store addresses, stale ping; two Claude-in-Chrome figures added later the same day: 3.9a sign-up form with the password-manager icons painted out, 3.1b header showing the registered address; 52 pages, TOC renumbered), mobile v4.9 (sign-up, new section 3.1.1 delivery location sheet, checkout address search, five emulator figures; 38 pages, TOC renumbered). Reset Data was run (orders, customers, Zippy chats, n8n executions all 0; stores, vendors, partners kept). Open: `node scripts/zippy-eval.mjs` after the 2026-10-05 re-ingest (Vishal runs it, it needs `N8N_INTERNAL_SECRET` in his shell); iPhone Expo Go check of the location sheet and sign-up; fresh customers must sign up again (clear browser site data on localhost:3000 to 3003, reinstall Expo Go on the iPhone).
-**C3 favorites and reorder (2026-10-07, branch `c3-favorites-reorder`, built, reviewed and live-verified on web in Chrome and on the Android emulator; not merged):** a signed-in customer can heart stores and reorder past orders on web and phone. Table `favorite_stores` (migration 36, service-role only, cascades from `users`); routes `GET /api/customer/favorites`, `PUT`/`DELETE /api/customer/favorites/[storeId]`, `GET /api/customer/reorder-options` (up to 3 most recent distinct stores from orders that are not cancelled/rejected and whose store is not suspended) and `POST /api/customer/orders/[id]/reorder` (rebuilds the lines at TODAY's prices through the shared `buildReorderLines` that Zippy's reorder card also uses; unavailable dishes are skipped and listed; a closed store is refused; another customer's order id is "not found"). Pure model `lib/favorites-model.ts` is shared BYTE-IDENTICAL with `mobile/lib/favorites-model.ts` (guarded by `tests/mobile-parity.test.mjs`). Web: `lib/favorites-store.tsx` (provider in `app/customer/layout.tsx`), `components/FavoriteHeart.tsx` on store cards and the store page, `lib/use-reorder.ts`, Home "Order again" row (closed store shows "Closed right now" and a disabled button), a "Favorites" chip (signed-in only), Reorder buttons on Your orders and on an order (hidden for cancelled/rejected). Phone: `mobile/lib/favorites-store.tsx`, `use-reorder.ts`, hearts on `StoreCard`, the existing Home "Order again" row now reorders in one tap (closed store shows "Closed"), Favorites chip, Reorder on the Orders tab and order detail. Reorder only FILLS THE CART (same store merges quantities; a different store replaces the cart and the message says so); it never places an order. Favorites sync between web and phone because they live on the account. Tests: 489 pass. Final fix wave (same day) fixed: stale cart read after the reorder await (web hook now reads a ref set in an effect), render-time ref lint errors, rollback after an account switch (only touches state the toggling account owns), rapid taps (per-store in-flight guard), heart before the session loads (disabled until `loaded`), Favorites filter staying on after sign-out, grey phone reorder error, and the reorder route's unhandled 500 (now JSON "Could not reorder right now"); verified live on web (one PUT on a double click, reorder fills cart, sign-out clears the filter); phone fixes verified by tsc + eslint only. Still open (deferred minors): Reorder button nested in a Link, Order-again row refreshes only on pull-to-refresh, no toggle-failure toast on the phone, the pre-existing `set-state-in-effect` lint error in `app/customer/stores/[id]/page.tsx`, a corrupt generated `.next-delivery/` that breaks tsc/build until moved aside; full list in `.superpowers/sdd/2026-10-07-c3-favorites-reorder/progress.md`. Open items: re-ingest `knowledge/` after merge (`ordering-web.md`, `ordering-mobile.md` changed) and re-run `node scripts/zippy-eval.mjs`; a real checkout of a reordered cart (uses live Gmail, Vishal's call); iPhone Expo Go check. Manuals: web v3.11, mobile v4.11. Spec `docs/superpowers/specs/2026-10-07-c3-favorites-reorder-design.md`, plan `docs/superpowers/plans/2026-10-07-c3-favorites-reorder.md`. See MEMORY.md's "C3 favorites and reorder" entry.
+**C3 favorites and reorder (2026-10-07, branch `c3-favorites-reorder`, built, reviewed and live-verified on web in Chrome and on the Android emulator; PR #23, merged into `main` 2026-10-07):** a signed-in customer can heart stores and reorder past orders on web and phone. Table `favorite_stores` (migration 36, service-role only, cascades from `users`); routes `GET /api/customer/favorites`, `PUT`/`DELETE /api/customer/favorites/[storeId]`, `GET /api/customer/reorder-options` (up to 3 most recent distinct stores from orders that are not cancelled/rejected and whose store is not suspended) and `POST /api/customer/orders/[id]/reorder` (rebuilds the lines at TODAY's prices through the shared `buildReorderLines` that Zippy's reorder card also uses; unavailable dishes are skipped and listed; a closed store is refused; another customer's order id is "not found"). Pure model `lib/favorites-model.ts` is shared BYTE-IDENTICAL with `mobile/lib/favorites-model.ts` (guarded by `tests/mobile-parity.test.mjs`). Web: `lib/favorites-store.tsx` (provider in `app/customer/layout.tsx`), `components/FavoriteHeart.tsx` on store cards and the store page, `lib/use-reorder.ts`, Home "Order again" row (closed store shows "Closed right now" and a disabled button), a "Favorites" chip (signed-in only), Reorder buttons on Your orders and on an order (hidden for cancelled/rejected). Phone: `mobile/lib/favorites-store.tsx`, `use-reorder.ts`, hearts on `StoreCard`, the existing Home "Order again" row now reorders in one tap (closed store shows "Closed"), Favorites chip, Reorder on the Orders tab and order detail. Reorder only FILLS THE CART (same store merges quantities; a different store replaces the cart and the message says so); it never places an order. Favorites sync between web and phone because they live on the account. Tests: 489 pass. Final fix wave (same day) fixed: stale cart read after the reorder await (web hook now reads a ref set in an effect), render-time ref lint errors, rollback after an account switch (only touches state the toggling account owns), rapid taps (per-store in-flight guard), heart before the session loads (disabled until `loaded`), Favorites filter staying on after sign-out, grey phone reorder error, and the reorder route's unhandled 500 (now JSON "Could not reorder right now"); verified live on web (one PUT on a double click, reorder fills cart, sign-out clears the filter); phone fixes verified by tsc + eslint only. Still open (deferred minors): Reorder button nested in a Link, Order-again row refreshes only on pull-to-refresh, no toggle-failure toast on the phone, the pre-existing `set-state-in-effect` lint error in `app/customer/stores/[id]/page.tsx`, a corrupt generated `.next-delivery/` that breaks tsc/build until moved aside; full list in `.superpowers/sdd/2026-10-07-c3-favorites-reorder/progress.md`. Open items: re-ingest `knowledge/` after merge (`ordering-web.md`, `ordering-mobile.md` changed) and re-run `node scripts/zippy-eval.mjs`; a real checkout of a reordered cart (uses live Gmail, Vishal's call); iPhone Expo Go check. Manuals: web v3.11, mobile v4.11.1 (an "Update Manuals" pass the same day found two stale phone-manual statements that still called the hearts "local-only" and removed them). Spec `docs/superpowers/specs/2026-10-07-c3-favorites-reorder-design.md`, plan `docs/superpowers/plans/2026-10-07-c3-favorites-reorder.md`. See MEMORY.md's "C3 favorites and reorder" entry.
 **Gotcha for demos/tests:** workflow 04 auto-assigns a `ready` order within
 ~10 s to the NEAREST ONLINE partner by stored lat/lng, so it never reaches the
 "Available" list while any online partner has coordinates — a leftover online
@@ -984,24 +984,81 @@ so and stop. Steps, in order:
 
 ## Standing phrase: "Commit Work" — NON-NEGOTIABLE
 
-When Vishal says **"Commit Work"** in this project, perform these three
-steps in sequence, every time, without asking for confirmation on each
-individual step (this phrase is the standing pre-authorization for all
-three, including the push to `origin`):
+When Vishal says **"Commit Work"** in this project, perform these steps in
+sequence, every time, without asking for confirmation on each individual
+step (this phrase is the standing pre-authorization for all of them,
+including the push to `origin` and the merge into and push of `main`;
+set by Vishal on 2026-10-07):
 
-1. **Update project memory docs** — `CLAUDE.md`, `MEMORY.md`, `README.md`,
-   and `AGENTS.md` if it needs a change given what's being committed (per
-   the global "Update CLAUDE files" rule — check each one even if a given
-   file turns out to need no change).
+1. **Update project memory docs** — `CLAUDE.md`, `MEMORY.md`, `README.md`
+   and `AGENTS.md` with the latest changes (per the global "Update CLAUDE
+   files" rule — check each one every time and say in the report whether
+   it needed a change, even if it turns out to need none; also any other
+   standing project-memory doc the project has, such as `rules.md` if it
+   exists).
 2. **Commit** the staged/relevant changes with a clear message describing
    what changed and why (per the global commit-message rules — never
    `--no-verify`, never amend, review `git status`/diff for secrets first).
-3. **Push to `origin`** on the current branch.
+3. **Push the current branch to `origin`.**
+4. **Pull and merge to `main`:** `git checkout main`, `git pull origin main`
+   (fast-forward or merge, no rebase of published history), then
+   `git merge <branch>` (fast-forward when possible). Run the full test
+   suite (`node --test tests/*.test.mjs`) on the merged result.
+5. **Push `main` to `origin`** once the merged result is green.
 
-If step 2's commit would include anything that looks like a secret, or if
-`origin` isn't reachable/authorized (as has happened before in this repo —
-see `md_version/HANDOFF_2.md` for the collaborator-access issue), stop and
-report the problem rather than silently skipping the step.
+If already on `main`, steps 3 and 4 collapse to `git pull origin main`
+before committing, then push `main` (step 5).
+
+Stop and report (never force, never `--no-verify`, never `git reset --hard`,
+never delete the branch) when: the commit would include anything that looks
+like a secret; `origin` isn't reachable/authorized (as has happened before in
+this repo — see `md_version/HANDOFF_2.md` for the collaborator-access issue);
+the tests fail on the merged result (leave the merge local and unpushed and
+show the failure); or the merge hits a conflict in anything other than
+documentation files. A conflict limited to the memory docs themselves
+(`CLAUDE.md`, `MEMORY.md`, `README.md`, `AGENTS.md`) may be resolved by keeping
+both sides' content; resolve it, say exactly what was merged, and continue.
+Keep the feature branch after merging (an open PR may still need it).
+
+## Standing phrase: "Update Manuals" — NON-NEGOTIABLE
+
+When Vishal says **"Update Manuals"**, bring EVERY user manual in `docs/` up to
+date with what has changed since they were last refreshed (set by Vishal on
+2026-10-07). Today that means `docs/User_Manual.docx` (web) and
+`docs/Mobile_App_User_Manual.docx` (phone) plus their `.pdf` exports; any other
+`docs/*User_Manual*.docx` added later is included automatically (list
+`docs/*User_Manual*` first instead of assuming these two). `Usage_Guide.docx`,
+`UserList.docx` and `n8n-workflow-setup-guide.docx` are not user manuals and are
+left alone unless Vishal names them. Procedure:
+
+1. **Find what changed:** compare the manuals' current version label and content
+   with `git log`, `MEMORY.md` and the knowledge files since the last
+   manuals commit; verify each described behaviour against the code (the manuals
+   are fact-checked like `knowledge/`, never written from memory).
+2. **Edit in place with python-docx**, never by re-running the old `build.js`;
+   bump the version label the way earlier edits did; renumber the hand-typed
+   static TOC after every edit (convert to PDF with
+   `C:\Program Files\LibreOffice\program\soffice.exe --headless --convert-to pdf`,
+   read each chapter's start page, replace the whole text after the tab in each
+   TOC line — some lines split the page number across two runs); regenerate the
+   `.pdf` of every manual you touched and confirm the TOC matches. See the
+   "Update `docs/User_Manual.docx` / `Mobile_App_User_Manual.docx` by editing the
+   existing file in place" rule and MEMORY.md's "Manuals refreshed" entry.
+3. **Screenshots, when a change needs a new or replaced figure — browser order is
+   fixed:** use **Claude in Chrome** first (`mcp__claude-in-chrome__*`; load the
+   tools with one ToolSearch call, call `tabs_context_mcp` first, work in a NEW
+   tab, avoid JS dialogs). Switch to **Playwright** (`mcp__plugin_playwright_*`)
+   only if Claude in Chrome cannot connect or keeps failing (2-3 attempts), and say
+   in the report that you fell back and why. Web figures come from a production
+   build (`npx next build` then `npx next start -p 3000`; never `next dev`, so no
+   dev badge), phone figures from the Android emulator (`docs/ANDROID_TESTING.md`).
+   Do NOT start n8n or `npm run app:start` for screenshots (the Gmail workflows
+   send real email). Use throwaway test data only; blur or mosaic any real
+   personal data (emails, phone numbers, addresses) and delete the throwaway
+   rows when finished.
+4. Report which manuals changed, the new version labels, page counts, and the
+   screenshots added or replaced. Committing the result is a separate step
+   ("Commit Work").
 
 <!-- BEGIN:nextjs-agent-rules -->
 
