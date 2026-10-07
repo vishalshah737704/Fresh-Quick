@@ -14,6 +14,7 @@ import {
   type RawOrderListRow,
 } from "@/lib/order-detail";
 import { STATUS_LABEL } from "@/lib/order-status";
+import { useReorder } from "@/lib/use-reorder";
 
 const MAX_THUMBS = 4;
 
@@ -22,6 +23,7 @@ export default function CustomerOrdersPage() {
   const { userId, loading: sessionLoading } = useSession();
   const [orders, setOrders] = useState<OrderListRow[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const { busyOrderId, notice, error: reorderError, reorder } = useReorder();
 
   useEffect(() => {
     if (sessionLoading || !userId) return;
@@ -57,6 +59,8 @@ export default function CustomerOrdersPage() {
     <div>
       <h1 className="mb-6 text-2xl font-bold text-brand-ink">Your orders</h1>
       {error && <p className="text-red-600">{error}</p>}
+      {notice && <p className="mb-3 text-sm text-brand-ink-muted" role="status">{notice}</p>}
+      {reorderError && <p className="mb-3 text-sm text-red-600" role="alert">{reorderError}</p>}
       {orders === null && !error && <p className="text-gray-500">Loading…</p>}
       {orders !== null && orders.length === 0 && (
         <p className="text-brand-ink-muted">You haven&apos;t placed any orders yet.</p>
@@ -97,6 +101,20 @@ export default function CustomerOrdersPage() {
                 {formatPaise(Math.round(order.total * 100))}
               </p>
             </div>
+            {order.status !== "cancelled" && order.status !== "rejected" && (
+              <button
+                type="button"
+                disabled={busyOrderId !== null}
+                onClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  reorder(order.id);
+                }}
+                className="self-start rounded-[var(--radius-pill)] border border-brand-primary px-4 py-1.5 text-sm font-semibold text-brand-primary-text-safe disabled:opacity-50"
+              >
+                {busyOrderId === order.id ? "Adding…" : "Reorder"}
+              </button>
+            )}
           </Link>
         ))}
       </div>

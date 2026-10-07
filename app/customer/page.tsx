@@ -14,6 +14,12 @@ import { CategoryIconRow } from "@/components/CategoryIconRow";
 import { HeaderSearchBox } from "@/components/HeaderSearchBox";
 import { SortFilterBar, type SortOption } from "@/components/SortFilterBar";
 import { CATEGORY_ICONS, CATEGORY_ORDER, type CategoryType } from "@/lib/category-icons";
+import Link from "next/link";
+import { useFavorites } from "@/lib/favorites-store";
+import { useReorder } from "@/lib/use-reorder";
+import { customerFetch } from "@/lib/customer-api";
+import { REORDER_OPTIONS_PATH, type ReorderOption } from "@/lib/favorites-model";
+import { useSession } from "@/lib/auth";
 
 type Restaurant = {
   id: string;
@@ -59,6 +65,29 @@ function CustomerHomeContent() {
   const [sortBy, setSortBy] = useState<SortOption>("distance");
   const [under30, setUnder30] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { userId } = useSession();
+  const { ids: favoriteIds } = useFavorites();
+  const { busyOrderId, notice, error: reorderError, reorder } = useReorder();
+  const [favoritesOnly, setFavoritesOnly] = useState(false);
+  // Tagged with the account that fetched them so a sign-out never shows stale options
+  // (and no synchronous reset inside the effect, which react-hooks/set-state-in-effect rejects).
+  const [fetchedOptions, setFetchedOptions] = useState<{ owner: string; options: ReorderOption[] } | null>(null);
+  const reorderOptions = userId && fetchedOptions?.owner === userId ? fetchedOptions.options : [];
+
+  useEffect(() => {
+    if (!userId) return;
+    let cancelled = false;
+    customerFetch<{ options: ReorderOption[] }>(REORDER_OPTIONS_PATH)
+      .then((res) => {
+        if (!cancelled) setFetchedOptions({ owner: userId, options: res.options });
+      })
+      .catch(() => {
+        if (!cancelled) setFetchedOptions({ owner: userId, options: [] });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [userId]);
 
   useEffect(() => {
     let cancelled = false;
@@ -123,7 +152,10 @@ function CustomerHomeContent() {
   // differs from the sort dropdown, which only reorders the two flat-grid
   // paths below.
   const searched = withDistance.filter(
-    ({ r }) => matchesQuery(r) && (!under30 || r.avg_prep_minutes < 30)
+    ({ r }) =>
+      matchesQuery(r) &&
+      (!under30 || r.avg_prep_minutes < 30) &&
+      (!favoritesOnly || favoriteIds.has(r.id))
   );
 
   const filtered = searched.filter(
@@ -182,6 +214,29 @@ function CustomerHomeContent() {
     <div className="flex flex-col gap-6">
       <HeroSearch />
       <PromoBanner message="Free delivery on your first order 🎉" />
+      {reorderOptions.length > 0 && (
+        <section aria-label="Order again">
+          <h2 className="mb-2 font-heading text-lg text-brand-ink">Order again</h2>
+          {notice && <p className="mb-2 text-sm text-brand-ink-muted" role="status">{notice}</p>}
+          {reorderError && <p className="mb-2 text-sm text-red-600" role="alert">{reorderError}</p>}
+          <div className="flex gap-3 overflow-x-auto pb-2">
+            {reorderOptions.map((option) => (
+              <div key={option.storeId} className="flex w-56 shrink-0 flex-col gap-2 rounded-[var(--radius-card)] border border-brand-ink-muted/10 bg-brand-surface p-3">
+                <Link href={`/customer/stores/${option.storeId}`} className="font-semibold text-brand-ink">{option.storeName}</Link>
+                {!option.isOpen && <p className="text-xs text-brand-ink-muted">Closed right now</p>}
+                <button
+                  type="button"
+                  disabled={busyOrderId !== null || !option.isOpen}
+                  onClick={() => reorder(option.lastOrderId)}
+                  className="rounded-[var(--radius-pill)] bg-brand-primary px-3 py-1.5 text-sm font-semibold text-white disabled:opacity-50"
+                >
+                  {busyOrderId === option.lastOrderId ? "Adding…" : "Reorder"}
+                </button>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
       <HeaderSearchBox
         value={searchQuery}
         onChange={setSearchQuery}
@@ -190,6 +245,18 @@ function CustomerHomeContent() {
       />
       <CategoryIconRow activeCategory={validCategory} />
       <SortFilterBar sortBy={sortBy} onSortByChange={setSortBy} under30={under30} onUnder30Toggle={setUnder30} />
+      {userId && (
+        <div>
+          <button
+            type="button"
+            aria-pressed={favoritesOnly}
+            onClick={() => setFavoritesOnly((v) => !v)}
+            className={`rounded-[var(--radius-pill)] border px-4 py-1.5 text-sm font-semibold ${favoritesOnly ? "border-brand-primary bg-brand-primary text-white" : "border-brand-ink-muted/20 bg-brand-surface text-brand-ink"}`}
+          >
+            ♥ Favorites
+          </button>
+        </div>
+      )}
       {(validCategory === null || validCategory === "restaurant") && (
         <CuisineChipRow cuisines={cuisines} selected={selectedCuisine} onSelect={setSelectedCuisine} />
       )}
@@ -212,7 +279,9 @@ function CustomerHomeContent() {
         )
       ) : searched.length === 0 ? (
         <p className="text-brand-ink-muted">
-          {under30 ? (
+          {favoritesOnly ? (
+            "You have no favorite stores here yet. Tap the heart on a store to add one."
+          ) : under30 ? (
             searchQuery.trim() === "" ? (
               "No restaurants deliver in under 30 min right now."
             ) : (

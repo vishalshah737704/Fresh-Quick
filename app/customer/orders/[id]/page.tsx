@@ -17,6 +17,7 @@ import {
   type RawOrderDetail,
 } from "@/lib/order-detail";
 import { STATUS_MESSAGE, isTerminalStatus } from "@/lib/order-status";
+import { useReorder } from "@/lib/use-reorder";
 
 type PartnerLocation = {
   current_lat: number | null;
@@ -35,6 +36,7 @@ export default function OrderConfirmationPage() {
   const [celebrating, setCelebrating] = useState(false);
   const [dismissed, setDismissed] = useState(false);
   const [sawPickedUp, setSawPickedUp] = useState(false);
+  const { busyOrderId, notice, error: reorderError, reorder } = useReorder();
 
   const postComplete = useCallback(async (): Promise<number> => {
     try {
@@ -156,6 +158,21 @@ export default function OrderConfirmationPage() {
             )}
 
             <OrderDetailView order={order} />
+
+            {order.status !== "cancelled" && order.status !== "rejected" && (
+              <div>
+                {notice && <p className="mb-2 text-sm text-brand-ink-muted" role="status">{notice}</p>}
+                {reorderError && <p className="mb-2 text-sm text-red-600" role="alert">{reorderError}</p>}
+                <button
+                  type="button"
+                  disabled={busyOrderId !== null}
+                  onClick={() => reorder(order.id)}
+                  className="rounded-[var(--radius-pill)] bg-brand-primary px-5 py-2 font-semibold text-white disabled:opacity-50"
+                >
+                  {busyOrderId === order.id ? "Adding…" : "Reorder"}
+                </button>
+              </div>
+            )}
           </>
         )}
       </div>
