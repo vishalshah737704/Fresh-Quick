@@ -207,12 +207,11 @@ export type ReorderSource = {
   lines: { product_id: string; quantity: number; note: string | null; option_ids: (string | null)[] }[];
 };
 
-export function buildReorderCard(
+export function buildReorderLines(
   source: ReorderSource,
   products: Map<string, ProductForCart>,
-  deps: ActionShapeDeps,
-  cart?: CartSnapshot | null
-): { ok: true; card: ActionCard } | { ok: false; error: string } {
+  deps: ActionShapeDeps
+): { ok: true; items: CartLineData[]; skipped: { name: string; reason: string }[]; storeName: string; totalPaise: number } | { ok: false; error: string } {
   const items: CartLineData[] = [];
   const skipped: { name: string; reason: string }[] = [];
   let storeName: string | null = null;
@@ -263,6 +262,18 @@ export function buildReorderCard(
     totalPaise += unitPaise(product, chosen.selected, deps) * quantity;
   }
   if (items.length === 0 || storeName === null) return { ok: false, error: "None of the items can be reordered right now" };
+  return { ok: true, items, skipped, storeName, totalPaise };
+}
+
+export function buildReorderCard(
+  source: ReorderSource,
+  products: Map<string, ProductForCart>,
+  deps: ActionShapeDeps,
+  cart?: CartSnapshot | null
+): { ok: true; card: ActionCard } | { ok: false; error: string } {
+  const built = buildReorderLines(source, products, deps);
+  if (!built.ok) return built;
+  const { items, skipped, storeName, totalPaise } = built;
   const count = items.length;
   const itemText = (line: CartLineData) =>
     `${line.quantity} × ${line.name}${optionText(line.selectedOptions, deps)}${line.specialInstructions === null ? "" : noteText(line.specialInstructions, LIMITS.maxNoteShown)}`;
