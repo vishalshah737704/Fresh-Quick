@@ -15,11 +15,17 @@ export async function POST(request: NextRequest, ctx: Ctx) {
   if (uuidsOnly([id]).length !== 1) return NextResponse.json({ error: "not found" }, { status: 404 });
 
   // The reader filters on the verified customer id, so another customer's order id is simply "not found".
-  const source = await ordersReader.getReorderSource(who.userId, { order_id: id.toLowerCase() });
-  if ("error" in source) return NextResponse.json({ error: "not found" }, { status: 404 });
-
-  const products = await loadProductsForCart(source.lines.map((line) => line.product_id));
-  const built = buildReorderLines(source, products, { sanitize: sanitizeText, toPaise, formatRupees, newId: () => "reorder" });
+  let source: Awaited<ReturnType<typeof ordersReader.getReorderSource>>;
+  let built: ReturnType<typeof buildReorderLines>;
+  try {
+    source = await ordersReader.getReorderSource(who.userId, { order_id: id.toLowerCase() });
+    if ("error" in source) return NextResponse.json({ error: "not found" }, { status: 404 });
+    const products = await loadProductsForCart(source.lines.map((line) => line.product_id));
+    built = buildReorderLines(source, products, { sanitize: sanitizeText, toPaise, formatRupees, newId: () => "reorder" });
+  } catch (err) {
+    console.error("reorder failed", err);
+    return NextResponse.json({ error: "Could not reorder right now" }, { status: 500 });
+  }
   if (!built.ok) {
     return NextResponse.json({ error: built.error }, { status: built.error === "not found" ? 404 : 409 });
   }

@@ -307,7 +307,7 @@ export default function CustomerHomeScreen() {
             <View>
               <Text style={styles.sectionHeading}>Order again</Text>
               {notice && <Text style={styles.reorderNotice}>{notice}</Text>}
-              {reorderError && <Text style={[styles.errorText, styles.reorderNotice]}>{reorderError}</Text>}
+              {reorderError && <Text style={[styles.reorderNotice, styles.errorText]}>{reorderError}</Text>}
               <FlatList
                 horizontal
                 data={reorderStores}

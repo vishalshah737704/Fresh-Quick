@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useFavorites } from "@/lib/favorites-store";
 
 export function FavoriteHeart({ storeId, className = "" }: { storeId: string; className?: string }) {
-  const { isFavorite, toggle } = useFavorites();
+  const { isFavorite, toggle, loaded } = useFavorites();
   const router = useRouter();
   const pathname = usePathname();
   const [failed, setFailed] = useState(false);
@@ -15,6 +15,7 @@ export function FavoriteHeart({ storeId, className = "" }: { storeId: string; cl
     <button
       type="button"
       aria-pressed={on}
+      disabled={!loaded}
       aria-label={on ? "Remove from favorites" : "Add to favorites"}
       title={failed ? "Could not update favorite" : undefined}
       className={`flex h-8 w-8 items-center justify-center rounded-full bg-brand-surface text-lg shadow ${className}`}

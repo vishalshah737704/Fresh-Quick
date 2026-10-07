@@ -1,12 +1,17 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useCart } from "@/lib/cart-store";
 import { customerFetch } from "@/lib/customer-api";
 import { isReorderBusy, reorderNotice, reorderPath, type ReorderResponse } from "@/lib/favorites-model";
 
 export function useReorder() {
   const cart = useCart();
+  // The cart can change while the request is in flight, so read it after the await from a ref, not the closure.
+  const cartRef = useRef(cart);
+  useEffect(() => {
+    cartRef.current = cart;
+  });
   const [busyOrderId, setBusyOrderId] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -21,11 +26,12 @@ export function useReorder() {
     setError(null);
     try {
       const result = await customerFetch<ReorderResponse>(reorderPath(orderId), { method: "POST" });
-      const replacing = cart.storeId !== null && cart.storeId !== result.storeId && cart.items.length > 0;
+      const current = cartRef.current;
+      const replacing = current.storeId !== null && current.storeId !== result.storeId && current.items.length > 0;
       const replaced = replacing
-        ? { count: cart.items.reduce((sum, line) => sum + line.quantity, 0), storeName: cart.storeName }
+        ? { count: current.items.reduce((sum, line) => sum + line.quantity, 0), storeName: current.storeName }
         : null;
-      cart.addItems(result.storeId, result.storeName, result.lines, replacing);
+      current.addItems(result.storeId, result.storeName, result.lines, replacing);
       setNotice(reorderNotice({ storeName: result.storeName, added: result.lines.length, skipped: result.skipped, replaced }));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not reorder");

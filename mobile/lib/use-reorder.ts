@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useCart } from "./cart-store";
 import { apiFetch } from "./api";
 import { isReorderBusy, reorderNotice, reorderPath, type ReorderResponse } from "./favorites-model";
@@ -7,7 +7,9 @@ export function useReorder() {
   const cart = useCart();
   // The cart can change while the request is in flight, so read it after the await from a ref, not the closure.
   const cartRef = useRef(cart);
-  cartRef.current = cart;
+  useEffect(() => {
+    cartRef.current = cart;
+  });
   const [busyOrderId, setBusyOrderId] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);

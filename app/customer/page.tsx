@@ -151,11 +151,12 @@ function CustomerHomeContent() {
   // everything via `filtered`. See plan's Global Constraints for why this
   // differs from the sort dropdown, which only reorders the two flat-grid
   // paths below.
+  const favoritesActive = favoritesOnly && !!userId;
   const searched = withDistance.filter(
     ({ r }) =>
       matchesQuery(r) &&
       (!under30 || r.avg_prep_minutes < 30) &&
-      (!favoritesOnly || favoriteIds.has(r.id))
+      (!favoritesActive || favoriteIds.has(r.id))
   );
 
   const filtered = searched.filter(
@@ -279,7 +280,7 @@ function CustomerHomeContent() {
         )
       ) : searched.length === 0 ? (
         <p className="text-brand-ink-muted">
-          {favoritesOnly ? (
+          {favoritesActive ? (
             "You have no favorite stores here yet. Tap the heart on a store to add one."
           ) : under30 ? (
             searchQuery.trim() === "" ? (

@@ -18,8 +18,11 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
   // switch can never show the previous account's hearts.
   const [state, setState] = useState<{ owner: string | null; ids: Set<string> }>({ owner: null, ids: new Set() });
   const ids = userId && state.owner === userId ? state.ids : EMPTY_IDS;
+  const inFlightRef = useRef<Set<string>>(new Set());
   const idsRef = useRef(ids);
-  idsRef.current = ids;
+  useEffect(() => {
+    idsRef.current = ids;
+  }, [ids]);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setUserId(data.session?.user.id ?? null));
@@ -45,21 +48,28 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
   const toggle = useCallback(
     async (storeId: string): Promise<"ok" | "failed"> => {
       if (!userId) return "failed";
+      // A second tap while this store's request is pending is ignored, so taps cannot interleave.
+      if (inFlightRef.current.has(storeId)) return "ok";
+      inFlightRef.current.add(storeId);
       const wasFavorite = idsRef.current.has(storeId);
-      const apply = (on: boolean) =>
+      const apply = (on: boolean, rollback: boolean) =>
         setState((prev) => {
+          // A rollback must not touch state that now belongs to a different account.
+          if (rollback && prev.owner !== userId) return prev;
           const next = new Set(prev.owner === userId ? prev.ids : []);
           if (on) next.add(storeId);
           else next.delete(storeId);
           return { owner: userId, ids: next };
         });
-      apply(!wasFavorite);
+      apply(!wasFavorite, false);
       try {
         await apiFetch(`${FAVORITES_PATH}/${storeId}`, { method: wasFavorite ? "DELETE" : "PUT" });
         return "ok";
       } catch {
-        apply(wasFavorite);
+        apply(wasFavorite, true);
         return "failed";
+      } finally {
+        inFlightRef.current.delete(storeId);
       }
     },
     [userId]

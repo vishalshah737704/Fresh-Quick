@@ -89,7 +89,7 @@ It shows your name and email, a Reset password link, Wallet (a read-only list of
 
 ## How do I save a favorite store in the mobile app?
 
-Sign in, then tap the heart on a store card. A filled heart means the store is saved; tap it again to remove it. Favorites are saved on your account, so they also show on the website, and the other way round.
+Sign in, then tap the heart on a store card or on the store page. A filled heart means the store is saved; tap it again to remove it. Favorites are saved on your account, so they also show on the website, and the other way round.
 
 ## How do I see my favorite stores in the mobile app?
 
