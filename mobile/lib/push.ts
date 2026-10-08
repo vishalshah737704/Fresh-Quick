@@ -9,6 +9,18 @@ import { pushTapTarget } from "./push-target";
 
 type Fetcher = typeof apiFetch;
 
+// Android Expo Go cannot do remote push (removed in SDK 53) and loading expo-notifications there
+// logs an error that dev mode shows as a red screen, so never load it in that case.
+function pushUnsupported(): boolean {
+  if (Platform.OS !== "android") return false;
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    return require("expo-constants").default?.executionEnvironment === "storeClient";
+  } catch {
+    return false;
+  }
+}
+
 let handlerSet = false;
 let registeredToken: string | null = null;
 
@@ -28,6 +40,7 @@ function setForegroundHandler(Notifications: any) {
 }
 
 export async function registerForPush(fetcher: Fetcher): Promise<void> {
+  if (pushUnsupported()) return;
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const Notifications = require("expo-notifications");
@@ -87,6 +100,7 @@ export function usePushRegistration(): void {
 // layout signs out on every fresh launch, so there is no session to open an order with.
 export function usePushTapHandler(): void {
   useEffect(() => {
+    if (pushUnsupported()) return;
     let subscription: { remove: () => void } | null = null;
     try {
       // eslint-disable-next-line @typescript-eslint/no-require-imports

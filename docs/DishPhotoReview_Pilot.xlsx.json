@@ -1,0 +1,842 @@
+[
+ {
+  "product_id": "a0a00000-4444-4444-4444-000000000039",
+  "store": "Juice Junction",
+  "name": "Junction Aloe Vera Juice",
+  "proposed_id": "36663534"
+ },
+ {
+  "product_id": "a0a00000-4444-4444-4444-000000000010",
+  "store": "Juice Junction",
+  "name": "Junction Apple Juice",
+  "proposed_id": "8228301"
+ },
+ {
+  "product_id": "a0a00000-4444-4444-4444-000000000008",
+  "store": "Juice Junction",
+  "name": "Junction Beetroot Juice",
+  "proposed_id": "161440"
+ },
+ {
+  "product_id": "a0a00000-4444-4444-4444-000000000017",
+  "store": "Juice Junction",
+  "name": "Junction Cappuccino",
+  "proposed_id": "35285617"
+ },
+ {
+  "product_id": "a0a00000-4444-4444-4444-000000000009",
+  "store": "Juice Junction",
+  "name": "Junction Carrot Juice",
+  "proposed_id": "4443447"
+ },
+ {
+  "product_id": "a0a00000-4444-4444-4444-000000000016",
+  "store": "Juice Junction",
+  "name": "Junction Cold Coffee",
+  "proposed_id": "18142624"
+ },
+ {
+  "product_id": "a0a00000-4444-4444-4444-000000000047",
+  "store": "Juice Junction",
+  "name": "Junction Dragon Fruit Juice",
+  "proposed_id": "37065935"
+ },
+ {
+  "product_id": "a0a00000-4444-4444-4444-000000000019",
+  "store": "Juice Junction",
+  "name": "Junction Espresso Shot",
+  "proposed_id": "12620633"
+ },
+ {
+  "product_id": "a0a00000-4444-4444-4444-000000000033",
+  "store": "Juice Junction",
+  "name": "Junction Grape Juice",
+  "proposed_id": "3842608"
+ },
+ {
+  "product_id": "a0a00000-4444-4444-4444-000000000035",
+  "store": "Juice Junction",
+  "name": "Junction Guava Juice",
+  "proposed_id": "2134037"
+ },
+ {
+  "product_id": "a0a00000-4444-4444-4444-000000000050",
+  "store": "Juice Junction",
+  "name": "Junction Iced Latte",
+  "proposed_id": "4869289"
+ },
+ {
+  "product_id": "a0a00000-4444-4444-4444-000000000012",
+  "store": "Juice Junction",
+  "name": "Junction Kiwi Juice",
+  "proposed_id": "36541014"
+ },
+ {
+  "product_id": "a0a00000-4444-4444-4444-000000000018",
+  "store": "Juice Junction",
+  "name": "Junction Latte",
+  "proposed_id": "997670"
+ },
+ {
+  "product_id": "a0a00000-4444-4444-4444-000000000013",
+  "store": "Juice Junction",
+  "name": "Junction Mixed Fruit Juice",
+  "proposed_id": "6895957"
+ },
+ {
+  "product_id": "a0a00000-4444-4444-4444-000000000020",
+  "store": "Juice Junction",
+  "name": "Junction Mocha",
+  "proposed_id": "2226091"
+ },
+ {
+  "product_id": "a0a00000-4444-4444-4444-000000000048",
+  "store": "Juice Junction",
+  "name": "Junction Passion Fruit Juice",
+  "proposed_id": "18142606"
+ },
+ {
+  "product_id": "a0a00000-4444-4444-4444-000000000004",
+  "store": "Juice Junction",
+  "name": "Junction Pineapple Juice",
+  "proposed_id": "27275592"
+ },
+ {
+  "product_id": "a0a00000-4444-4444-4444-000000000011",
+  "store": "Juice Junction",
+  "name": "Junction Pomegranate Juice",
+  "proposed_id": "29596450"
+ },
+ {
+  "product_id": "a0a00000-4444-4444-4444-000000000037",
+  "store": "Juice Junction",
+  "name": "Junction Spinach Detox Juice",
+  "proposed_id": "8169572"
+ },
+ {
+  "product_id": "a0a00000-4444-4444-4444-000000000015",
+  "store": "Juice Junction",
+  "name": "Junction Sugarcane Juice",
+  "proposed_id": "18295371"
+ },
+ {
+  "product_id": "a0a00000-4444-4444-4444-000000000032",
+  "store": "Juice Junction",
+  "name": "Junction Sweet Lime Juice",
+  "proposed_id": "2962142"
+ },
+ {
+  "product_id": "a0a00000-4444-4444-4444-000000000003",
+  "store": "Juice Junction",
+  "name": "Junction Watermelon Juice",
+  "proposed_id": "11009203"
+ },
+ {
+  "product_id": "a0a00000-4444-4444-4444-000000000030",
+  "store": "Juice Junction",
+  "name": "Junction Buttermilk",
+  "proposed_id": "39850858"
+ },
+ {
+  "product_id": "a0a00000-4444-4444-4444-000000000014",
+  "store": "Juice Junction",
+  "name": "Junction Coconut Water",
+  "proposed_id": "16960976"
+ },
+ {
+  "product_id": "a0a00000-4444-4444-4444-000000000040",
+  "store": "Juice Junction",
+  "name": "Junction Cucumber Mint Cooler",
+  "proposed_id": "30591641"
+ },
+ {
+  "product_id": "a0a00000-4444-4444-4444-000000000038",
+  "store": "Juice Junction",
+  "name": "Junction Ginger Lemon Shot",
+  "proposed_id": "4443464"
+ },
+ {
+  "product_id": "a0a00000-4444-4444-4444-000000000049",
+  "store": "Juice Junction",
+  "name": "Junction Herbal Immunity Shot",
+  "proposed_id": "7615474"
+ },
+ {
+  "product_id": "a0a00000-4444-4444-4444-000000000025",
+  "store": "Juice Junction",
+  "name": "Junction Hot Chocolate",
+  "proposed_id": "5429267"
+ },
+ {
+  "product_id": "a0a00000-4444-4444-4444-000000000041",
+  "store": "Juice Junction",
+  "name": "Junction Jaljeera",
+  "proposed_id": "55588"
+ },
+ {
+  "product_id": "a0a00000-4444-4444-4444-000000000029",
+  "store": "Juice Junction",
+  "name": "Junction Kesar Milk",
+  "proposed_id": "33430555"
+ },
+ {
+  "product_id": "a0a00000-4444-4444-4444-000000000043",
+  "store": "Juice Junction",
+  "name": "Junction Lassi Salted",
+  "proposed_id": "18142611"
+ },
+ {
+  "product_id": "a0a00000-4444-4444-4444-000000000042",
+  "store": "Juice Junction",
+  "name": "Junction Lassi Sweet",
+  "proposed_id": "17200460"
+ },
+ {
+  "product_id": "a0a00000-4444-4444-4444-000000000031",
+  "store": "Juice Junction",
+  "name": "Junction Rose Milk",
+  "proposed_id": "28985887"
+ },
+ {
+  "product_id": "a0a00000-4444-4444-4444-000000000006",
+  "store": "Juice Junction",
+  "name": "Junction Banana Shake",
+  "proposed_id": "775030"
+ },
+ {
+  "product_id": "a0a00000-4444-4444-4444-000000000045",
+  "store": "Juice Junction",
+  "name": "Junction Chikoo Shake",
+  "proposed_id": "12448626"
+ },
+ {
+  "product_id": "a0a00000-4444-4444-4444-000000000026",
+  "store": "Juice Junction",
+  "name": "Junction Chocolate Milkshake",
+  "proposed_id": "7429595"
+ },
+ {
+  "product_id": "a0a00000-4444-4444-4444-000000000028",
+  "store": "Juice Junction",
+  "name": "Junction Oreo Milkshake",
+  "proposed_id": "39948188"
+ },
+ {
+  "product_id": "a0a00000-4444-4444-4444-000000000027",
+  "store": "Juice Junction",
+  "name": "Junction Vanilla Milkshake",
+  "proposed_id": "18142623"
+ },
+ {
+  "product_id": "a0a00000-4444-4444-4444-000000000036",
+  "store": "Juice Junction",
+  "name": "Junction Avocado Smoothie",
+  "proposed_id": "16096610"
+ },
+ {
+  "product_id": "a0a00000-4444-4444-4444-000000000044",
+  "store": "Juice Junction",
+  "name": "Junction Blueberry Smoothie",
+  "proposed_id": "4753639"
+ },
+ {
+  "product_id": "a0a00000-4444-4444-4444-000000000046",
+  "store": "Juice Junction",
+  "name": "Junction Fig Smoothie",
+  "proposed_id": "9351341"
+ },
+ {
+  "product_id": "a0a00000-4444-4444-4444-000000000005",
+  "store": "Juice Junction",
+  "name": "Junction Mango Smoothie",
+  "proposed_id": "12119029"
+ },
+ {
+  "product_id": "a0a00000-4444-4444-4444-000000000034",
+  "store": "Juice Junction",
+  "name": "Junction Papaya Smoothie",
+  "proposed_id": "5507729"
+ },
+ {
+  "product_id": "a0a00000-4444-4444-4444-000000000007",
+  "store": "Juice Junction",
+  "name": "Junction Strawberry Smoothie",
+  "proposed_id": "11410545"
+ },
+ {
+  "product_id": "a0a00000-4444-4444-4444-000000000021",
+  "store": "Juice Junction",
+  "name": "Junction Green Tea",
+  "proposed_id": "8330337"
+ },
+ {
+  "product_id": "a0a00000-4444-4444-4444-000000000022",
+  "store": "Juice Junction",
+  "name": "Junction Lemon Iced Tea",
+  "proposed_id": "11009226"
+ },
+ {
+  "product_id": "a0a00000-4444-4444-4444-000000000024",
+  "store": "Juice Junction",
+  "name": "Junction Masala Chai",
+  "proposed_id": "18413481"
+ },
+ {
+  "product_id": "a0a00000-4444-4444-4444-000000000023",
+  "store": "Juice Junction",
+  "name": "Junction Peach Iced Tea",
+  "proposed_id": "12420824"
+ },
+ {
+  "product_id": "a0200000-4444-4444-4444-000000000025",
+  "store": "Punjabi Dhaba",
+  "name": "Dhaba Lassi Salted",
+  "proposed_id": "6808666"
+ },
+ {
+  "product_id": "a0200000-4444-4444-4444-000000000049",
+  "store": "Punjabi Dhaba",
+  "name": "Dhaba Punjabi Chaas",
+  "proposed_id": "16233914"
+ },
+ {
+  "product_id": "a0200000-4444-4444-4444-000000000043",
+  "store": "Punjabi Dhaba",
+  "name": "Dhaba Amritsari Kulfi",
+  "proposed_id": "36576778"
+ },
+ {
+  "product_id": "a0200000-4444-4444-4444-000000000034",
+  "store": "Punjabi Dhaba",
+  "name": "Dhaba Gajar Halwa",
+  "proposed_id": "20446398"
+ },
+ {
+  "product_id": "a0200000-4444-4444-4444-000000000035",
+  "store": "Punjabi Dhaba",
+  "name": "Dhaba Kheer Punjabi Style",
+  "proposed_id": "9609853"
+ },
+ {
+  "product_id": "a0200000-4444-4444-4444-000000000044",
+  "store": "Punjabi Dhaba",
+  "name": "Dhaba Rabri",
+  "proposed_id": "39852759"
+ },
+ {
+  "product_id": "a0200000-4444-4444-4444-000000000022",
+  "store": "Punjabi Dhaba",
+  "name": "Dhaba Amritsari Chole",
+  "proposed_id": "17050759"
+ },
+ {
+  "product_id": "a0200000-4444-4444-4444-000000000030",
+  "store": "Punjabi Dhaba",
+  "name": "Dhaba Bhindi Do Pyaza",
+  "proposed_id": "20422192"
+ },
+ {
+  "product_id": "a0200000-4444-4444-4444-000000000004",
+  "store": "Punjabi Dhaba",
+  "name": "Dhaba Butter Chicken Special",
+  "proposed_id": "20408442"
+ },
+ {
+  "product_id": "a0200000-4444-4444-4444-000000000028",
+  "store": "Punjabi Dhaba",
+  "name": "Dhaba Chicken Curry",
+  "proposed_id": "38400477"
+ },
+ {
+  "product_id": "a0200000-4444-4444-4444-000000000020",
+  "store": "Punjabi Dhaba",
+  "name": "Dhaba Dal Fry",
+  "proposed_id": "33430562"
+ },
+ {
+  "product_id": "a0200000-4444-4444-4444-000000000005",
+  "store": "Punjabi Dhaba",
+  "name": "Dhaba Dal Makhani Creamy",
+  "proposed_id": "37182513"
+ },
+ {
+  "product_id": "a0200000-4444-4444-4444-000000000027",
+  "store": "Punjabi Dhaba",
+  "name": "Dhaba Egg Bhurji",
+  "proposed_id": "35267285"
+ },
+ {
+  "product_id": "a0200000-4444-4444-4444-000000000048",
+  "store": "Punjabi Dhaba",
+  "name": "Dhaba Egg Curry Punjabi",
+  "proposed_id": "34217293"
+ },
+ {
+  "product_id": "a0200000-4444-4444-4444-000000000012",
+  "store": "Punjabi Dhaba",
+  "name": "Dhaba Kadai Chicken",
+  "proposed_id": "31521713"
+ },
+ {
+  "product_id": "a0200000-4444-4444-4444-000000000013",
+  "store": "Punjabi Dhaba",
+  "name": "Dhaba Kadai Paneer",
+  "proposed_id": "30858402"
+ },
+ {
+  "product_id": "a0200000-4444-4444-4444-000000000050",
+  "store": "Punjabi Dhaba",
+  "name": "Dhaba Matar Paneer",
+  "proposed_id": "13823417"
+ },
+ {
+  "product_id": "a0200000-4444-4444-4444-000000000029",
+  "store": "Punjabi Dhaba",
+  "name": "Dhaba Mixed Veg Sabzi",
+  "proposed_id": "27254878"
+ },
+ {
+  "product_id": "a0200000-4444-4444-4444-000000000016",
+  "store": "Punjabi Dhaba",
+  "name": "Dhaba Mutton Rogan Josh",
+  "proposed_id": "9609868"
+ },
+ {
+  "product_id": "a0200000-4444-4444-4444-000000000010",
+  "store": "Punjabi Dhaba",
+  "name": "Dhaba Paneer Bhurji",
+  "proposed_id": "36458544"
+ },
+ {
+  "product_id": "a0200000-4444-4444-4444-000000000047",
+  "store": "Punjabi Dhaba",
+  "name": "Dhaba Paneer Lababdar",
+  "proposed_id": "30858420"
+ },
+ {
+  "product_id": "a0200000-4444-4444-4444-000000000021",
+  "store": "Punjabi Dhaba",
+  "name": "Dhaba Punjabi Kadhi",
+  "proposed_id": "10464100"
+ },
+ {
+  "product_id": "a0200000-4444-4444-4444-000000000011",
+  "store": "Punjabi Dhaba",
+  "name": "Dhaba Rajma",
+  "proposed_id": "13620780"
+ },
+ {
+  "product_id": "a0200000-4444-4444-4444-000000000006",
+  "store": "Punjabi Dhaba",
+  "name": "Dhaba Sarson da Saag",
+  "proposed_id": "5031947"
+ },
+ {
+  "product_id": "a0200000-4444-4444-4444-000000000026",
+  "store": "Punjabi Dhaba",
+  "name": "Dhaba Shahi Paneer",
+  "proposed_id": "28674560"
+ },
+ {
+  "product_id": "a0200000-4444-4444-4444-000000000045",
+  "store": "Punjabi Dhaba",
+  "name": "Dhaba Special Thali",
+  "proposed_id": "8818667"
+ },
+ {
+  "product_id": "a0200000-4444-4444-4444-000000000014",
+  "store": "Punjabi Dhaba",
+  "name": "Dhaba Tandoori Chicken Full",
+  "proposed_id": "20371525"
+ },
+ {
+  "product_id": "a0200000-4444-4444-4444-000000000036",
+  "store": "Punjabi Dhaba",
+  "name": "Dhaba Jeera Rice",
+  "proposed_id": "35267286"
+ },
+ {
+  "product_id": "a0200000-4444-4444-4444-000000000037",
+  "store": "Punjabi Dhaba",
+  "name": "Dhaba Veg Biryani",
+  "proposed_id": "12669168"
+ },
+ {
+  "product_id": "a0200000-4444-4444-4444-000000000033",
+  "store": "Punjabi Dhaba",
+  "name": "Dhaba Achaar Platter",
+  "proposed_id": "30660302"
+ },
+ {
+  "product_id": "a0200000-4444-4444-4444-000000000017",
+  "store": "Punjabi Dhaba",
+  "name": "Dhaba Aloo Paratha",
+  "proposed_id": "33428723"
+ },
+ {
+  "product_id": "a0200000-4444-4444-4444-000000000023",
+  "store": "Punjabi Dhaba",
+  "name": "Dhaba Butter Naan Special",
+  "proposed_id": "28125427"
+ },
+ {
+  "product_id": "a0200000-4444-4444-4444-000000000024",
+  "store": "Punjabi Dhaba",
+  "name": "Dhaba Garlic Naan Punjabi Style",
+  "proposed_id": "10337726"
+ },
+ {
+  "product_id": "a0200000-4444-4444-4444-000000000009",
+  "store": "Punjabi Dhaba",
+  "name": "Dhaba Kulcha",
+  "proposed_id": "15020544"
+ },
+ {
+  "product_id": "a0200000-4444-4444-4444-000000000019",
+  "store": "Punjabi Dhaba",
+  "name": "Dhaba Lachha Paratha",
+  "proposed_id": "20446390"
+ },
+ {
+  "product_id": "a0200000-4444-4444-4444-000000000007",
+  "store": "Punjabi Dhaba",
+  "name": "Dhaba Makki di Roti",
+  "proposed_id": "37420999"
+ },
+ {
+  "product_id": "a0200000-4444-4444-4444-000000000031",
+  "store": "Punjabi Dhaba",
+  "name": "Dhaba Onion Salad",
+  "proposed_id": "28909535"
+ },
+ {
+  "product_id": "a0200000-4444-4444-4444-000000000018",
+  "store": "Punjabi Dhaba",
+  "name": "Dhaba Paneer Paratha",
+  "proposed_id": "20408462"
+ },
+ {
+  "product_id": "a0200000-4444-4444-4444-000000000032",
+  "store": "Punjabi Dhaba",
+  "name": "Dhaba Papad Roasted",
+  "proposed_id": "34739831"
+ },
+ {
+  "product_id": "a0200000-4444-4444-4444-000000000042",
+  "store": "Punjabi Dhaba",
+  "name": "Dhaba Stuffed Kulcha",
+  "proposed_id": "36681872"
+ },
+ {
+  "product_id": "a0200000-4444-4444-4444-000000000008",
+  "store": "Punjabi Dhaba",
+  "name": "Dhaba Amritsari Fish",
+  "proposed_id": "34657606"
+ },
+ {
+  "product_id": "a0200000-4444-4444-4444-000000000046",
+  "store": "Punjabi Dhaba",
+  "name": "Dhaba Chicken Malai Boti",
+  "proposed_id": "9609850"
+ },
+ {
+  "product_id": "a0200000-4444-4444-4444-000000000038",
+  "store": "Punjabi Dhaba",
+  "name": "Dhaba Chicken Malai Tikka",
+  "proposed_id": "30021858"
+ },
+ {
+  "product_id": "a0200000-4444-4444-4444-000000000015",
+  "store": "Punjabi Dhaba",
+  "name": "Dhaba Chicken Seekh Kebab",
+  "proposed_id": "6522658"
+ },
+ {
+  "product_id": "a0200000-4444-4444-4444-000000000041",
+  "store": "Punjabi Dhaba",
+  "name": "Dhaba Pakora Platter",
+  "proposed_id": "9738980"
+ },
+ {
+  "product_id": "a0200000-4444-4444-4444-000000000040",
+  "store": "Punjabi Dhaba",
+  "name": "Dhaba Punjabi Samosa",
+  "proposed_id": "29037272"
+ },
+ {
+  "product_id": "a0200000-4444-4444-4444-000000000039",
+  "store": "Punjabi Dhaba",
+  "name": "Dhaba Tandoori Prawns",
+  "proposed_id": "36701437"
+ },
+ {
+  "product_id": "a0100000-4444-4444-4444-000000000042",
+  "store": "Spice Route",
+  "name": "Spice Route Filter Coffee",
+  "proposed_id": "69976"
+ },
+ {
+  "product_id": "a0100000-4444-4444-4444-000000000041",
+  "store": "Spice Route",
+  "name": "Spice Route Masala Chai Route Style",
+  "proposed_id": "18413480"
+ },
+ {
+  "product_id": "a0100000-4444-4444-4444-000000000039",
+  "store": "Spice Route",
+  "name": "Spice Route Gulab Jamun Route Style",
+  "proposed_id": "37294501"
+ },
+ {
+  "product_id": "a0100000-4444-4444-4444-000000000040",
+  "store": "Spice Route",
+  "name": "Spice Route Kesari Halwa",
+  "proposed_id": "39798775"
+ },
+ {
+  "product_id": "a0100000-4444-4444-4444-000000000007",
+  "store": "Spice Route",
+  "name": "Spice Route Aloo Jeera",
+  "proposed_id": "36343375"
+ },
+ {
+  "product_id": "a0100000-4444-4444-4444-000000000006",
+  "store": "Spice Route",
+  "name": "Spice Route Baingan Bharta",
+  "proposed_id": "38383097"
+ },
+ {
+  "product_id": "a0100000-4444-4444-4444-000000000017",
+  "store": "Spice Route",
+  "name": "Spice Route Chicken 65 Route Style",
+  "proposed_id": "37485643"
+ },
+ {
+  "product_id": "a0100000-4444-4444-4444-000000000009",
+  "store": "Spice Route",
+  "name": "Spice Route Chicken Chettinad",
+  "proposed_id": "37653982"
+ },
+ {
+  "product_id": "a0100000-4444-4444-4444-000000000004",
+  "store": "Spice Route",
+  "name": "Spice Route Chicken Korma",
+  "proposed_id": "34217292"
+ },
+ {
+  "product_id": "a0100000-4444-4444-4444-000000000025",
+  "store": "Spice Route",
+  "name": "Spice Route Chicken Malabar",
+  "proposed_id": "35066816"
+ },
+ {
+  "product_id": "a0100000-4444-4444-4444-000000000021",
+  "store": "Spice Route",
+  "name": "Spice Route Chicken Vindaloo",
+  "proposed_id": "10692534"
+ },
+ {
+  "product_id": "a0100000-4444-4444-4444-000000000005",
+  "store": "Spice Route",
+  "name": "Spice Route Dal Tadka Special",
+  "proposed_id": "32825914"
+ },
+ {
+  "product_id": "a0100000-4444-4444-4444-000000000012",
+  "store": "Spice Route",
+  "name": "Spice Route Egg Masala",
+  "proposed_id": "35071817"
+ },
+ {
+  "product_id": "a0100000-4444-4444-4444-000000000010",
+  "store": "Spice Route",
+  "name": "Spice Route Fish Curry Route Style",
+  "proposed_id": "35532828"
+ },
+ {
+  "product_id": "a0100000-4444-4444-4444-000000000022",
+  "store": "Spice Route",
+  "name": "Spice Route Goan Fish Curry",
+  "proposed_id": "35267289"
+ },
+ {
+  "product_id": "a0100000-4444-4444-4444-000000000016",
+  "store": "Spice Route",
+  "name": "Spice Route Jeera Aloo",
+  "proposed_id": "33643313"
+ },
+ {
+  "product_id": "a0100000-4444-4444-4444-000000000018",
+  "store": "Spice Route",
+  "name": "Spice Route Kadai Vegetable",
+  "proposed_id": "33643298"
+ },
+ {
+  "product_id": "a0100000-4444-4444-4444-000000000008",
+  "store": "Spice Route",
+  "name": "Spice Route Malai Kofta Route Style",
+  "proposed_id": "36651769"
+ },
+ {
+  "product_id": "a0100000-4444-4444-4444-000000000023",
+  "store": "Spice Route",
+  "name": "Spice Route Mutton Kheema",
+  "proposed_id": "28674568"
+ },
+ {
+  "product_id": "a0100000-4444-4444-4444-000000000019",
+  "store": "Spice Route",
+  "name": "Spice Route Mysore Masala Dosa",
+  "proposed_id": "20422133"
+ },
+ {
+  "product_id": "a0100000-4444-4444-4444-000000000024",
+  "store": "Spice Route",
+  "name": "Spice Route Paneer Do Pyaza",
+  "proposed_id": "28674562"
+ },
+ {
+  "product_id": "a0100000-4444-4444-4444-000000000014",
+  "store": "Spice Route",
+  "name": "Spice Route Paneer Tikka Masala",
+  "proposed_id": "28674541"
+ },
+ {
+  "product_id": "a0100000-4444-4444-4444-000000000011",
+  "store": "Spice Route",
+  "name": "Spice Route Prawn Masala",
+  "proposed_id": "34217290"
+ },
+ {
+  "product_id": "a0100000-4444-4444-4444-000000000015",
+  "store": "Spice Route",
+  "name": "Spice Route Tandoori Chicken Route Style",
+  "proposed_id": "36097084"
+ },
+ {
+  "product_id": "a0100000-4444-4444-4444-000000000013",
+  "store": "Spice Route",
+  "name": "Spice Route Veg Kolhapuri",
+  "proposed_id": "35066808"
+ },
+ {
+  "product_id": "a0100000-4444-4444-4444-000000000020",
+  "store": "Spice Route",
+  "name": "Spice Route Vegetable Korma",
+  "proposed_id": "33430561"
+ },
+ {
+  "product_id": "a0100000-4444-4444-4444-000000000030",
+  "store": "Spice Route",
+  "name": "Spice Route Curd Rice",
+  "proposed_id": "35175194"
+ },
+ {
+  "product_id": "a0100000-4444-4444-4444-000000000027",
+  "store": "Spice Route",
+  "name": "Spice Route Hyderabadi Biryani",
+  "proposed_id": "35287418"
+ },
+ {
+  "product_id": "a0100000-4444-4444-4444-000000000028",
+  "store": "Spice Route",
+  "name": "Spice Route Kashmiri Pulao",
+  "proposed_id": "35552983"
+ },
+ {
+  "product_id": "a0100000-4444-4444-4444-000000000026",
+  "store": "Spice Route",
+  "name": "Spice Route Mutton Biryani",
+  "proposed_id": "9609856"
+ },
+ {
+  "product_id": "a0100000-4444-4444-4444-000000000031",
+  "store": "Spice Route",
+  "name": "Spice Route Prawn Biryani",
+  "proposed_id": "9609861"
+ },
+ {
+  "product_id": "a0100000-4444-4444-4444-000000000029",
+  "store": "Spice Route",
+  "name": "Spice Route Sambar Rice",
+  "proposed_id": "20408455"
+ },
+ {
+  "product_id": "a0100000-4444-4444-4444-000000000038",
+  "store": "Spice Route",
+  "name": "Spice Route Boondi Raita",
+  "proposed_id": "35552954"
+ },
+ {
+  "product_id": "a0100000-4444-4444-4444-000000000034",
+  "store": "Spice Route",
+  "name": "Spice Route Coconut Chutney Platter",
+  "proposed_id": "20422126"
+ },
+ {
+  "product_id": "a0100000-4444-4444-4444-000000000036",
+  "store": "Spice Route",
+  "name": "Spice Route Mango Chutney",
+  "proposed_id": "7340914"
+ },
+ {
+  "product_id": "a0100000-4444-4444-4444-000000000032",
+  "store": "Spice Route",
+  "name": "Spice Route Naan Basket",
+  "proposed_id": "28674556"
+ },
+ {
+  "product_id": "a0100000-4444-4444-4444-000000000037",
+  "store": "Spice Route",
+  "name": "Spice Route Onion Raita",
+  "proposed_id": "38298052"
+ },
+ {
+  "product_id": "a0100000-4444-4444-4444-000000000035",
+  "store": "Spice Route",
+  "name": "Spice Route Papadum Basket",
+  "proposed_id": "20432511"
+ },
+ {
+  "product_id": "a0100000-4444-4444-4444-000000000033",
+  "store": "Spice Route",
+  "name": "Spice Route Roti Basket",
+  "proposed_id": "35066812"
+ },
+ {
+  "product_id": "a0100000-4444-4444-4444-000000000045",
+  "store": "Spice Route",
+  "name": "Spice Route Amritsari Fish Route Style",
+  "proposed_id": "36832375"
+ },
+ {
+  "product_id": "a0100000-4444-4444-4444-000000000047",
+  "store": "Spice Route",
+  "name": "Spice Route Chicken Reshmi Kebab",
+  "proposed_id": "38400478"
+ },
+ {
+  "product_id": "a0100000-4444-4444-4444-000000000043",
+  "store": "Spice Route",
+  "name": "Spice Route Chicken Tikka Skewers",
+  "proposed_id": "9646846"
+ },
+ {
+  "product_id": "a0100000-4444-4444-4444-000000000046",
+  "store": "Spice Route",
+  "name": "Spice Route Paneer Malai Tikka",
+  "proposed_id": "3928854"
+ },
+ {
+  "product_id": "a0100000-4444-4444-4444-000000000048",
+  "store": "Spice Route",
+  "name": "Spice Route Tandoori Mushroom",
+  "proposed_id": "29173093"
+ },
+ {
+  "product_id": "a0100000-4444-4444-4444-000000000044",
+  "store": "Spice Route",
+  "name": "Spice Route Vegetable Seekh Kebab",
+  "proposed_id": "29173123"
+ }
+]
