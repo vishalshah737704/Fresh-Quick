@@ -25,6 +25,15 @@
     "plugins": [
       "expo-router",
       "expo-status-bar"
-    ]
+    ],
+    "extra": {
+      "googleMapsAndroidKey": {},
+      "googleMapsAndroidCertSha1": "5E8F16062EA3CD2C4A0D547876BAA6F38CABF625",
+      "router": {},
+      "eas": {
+        "projectId": "06af2fbc-9a5b-4733-9bb8-5d3be4d9be8f"
+      }
+    },
+    "owner": "vishalshah1973"
   }
 }
