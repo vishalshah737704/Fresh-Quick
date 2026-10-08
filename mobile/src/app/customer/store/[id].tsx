@@ -17,6 +17,8 @@ import { useFavorites } from "../../../../lib/favorites-store";
 import { FloatingCartPill } from "../../../../components/FloatingCartPill";
 import { ItemCustomizationModal } from "../../../../components/ItemCustomizationModal";
 import { useRequireSession } from "../../../../lib/use-require-session";
+import { StoreReviews } from "../../../../components/reviews/StoreReviews";
+import { averageOf } from "../../../../lib/reviews-model";
 
 type Option = { id: string; name: string; price_delta_paise: number; sort_order: number };
 type OptionGroup = {
@@ -37,6 +39,8 @@ type MenuItem = {
   is_available: boolean;
   image_url: string | null;
   category: string | null;
+  rating_sum: number;
+  rating_count: number;
   menu_item_option_groups: OptionGroup[];
 };
 
@@ -121,7 +125,7 @@ export default function StoreDetailScreen() {
         supabase
           .from("products")
           .select(
-            "id, name, description, price, product_attributes, is_available, image_url, category, menu_item_option_groups(id, name, min_select, max_select, sort_order, menu_item_options(id, name, price_delta_paise, sort_order))"
+            "id, name, description, price, product_attributes, is_available, image_url, category, rating_sum, rating_count, menu_item_option_groups(id, name, min_select, max_select, sort_order, menu_item_options(id, name, price_delta_paise, sort_order))"
           )
           .eq("store_id", id),
       ]);
@@ -288,6 +292,11 @@ export default function StoreDetailScreen() {
                         <Text style={styles.itemName}>
                           {item.product_attributes?.is_veg ? "🟢" : "🔴"} {item.name}
                         </Text>
+                        {item.rating_count > 0 && (
+                          <Text style={styles.itemRating}>
+                            ★ {averageOf(item.rating_sum, item.rating_count)?.toFixed(1)} ({item.rating_count})
+                          </Text>
+                        )}
                         {item.description && (
                           <Text style={styles.itemDescription} numberOfLines={2}>
                             {item.description}
@@ -317,6 +326,7 @@ export default function StoreDetailScreen() {
             ))}
           </View>
         )}
+        <StoreReviews storeId={store.id} />
       </ScrollView>
 
       {modalItem && (
@@ -487,6 +497,12 @@ const styles = StyleSheet.create({
     fontFamily: BRAND.fonts.bodySemiBold,
     fontSize: 14,
     color: BRAND.colors.ink,
+  },
+  itemRating: {
+    fontFamily: BRAND.fonts.body,
+    fontSize: 12,
+    color: BRAND.colors.primaryTextSafe,
+    marginTop: 2,
   },
   itemDescription: {
     fontFamily: BRAND.fonts.body,

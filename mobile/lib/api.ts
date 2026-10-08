@@ -20,6 +20,11 @@ export class ApiError extends Error {
   }
 }
 
+// Review photo URLs come back as app-relative paths (/api/reviews/<id>/photo); an <Image> needs the full address.
+export function absoluteUrl(path: string): string {
+  return path.startsWith("/") ? `${API_BASE_URL}${path}` : path;
+}
+
 // Returns null (never throws) when there is no active session — callers
 // decide how to handle "not logged in" for their own screen.
 async function getAccessToken(): Promise<string | null> {

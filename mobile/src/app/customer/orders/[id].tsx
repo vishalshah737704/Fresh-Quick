@@ -28,6 +28,9 @@ import { CourierCard } from "../../../../components/CourierCard";
 import { OrderTrackingMap } from "../../../../components/OrderTrackingMap";
 import { showTrackingMap } from "../../../../lib/tracking";
 import { useReorder } from "../../../../lib/use-reorder";
+import { useOrderReview } from "../../../../lib/use-order-review";
+import { ReviewForm } from "../../../../components/reviews/ReviewForm";
+import { OwnReviewCard } from "../../../../components/reviews/OwnReviewCard";
 
 type PartnerLocation = {
   current_lat: number | null;
@@ -85,6 +88,7 @@ export default function OrderDetailScreen() {
   const [dismissed, setDismissed] = useState(false);
   const [sawPickedUp, setSawPickedUp] = useState(false);
   const { busyOrderId, notice: reorderNotice, error: reorderError, reorder } = useReorder();
+  const review = useOrderReview(id, order?.status ?? null);
 
   const postComplete = useCallback(async (): Promise<number> => {
     try {
@@ -259,6 +263,18 @@ export default function OrderDetailScreen() {
           <OrderItemsList items={order.items} />
         )}
       </View>
+
+      {review.state?.partnerScore && order.deliveryPartnerId && (
+        <Text style={styles.mutedText}>
+          {review.state.partnerScore.isNew
+            ? "Your delivery partner · New partner"
+            : `Your delivery partner · ★ ${review.state.partnerScore.average.toFixed(1)} (${review.state.partnerScore.count} ratings)`}
+        </Text>
+      )}
+      {review.state?.eligible && (
+        <ReviewForm state={review.state} submitting={review.submitting} error={review.error} onSubmit={review.submit} />
+      )}
+      {review.state?.review && <OwnReviewCard review={review.state.review} />}
 
       <View style={styles.section}>
         <TotalsRow label="Subtotal" value={formatPaise(Math.round(order.subtotal * 100))} />
