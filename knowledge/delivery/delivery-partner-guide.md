@@ -54,4 +54,4 @@ Open My rating in the left menu (on the phone, the My rating card on the Dashboa
 
 ## Why do customers see "New partner" for me?
 
-Customers see your average only after you have 5 ratings. Until then they see "New partner". My rating tells you how many more ratings you need.
+Customers see your average only after you have 5 ratings. Until then they see "New partner". While you have fewer than 5 ratings, the My rating page shows a note saying customers see "New partner" until you have 5.

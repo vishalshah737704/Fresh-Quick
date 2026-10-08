@@ -118,3 +118,8 @@ Under a review on a store's screen tap Report and pick a reason: Offensive or ab
 ## Will I be asked to review my order in the mobile app?
 
 About one hour after an order is delivered, an email asking "How was your order?" is sent to the email address you typed at checkout. It is not sent if you have already reviewed the order.
+
+
+## What does "New partner" mean next to my delivery partner in the mobile app?
+
+On an order's screen, once a delivery partner is assigned, the line "Your delivery partner" shows the partner's average star rating and number of ratings. Until a partner has 5 ratings it shows "New partner" instead of a number.
