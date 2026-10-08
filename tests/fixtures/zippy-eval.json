@@ -56,5 +56,17 @@
   { "question": "can zippy add a note to my order", "role": "customer", "expectTitleIncludes": "Can Zippy add a note to my order" },
   { "question": "can you tell the restaurant no onions", "role": "customer", "expectTitleIncludes": "Can Zippy add a note to my order" },
   { "question": "how do i change my delivery location", "role": "customer", "expectTitleIncludes": "How do I change my delivery location" },
-  { "question": "can i see where my delivery partner is", "role": "customer", "expectTitleIncludes": "Can I see where my delivery partner is" }
+  { "question": "can i see where my delivery partner is", "role": "customer", "expectTitleIncludes": "Can I see where my delivery partner is" },
+  { "question": "how do i rate my order on the website", "role": "customer", "expectTitleIncludes": "How do I rate an order on the website" },
+  { "question": "how do i give stars to my order in the phone app", "role": "customer", "expectTitleIncludes": "How do I rate an order in the mobile app" },
+  { "question": "can i edit my review after posting it", "role": "customer", "expectTitleIncludes": "Can I review an order more than once or edit my review" },
+  { "question": "how do i see what other people said about a restaurant on the website", "role": "customer", "expectTitleIncludes": "Where do I see reviews of a store on the website" },
+  { "question": "someone wrote a rude review, how do i flag it in the phone app", "role": "customer", "expectTitleIncludes": "How do I report a review in the mobile app" },
+  { "question": "what does new partner mean next to my rider", "role": "customer", "expectTitleIncludes": "mean next to my delivery partner" },
+  { "question": "are my review photos visible to everyone", "role": "customer", "expectTitleIncludes": "Are my reviews and review photos public" },
+  { "question": "how do i answer a customer review of my store", "role": "vendor", "expectTitleIncludes": "How do I reply to a review" },
+  { "question": "can i delete a bad review of my store", "role": "vendor", "expectTitleIncludes": "Can I hide or delete a review of my store" },
+  { "question": "where do i find my customer rating", "role": "delivery", "expectTitleIncludes": "Where can I see my rating" },
+  { "question": "how do i hide an abusive review", "role": "admin", "expectTitleIncludes": "How do I moderate customer reviews" },
+  { "question": "what does the low score badge mean", "role": "admin", "expectTitleIncludes": "What does the Low score badge on a delivery partner mean" }
 ]
