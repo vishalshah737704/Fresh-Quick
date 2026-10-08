@@ -189,6 +189,10 @@ The web app's address picker, checkout address search and order tracking map use
 
 Customer sign-up geocodes the registration address on the server with a second, separate key. It is a secret: keep it in `.env.local` only, never prefix it `NEXT_PUBLIC`, never ship it to the browser or phone app. Restrict it by API to Geocoding API only and set its Application restriction to None, because the Geocoding web service rejects referrer- and Android-restricted keys (REQUEST_DENIED); key changes take a few minutes to apply. Without it, sign-up returns 503 and creates no account. Before any public launch, set a daily quota and a budget alert on it, and consider throttling sign-up (each attempt costs one geocode call).
 
+### Ratings and reviews
+
+- Review and report routes have no rate limit (local-only install). Before going public add per-user and per-IP limits, a CAPTCHA or email-verified sign-up requirement before reviews, and image scanning for the `review-photos` bucket.
+
 ### Trusted proxy hops (`ZIPPY_TRUSTED_PROXY_HOPS`)
 
 The client IP is taken from the `x-forwarded-for` header: it is the entry this many positions from the right,

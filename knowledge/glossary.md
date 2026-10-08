@@ -67,3 +67,11 @@ An administrator action that pauses a store. A suspended store is switched to cl
 ## What is Zippy?
 
 Zippy is the in-app help assistant. It answers questions about using the app and also about stores, dishes, prices and whether a store is open (for any visitor, no restriction by role). It can look up a signed-in customer's own orders, but it cannot place, change, cancel or pay for orders. It can also prepare cart changes for a signed-in customer to confirm, and show a Go to checkout card that opens the Checkout page, where you enter your details and pay yourself. It never places orders, pays or cancels.
+
+## What is a review, a reply and a hidden review?
+
+A review is the rating a customer leaves for an order after it is delivered: stars for the store, and optionally a comment, a photo, dish ratings and a delivery rating. A reply is the store's one public answer to a review. A hidden review is one an administrator has taken down; it no longer appears on the store page or counts toward the store's rating, and it can be unhidden.
+
+## What does "New partner" mean?
+
+It is shown to customers instead of a delivery partner's average until the partner has 5 ratings.

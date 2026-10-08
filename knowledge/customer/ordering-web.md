@@ -99,3 +99,27 @@ There are three places. On Home, an "Order again" row shows up to three stores y
 ## What does Reorder do on the website?
 
 Reorder fills your cart with the items of that earlier order, including the options and notes you chose, at today's prices. It does not place the order: open the cart and go to Checkout as usual. Items that are no longer available are skipped and listed in the message after "Skipped:". If the store is closed right now, the Reorder button on Home is disabled and a line under the store name reads "Closed right now", and on the Orders pages a message says the store is closed. If your cart already holds items from the same store, the quantities are added together. If it holds items from a different store, the cart is replaced and the message says how many items were replaced.
+
+## How do I rate an order on the website?
+
+Once an order is Delivered, its order page shows a "Rate your order" form. Give the store 1 to 5 stars (required) and, if you like, a comment of up to 1000 characters and one photo (JPEG, PNG or WebP, up to 3 MB). You can also rate individual dishes from that order (1 to 5 stars, with an optional comment of up to 500 characters) and, if a delivery partner delivered it, rate the delivery (1 to 5 stars, optional comment of up to 500 characters). Only the store rating is required. You can only review orders that were delivered.
+
+## Can I review an order more than once or edit my review?
+
+No. Each order can be reviewed once, and the website has no way to edit or delete a review after you send it. After you submit, the order page shows "Your review". If the Fresh & Quick team hides your review, that page says it is currently hidden.
+
+## Where do I see reviews of a store on the website?
+
+On a store's page, under the rating summary, the Reviews list shows the newest reviews first, 10 at a time, with a "Load more reviews" button. Each review shows the customer's first name and last initial, the stars, the date, the comment, any photo, the dish ratings and any reply from the store. The summary shows the average rating from real reviews; until a store has its first review, it shows the starting rating it was listed with.
+
+## How do I report a review on the website?
+
+Under any review on a store's page choose Report and pick a reason: Offensive or abusive, Spam or fake, or Not about this store. You must be signed in. You cannot report your own review. The review stays visible until an administrator looks at it.
+
+## What does "New partner" mean next to my delivery partner?
+
+On your order page, the line "Your delivery partner" shows the partner's average star rating and number of ratings. Until a partner has 5 ratings it shows "New partner" instead of a number.
+
+## Will I be asked to review my order?
+
+About one hour after an order is delivered, an email asking "How was your order?" is sent to the email address you typed at checkout, with a button to your order page. It is not sent if you have already reviewed the order.

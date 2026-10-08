@@ -61,3 +61,11 @@ On the Overview page there is a checkbox called Automatic order acceptance (demo
 ## How do I turn Automatic order acceptance on or off?
 
 Open Overview and tick or clear the checkbox Automatic order acceptance (demo mode); it saves at once. Ticking it also starts every order that is already open (placed and paid, accepted, preparing, ready or assigned). Clearing it stops further automatic steps; orders already in progress stay where they are and the vendor and delivery partner handle them by hand. If a message says n8n did not respond, the setting is saved but open orders were not started, so check that n8n is running. If no delivery partner is online, an order waits at Ready until one is assigned and is then picked up about 3 seconds later.
+
+## How do I moderate customer reviews?
+
+Open Reviews in the left menu. The Reported tab lists reviews that customers or stores reported, with the report reason and who reported it; Hidden lists hidden reviews and All lists everything. To hide a review enter a reason (required, up to 300 characters) and choose Hide. A hidden review disappears from the store page and from the store's average, and its photo stops being shown. Choose Unhide to bring it back. On a reported review that you decide to keep, choose Dismiss report. Hiding a review also clears its report.
+
+## What does the Low score badge on a delivery partner mean?
+
+On the Delivery Partners page, each partner shows their average stars and rating count. A red "Low score" badge appears when the partner has at least 5 ratings and the average is below 3.0.

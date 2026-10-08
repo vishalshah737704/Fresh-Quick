@@ -102,3 +102,19 @@ On the Home tab, the "Order again" row shows up to three stores you ordered from
 ## What does Reorder do in the mobile app?
 
 Reorder fills your cart with the items of that earlier order, including the options and notes you chose, at today's prices. It does not place the order: open your cart and go to Checkout as usual. Items that are no longer available are skipped and listed in the message after "Skipped:". A store that is closed right now shows "Closed" on its Home button and cannot be reordered. If your cart already holds items from the same store, the quantities are added together. If it holds items from a different store, the cart is replaced and the message says how many items were replaced.
+
+## How do I rate an order in the mobile app?
+
+Once an order is Delivered, its screen in the Orders tab shows a "Rate your order" form. Give the store 1 to 5 stars (required) and, if you like, a comment of up to 1000 characters and one photo from your phone (JPEG, PNG or WebP, up to 3 MB). You can also rate dishes from that order and, if a delivery partner delivered it, the delivery (comments up to 500 characters). Only the store rating is required. Each order can be reviewed once and the app has no way to edit or delete a review after you send it; afterwards the order screen shows your review.
+
+## Where do I see reviews of a store in the mobile app?
+
+On a store's screen the Reviews list shows the newest reviews with the customer's first name and last initial, stars, comment, photo, dish ratings and any reply from the store. Until a store has its first review it shows the starting rating it was listed with.
+
+## How do I report a review in the mobile app?
+
+Under a review on a store's screen tap Report and pick a reason: Offensive or abusive, Spam or fake, or Not about this store. You must be signed in, and you cannot report your own review.
+
+## Will I be asked to review my order in the mobile app?
+
+About one hour after an order is delivered, an email asking "How was your order?" is sent to the email address you typed at checkout. It is not sent if you have already reviewed the order.

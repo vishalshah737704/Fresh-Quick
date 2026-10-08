@@ -61,3 +61,7 @@ Email vishalshah1973@gmail.com or call +919820020000. No support hours or reply 
 ## Where can I find the terms of use or privacy policy?
 
 They are described in this section. The app does not have separate terms or privacy pages, so ask Zippy or contact support if you need more detail.
+
+## Are my reviews and review photos public?
+
+Yes. A review you leave for a store, including its comment and photo, can be seen by anyone who opens that store's page, shown with your first name and last initial (never your email or phone). Do not put personal details in a review or photo. The delivery rating and comment are shown only to the delivery partner (without your name) and administrators. If an administrator hides a review it disappears from the store page and from the store's rating, and its photo stops being served. Ask Zippy chats are not affected by reviews.

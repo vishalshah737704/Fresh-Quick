@@ -43,3 +43,11 @@ Yes, on the website. Once your order is assigned or on the way, the order page s
 ## How long will my order take?
 
 The app does not promise a delivery time. Store cards show an average preparation time in minutes, and the home page has an Under 30 min filter based on it. The tracker shows the real progress.
+
+## Can I leave a review for my order?
+
+Yes, once the order is Delivered, on the website and in the phone app. You rate the store (required), and can also add a comment, one photo, ratings for dishes and a rating for the delivery. Each order can be reviewed once and a customer cannot edit or delete a review. Reviews do not trigger refunds. For a wrong or missing item contact support, see the refund policy.
+
+## Who can see my review?
+
+Everyone who opens the store's page can see it: your first name and last initial, stars, comment, photo and dish ratings, plus any reply from the store. The store can reply to it or report it. The delivery rating and its comment are seen by the delivery partner without your name, and the Fresh & Quick team can see them too.

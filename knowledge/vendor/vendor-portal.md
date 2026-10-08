@@ -65,3 +65,15 @@ Right after checkout the simulated payment can take a few seconds to resolve. Yo
 ## How do I reset my password or sign out?
 
 In the left menu, your name is shown with a Reset password link that emails a reset link to your account address. Sign out is at the bottom of the menu.
+
+## Where do I see customer reviews of my store?
+
+Open Reviews in the left menu. It lists reviews of your store, newest first, with the customer's first name and last initial, stars, comment, photo and dish ratings. Tabs filter by All, Needs reply and Reported, and a badge shows how many reviews still need a reply. You do not see delivery ratings or comments about the delivery partner.
+
+## How do I reply to a review?
+
+On the Reviews page type your reply (up to 600 characters) under the review and choose Reply. A review has one reply from the store. To change it, type the new text and choose Update reply; Remove deletes it. The customer and other shoppers see your reply under the review on the store page.
+
+## Can I hide or delete a review of my store?
+
+No. Vendors cannot hide or delete reviews. If a review is abusive, fake or not about your store, choose "Report to admin" on it; an administrator decides whether to hide it. A review hidden by the team shows only as a note with its date.

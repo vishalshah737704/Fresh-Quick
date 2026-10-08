@@ -47,3 +47,11 @@ No. After you mark it picked up, the card reads "Customer is receiving the order
 ## Where can I see my past deliveries?
 
 Open History in the left menu. It shows your 50 most recent finished orders. Choose Refresh to reload.
+
+## Where can I see my rating?
+
+Open My rating in the left menu (on the phone, the My rating card on the Dashboard). It shows your average stars and how many ratings you have, plus your recent comments from customers. Comments do not show the customer's name. Customers rate the delivery after an order is delivered, and it is optional for them.
+
+## Why do customers see "New partner" for me?
+
+Customers see your average only after you have 5 ratings. Until then they see "New partner". My rating tells you how many more ratings you need.
