@@ -150,6 +150,56 @@
         }
       },
       "notes": "Credential intentionally left as a placeholder -- after importing, select your own Gmail OAuth2 credential in this node's Credential dropdown before activating this workflow."
+    },
+    {
+      "id": "wait-review-request",
+      "name": "Wait 1 h (review request)",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [900, 700],
+      "webhookId": "4be51e1a-af90-406e-9e90-45134a4057ec",
+      "parameters": { "resume": "timeInterval", "amount": 1, "unit": "hours" },
+      "notes": "C1: one hour after delivery, ask the customer for a review. Workflow must stay active for the wait to resume; Reset Data deletes pending waits."
+    },
+    {
+      "id": "get-review-eligibility",
+      "name": "GET /api/internal/orders/:id/review-eligibility",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [1120, 700],
+      "parameters": {
+        "method": "GET",
+        "url": "={{$env.APP_BASE_URL}}/api/internal/orders/{{$json[\"body\"][\"record\"][\"id\"]}}/review-eligibility",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [{ "name": "X-Internal-Secret", "value": "={{$env.N8N_INTERNAL_SECRET}}" }] }
+      },
+      "notes": "Returns eligible:false (already reviewed, too early, account deleted) or the email subject and HTML."
+    },
+    {
+      "id": "if-review-eligible",
+      "name": "IF: review request eligible",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [1340, 700],
+      "parameters": { "conditions": { "string": [{ "value1": "={{String($json[\"eligible\"])}}", "value2": "true" }] } }
+    },
+    {
+      "id": "send-review-request-email",
+      "name": "Gmail: Send Review Request",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2,
+      "position": [1560, 700],
+      "parameters": {
+        "resource": "message",
+        "operation": "send",
+        "sendTo": "={{$json[\"customerEmail\"]}}",
+        "subject": "={{$json[\"emailSubject\"]}}",
+        "emailType": "html",
+        "message": "={{$json[\"reviewRequestHtml\"]}}",
+        "options": {}
+      },
+      "credentials": { "gmailOAuth2": { "id": "PLACEHOLDER_CONNECT_YOUR_GMAIL_CREDENTIAL", "name": "Gmail account (connect in n8n UI)" } },
+      "notes": "Credential intentionally left as a placeholder -- select your own Gmail OAuth2 credential after importing. This send is LIVE once published: test only with an address you own."
     }
   ],
   "connections": {
@@ -181,17 +231,21 @@
       "main": [
         [
           { "node": "Finalize Payment + Prompt Review (placeholder)", "type": "main", "index": 0 },
-          { "node": "GET /api/internal/orders/:id/notification-details", "type": "main", "index": 0 }
+          { "node": "GET /api/internal/orders/:id/notification-details", "type": "main", "index": 0 },
+          { "node": "Wait 1 h (review request)", "type": "main", "index": 0 }
         ],
         []
       ]
     },
     "GET /api/internal/orders/:id/notification-details": {
       "main": [[{ "node": "Gmail: Send Order Delivered Email", "type": "main", "index": 0 }]]
-    }
+    },
+    "Wait 1 h (review request)": { "main": [[{ "node": "GET /api/internal/orders/:id/review-eligibility", "type": "main", "index": 0 }]] },
+    "GET /api/internal/orders/:id/review-eligibility": { "main": [[{ "node": "IF: review request eligible", "type": "main", "index": 0 }]] },
+    "IF: review request eligible": { "main": [[{ "node": "Gmail: Send Review Request", "type": "main", "index": 0 }], []] }
   },
   "active": false,
   "settings": {},
   "_untested_reference_only": false,
-  "_note": "Imported into n8n 2.40.7 and run live on 2026-09-30 (executions 322/323): the delivered branch fetched notification-details and sent the delivered email. Gmail credential is a placeholder -- select your Gmail OAuth2 credential on the Gmail node after importing, save, then Publish. IF filters wrap includes() in String() because n8n 2.40.7 does not coerce a boolean to the string \"true\". Added the 5-minute customer-completion fallback (picked_up -> Wait -> internal complete-delivery) on 2026-10-02; not yet run live."
+  "_note": "Imported into n8n 2.40.7 and run live on 2026-09-30 (executions 322/323): the delivered branch fetched notification-details and sent the delivered email. Gmail credential is a placeholder -- select your Gmail OAuth2 credential on the Gmail node after importing, save, then Publish. IF filters wrap includes() in String() because n8n 2.40.7 does not coerce a boolean to the string \"true\". Added the 5-minute customer-completion fallback (picked_up -> Wait -> internal complete-delivery) on 2026-10-02; not yet run live. C1 (2026-10-07): added the 1 h review request path (Wait, eligibility call, IF, Gmail); not yet run live."
 }

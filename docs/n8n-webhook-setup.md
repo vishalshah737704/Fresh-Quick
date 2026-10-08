@@ -406,6 +406,20 @@ order was completed exactly 5:00.09 after pickup with exactly one delivered emai
 execution; for customer-completed orders the 20-second wait fires as a harmless
 no-op ("already delivered", no second email).
 
+### Workflow 05 review request (C1, added 2026-10-07)
+
+The delivered branch also starts a review request: `Wait 1 h (review request)`,
+then `GET /api/internal/orders/:id/review-eligibility` (X-Internal-Secret), an
+`IF: review request eligible` (with `String(...)`), and `Gmail: Send Review Request`.
+The route answers `eligible:false` with a reason (not delivered, too early, already
+reviewed, customer account deleted, no email) or the email subject and HTML. For
+tests it takes `?minAgeMinutes=0` (0 to 1440, default 55). `PUBLIC_APP_URL`
+(default `http://localhost:3000`) controls the link in the email. The Gmail send is
+LIVE once published, so test only with an address you own. The workflow must be
+active for the Wait to resume. To load the change, re-import the JSON with a
+top-level `id` (CLI import needs one) and republish in the n8n UI; never stop or
+restart the `--rm` n8n container. Repo JSON is now 14 nodes.
+
 ### If an order is stuck in picked_up
 
 The fallback only exists if n8n was up and workflow 05 was active when the
