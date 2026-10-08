@@ -20,7 +20,7 @@ function LoginForm() {
   const searchParams = useSearchParams();
   const rawRedirectTo = searchParams.get("redirectTo") ?? "/customer";
 
-  const [mode, setMode] = useState<"login" | "signup">("login");
+  const [mode, setMode] = useState<"login" | "signup">(searchParams.get("ref") ? "signup" : "login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
@@ -30,6 +30,7 @@ function LoginForm() {
   const [city, setCity] = useState("");
   const [state, setState] = useState("");
   const [pincode, setPincode] = useState("");
+  const [referralCode, setReferralCode] = useState((searchParams.get("ref") ?? "").toUpperCase());
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -64,7 +65,14 @@ function LoginForm() {
     const res = await fetch("/api/auth/signup", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password, fullName, phone, address }),
+      body: JSON.stringify({
+        email,
+        password,
+        fullName,
+        phone,
+        address,
+        referralCode: referralCode.trim() === "" ? undefined : referralCode.trim(),
+      }),
     });
     const body = await res.json().catch(() => ({}));
     if (!res.ok) {
@@ -111,6 +119,7 @@ function LoginForm() {
             { placeholder: "City", value: city, set: setCity, type: "text" },
             { placeholder: "State", value: state, set: setState, type: "text" },
             { placeholder: "Pincode (6 digits)", value: pincode, set: setPincode, type: "text" },
+            { placeholder: "Referral code (optional)", value: referralCode, set: setReferralCode, type: "text" },
           ].map((field) => (
             <input
               key={field.placeholder}

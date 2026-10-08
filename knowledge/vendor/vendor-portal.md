@@ -77,3 +77,15 @@ On the Reviews page type your reply (up to 600 characters) under the review and 
 ## Can I hide or delete a review of my store?
 
 No. Vendors cannot hide or delete reviews. If a review is abusive, fake or not about your store, choose "Report to admin" on it; an administrator decides whether to hide it. A review hidden by the team shows only as a note with its date.
+
+## How do I create a coupon for my store?
+
+Open Coupons in the left menu and choose New coupon. Pick a code (3 to 20 letters, digits, dashes or underscores; codes are unique across the whole app), a type (percent or fixed rupees), the value, and optional limits: minimum order, a maximum discount for percent codes, an end date, a total number of uses, uses per customer and first-orders-only. A store coupon works only at your store and can give at most 50% off or Rs 500 off.
+
+## Can I pause or change a coupon?
+
+You can pause and resume a coupon with the button on its row. The code, type and value cannot be edited afterwards; create a new coupon instead. The table shows how many times each coupon was used and the total discount given. Coupon discounts reduce the order total the customer pays; this app does not model payouts to stores.
+
+## Where are my notifications?
+
+Tap the bell at the top of the portal. New orders appear there. Notification settings on that page let you switch categories and push on or off.

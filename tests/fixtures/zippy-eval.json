@@ -1,72 +1,385 @@
 [
-  { "question": "how do i find a pizza place on the site", "role": "customer", "expectTitleIncludes": "How do I find a restaurant or store on the website" },
-  { "question": "put stuff in my basket from the website", "role": "customer", "expectTitleIncludes": "How do I add items to my cart on the website" },
-  { "question": "steps to buy food on the web", "role": "customer", "expectTitleIncludes": "How do I place an order on the website" },
-  { "question": "where can i watch my food order progress", "role": "customer", "expectTitleIncludes": "How do I track my order on the website" },
-  { "question": "can i pay with upi", "role": "customer", "expectTitleIncludes": "Which payment methods can I use?" },
-  { "question": "how to make an account on the app", "role": "customer", "expectTitleIncludes": "How do I create a customer account in the mobile app" },
-  { "question": "forgot pw, how to change it on the website", "role": "customer", "expectTitleIncludes": "How do I reset my password on the website" },
-  { "question": "log out of the phone app", "role": "customer", "expectTitleIncludes": "How do I sign out in the mobile app" },
-  { "question": "can i order from 2 shops together", "role": "customer", "expectTitleIncludes": "Can I order from more than one store" },
-  { "question": "wanna cancel my order", "role": "customer", "expectTitleIncludes": "How do I cancel an order?" },
-  { "question": "where is my order history in the app", "role": "customer", "expectTitleIncludes": "How do I see my orders in the mobile app" },
-  { "question": "will i get a confirmation mail", "role": "customer", "expectTitleIncludes": "Will I get an email about my order?" },
-  { "question": "my food says Preparing, what does that mean", "role": "customer", "expectTitleIncludes": "What does \"Preparing\" mean?" },
-  { "question": "whats the Partner assigned status", "role": "customer", "expectTitleIncludes": "What does \"Partner assigned\" mean?" },
-  { "question": "my order got marked Rejected, why", "role": "customer", "expectTitleIncludes": "What does \"Rejected\" mean?" },
-  { "question": "how is the delivery charge worked out", "role": "customer", "expectTitleIncludes": "How is the delivery fee decided?" },
-  { "question": "is this real money or fake", "role": null, "expectTitleIncludes": "Is this app taking real money?" },
-  { "question": "how do i get my money back", "role": "customer", "expectTitleIncludes": "How do I get a refund?" },
-  { "question": "place order button wont click", "role": "customer", "expectTitleIncludes": "The Place order button is greyed out" },
-  { "question": "checkout keeps saying my session ended", "role": "customer", "expectTitleIncludes": "Session expired" },
-  { "question": "how to shut my shop for the day", "role": "vendor", "expectTitleIncludes": "How do I open or close my restaurant?" },
-  { "question": "add toppings choices to a dish", "role": "vendor", "expectTitleIncludes": "How do I add choices like size or toppings to an item?" },
-  { "question": "a new order came in, what do i do", "role": "vendor", "expectTitleIncludes": "How do I handle incoming orders?" },
-  { "question": "how do i start getting deliveries", "role": "delivery", "expectTitleIncludes": "How do I go online or offline?" },
-  { "question": "where are my previous drops", "role": "delivery", "expectTitleIncludes": "Where can I see my past deliveries?" },
-  { "question": "why is there nothing to pick up", "role": "delivery", "expectTitleIncludes": "Why do I see no available orders?" },
-  { "question": "onboard a new restaurant owner", "role": "admin", "expectTitleIncludes": "How do I add a vendor?" },
-  { "question": "move an order to another rider", "role": "admin", "expectTitleIncludes": "How do I reassign an order to a different delivery partner?" },
-  { "question": "block a vendor temporarily", "role": "admin", "expectTitleIncludes": "How do I suspend or unsuspend a vendor?" },
-  { "question": "How do I sign up?", "role": null, "expectTitleIncludes": "How do I create a customer account" },
-  { "question": "What's the weather like today?", "role": "customer", "expectTitleIncludes": null },
-  { "question": "what is the cricket score right now", "role": null, "expectTitleIncludes": null },
-  { "question": "write me a poem about the ocean", "role": "customer", "expectTitleIncludes": null },
-  { "question": "how do i close my restaurant for the day", "role": "customer", "expectTitleIncludes": null, "expectTitleExcludes": "Vendor portal guide" },
-  { "question": "how do i add new dishes to my menu", "role": null, "expectTitleIncludes": null, "expectTitleExcludes": "Vendor portal guide" },
-  { "question": "where do I reassign a delivery partner", "role": "customer", "expectTitleIncludes": null, "expectTitleExcludes": "Admin portal guide" },
-  { "question": "who do i call or email if i have a problem", "role": "customer", "expectTitleIncludes": "How do I contact support?" },
-  { "question": "how long do you keep my order history and chats", "role": "customer", "expectTitleIncludes": "What is the privacy policy?" },
-  { "question": "what are the rules for using this app", "role": "customer", "expectTitleIncludes": "What are the terms of use?" },
-  { "question": "my order arrived with items missing what can i do", "role": "customer", "expectTitleIncludes": "wrong or with items missing" },
-  { "question": "is there a privacy policy page", "role": "customer", "expectTitleIncludes": "What is the privacy policy?" },
-  { "question": "where can I get chilli paneer", "role": "customer", "expectCatalogIncludes": "Wok Style Chilli Paneer" },
-  { "question": "is there a Mexican chocolate cake", "role": "customer", "expectCatalogIncludes": "Fiesta Mexican Chocolate Cake" },
-  { "question": "any good Italian restaurant", "role": "customer", "expectCatalogIncludes": "Bella Italia" },
-  { "question": "I want to order Chinese food from Golden Dragon", "role": "customer", "expectCatalogIncludes": "Golden Dragon" },
-  { "question": "which store sells palak paneer", "role": "customer", "expectCatalogIncludes": "Palak Paneer" },
-  { "question": "a place for cheese dosa", "role": "customer", "expectCatalogIncludes": "Corner Cheese Dosa" },
-  { "question": "can zippy look up my order for me", "role": "customer", "expectTitleIncludes": "Can Zippy see my orders or place an order for me" },
-  { "question": "does zippy see my address and phone number", "role": "customer", "expectTitleIncludes": "Does Zippy see my orders and personal details" },
-  { "question": "can zippy cancel my order for me", "role": "customer", "expectTitleIncludes": "Can Zippy see my orders or place an order for me" },
-  { "question": "can zippy put a dosa in my basket for me", "role": "customer", "expectTitleIncludes": "Can Zippy add things to my cart" },
-  { "question": "will zippy order and pay for me automatically", "role": "customer", "expectTitleIncludes": "Can Zippy add things to my cart" },
-  { "question": "can zippy check out for me", "role": "customer", "expectTitleIncludes": "Can Zippy add things to my cart?" },
-  { "question": "can zippy open the checkout page for me", "role": "customer", "expectTitleIncludes": "Can Zippy add things to my cart?" },
-  { "question": "can zippy add a note to my order", "role": "customer", "expectTitleIncludes": "Can Zippy add a note to my order" },
-  { "question": "can you tell the restaurant no onions", "role": "customer", "expectTitleIncludes": "Can Zippy add a note to my order" },
-  { "question": "how do i change my delivery location", "role": "customer", "expectTitleIncludes": "How do I change my delivery location" },
-  { "question": "can i see where my delivery partner is", "role": "customer", "expectTitleIncludes": "Can I see where my delivery partner is" },
-  { "question": "how do i rate my order on the website", "role": "customer", "expectTitleIncludes": "How do I rate an order on the website" },
-  { "question": "how do i give stars to my order in the phone app", "role": "customer", "expectTitleIncludes": "How do I rate an order in the mobile app" },
-  { "question": "can i edit my review after posting it", "role": "customer", "expectTitleIncludes": "Can I review an order more than once or edit my review" },
-  { "question": "how do i see what other people said about a restaurant on the website", "role": "customer", "expectTitleIncludes": "Where do I see reviews of a store on the website" },
-  { "question": "someone wrote a rude review, how do i flag it in the phone app", "role": "customer", "expectTitleIncludes": "How do I report a review in the mobile app" },
-  { "question": "what does new partner mean next to my rider", "role": "customer", "expectTitleIncludes": "mean next to my delivery partner" },
-  { "question": "are my review photos visible to everyone", "role": "customer", "expectTitleIncludes": "Are my reviews and review photos public" },
-  { "question": "how do i answer a customer review of my store", "role": "vendor", "expectTitleIncludes": "How do I reply to a review" },
-  { "question": "can i delete a bad review of my store", "role": "vendor", "expectTitleIncludes": "Can I hide or delete a review of my store" },
-  { "question": "where do i find my customer rating", "role": "delivery", "expectTitleIncludes": "Where can I see my rating" },
-  { "question": "how do i hide an abusive review", "role": "admin", "expectTitleIncludes": "How do I moderate customer reviews" },
-  { "question": "what does the low score badge mean", "role": "admin", "expectTitleIncludes": "What does the Low score badge on a delivery partner mean" }
+  {
+    "question": "how do i find a pizza place on the site",
+    "role": "customer",
+    "expectTitleIncludes": "How do I find a restaurant or store on the website"
+  },
+  {
+    "question": "put stuff in my basket from the website",
+    "role": "customer",
+    "expectTitleIncludes": "How do I add items to my cart on the website"
+  },
+  {
+    "question": "steps to buy food on the web",
+    "role": "customer",
+    "expectTitleIncludes": "How do I place an order on the website"
+  },
+  {
+    "question": "where can i watch my food order progress",
+    "role": "customer",
+    "expectTitleIncludes": "How do I track my order on the website"
+  },
+  {
+    "question": "can i pay with upi",
+    "role": "customer",
+    "expectTitleIncludes": "Which payment methods can I use?"
+  },
+  {
+    "question": "how to make an account on the app",
+    "role": "customer",
+    "expectTitleIncludes": "How do I create a customer account in the mobile app"
+  },
+  {
+    "question": "forgot pw, how to change it on the website",
+    "role": "customer",
+    "expectTitleIncludes": "How do I reset my password on the website"
+  },
+  {
+    "question": "log out of the phone app",
+    "role": "customer",
+    "expectTitleIncludes": "How do I sign out in the mobile app"
+  },
+  {
+    "question": "can i order from 2 shops together",
+    "role": "customer",
+    "expectTitleIncludes": "Can I order from more than one store"
+  },
+  {
+    "question": "wanna cancel my order",
+    "role": "customer",
+    "expectTitleIncludes": "How do I cancel an order?"
+  },
+  {
+    "question": "where is my order history in the app",
+    "role": "customer",
+    "expectTitleIncludes": "How do I see my orders in the mobile app"
+  },
+  {
+    "question": "will i get a confirmation mail",
+    "role": "customer",
+    "expectTitleIncludes": "Will I get an email about my order?"
+  },
+  {
+    "question": "my food says Preparing, what does that mean",
+    "role": "customer",
+    "expectTitleIncludes": "What does \"Preparing\" mean?"
+  },
+  {
+    "question": "whats the Partner assigned status",
+    "role": "customer",
+    "expectTitleIncludes": "What does \"Partner assigned\" mean?"
+  },
+  {
+    "question": "my order got marked Rejected, why",
+    "role": "customer",
+    "expectTitleIncludes": "What does \"Rejected\" mean?"
+  },
+  {
+    "question": "how is the delivery charge worked out",
+    "role": "customer",
+    "expectTitleIncludes": "How is the delivery fee decided?"
+  },
+  {
+    "question": "is this real money or fake",
+    "role": null,
+    "expectTitleIncludes": "Is this app taking real money?"
+  },
+  {
+    "question": "how do i get my money back",
+    "role": "customer",
+    "expectTitleIncludes": "How do I get a refund?"
+  },
+  {
+    "question": "place order button wont click",
+    "role": "customer",
+    "expectTitleIncludes": "The Place order button is greyed out"
+  },
+  {
+    "question": "checkout keeps saying my session ended",
+    "role": "customer",
+    "expectTitleIncludes": "Session expired"
+  },
+  {
+    "question": "how to shut my shop for the day",
+    "role": "vendor",
+    "expectTitleIncludes": "How do I open or close my restaurant?"
+  },
+  {
+    "question": "add toppings choices to a dish",
+    "role": "vendor",
+    "expectTitleIncludes": "How do I add choices like size or toppings to an item?"
+  },
+  {
+    "question": "a new order came in, what do i do",
+    "role": "vendor",
+    "expectTitleIncludes": "How do I handle incoming orders?"
+  },
+  {
+    "question": "how do i start getting deliveries",
+    "role": "delivery",
+    "expectTitleIncludes": "How do I go online or offline?"
+  },
+  {
+    "question": "where are my previous drops",
+    "role": "delivery",
+    "expectTitleIncludes": "Where can I see my past deliveries?"
+  },
+  {
+    "question": "why is there nothing to pick up",
+    "role": "delivery",
+    "expectTitleIncludes": "Why do I see no available orders?"
+  },
+  {
+    "question": "onboard a new restaurant owner",
+    "role": "admin",
+    "expectTitleIncludes": "How do I add a vendor?"
+  },
+  {
+    "question": "move an order to another rider",
+    "role": "admin",
+    "expectTitleIncludes": "How do I reassign an order to a different delivery partner?"
+  },
+  {
+    "question": "block a vendor temporarily",
+    "role": "admin",
+    "expectTitleIncludes": "How do I suspend or unsuspend a vendor?"
+  },
+  {
+    "question": "How do I sign up?",
+    "role": null,
+    "expectTitleIncludes": "How do I create a customer account"
+  },
+  {
+    "question": "What's the weather like today?",
+    "role": "customer",
+    "expectTitleIncludes": null
+  },
+  {
+    "question": "what is the cricket score right now",
+    "role": null,
+    "expectTitleIncludes": null
+  },
+  {
+    "question": "write me a poem about the ocean",
+    "role": "customer",
+    "expectTitleIncludes": null
+  },
+  {
+    "question": "how do i close my restaurant for the day",
+    "role": "customer",
+    "expectTitleIncludes": null,
+    "expectTitleExcludes": "Vendor portal guide"
+  },
+  {
+    "question": "how do i add new dishes to my menu",
+    "role": null,
+    "expectTitleIncludes": null,
+    "expectTitleExcludes": "Vendor portal guide"
+  },
+  {
+    "question": "where do I reassign a delivery partner",
+    "role": "customer",
+    "expectTitleIncludes": null,
+    "expectTitleExcludes": "Admin portal guide"
+  },
+  {
+    "question": "who do i call or email if i have a problem",
+    "role": "customer",
+    "expectTitleIncludes": "How do I contact support?"
+  },
+  {
+    "question": "how long do you keep my order history and chats",
+    "role": "customer",
+    "expectTitleIncludes": "What is the privacy policy?"
+  },
+  {
+    "question": "what are the rules for using this app",
+    "role": "customer",
+    "expectTitleIncludes": "What are the terms of use?"
+  },
+  {
+    "question": "my order arrived with items missing what can i do",
+    "role": "customer",
+    "expectTitleIncludes": "wrong or with items missing"
+  },
+  {
+    "question": "is there a privacy policy page",
+    "role": "customer",
+    "expectTitleIncludes": "What is the privacy policy?"
+  },
+  {
+    "question": "where can I get chilli paneer",
+    "role": "customer",
+    "expectCatalogIncludes": "Wok Style Chilli Paneer"
+  },
+  {
+    "question": "is there a Mexican chocolate cake",
+    "role": "customer",
+    "expectCatalogIncludes": "Fiesta Mexican Chocolate Cake"
+  },
+  {
+    "question": "any good Italian restaurant",
+    "role": "customer",
+    "expectCatalogIncludes": "Bella Italia"
+  },
+  {
+    "question": "I want to order Chinese food from Golden Dragon",
+    "role": "customer",
+    "expectCatalogIncludes": "Golden Dragon"
+  },
+  {
+    "question": "which store sells palak paneer",
+    "role": "customer",
+    "expectCatalogIncludes": "Palak Paneer"
+  },
+  {
+    "question": "a place for cheese dosa",
+    "role": "customer",
+    "expectCatalogIncludes": "Corner Cheese Dosa"
+  },
+  {
+    "question": "can zippy look up my order for me",
+    "role": "customer",
+    "expectTitleIncludes": "Can Zippy see my orders or place an order for me"
+  },
+  {
+    "question": "does zippy see my address and phone number",
+    "role": "customer",
+    "expectTitleIncludes": "Does Zippy see my orders and personal details"
+  },
+  {
+    "question": "can zippy cancel my order for me",
+    "role": "customer",
+    "expectTitleIncludes": "Can Zippy see my orders or place an order for me"
+  },
+  {
+    "question": "can zippy put a dosa in my basket for me",
+    "role": "customer",
+    "expectTitleIncludes": "Can Zippy add things to my cart"
+  },
+  {
+    "question": "will zippy order and pay for me automatically",
+    "role": "customer",
+    "expectTitleIncludes": "Can Zippy add things to my cart"
+  },
+  {
+    "question": "can zippy check out for me",
+    "role": "customer",
+    "expectTitleIncludes": "Can Zippy add things to my cart?"
+  },
+  {
+    "question": "can zippy open the checkout page for me",
+    "role": "customer",
+    "expectTitleIncludes": "Can Zippy add things to my cart?"
+  },
+  {
+    "question": "can zippy add a note to my order",
+    "role": "customer",
+    "expectTitleIncludes": "Can Zippy add a note to my order"
+  },
+  {
+    "question": "can you tell the restaurant no onions",
+    "role": "customer",
+    "expectTitleIncludes": "Can Zippy add a note to my order"
+  },
+  {
+    "question": "how do i change my delivery location",
+    "role": "customer",
+    "expectTitleIncludes": "How do I change my delivery location"
+  },
+  {
+    "question": "can i see where my delivery partner is",
+    "role": "customer",
+    "expectTitleIncludes": "Can I see where my delivery partner is"
+  },
+  {
+    "question": "how do i rate my order on the website",
+    "role": "customer",
+    "expectTitleIncludes": "How do I rate an order on the website"
+  },
+  {
+    "question": "how do i give stars to my order in the phone app",
+    "role": "customer",
+    "expectTitleIncludes": "How do I rate an order in the mobile app"
+  },
+  {
+    "question": "can i edit my review after posting it",
+    "role": "customer",
+    "expectTitleIncludes": "Can I review an order more than once or edit my review"
+  },
+  {
+    "question": "how do i see what other people said about a restaurant on the website",
+    "role": "customer",
+    "expectTitleIncludes": "Where do I see reviews of a store on the website"
+  },
+  {
+    "question": "someone wrote a rude review, how do i flag it in the phone app",
+    "role": "customer",
+    "expectTitleIncludes": "How do I report a review in the mobile app"
+  },
+  {
+    "question": "what does new partner mean next to my rider",
+    "role": "customer",
+    "expectTitleIncludes": "mean next to my delivery partner"
+  },
+  {
+    "question": "are my review photos visible to everyone",
+    "role": "customer",
+    "expectTitleIncludes": "Are my reviews and review photos public"
+  },
+  {
+    "question": "how do i answer a customer review of my store",
+    "role": "vendor",
+    "expectTitleIncludes": "How do I reply to a review"
+  },
+  {
+    "question": "can i delete a bad review of my store",
+    "role": "vendor",
+    "expectTitleIncludes": "Can I hide or delete a review of my store"
+  },
+  {
+    "question": "where do i find my customer rating",
+    "role": "delivery",
+    "expectTitleIncludes": "Where can I see my rating"
+  },
+  {
+    "question": "how do i hide an abusive review",
+    "role": "admin",
+    "expectTitleIncludes": "How do I moderate customer reviews"
+  },
+  {
+    "question": "what does the low score badge mean",
+    "role": "admin",
+    "expectTitleIncludes": "What does the Low score badge on a delivery partner mean"
+  },
+  {
+    "question": "how do i use a promo code at checkout",
+    "role": "customer",
+    "expectTitleIncludes": "How do I use a promo code"
+  },
+  {
+    "question": "why is my coupon code not working",
+    "role": "customer",
+    "expectTitleIncludes": "Why does my promo code not work"
+  },
+  {
+    "question": "how does the referral programme work",
+    "role": "customer",
+    "expectTitleIncludes": "How does the referral programme work"
+  },
+  {
+    "question": "how do i spend my wallet credit",
+    "role": "customer",
+    "expectTitleIncludes": "How do I use wallet credit"
+  },
+  {
+    "question": "how do i create a coupon for my store",
+    "role": "vendor",
+    "expectTitleIncludes": "How do I create a coupon for my store"
+  },
+  {
+    "question": "how do i add a platform wide coupon",
+    "role": "admin",
+    "expectTitleIncludes": "How do I manage coupons"
+  }
 ]

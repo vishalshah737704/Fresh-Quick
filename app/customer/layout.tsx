@@ -9,6 +9,7 @@ import { CartPanel } from "@/components/CartPanel";
 import { SidebarNav } from "@/components/SidebarNav";
 import { DeliveryPickupToggle } from "@/components/DeliveryPickupToggle";
 import { AccountMenu } from "@/components/AccountMenu";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { BRAND } from "@/lib/branding";
 
 export default function CustomerLayout({ children }: { children: ReactNode }) {
@@ -28,7 +29,8 @@ export default function CustomerLayout({ children }: { children: ReactNode }) {
                 </Link>
                 <AddressPicker />
                 <DeliveryPickupToggle />
-                <div className="ml-auto">
+                <div className="ml-auto flex items-center gap-1">
+                  <NotificationBell href="/customer/notifications" />
                   <Suspense fallback={null}>
                     <AccountMenu />
                   </Suspense>

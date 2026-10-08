@@ -24,6 +24,7 @@ export default function CustomerLoginScreen() {
   const [city, setCity] = useState("");
   const [state, setState] = useState("");
   const [pincode, setPincode] = useState("");
+  const [referralCode, setReferralCode] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -82,6 +83,7 @@ export default function CustomerLoginScreen() {
             password,
             fullName: trimmedName,
             phone: phone.trim(),
+            referralCode: referralCode.trim() === "" ? undefined : referralCode.trim(),
             address: {
               line1: line1.trim(),
               line2: line2.trim(),
@@ -192,6 +194,15 @@ export default function CustomerLoginScreen() {
             autoComplete="postal-code"
             value={pincode}
             onChangeText={setPincode}
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Referral code (optional)"
+            placeholderTextColor={BRAND.colors.inkMuted}
+            autoCapitalize="characters"
+            autoCorrect={false}
+            value={referralCode}
+            onChangeText={setReferralCode}
           />
         </>
       )}

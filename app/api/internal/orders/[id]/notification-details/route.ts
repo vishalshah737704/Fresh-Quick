@@ -46,6 +46,9 @@ export async function GET(
     recipientPhone: order.recipientPhone,
     subtotal: order.subtotal,
     deliveryFee: order.deliveryFee,
+    discount: order.discount,
+    creditUsed: order.creditUsed,
+    couponCode: order.couponCode,
     address: order.address,
     items: order.items.map((item) => ({
       name: item.name,

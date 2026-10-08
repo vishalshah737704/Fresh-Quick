@@ -1,0 +1,44 @@
+{
+  "name": "10 - Notify Router",
+  "nodes": [
+    {
+      "id": "notify-webhook",
+      "name": "Supabase Webhook: user_notifications insert",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 200],
+      "webhookId": "f47ac10b-58cc-4372-a567-0e02b2c3d010",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "foodhub/notify-dispatch",
+        "responseMode": "onReceived"
+      },
+      "notes": "Fired by the n8n_notification_created trigger for every new inbox row. The dispatch route claims all undispatched rows, so one call also covers rows from a burst."
+    },
+    {
+      "id": "notify-dispatch-call",
+      "name": "POST /api/internal/notifications/dispatch",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [520, 200],
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.APP_BASE_URL}}/api/internal/notifications/dispatch",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "X-Internal-Secret", "value": "={{$env.N8N_INTERNAL_SECRET}}" }
+          ]
+        }
+      },
+      "notes": "Sends Expo push to the recipient's registered phones. SMS and WhatsApp stay off unless NOTIFY_SMS / NOTIFY_WHATSAPP and the Twilio variables are set in the app environment."
+    }
+  ],
+  "connections": {
+    "Supabase Webhook: user_notifications insert": {
+      "main": [[{ "node": "POST /api/internal/notifications/dispatch", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1", "timezone": "Asia/Kolkata" }
+}

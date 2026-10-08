@@ -5,6 +5,9 @@ import { Ionicons } from "@expo/vector-icons";
 import { supabase } from "../../../../lib/supabase";
 import { BRAND } from "../../../../theme";
 import { useRequireSession } from "../../../../lib/use-require-session";
+import { usePushRegistration, unregisterPush } from "../../../../lib/push";
+import { useUnreadCount } from "../../../../lib/use-unread-count";
+import { apiFetch } from "../../../../lib/api";
 
 // Account tab: houses profile info, sign-out, wallet, and help as list rows,
 // matching UberEats' Account tab pattern (mobile UberEats redesign spec,
@@ -12,6 +15,8 @@ import { useRequireSession } from "../../../../lib/use-require-session";
 export default function CustomerAccountScreen() {
   useRequireSession("/login/customer");
   const router = useRouter();
+  usePushRegistration();
+  const unread = useUnreadCount();
   const [profileName, setProfileName] = useState<string | null>(null);
   const [email, setEmail] = useState<string | null>(null);
   const [resetStatus, setResetStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
@@ -44,6 +49,7 @@ export default function CustomerAccountScreen() {
   }
 
   async function handleSignOut() {
+    await unregisterPush(apiFetch);
     await supabase.auth.signOut();
     router.replace("/login/customer");
   }
@@ -76,6 +82,17 @@ export default function CustomerAccountScreen() {
       </View>
 
       <View style={styles.list}>
+        <Pressable style={styles.row} onPress={() => router.push("/customer/notifications" as never)}>
+          <Ionicons name="notifications-outline" size={20} color={BRAND.colors.ink} />
+          <Text style={styles.rowLabel}>Notifications</Text>
+          {unread > 0 ? (
+            <View style={styles.badge}>
+              <Text style={styles.badgeText}>{unread > 99 ? "99+" : unread}</Text>
+            </View>
+          ) : null}
+          <Ionicons name="chevron-forward" size={18} color={BRAND.colors.inkMuted} />
+        </Pressable>
+
         <Pressable style={styles.row} onPress={() => router.push("/customer/wallet")}>
           <Ionicons name="wallet-outline" size={20} color={BRAND.colors.ink} />
           <Text style={styles.rowLabel}>Wallet</Text>
@@ -150,6 +167,16 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: BRAND.colors.ink,
   },
+  badge: {
+    minWidth: 20,
+    height: 20,
+    paddingHorizontal: 6,
+    borderRadius: 10,
+    backgroundColor: BRAND.colors.primaryTextSafe,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  badgeText: { fontFamily: BRAND.fonts.bodySemiBold, fontSize: 11, color: "#FFFFFF" },
   signOutLabel: {
     color: "#c0392b",
   },

@@ -13,6 +13,8 @@ import { supabase } from "../../../lib/supabase";
 import { apiFetch, ApiError } from "../../../lib/api";
 import { BRAND } from "../../../theme";
 import { useRequireSession } from "../../../lib/use-require-session";
+import { usePushRegistration, unregisterPush } from "../../../lib/push";
+import { useUnreadCount } from "../../../lib/use-unread-count";
 import type { OrderDetail } from "../../../lib/order-detail";
 import { DeliveryOrderCard } from "../../../components/DeliveryOrderCard";
 import { PartnerRatingCard } from "../../../components/reviews/PartnerRatingCard";
@@ -29,6 +31,8 @@ import { PartnerRatingCard } from "../../../components/reviews/PartnerRatingCard
 export default function DeliveryDashboardScreen() {
   useRequireSession("/login/delivery");
   const router = useRouter();
+  usePushRegistration();
+  const unread = useUnreadCount();
   const [isOnline, setIsOnline] = useState(false);
   const [toggling, setToggling] = useState(false);
   const [available, setAvailable] = useState<OrderDetail[]>([]);
@@ -191,6 +195,7 @@ export default function DeliveryDashboardScreen() {
   }
 
   async function handleSignOut() {
+    await unregisterPush(apiFetch);
     await supabase.auth.signOut();
     router.replace("/");
   }
@@ -215,6 +220,11 @@ export default function DeliveryDashboardScreen() {
             <Text style={styles.heading}>Dashboard</Text>
             <Pressable onPress={() => router.push("/delivery/history")}>
               <Text style={styles.historyLink}>History</Text>
+            </Pressable>
+            <Pressable onPress={() => router.push("/delivery/notifications" as never)}>
+              <Text style={styles.historyLink}>
+                {unread > 0 ? `Notifications (${unread > 99 ? "99+" : unread})` : "Notifications"}
+              </Text>
             </Pressable>
           </View>
           {profileName ? <Text style={styles.profileName}>{profileName}</Text> : null}

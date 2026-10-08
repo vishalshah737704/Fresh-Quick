@@ -55,3 +55,7 @@ Open My rating in the left menu (on the phone, the My rating card on the Dashboa
 ## Why do customers see "New partner" for me?
 
 Customers see your average only after you have 5 ratings. Until then they see "New partner". While you have fewer than 5 ratings, the My rating page shows a note saying customers see "New partner" until you have 5.
+
+## Where are my notifications?
+
+Tap the bell at the top of the portal, or open Notifications in the phone app. A new delivery assigned to you appears there. Notification settings on that page let you switch categories and push on or off.

@@ -11,6 +11,14 @@ import { validateCardFields, validateUpiFields, validateRecipientEmail } from "@
 import { validateRecipientPhone } from "@/lib/phone";
 import MapErrorBoundary from "@/components/maps/MapErrorBoundary";
 import AddressSearch, { type SelectedPlace } from "@/components/maps/AddressSearch";
+import { customerFetch } from "@/lib/customer-api";
+import { setCheckoutAdjustments } from "@/lib/checkout-adjustments";
+import {
+  computeCheckoutTotals,
+  formatPaise,
+  normalizeCouponCode,
+  type CouponPreview,
+} from "@/lib/coupon-model";
 import { useGoogleMaps } from "@/lib/maps/loader";
 import { reverseGeocodePoint } from "@/lib/maps/geocode";
 import { placeLabel, toAddressFormFields } from "@/lib/maps/place";
@@ -25,6 +33,9 @@ const EMPTY_DELIVERY_DETAILS: DeliveryDetails = {
   state: "",
   pincode: "",
 };
+
+type AvailableCoupon = { code: string; description: string | null; summary: string };
+type AppliedCoupon = { key: string; code: string; discountPaise: number; description: string | null };
 
 const PAYMENT_METHODS = [
   { value: "mock_card", label: "Mock Card", icon: "💳" },
@@ -55,6 +66,13 @@ export default function CheckoutPage() {
   const [cardholderName, setCardholderName] = useState("");
   const [upiId, setUpiId] = useState("");
   const [address, setAddress] = useState<DeliveryDetails>(EMPTY_DELIVERY_DETAILS);
+  const [couponInput, setCouponInput] = useState("");
+  const [couponBusy, setCouponBusy] = useState(false);
+  const [couponMessage, setCouponMessage] = useState<string | null>(null);
+  const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon | null>(null);
+  const [useCredit, setUseCredit] = useState(false);
+  const [walletData, setWalletData] = useState<{ key: string; balancePaise: number } | null>(null);
+  const [availableData, setAvailableData] = useState<{ key: string; coupons: AvailableCoupon[] } | null>(null);
 
   function updateAddressField(field: keyof DeliveryDetails, value: string) {
     setAddress((prev) => ({ ...prev, [field]: value }));
@@ -115,7 +133,95 @@ export default function CheckoutPage() {
     }
   }, [sessionLoading, userId, router]);
 
-  const total = deliveryFeePaise !== null ? (Math.round(subtotal * 100) + deliveryFeePaise) / 100 : null;
+  const subtotalPaise = Math.round(subtotal * 100);
+  const couponKey = `${storeId ?? ""}:${subtotalPaise}`;
+  const ownerKey = `${userId ?? ""}:${storeId ?? ""}`;
+
+  // Fetched data is tagged with the key it was fetched for and only used while the key
+  // still matches, so nothing is reset inside an effect.
+  useEffect(() => {
+    if (!userId || !storeId) return;
+    let cancelled = false;
+    const key = `${userId}:${storeId}`;
+    customerFetch<{ balancePaise: number }>("/api/customer/wallet")
+      .then((w) => {
+        if (!cancelled) setWalletData({ key: userId, balancePaise: w.balancePaise });
+      })
+      .catch(() => {});
+    customerFetch<{ coupons: AvailableCoupon[] }>(
+      `/api/customer/coupons/available?storeId=${encodeURIComponent(storeId)}`
+    )
+      .then((r) => {
+        if (!cancelled) setAvailableData({ key, coupons: r.coupons });
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [userId, storeId]);
+
+  const walletBalancePaise = walletData && walletData.key === userId ? walletData.balancePaise : 0;
+  const availableCoupons = availableData && availableData.key === ownerKey ? availableData.coupons : [];
+  // An applied coupon is only valid for the store and subtotal it was checked against.
+  const activeCoupon = appliedCoupon && appliedCoupon.key === couponKey ? appliedCoupon : null;
+  const couponStale = appliedCoupon !== null && activeCoupon === null;
+  const creditOn = useCredit && walletBalancePaise > 0;
+  const totals =
+    deliveryFeePaise !== null
+      ? computeCheckoutTotals({
+          subtotalPaise,
+          deliveryFeePaise,
+          discountPaise: activeCoupon?.discountPaise ?? 0,
+          creditBalancePaise: walletBalancePaise,
+          useCredit: creditOn,
+        })
+      : null;
+  const total = totals ? totals.totalPaise / 100 : null;
+  const adjDiscount = totals?.discountPaise ?? 0;
+  const adjCredit = totals?.creditPaise ?? 0;
+  const adjCode = activeCoupon?.code ?? null;
+  useEffect(() => {
+    setCheckoutAdjustments({ discountPaise: adjDiscount, creditPaise: adjCredit, couponCode: adjCode });
+    return () => setCheckoutAdjustments(null);
+  }, [adjDiscount, adjCredit, adjCode]);
+
+  async function applyCoupon(rawCode: string) {
+    if (!storeId) return;
+    const code = normalizeCouponCode(rawCode);
+    if (!code) {
+      setCouponMessage("Enter a valid promo code (3 to 20 letters or digits).");
+      return;
+    }
+    setCouponBusy(true);
+    setCouponMessage(null);
+    try {
+      const preview = await customerFetch<CouponPreview>("/api/customer/coupons/preview", {
+        method: "POST",
+        body: { code, storeId, subtotalPaise },
+      });
+      if (preview.ok) {
+        setAppliedCoupon({
+          key: couponKey,
+          code: preview.code,
+          discountPaise: preview.discountPaise,
+          description: preview.description,
+        });
+        setCouponInput("");
+      } else {
+        setAppliedCoupon(null);
+        setCouponMessage(preview.message);
+      }
+    } catch (e) {
+      setCouponMessage(e instanceof Error ? e.message : "Could not check the promo code");
+    } finally {
+      setCouponBusy(false);
+    }
+  }
+
+  function removeCoupon() {
+    setAppliedCoupon(null);
+    setCouponMessage(null);
+  }
 
   const recipientNameError = recipientName.trim().length === 0 ? "Name is required" : null;
   const recipientEmailError = validateRecipientEmail(recipientEmail);
@@ -178,6 +284,8 @@ export default function CheckoutPage() {
           },
           paymentMethod,
           expectedTotal: total,
+          couponCode: activeCoupon ? activeCoupon.code : null,
+          useCredit: creditOn,
           deliveryNote: orderNote.trim() === "" ? null : orderNote,
           recipientName: recipientName.trim(),
           recipientEmail: recipientEmail.trim(),
@@ -188,6 +296,10 @@ export default function CheckoutPage() {
       });
       const result = await res.json();
       if (!res.ok) {
+        if (result.couponError) {
+          setAppliedCoupon(null);
+          setCouponMessage(result.error ?? "That promo code cannot be used.");
+        }
         setError(result.error ?? "Checkout failed");
         setSubmitting(false);
         return;
@@ -232,6 +344,8 @@ export default function CheckoutPage() {
     upiId,
     orderNote,
     total,
+    activeCoupon,
+    creditOn,
     label,
     lat,
     lng,
@@ -425,6 +539,110 @@ export default function CheckoutPage() {
               />
             </div>
           </div>
+        </section>
+
+        <section className="rounded-[var(--radius-card)] border-t-4 border-brand-primary bg-brand-surface p-4 shadow-sm">
+          <h2 className="mb-3 font-semibold text-brand-primary">Promo code and wallet</h2>
+          {activeCoupon ? (
+            <div className="flex items-center justify-between gap-3 rounded-lg border border-brand-primary/30 bg-brand-primary-tint px-3 py-2 text-sm">
+              <span className="font-medium text-brand-ink">
+                {activeCoupon.code} applied: you save {formatPaise(totals?.discountPaise ?? 0)}
+              </span>
+              <button
+                type="button"
+                onClick={removeCoupon}
+                className="rounded-full border border-brand-ink-muted/30 px-3 py-1 text-xs font-medium text-brand-ink"
+              >
+                Remove
+              </button>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-2">
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={couponInput}
+                  onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
+                  placeholder="Promo code"
+                  aria-label="Promo code"
+                  className="min-w-0 flex-1 rounded border border-brand-ink-muted/15 px-3 py-2 text-sm"
+                />
+                <button
+                  type="button"
+                  onClick={() => applyCoupon(couponInput)}
+                  disabled={couponBusy || couponInput.trim() === ""}
+                  className="rounded-full bg-brand-primary-text-safe px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+                >
+                  {couponBusy ? "Checking…" : "Apply"}
+                </button>
+              </div>
+              {availableCoupons.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {availableCoupons.map((c) => (
+                    <button
+                      key={c.code}
+                      type="button"
+                      onClick={() => applyCoupon(c.code)}
+                      disabled={couponBusy}
+                      title={c.description ?? undefined}
+                      className="rounded-full border border-dashed border-brand-primary px-3 py-1 text-left text-xs text-brand-ink disabled:opacity-60"
+                    >
+                      <span className="font-semibold">{c.code}</span> · {c.summary}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+          {couponStale && (
+            <p className="mt-2 text-xs text-brand-ink-muted">
+              Your cart changed, so the promo code was removed. Apply it again.
+            </p>
+          )}
+          {couponMessage && (
+            <p role="alert" className="mt-2 text-sm text-red-600">
+              {couponMessage}
+            </p>
+          )}
+          {walletBalancePaise > 0 && (
+            <label className="mt-3 flex cursor-pointer items-center gap-2 text-sm text-brand-ink">
+              <input
+                type="checkbox"
+                checked={useCredit}
+                onChange={(e) => setUseCredit(e.target.checked)}
+                className="accent-brand-primary"
+              />
+              <span>Use wallet credit (balance {formatPaise(walletBalancePaise)})</span>
+            </label>
+          )}
+          {totals && (
+            <dl className="mt-4 flex flex-col gap-1 border-t border-brand-ink-muted/10 pt-3 text-sm text-brand-ink">
+              <div className="flex justify-between">
+                <dt>Subtotal</dt>
+                <dd>{formatPaise(subtotalPaise)}</dd>
+              </div>
+              <div className="flex justify-between">
+                <dt>Delivery fee</dt>
+                <dd>{formatPaise(deliveryFeePaise ?? 0)}</dd>
+              </div>
+              {activeCoupon && totals.discountPaise > 0 && (
+                <div className="flex justify-between text-brand-primary-text-safe">
+                  <dt>Discount ({activeCoupon.code})</dt>
+                  <dd>-{formatPaise(totals.discountPaise)}</dd>
+                </div>
+              )}
+              {totals.creditPaise > 0 && (
+                <div className="flex justify-between text-brand-primary-text-safe">
+                  <dt>Wallet credit</dt>
+                  <dd>-{formatPaise(totals.creditPaise)}</dd>
+                </div>
+              )}
+              <div className="flex justify-between font-semibold">
+                <dt>Total</dt>
+                <dd>{formatPaise(totals.totalPaise)}</dd>
+              </div>
+            </dl>
+          )}
         </section>
 
         <section className="rounded-[var(--radius-card)] border-t-4 border-brand-ink bg-brand-surface p-4 shadow-sm">

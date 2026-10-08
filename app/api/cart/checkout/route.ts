@@ -11,6 +11,7 @@ import {
 } from "@/lib/payment-fields";
 import { applyPaymentResult } from "@/lib/mock-payment";
 import { validateRecipientPhone, normalizeIndianMobile } from "@/lib/phone";
+import { normalizeCouponCode, parseCheckoutRpcError, computeCheckoutTotals } from "@/lib/coupon-model";
 
 type CheckoutRequestItem = {
   productId: string;
@@ -44,6 +45,8 @@ export async function POST(request: NextRequest) {
     recipientPhone,
     cardFields,
     upiFields,
+    couponCode,
+    useCredit,
   }: {
     storeId: string;
     items: CheckoutRequestItem[];
@@ -65,6 +68,8 @@ export async function POST(request: NextRequest) {
     recipientPhone: string;
     cardFields?: CardFields;
     upiFields?: UpiFields;
+    couponCode?: string | null;
+    useCredit?: boolean;
   } = body;
 
   if (!storeId || !items?.length || !deliveryAddress) {
@@ -282,9 +287,51 @@ export async function POST(request: NextRequest) {
     return sum + (basePaise + deltaPaise) * item.quantity;
   }, 0);
   const deliveryFeePaise = store.delivery_fee_paise;
-  const totalPaise = subtotalPaise + deliveryFeePaise;
   const subtotal = subtotalPaise / 100;
-  const total = totalPaise / 100;
+
+  // Discount and credit are recomputed from the database here and again, under
+  // row locks, inside the checkout RPC; the client only sends the code and a flag.
+  let normalizedCoupon: string | null = null;
+  if (couponCode !== undefined && couponCode !== null && String(couponCode).trim() !== "") {
+    normalizedCoupon = normalizeCouponCode(couponCode);
+    if (!normalizedCoupon) {
+      return NextResponse.json({ error: "That promo code does not exist." }, { status: 400 });
+    }
+  }
+  if (useCredit !== undefined && typeof useCredit !== "boolean") {
+    return NextResponse.json({ error: "Invalid wallet option" }, { status: 400 });
+  }
+  let discountPaise = 0;
+  if (normalizedCoupon) {
+    const { data: check, error: checkError } = await supabaseServer
+      .rpc("coupon_check", {
+        p_code: normalizedCoupon,
+        p_customer: customerId,
+        p_store: storeId,
+        p_subtotal_paise: subtotalPaise,
+      })
+      .single<{ error_code: string | null; message: string | null; discount_paise: number }>();
+    if (checkError || !check) {
+      return NextResponse.json({ error: "Could not check the promo code" }, { status: 500 });
+    }
+    if (check.error_code) {
+      return NextResponse.json({ error: check.message, couponError: check.error_code }, { status: 409 });
+    }
+    discountPaise = check.discount_paise;
+  }
+  let balancePaise = 0;
+  if (useCredit === true) {
+    const { data: balance } = await supabaseServer.rpc("wallet_balance_paise", { p_customer: customerId });
+    balancePaise = typeof balance === "number" ? balance : 0;
+  }
+  const totals = computeCheckoutTotals({
+    subtotalPaise,
+    deliveryFeePaise,
+    discountPaise,
+    creditBalancePaise: balancePaise,
+    useCredit: useCredit === true,
+  });
+  const total = totals.totalPaise / 100;
 
   if (typeof expectedTotal === "number" && Math.abs(expectedTotal - total) > 0.01) {
     return NextResponse.json(
@@ -336,8 +383,22 @@ export async function POST(request: NextRequest) {
     p_payment_amount: total,
     p_payment_reference: maskedReference,
     p_delivery_note: normalizedDeliveryNote,
+    p_coupon_code: normalizedCoupon,
+    p_use_credit: useCredit === true,
   });
 
+  if (rpcError) {
+    const parsed = parseCheckoutRpcError(rpcError.message);
+    if (parsed?.kind === "coupon") {
+      return NextResponse.json({ error: parsed.message, couponError: parsed.errorCode }, { status: 409 });
+    }
+    if (parsed?.kind === "price_changed") {
+      return NextResponse.json(
+        { error: "Prices have changed since you added items to your cart. Please review your order." },
+        { status: 409 }
+      );
+    }
+  }
   if (rpcError || !rpcRows || !rpcRows[0]) {
     return NextResponse.json({ error: "Failed to place order" }, { status: 500 });
   }

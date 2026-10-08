@@ -110,6 +110,13 @@ export function AccountMenu() {
             Wallet
           </Link>
           <Link
+            href="/customer/notifications"
+            onClick={() => setOpen(false)}
+            className="block px-4 py-2 text-sm text-brand-ink hover:bg-brand-accent/10"
+          >
+            Notifications
+          </Link>
+          <Link
             href="/customer/help"
             onClick={() => setOpen(false)}
             className="block px-4 py-2 text-sm text-brand-ink hover:bg-brand-accent/10"

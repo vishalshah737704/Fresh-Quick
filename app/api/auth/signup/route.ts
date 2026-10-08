@@ -18,6 +18,24 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
   }
 
+  // Optional referral code: an unknown code is rejected BEFORE any account exists.
+  let referrerId: string | null = null;
+  const rawReferral = typeof body.referralCode === "string" ? body.referralCode.trim() : "";
+  if (rawReferral !== "") {
+    const code = rawReferral.toUpperCase();
+    const { data: referrer } = await supabaseServer
+      .from("users")
+      .select("id")
+      .eq("referral_code", code)
+      .eq("role", "customer")
+      .maybeSingle();
+    if (!referrer) {
+      return NextResponse.json({ error: "That referral code does not exist." }, { status: 400 });
+    }
+    referrerId = referrer.id;
+  }
+  let newUserId = null as string | null;
+
   const outcome = await runSignup(body, {
     validate: (b) => validateSignupPayload(b, normalizeIndianMobile),
     geocode: geocodeAddress,
@@ -30,6 +48,7 @@ export async function POST(request: NextRequest) {
         email_confirm: true,
       });
       if (error || !data.user) return { error: error?.message ?? "Failed to create account" };
+      newUserId = data.user.id;
       return { id: data.user.id };
     },
     async insertProfile(row) {
@@ -63,5 +82,12 @@ export async function POST(request: NextRequest) {
       await supabaseServer.auth.admin.deleteUser(id);
     },
   });
+  if (outcome.status === 200 && referrerId && newUserId) {
+    // The account already exists, so a failure here must not fail the sign-up.
+    const { error } = await supabaseServer
+      .from("referrals")
+      .insert({ referrer_id: referrerId, referred_id: newUserId });
+    if (error) console.error("referral link failed", error.code);
+  }
   return NextResponse.json(outcome.body, { status: outcome.status });
 }

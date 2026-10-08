@@ -70,6 +70,8 @@ export default function RootLayout() {
         <Stack.Screen name="customer/orders/[id]" options={{ title: "Order" }} />
         <Stack.Screen name="customer/help" options={{ title: "Help" }} />
         <Stack.Screen name="customer/wallet" options={{ title: "Wallet" }} />
+        <Stack.Screen name="customer/notifications" options={{ title: "Notifications" }} />
+        <Stack.Screen name="delivery/notifications" options={{ title: "Notifications" }} />
         <Stack.Screen name="delivery/dashboard" options={{ title: "Dashboard", headerBackVisible: false }} />
         <Stack.Screen name="delivery/history" options={{ title: "History" }} />
       </Stack>

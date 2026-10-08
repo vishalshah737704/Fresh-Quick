@@ -103,6 +103,20 @@ export function OrderDetailView({
           <p className="text-xs font-medium text-brand-accent-text-safe">Delivery fee</p>
           <p className="text-base font-semibold">{rupees(order.deliveryFee)}</p>
         </div>
+        {order.discount > 0 && (
+          <div className="rounded-[var(--radius-card)] bg-brand-accent-tint p-3">
+            <p className="text-xs font-medium text-brand-accent-text-safe">
+              Discount{order.couponCode ? ` (${order.couponCode})` : ""}
+            </p>
+            <p className="text-base font-semibold">-{rupees(order.discount)}</p>
+          </div>
+        )}
+        {order.creditUsed > 0 && (
+          <div className="rounded-[var(--radius-card)] bg-brand-accent-tint p-3">
+            <p className="text-xs font-medium text-brand-accent-text-safe">Wallet credit</p>
+            <p className="text-base font-semibold">-{rupees(order.creditUsed)}</p>
+          </div>
+        )}
         <div className="rounded-[var(--radius-card)] bg-brand-accent-tint p-3">
           <p className="text-xs font-medium text-brand-accent-text-safe">Total</p>
           <p className="text-lg font-bold">{rupees(order.total)}</p>

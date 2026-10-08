@@ -2,7 +2,7 @@ import type { OrderStatus } from "./order-status";
 
 // `addresses!delivery_address_id` pins the embed to the orders->addresses FK.
 export const ORDER_DETAIL_SELECT =
-  "id, status, subtotal, delivery_fee, total, placed_at, accepted_at, picked_up_at, delivered_at, delivery_note, recipient_name, recipient_email, recipient_phone, delivery_partner_id, " +
+  "id, status, subtotal, delivery_fee, discount, credit_used, coupon_code, total, placed_at, accepted_at, picked_up_at, delivered_at, delivery_note, recipient_name, recipient_email, recipient_phone, delivery_partner_id, " +
   "stores(name, lat, lng, store_address:addresses!address_id(label, line1, line2, city, state, pincode)), " +
   "address:addresses!delivery_address_id(label, line1, line2, city, state, pincode, lat, lng), " +
   "payments(status, method), " +
@@ -29,6 +29,9 @@ export type RawOrderDetail = {
   status: OrderStatus;
   subtotal: number | string;
   delivery_fee: number | string;
+  discount?: number | string | null;
+  credit_used?: number | string | null;
+  coupon_code?: string | null;
   total: number | string;
   placed_at: string;
   accepted_at?: string | null;
@@ -81,6 +84,9 @@ export type OrderDetail = {
   placedAt: string;
   subtotal: number;
   deliveryFee: number;
+  discount: number;
+  creditUsed: number;
+  couponCode: string | null;
   total: number;
   deliveryNote: string | null;
   recipientName: string;
@@ -186,6 +192,9 @@ export function normalizeOrderDetail(raw: RawOrderDetail): OrderDetail {
     placedAt: raw.placed_at,
     subtotal: Number(raw.subtotal),
     deliveryFee: Number(raw.delivery_fee),
+    discount: Number(raw.discount ?? 0),
+    creditUsed: Number(raw.credit_used ?? 0),
+    couponCode: raw.coupon_code ?? null,
     total: Number(raw.total),
     deliveryNote: cleanText(raw.delivery_note),
     recipientName: raw.recipient_name,

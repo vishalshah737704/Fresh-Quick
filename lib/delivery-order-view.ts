@@ -8,7 +8,8 @@ export type DeliveryScope = "available" | "active" | "history";
 // is theirs and in flight. storePoint stays: store coordinates are public and
 // the pickup address is already shown.
 export function redactForDelivery(order: OrderDetail, scope: DeliveryScope): OrderDetail {
-  const base = { ...order, recipientEmail: "" };
+  // The coupon code is customer-side detail; the amounts stay because the partner collects the total.
+  const base = { ...order, recipientEmail: "", couponCode: null };
   if (scope === "active") return base;
   if (scope === "history") {
     return { ...base, recipientPhone: "", address: null, deliveryPoint: null, deliveryNote: null };

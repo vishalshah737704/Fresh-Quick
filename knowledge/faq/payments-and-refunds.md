@@ -30,7 +30,7 @@ Open the order page. It shows how the order was paid, with the payment status (f
 
 ## Is my total ever different from what I saw in the cart?
 
-The total is the subtotal plus the store's delivery fee. If a store changes an item price after you added it to your cart, checkout stops and shows "Prices have changed since you added items to your cart. Please review your order." so you can review before paying.
+The total is the subtotal plus the store's delivery fee, minus any promo-code discount and any wallet credit you chose to use. If a store changes an item price after you added it to your cart, checkout stops and shows "Prices have changed since you added items to your cart. Please review your order." so you can review before paying.
 
 ## Can I add a tip?
 

@@ -8,12 +8,14 @@ import { useVendorSession } from "@/components/vendor/useVendorSession";
 import { VendorSessionContext } from "@/components/vendor/VendorSessionContext";
 import { useProfile } from "@/lib/use-profile";
 import { MyProfileSection } from "@/components/MyProfileSection";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
 
 const NAV_LINKS = [
   { href: "/vendor/dashboard", label: "Dashboard" },
   { href: "/vendor/menu", label: "Menu" },
   { href: "/vendor/orders", label: "Orders" },
   { href: "/vendor/reviews", label: "Reviews" },
+  { href: "/vendor/coupons", label: "Coupons" },
 ];
 
 export default function VendorShell({ children }: { children: React.ReactNode }) {
@@ -54,18 +56,24 @@ export default function VendorShell({ children }: { children: React.ReactNode })
       <div className="flex min-h-screen flex-col md:flex-row">
         <div className="flex items-center justify-between bg-brand-surface p-3 text-brand-ink md:hidden">
           <span className="font-heading text-lg text-brand-ink">Vendor</span>
-          <button
-            onClick={() => setDrawerOpen(!drawerOpen)}
-            className="rounded-[var(--radius-pill)] border border-brand-ink-muted/20 px-3 py-1 text-sm text-brand-ink"
-          >
-            Menu
-          </button>
+          <div className="flex items-center gap-2">
+            <NotificationBell href="/vendor/notifications" />
+            <button
+              onClick={() => setDrawerOpen(!drawerOpen)}
+              className="rounded-[var(--radius-pill)] border border-brand-ink-muted/20 px-3 py-1 text-sm text-brand-ink"
+            >
+              Menu
+            </button>
+          </div>
         </div>
         <aside
           className={`${drawerOpen ? "flex" : "hidden"} w-full flex-col gap-2 p-4 text-white md:flex md:w-56 md:min-h-screen`}
           style={{ background: "linear-gradient(180deg, var(--color-brand-ink) 0%, #132849 100%)" }}
         >
-          <span className="mb-2 hidden font-heading text-lg text-white md:block">Vendor</span>
+          <div className="mb-2 hidden items-center justify-between md:flex">
+            <span className="font-heading text-lg text-white">Vendor</span>
+            <NotificationBell href="/vendor/notifications" variant="dark" />
+          </div>
           <span className="mb-2 inline-flex w-fit items-center rounded-[var(--radius-pill)] bg-brand-accent/20 px-3 py-1 text-xs font-medium text-white">
             {isOpen === null ? "…" : isOpen ? "Open" : "Closed"}
           </span>

@@ -562,3 +562,8 @@ acceptance (demo mode)" checkbox. It does nothing while the checkbox is off.
   after every re-import. Needs migration 35 applied first.
 - **Test it:** tick the box, then insert a paid order (or place one) and watch
   `orders.status`. Real Gmail: workflows 03 and 05 mail the order's recipient.
+
+
+## Workflow 10: Notify Router (C4)
+
+File: `n8n/workflows/10-notify-router.json`. Import it like the others (needs a top-level `id`; publish in the n8n UI, never restart the `--rm` container). Trigger: webhook `POST /webhook/foodhub/notify-dispatch`, fired by the database trigger `n8n_notification_created` for every new inbox row. It calls `POST {APP_BASE_URL}/api/internal/notifications/dispatch` with the internal secret; the route claims undispatched rows and sends Expo push (and SMS/WhatsApp only when enabled in the app environment: `NOTIFY_SMS=on`, `NOTIFY_WHATSAPP=on`, `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_SMS_FROM`, `TWILIO_WHATSAPP_FROM`). Until it is published, inbox rows are still created and shown in the apps; push just waits (rows older than 24 h are never pushed).

@@ -8,6 +8,7 @@ import { useDeliverySession } from "@/components/delivery/useDeliverySession";
 import { DeliverySessionContext } from "@/components/delivery/DeliverySessionContext";
 import { useProfile } from "@/lib/use-profile";
 import { MyProfileSection } from "@/components/MyProfileSection";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
 
 const NAV_LINKS = [
   { href: "/delivery/dashboard", label: "Dashboard" },
@@ -39,18 +40,24 @@ export default function DeliveryShell({ children }: { children: React.ReactNode 
       <div className="flex min-h-screen flex-col md:flex-row">
         <div className="flex items-center justify-between bg-brand-surface p-3 text-brand-ink md:hidden">
           <span className="font-heading text-lg text-brand-ink">Delivery</span>
-          <button
-            onClick={() => setDrawerOpen(!drawerOpen)}
-            className="rounded-[var(--radius-pill)] border border-brand-ink-muted/20 px-3 py-1 text-sm text-brand-ink"
-          >
-            Menu
-          </button>
+          <div className="flex items-center gap-2">
+            <NotificationBell href="/delivery/notifications" />
+            <button
+              onClick={() => setDrawerOpen(!drawerOpen)}
+              className="rounded-[var(--radius-pill)] border border-brand-ink-muted/20 px-3 py-1 text-sm text-brand-ink"
+            >
+              Menu
+            </button>
+          </div>
         </div>
         <aside
           className={`${drawerOpen ? "flex" : "hidden"} w-full flex-col gap-2 p-4 text-white md:flex md:w-56 md:min-h-screen`}
           style={{ background: "linear-gradient(180deg, var(--color-brand-ink) 0%, #132849 100%)" }}
         >
-          <span className="mb-2 hidden font-heading text-lg text-white md:block">Delivery</span>
+          <div className="mb-2 hidden items-center justify-between md:flex">
+            <span className="font-heading text-lg text-white">Delivery</span>
+            <NotificationBell href="/delivery/notifications" variant="dark" />
+          </div>
           <span className="mb-2 inline-flex w-fit items-center rounded-[var(--radius-pill)] bg-brand-accent/20 px-3 py-1 text-xs font-medium text-white">
             {isOnline ? "Online" : "Offline"}
           </span>

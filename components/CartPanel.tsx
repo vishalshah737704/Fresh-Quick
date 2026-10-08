@@ -6,6 +6,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCart } from "@/lib/cart-store";
 import { useDeliveryFee } from "@/lib/use-delivery-fee";
+import { useCheckoutAdjustments } from "@/lib/checkout-adjustments";
 
 export function CartPanel() {
   const pathname = usePathname();
@@ -27,14 +28,21 @@ export function CartPanel() {
   const [orderNoteDraft, setOrderNoteDraft] = useState<string | null>(null);
   const { deliveryFeePaise, loading: feeLoading } = useDeliveryFee(storeId);
 
+  const adjustments = useCheckoutAdjustments();
+
   if (items.length === 0) return null;
 
   function noteValue(lineId: string, current: string | null) {
     return noteDrafts[lineId] ?? current ?? "";
   }
 
+  const adjustmentsApply = isOnCheckoutPage;
+  const discountPaise = adjustmentsApply ? adjustments.discountPaise : 0;
+  const creditPaise = adjustmentsApply ? adjustments.creditPaise : 0;
   const totalPaise =
-    deliveryFeePaise !== null ? Math.round(subtotal * 100) + deliveryFeePaise : null;
+    deliveryFeePaise !== null
+      ? Math.round(subtotal * 100) + deliveryFeePaise - discountPaise - creditPaise
+      : null;
   const total = totalPaise !== null ? totalPaise / 100 : null;
 
   return (
@@ -114,6 +122,12 @@ export function CartPanel() {
           ) : deliveryFeePaise !== null ? (
             <p>Delivery fee: ₹{(deliveryFeePaise / 100).toFixed(2)}</p>
           ) : null}
+          {discountPaise > 0 && (
+            <p>
+              Discount{adjustments.couponCode ? ` (${adjustments.couponCode})` : ""}: -₹{(discountPaise / 100).toFixed(2)}
+            </p>
+          )}
+          {creditPaise > 0 && <p>Wallet credit: -₹{(creditPaise / 100).toFixed(2)}</p>}
           {total !== null && (
             <p className="mt-1 flex items-center justify-between text-base font-semibold text-white">
               <span>Total to pay</span>

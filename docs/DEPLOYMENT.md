@@ -264,3 +264,6 @@ bucket names, so delete the rows for your test IP hash afterwards.
   `n8n/workflows/*.json` are explicitly untested reference material (see
   `docs/n8n-webhook-setup.md` and MEMORY.md's Phase 7 entry). Wiring up a
   real n8n instance is a separate task, not part of deploying the web app.
+
+## Coupons, referrals and notifications (public-launch notes)
+Not needed for the local install. Before any public launch: add sign-up throttling (referral codes make fake accounts profitable: each referred account yields Rs 50 + Rs 50 after one delivered order of Rs 100), consider a per-day cap on credit per customer, rate-limit the promo preview and notification routes, and set Twilio budgets before turning `NOTIFY_SMS`/`NOTIFY_WHATSAPP` on.

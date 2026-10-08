@@ -13,7 +13,8 @@ export function escapeHtml(value: string): string {
 }
 
 function rupees(amount: number): string {
-  return `₹${(Math.round(amount * 100) / 100).toFixed(2)}`;
+  const text = `₹${(Math.round(Math.abs(amount) * 100) / 100).toFixed(2)}`;
+  return amount < 0 ? `-${text}` : text;
 }
 
 function isHttps(url: string): boolean {
@@ -89,6 +90,8 @@ export function buildDeliveredEmail(
     `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:12px;">` +
     totalRow("Subtotal", order.subtotal, false) +
     totalRow("Delivery fee", order.deliveryFee, false) +
+    (order.discount > 0 ? totalRow(order.couponCode ? `Discount (${escapeHtml(order.couponCode)})` : "Discount", -order.discount, false) : "") +
+    (order.creditUsed > 0 ? totalRow("Wallet credit", -order.creditUsed, false) : "") +
     totalRow("Total", order.total, true) +
     `</table>` +
     `<p style="margin:20px 0 4px;${FONT}font-size:14px;font-weight:bold;color:#222222;">Delivered to</p>` +

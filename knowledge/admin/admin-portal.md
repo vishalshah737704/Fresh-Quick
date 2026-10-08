@@ -69,3 +69,7 @@ Open Reviews in the left menu. The Reported tab lists reviews that customers or 
 ## What does the Low score badge on a delivery partner mean?
 
 On the Delivery Partners page, each partner shows their average stars and rating count. A red "Low score" badge appears when the partner has at least 5 ratings and the average is below 3.0.
+
+## How do I manage coupons?
+
+Open Coupons in the sidebar. The page lists every coupon (platform-wide and store coupons, with a Scope column), how many times each was used and the discount given. Choose New coupon to create one: leave the store as "Platform-wide" for a code that works at every store, or pick a store. Admin coupons have no percent or amount cap beyond 100% and the order subtotal. Use Pause or Resume on a row to switch a coupon off or on; the code, type and value cannot be edited after creation.
