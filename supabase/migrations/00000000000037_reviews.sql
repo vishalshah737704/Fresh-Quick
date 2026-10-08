@@ -74,49 +74,88 @@ end $$;
 create trigger stores_seed_rating before insert on public.stores
   for each row execute function public.stores_set_seed_rating();
 
+create function public.recompute_store_rating(p_store_id uuid) returns void
+language plpgsql security definer set search_path = '' as $$
+begin
+  -- Lock first, compute in a NEW statement: under READ COMMITTED a concurrent review's
+  -- recompute then sees our committed row instead of overwriting it with a stale sum.
+  perform 1 from public.stores where id = p_store_id for update;
+  update public.stores s set
+    rating_sum = coalesce((select sum(r.rating) from public.reviews r where r.store_id = s.id and r.status = 'visible'), 0),
+    rating_count = (select count(*) from public.reviews r where r.store_id = s.id and r.status = 'visible')
+  where s.id = p_store_id;
+  update public.stores s set
+    rating = case when s.rating_count > 0 then round(s.rating_sum::numeric / s.rating_count, 1) else coalesce(s.seed_rating, 0) end
+  where s.id = p_store_id;
+end $$;
+
+create function public.recompute_product_rating(p_product_id uuid) returns void
+language plpgsql security definer set search_path = '' as $$
+begin
+  perform 1 from public.products where id = p_product_id for update;
+  update public.products p set
+    rating_sum = coalesce((select sum(rd.stars) from public.review_dishes rd join public.reviews r on r.id = rd.review_id
+                           where rd.product_id = p.id and r.status = 'visible'), 0),
+    rating_count = (select count(*) from public.review_dishes rd join public.reviews r on r.id = rd.review_id
+                    where rd.product_id = p.id and r.status = 'visible')
+  where p.id = p_product_id;
+end $$;
+
+create function public.recompute_partner_rating(p_partner_id uuid) returns void
+language plpgsql security definer set search_path = '' as $$
+begin
+  perform 1 from public.delivery_partners where user_id = p_partner_id for update;
+  update public.delivery_partners dp set
+    rating_sum = coalesce((select sum(rp.stars) from public.review_partner rp join public.reviews r on r.id = rp.review_id
+                           where rp.partner_id = dp.user_id and r.status = 'visible'), 0),
+    rating_count = (select count(*) from public.review_partner rp join public.reviews r on r.id = rp.review_id
+                    where rp.partner_id = dp.user_id and r.status = 'visible')
+  where dp.user_id = p_partner_id;
+end $$;
+
 create function public.recompute_review_aggregates(p_review_id uuid) returns void
 language plpgsql security definer set search_path = '' as $$
 declare
   v_store uuid;
-  v_products uuid[];
+  v_product uuid;
   v_partner uuid;
 begin
   select store_id into v_store from public.reviews where id = p_review_id;
   if v_store is null then return; end if;
-  select coalesce(array_agg(product_id), '{}') into v_products from public.review_dishes where review_id = p_review_id;
+  perform public.recompute_store_rating(v_store);
+  for v_product in select product_id from public.review_dishes where review_id = p_review_id order by product_id loop
+    perform public.recompute_product_rating(v_product);
+  end loop;
   select partner_id into v_partner from public.review_partner where review_id = p_review_id;
-
-  -- Lock first, compute in a NEW statement: under READ COMMITTED a concurrent review's
-  -- recompute then sees our committed row instead of overwriting it with a stale sum.
-  perform 1 from public.stores where id = v_store for update;
-  update public.stores s set
-    rating_sum = coalesce((select sum(r.rating) from public.reviews r where r.store_id = s.id and r.status = 'visible'), 0),
-    rating_count = (select count(*) from public.reviews r where r.store_id = s.id and r.status = 'visible')
-  where s.id = v_store;
-  update public.stores s set
-    rating = case when s.rating_count > 0 then round(s.rating_sum::numeric / s.rating_count, 1) else coalesce(s.seed_rating, 0) end
-  where s.id = v_store;
-
-  if array_length(v_products, 1) is not null then
-    perform 1 from public.products where id = any (v_products) order by id for update;
-    update public.products p set
-      rating_sum = coalesce((select sum(rd.stars) from public.review_dishes rd join public.reviews r on r.id = rd.review_id
-                             where rd.product_id = p.id and r.status = 'visible'), 0),
-      rating_count = (select count(*) from public.review_dishes rd join public.reviews r on r.id = rd.review_id
-                      where rd.product_id = p.id and r.status = 'visible')
-    where p.id = any (v_products);
-  end if;
-
-  if v_partner is not null then
-    perform 1 from public.delivery_partners where user_id = v_partner for update;
-    update public.delivery_partners dp set
-      rating_sum = coalesce((select sum(rp.stars) from public.review_partner rp join public.reviews r on r.id = rp.review_id
-                             where rp.partner_id = dp.user_id and r.status = 'visible'), 0),
-      rating_count = (select count(*) from public.review_partner rp join public.reviews r on r.id = rp.review_id
-                      where rp.partner_id = dp.user_id and r.status = 'visible')
-    where dp.user_id = v_partner;
-  end if;
+  if v_partner is not null then perform public.recompute_partner_rating(v_partner); end if;
 end $$;
+
+-- Deleting a review (for example through the orders cascade) must also refresh the aggregates.
+-- Each trigger recomputes its own target from current table state, so cascade firing order does not matter.
+create function public.reviews_deleted() returns trigger
+language plpgsql security definer set search_path = '' as $$
+begin
+  perform public.recompute_store_rating(old.store_id);
+  return null;
+end $$;
+create function public.review_dishes_deleted() returns trigger
+language plpgsql security definer set search_path = '' as $$
+begin
+  perform public.recompute_product_rating(old.product_id);
+  return null;
+end $$;
+create function public.review_partner_deleted() returns trigger
+language plpgsql security definer set search_path = '' as $$
+begin
+  if old.partner_id is not null then perform public.recompute_partner_rating(old.partner_id); end if;
+  return null;
+end $$;
+create trigger reviews_recompute_on_delete after delete on public.reviews
+  for each row execute function public.reviews_deleted();
+create trigger review_dishes_recompute_on_delete after delete on public.review_dishes
+  for each row execute function public.review_dishes_deleted();
+create trigger review_partner_recompute_on_delete after delete on public.review_partner
+  for each row execute function public.review_partner_deleted();
 
 create function public.reviews_status_changed() returns trigger
 language plpgsql security definer set search_path = '' as $$
@@ -181,6 +220,9 @@ end $$;
 
 revoke all on function public.create_review(uuid, uuid, integer, text, text, jsonb, integer, text) from public, anon, authenticated;
 grant execute on function public.create_review(uuid, uuid, integer, text, text, jsonb, integer, text) to service_role;
+revoke all on function public.recompute_store_rating(uuid), public.recompute_product_rating(uuid), public.recompute_partner_rating(uuid),
+  public.reviews_deleted(), public.review_dishes_deleted(), public.review_partner_deleted() from public, anon, authenticated;
+grant execute on function public.recompute_store_rating(uuid), public.recompute_product_rating(uuid), public.recompute_partner_rating(uuid) to service_role;
 revoke all on function public.recompute_review_aggregates(uuid) from public, anon, authenticated;
 grant execute on function public.recompute_review_aggregates(uuid) to service_role;
 

@@ -146,6 +146,21 @@ begin
     raise exception 'order delete left review rows behind';
   end if;
 
+  -- ord1's review is gone; rev2 (store 2, dish A 1, partner 5) is the only visible one left
+  select rating, rating_count into s from public.stores where id = v_store;
+  if s.rating <> 2.0 or s.rating_count <> 1 then raise exception 'order cascade left store aggregate stale: %', s; end if;
+  select rating_sum, rating_count into p from public.products where id = prod_b;
+  if p.rating_sum <> 0 or p.rating_count <> 0 then raise exception 'order cascade left dish B aggregate stale: %', p; end if;
+
+  -- deleting the last visible review through the order cascade restores seed and zeroes every aggregate
+  delete from public.orders where id = ord2;
+  select rating, rating_count, rating_sum into s from public.stores where id = v_store;
+  if s.rating <> 4.2 or s.rating_count <> 0 or s.rating_sum <> 0 then raise exception 'order cascade left store aggregate stale: %', s; end if;
+  select rating_sum, rating_count into p from public.products where id = prod_a;
+  if p.rating_sum <> 0 or p.rating_count <> 0 then raise exception 'order cascade left dish A aggregate stale: %', p; end if;
+  select rating_sum, rating_count into d from public.delivery_partners where user_id = partner;
+  if d.rating_sum <> 0 or d.rating_count <> 0 then raise exception 'order cascade left partner aggregate stale: %', d; end if;
+
   -- RLS: enabled with no policies on the three tables
   if exists (select 1 from pg_policies where tablename in ('reviews', 'review_dishes', 'review_partner')) then
     raise exception 'a review table has an RLS policy';
