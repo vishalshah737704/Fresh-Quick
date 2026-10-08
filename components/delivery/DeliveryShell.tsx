@@ -12,6 +12,7 @@ import { MyProfileSection } from "@/components/MyProfileSection";
 const NAV_LINKS = [
   { href: "/delivery/dashboard", label: "Dashboard" },
   { href: "/delivery/history", label: "History" },
+  { href: "/delivery/rating", label: "My rating" },
 ];
 
 export default function DeliveryShell({ children }: { children: React.ReactNode }) {

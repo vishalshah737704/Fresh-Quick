@@ -15,6 +15,7 @@ import { BRAND } from "../../../theme";
 import { useRequireSession } from "../../../lib/use-require-session";
 import type { OrderDetail } from "../../../lib/order-detail";
 import { DeliveryOrderCard } from "../../../components/DeliveryOrderCard";
+import { PartnerRatingCard } from "../../../components/reviews/PartnerRatingCard";
 
 // Mirrors app/delivery/(portal)/dashboard/page.tsx on the web: online/
 // offline toggle, available-order self-claim list, "mine" list with the
@@ -256,6 +257,7 @@ export default function DeliveryDashboardScreen() {
         </View>
       ) : (
         <ScrollView contentContainerStyle={{ gap: 20 }}>
+          <PartnerRatingCard />
           <View style={{ gap: 20 }}>
               <View style={styles.section}>
                 <Text style={styles.sectionHeading}>Your active deliveries</Text>
