@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useAddToCart } from "@/lib/use-add-to-cart";
+import { averageOf } from "@/lib/reviews-model";
 import { ItemCustomizationModal } from "@/components/ItemCustomizationModal";
 
 type MenuItem = {
@@ -12,6 +13,8 @@ type MenuItem = {
   product_attributes: { is_veg?: boolean } | null;
   is_available: boolean;
   image_url: string | null;
+  rating_sum?: number;
+  rating_count?: number;
 };
 
 type Option = { id: string; name: string; price_delta_paise: number };
@@ -50,6 +53,9 @@ export function MenuItemRow({
         <p className="font-semibold text-brand-ink">
           {item.product_attributes?.is_veg ? "🟢" : "🔴"} {item.name}
         </p>
+        {(item.rating_count ?? 0) > 0 && (
+          <span className="text-xs text-brand-ink-muted">★ {averageOf(item.rating_sum ?? 0, item.rating_count ?? 0)?.toFixed(1)} ({item.rating_count})</span>
+        )}
         {item.description && (
           <p className="mt-0.5 line-clamp-2 text-sm text-brand-ink-muted">{item.description}</p>
         )}

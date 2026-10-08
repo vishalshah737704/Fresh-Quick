@@ -8,7 +8,7 @@ import { supabase } from "@/lib/supabase";
 import { MenuItemRow } from "@/components/MenuItemRow";
 import { RestaurantMenuAnchorNav } from "@/components/RestaurantMenuAnchorNav";
 import { FeaturedItemsRow } from "@/components/FeaturedItemsRow";
-import { StoreRatingSummary } from "@/components/StoreRatingSummary";
+import { StoreReviews } from "@/components/reviews/StoreReviews";
 
 type Option = { id: string; name: string; price_delta_paise: number; sort_order: number };
 type OptionGroup = {
@@ -29,6 +29,8 @@ type MenuItem = {
   is_available: boolean;
   image_url: string | null;
   category: string | null;
+  rating_sum: number;
+  rating_count: number;
   menu_item_option_groups: OptionGroup[];
 };
 
@@ -132,7 +134,7 @@ export default function RestaurantMenuPage() {
           supabase
             .from("products")
             .select(
-              "id, name, description, price, product_attributes, is_available, image_url, category, menu_item_option_groups(id, name, min_select, max_select, sort_order, menu_item_options(id, name, price_delta_paise, sort_order))"
+              "id, name, description, price, product_attributes, is_available, image_url, category, rating_sum, rating_count, menu_item_option_groups(id, name, min_select, max_select, sort_order, menu_item_options(id, name, price_delta_paise, sort_order))"
             )
             .eq("store_id", params.id),
         ]);
@@ -262,7 +264,7 @@ export default function RestaurantMenuPage() {
         placeholder="Search this menu"
         className="mb-4 w-full rounded-[var(--radius-pill)] border border-brand-ink-muted/20 bg-brand-surface px-4 py-2 text-sm text-brand-ink focus:border-brand-primary focus:outline-none"
       />
-      <StoreRatingSummary rating={restaurant.rating} />
+      <StoreReviews storeId={restaurant.id} seedRating={restaurant.rating} />
       <FeaturedItemsRow
         items={featuredItems}
         storeId={restaurant.id}

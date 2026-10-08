@@ -18,6 +18,10 @@ import {
 } from "@/lib/order-detail";
 import { STATUS_MESSAGE, isTerminalStatus } from "@/lib/order-status";
 import { useReorder } from "@/lib/use-reorder";
+import { useOrderReview } from "@/lib/use-order-review";
+import { ReviewForm } from "@/components/reviews/ReviewForm";
+import { OwnReviewView } from "@/components/reviews/OwnReviewView";
+import { PartnerScoreLine } from "@/components/reviews/PartnerScoreLine";
 
 type PartnerLocation = {
   current_lat: number | null;
@@ -37,6 +41,7 @@ export default function OrderConfirmationPage() {
   const [dismissed, setDismissed] = useState(false);
   const [sawPickedUp, setSawPickedUp] = useState(false);
   const { busyOrderId, notice, error: reorderError, reorder } = useReorder();
+  const review = useOrderReview(params.id, order?.status ?? null);
 
   const postComplete = useCallback(async (): Promise<number> => {
     try {
@@ -158,6 +163,12 @@ export default function OrderConfirmationPage() {
             )}
 
             <OrderDetailView order={order} />
+
+            {review.state?.partnerScore && order.deliveryPartnerId && <PartnerScoreLine score={review.state.partnerScore} />}
+            {review.state?.eligible && (
+              <ReviewForm state={review.state} submitting={review.submitting} error={review.error} onSubmit={review.submit} />
+            )}
+            {review.state?.review && <OwnReviewView review={review.state.review} />}
 
             {order.status !== "cancelled" && order.status !== "rejected" && (
               <div>
