@@ -11,19 +11,23 @@ const TYPE_BY_EXT: Record<string, string> = { jpg: "image/jpeg", png: "image/png
 export async function GET(_request: NextRequest, ctx: Ctx) {
   const { id } = await ctx.params;
   if (uuidsOnly([id]).length !== 1) return new NextResponse(null, { status: 404 });
-  const { data: review } = await supabaseServer
+  const { data: review, error: reviewError } = await supabaseServer
     .from("reviews")
     .select("photo_path, status")
     .eq("id", id.toLowerCase())
     .maybeSingle();
+  if (reviewError) console.error("review photo lookup failed", reviewError.message);
   if (!review || review.status !== "visible" || !review.photo_path) return new NextResponse(null, { status: 404 });
   const { data: blob, error } = await supabaseServer.storage.from(REVIEW_BUCKET).download(review.photo_path);
-  if (error || !blob) return new NextResponse(null, { status: 404 });
+  if (error || !blob) {
+    console.error("review photo download failed", error?.message);
+    return new NextResponse(null, { status: 404 });
+  }
   const ext = review.photo_path.split(".").pop() ?? "";
   return new NextResponse(await blob.arrayBuffer(), {
     headers: {
       "Content-Type": TYPE_BY_EXT[ext] ?? "application/octet-stream",
-      "Cache-Control": "public, max-age=300",
+      "Cache-Control": "private, max-age=300",
       "X-Content-Type-Options": "nosniff",
     },
   });

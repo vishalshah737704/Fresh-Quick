@@ -46,9 +46,18 @@ function distinctDishes(order: OrderRow): { productId: string; name: string }[] 
   return [...byId].map(([productId, name]) => ({ productId, name }));
 }
 
-async function loadReview(orderId: string): Promise<RawReviewRow | null> {
-  const { data } = await supabaseServer.from("reviews").select(REVIEW_SELECT).eq("order_id", orderId).maybeSingle();
+async function loadReview(orderId: string): Promise<RawReviewRow | null | "error"> {
+  const { data, error } = await supabaseServer.from("reviews").select(REVIEW_SELECT).eq("order_id", orderId).maybeSingle();
+  if (error) {
+    console.error("review load failed", error.message);
+    return "error";
+  }
   return (data as unknown as RawReviewRow | null) ?? null;
+}
+
+// A hidden review's photo is not served by the proxy, so do not hand out a URL that would 404.
+function ownPhotoUrl(review: RawReviewRow): string | null {
+  return review.photo_path && review.status === "visible" ? reviewPhotoPath(review.id) : null;
 }
 
 export async function GET(request: NextRequest, ctx: Ctx) {
@@ -61,6 +70,7 @@ export async function GET(request: NextRequest, ctx: Ctx) {
   if (!order) return NextResponse.json({ error: "not found" }, { status: 404 });
 
   const review = await loadReview(order.id);
+  if (review === "error") return NextResponse.json({ error: "Failed to load review" }, { status: 500 });
   let score: OrderReviewState["partnerScore"] = null;
   if (order.delivery_partner_id) {
     const { data: partner } = await supabaseServer
@@ -75,7 +85,7 @@ export async function GET(request: NextRequest, ctx: Ctx) {
     eligible,
     dishes: eligible ? distinctDishes(order) : [],
     hasPartner: order.delivery_partner_id !== null,
-    review: review ? toOwnReview(review, review.photo_path ? reviewPhotoPath(review.id) : null) : null,
+    review: review ? toOwnReview(review, ownPhotoUrl(review)) : null,
     partnerScore: score,
   };
   return NextResponse.json(state);
@@ -111,9 +121,9 @@ export async function POST(request: NextRequest, ctx: Ctx) {
   if (order.status !== "delivered") {
     return NextResponse.json({ error: "You can review an order once it has been delivered" }, { status: 409 });
   }
-  if (await loadReview(orderId)) {
-    return NextResponse.json({ error: "You have already reviewed this order" }, { status: 409 });
-  }
+  const existing = await loadReview(orderId);
+  if (existing === "error") return NextResponse.json({ error: "Could not save your review right now" }, { status: 500 });
+  if (existing) return NextResponse.json({ error: "You have already reviewed this order" }, { status: 409 });
 
   const submission = await readSubmission(request);
   if ("error" in submission) return NextResponse.json({ error: submission.error }, { status: 400 });
@@ -154,9 +164,10 @@ export async function POST(request: NextRequest, ctx: Ctx) {
     return NextResponse.json({ error: failure.error }, { status: failure.status });
   }
 
-  const review = await loadReview(orderId);
+  const loaded = await loadReview(orderId);
+  const review = loaded === "error" ? null : loaded;
   return NextResponse.json(
-    { review: review ? toOwnReview(review, review.photo_path ? reviewPhotoPath(review.id) : null) : null },
+    { review: review ? toOwnReview(review, ownPhotoUrl(review)) : null },
     { status: 201 }
   );
 }

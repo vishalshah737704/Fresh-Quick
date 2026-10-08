@@ -22,7 +22,10 @@ export function useOrderReview(orderId: string, status: string | null) {
     (async () => {
       try {
         const state = await customerFetch<OrderReviewState>(orderReviewPath(orderId));
-        if (!cancelled) setTagged({ key, state });
+        if (!cancelled) {
+          setTagged({ key, state });
+          setError(null);
+        }
       } catch (err) {
         if (!cancelled) setError(err instanceof Error ? err.message : "Could not load the review");
       }
