@@ -41,9 +41,9 @@ export function PartnerRatingCard() {
           )}
         </>
       )}
-      {rating.recent.slice(0, 3).map((row) =>
+      {rating.recent.slice(0, 3).map((row, index) =>
         row.comment ? (
-          <Text key={row.createdAt + row.stars} style={styles.body}>
+          <Text key={`${row.createdAt}-${index}`} style={styles.body}>
             {"★".repeat(row.stars)} · {row.comment}
           </Text>
         ) : null

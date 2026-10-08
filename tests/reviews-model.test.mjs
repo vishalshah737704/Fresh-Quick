@@ -150,6 +150,7 @@ test("isLowPartnerScore needs enough ratings and an average under 3.0", () => {
 
 const raw = (over = {}) => ({
   id: "r1",
+  customer_id: "cust-secret-id",
   store_id: "s1",
   rating: 4,
   comment: "Good <b>food</b>",
@@ -159,14 +160,14 @@ const raw = (over = {}) => ({
   vendor_reply_at: "2026-10-07T12:00:00Z",
   created_at: "2026-10-07T10:00:00Z",
   reported_at: null,
-  report_reason: null,
-  reported_by: null,
+  report_reason: "REPORT-SECRET",
+  reported_by: "vendor",
   hidden_reason: null,
   hidden_at: null,
   customer: { full_name: "Asha Verma" },
   stores: { name: "Dosa Corner" },
   review_dishes: [{ stars: 5, comment: "great", products: { name: "Masala Dosa" } }],
-  review_partner: { stars: 4, comment: "polite" },
+  review_partner: { stars: 4, comment: "polite", partner_id: "partner-secret" },
   ...over,
 });
 
@@ -228,8 +229,35 @@ test("toAdminReview shows everything moderation needs", () => {
   assert.equal(toAdminReview(raw({ customer: null }), null).customerName, "Customer");
 });
 
-test("toPartnerReviewRow: stars, comment and date only", () => {
+test("toPartnerReviewRow: stars, comment and the DATE only (no time to match a delivery)", () => {
   const out = toPartnerReviewRow({ created_at: "2026-10-07T10:00:00Z", review_partner: [{ stars: 5, comment: null }] });
-  assert.deepEqual(out, { stars: 5, comment: null, createdAt: "2026-10-07T10:00:00Z" });
+  assert.deepEqual(out, { stars: 5, comment: null, createdAt: "2026-10-07" });
   assert.equal(toPartnerReviewRow({ created_at: "x", review_partner: null }), null);
+});
+
+test("allow-lists: exact keys and no secret strings for vendor, own and partner shapes", () => {
+  const secrets = ["cust-secret-id", "REPORT-SECRET", "partner-secret", "Asha Verma"];
+  const shown = toVendorReview(raw({ reported_at: "2026-10-07T11:00:00Z" }), "u");
+  assert.deepEqual(Object.keys(shown).sort(), [
+    "comment", "createdAt", "dishes", "hidden", "id", "photoUrl", "reported", "reviewerName", "stars", "vendorReply", "vendorReplyAt",
+  ]);
+  const own = toOwnReview(raw(), "u");
+  assert.deepEqual(Object.keys(own).sort(), ["comment", "createdAt", "dishes", "id", "partner", "photoUrl", "stars", "status", "vendorReply"]);
+  assert.deepEqual(own.partner, { stars: 4, comment: "polite" });
+  const partnerRow = toPartnerReviewRow({
+    created_at: "2026-10-07T10:00:00Z",
+    review_partner: [{ stars: 5, comment: "nice", partner_id: "partner-secret", customer_id: "cust-secret-id" }],
+  });
+  assert.deepEqual(Object.keys(partnerRow).sort(), ["comment", "createdAt", "stars"]);
+  for (const [name, value] of [["vendor", shown], ["own", own], ["partner", partnerRow]]) {
+    const text = JSON.stringify(value);
+    for (const secret of secrets) assert.ok(!text.includes(secret), `${name} shape leaked ${secret}`);
+  }
+});
+
+test("cleanComment rejects a lone surrogate but keeps a valid emoji pair", () => {
+  assert.equal(cleanComment("a\ud800b", 100).ok, false);
+  assert.equal(cleanComment("\udc00", 100).ok, false);
+  assert.equal(cleanComment("trailing\ud83d", 100).ok, false);
+  assert.deepEqual(cleanComment("great 😀", 100), { ok: true, value: "great 😀" });
 });

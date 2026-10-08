@@ -53,8 +53,8 @@ export default function DeliveryRatingPage() {
       {rating.recent.length > 0 && (
         <section className="flex flex-col gap-2">
           <h2 className="font-heading text-lg text-brand-ink">Recent comments</h2>
-          {rating.recent.map((row) => (
-            <article key={row.createdAt + row.stars} className="rounded-[var(--radius-card)] bg-brand-surface p-3 shadow">
+          {rating.recent.map((row, index) => (
+            <article key={`${row.createdAt}-${index}`} className="rounded-[var(--radius-card)] bg-brand-surface p-3 shadow">
               <StarsDisplay value={row.stars} />{" "}
               <span className="text-xs text-brand-ink-muted">{new Date(row.createdAt).toLocaleDateString()}</span>
               {row.comment && <p className="mt-1 whitespace-pre-wrap text-sm text-brand-ink">{row.comment}</p>}

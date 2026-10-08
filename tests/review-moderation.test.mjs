@@ -26,3 +26,9 @@ test("unhide clears the hidden fields and makes the review visible again", () =>
 test("dismiss-report clears only the open report flag", () => {
   assert.deepEqual(buildModerationPatch("dismiss", undefined, NOW), { ok: true, patch: { reported_at: null } });
 });
+
+test("hide rejects a lone surrogate in the reason but accepts an emoji pair", () => {
+  assert.equal(buildModerationPatch("hide", "a\ud800b", NOW).ok, false);
+  assert.equal(buildModerationPatch("hide", "\udc00", NOW).ok, false);
+  assert.equal(buildModerationPatch("hide", "abusive 😀", NOW).ok, true);
+});

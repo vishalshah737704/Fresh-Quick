@@ -40,12 +40,16 @@ export function parseStars(value: unknown): number | null {
 }
 
 // Whitespace-only text means "no comment". A NUL byte is refused here because Postgres rejects it (it would be a 500).
+// A lone UTF-16 surrogate is valid JS but Postgres rejects it (a 500), so refuse it up front.
+const LONE_SURROGATE = /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(^|[^\uD800-\uDBFF])[\uDC00-\uDFFF]/;
+
 export function cleanComment(value: unknown, max: number): Parsed<string | null> {
   if (value === undefined || value === null) return { ok: true, value: null };
   if (typeof value !== "string") return { ok: false, error: "Comment must be text" };
   const trimmed = value.replace(/\r\n/g, "\n").trim();
   if (trimmed === "") return { ok: true, value: null };
   if (trimmed.includes("\u0000")) return { ok: false, error: "Comment contains an invalid character" };
+  if (LONE_SURROGATE.test(trimmed)) return { ok: false, error: "Comment contains an invalid character" };
   if ([...trimmed].length > max) return { ok: false, error: `Comment must be at most ${max} characters` };
   return { ok: true, value: trimmed };
 }
@@ -290,7 +294,7 @@ export function toPartnerReviewRow(row: {
 }): PartnerReviewRow | null {
   const partner = first(row.review_partner);
   if (!partner) return null;
-  return { stars: partner.stars, comment: partner.comment, createdAt: row.created_at };
+  return { stars: partner.stars, comment: partner.comment, createdAt: row.created_at.slice(0, 10) };
 }
 
 // What the order screens need from GET /api/customer/orders/[id]/review.
