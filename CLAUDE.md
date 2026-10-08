@@ -931,28 +931,43 @@ when he says **"stop-all-roles.ps1"** run `npm run app:stop -- --all-roles`
 
 ## Standing phrase: "Reset Data" — NON-NEGOTIABLE
 
-When Vishal says **"Reset Data"**, wipe all customer, order, payment, Ask Zippy chat
-history (every role's, plus the rate-limit counters) and n8n
-execution data from the LOCAL stack, without asking for per-step confirmation
-(this phrase is the standing authorization; local dev only — never hosted).
-Vendors, delivery partners, the admin, restaurants/menus, the Zippy knowledge
-and catalog indexes (`zippy_chunks`, `zippy_catalog_chunks`) and n8n workflows and
-credentials are KEPT. Supabase and n8n containers must be running; if not, say
+When Vishal says **"Reset Data"**, wipe ALL customer-created data: customers and their
+accounts, saved locations, addresses and carts, favorites (C3), orders, order items, payments,
+notifications, reviews with their dish and delivery-partner ratings, vendor replies, reports and
+moderation state, review photos (C1), Ask Zippy chat history (every role's, plus the rate-limit
+counters) and n8n execution data (including pending review-request and delivery Waits) from the
+LOCAL stack, and reset every rating aggregate derived from them, without asking for per-step
+confirmation (this phrase is the standing authorization; local dev only — never hosted).
+Vendors, delivery partners (their accounts, status and location), the admin, stores/menus (their
+seeded ratings are restored), the Zippy knowledge and catalog indexes (`zippy_chunks`,
+`zippy_catalog_chunks`), `app_settings` and n8n workflows and credentials are KEPT.
+When a later feature adds customer-created data (a table, a Storage bucket, a column that stores
+customer activity), extending this rule is part of finishing that feature. Supabase and n8n containers must be running; if not, say
 so and stop. Steps, in order:
 
 1. **Backup first** (cheap restore point, outside git):
    `docker exec supabase_db_phase1-scaffold-db pg_dump -U postgres -Fc -n public -n auth postgres > "<scratchpad>/pre-reset-<epoch>.dump"`
-2. **Customers, orders, payments** — one transaction (`psql -U postgres -v ON_ERROR_STOP=1`):
+2. **Customers, orders, payments, favorites, reviews** — one transaction (`psql -U postgres -v ON_ERROR_STOP=1`):
    ```sql
    begin;
+   delete from public.reviews;          -- C1; cascades review_dishes and review_partner (explicit, not only via orders)
+   delete from public.favorite_stores;  -- C3 (also cascades from users)
+   delete from public.carts;            -- all roles' carts (customers' cascade from users, but vendor/delivery/admin accounts can hold carts too)
    delete from public.orders;  -- cascades order_items, order_item_options, payments, notifications, reviews
    delete from public.addresses
      where user_id in (select id from public.users where role = 'customer') or user_id is null;
    delete from auth.users
-     where id in (select id from public.users where role = 'customer');  -- cascades public.users, carts, sessions
+     where id in (select id from public.users where role = 'customer');  -- cascades public.users (incl. saved location), carts, favorites, sessions
+   -- Rating aggregates derived from reviews. The delete triggers already do this; this is the safety net.
+   update public.stores set rating_sum = 0, rating_count = 0, rating = coalesce(seed_rating, rating);
+   update public.products set rating_sum = 0, rating_count = 0;
+   update public.delivery_partners set rating_sum = 0, rating_count = 0;
    commit;
    ```
    Do not delete vendor/delivery/admin users, restaurants, or vendor addresses.
+   **Review photos (C1)** are FILES in the private `review-photos` Storage bucket; SQL deletes do not
+   remove them. Right after the transaction run `node scripts/purge-review-photos.mjs --dry-run`, then
+   `node scripts/purge-review-photos.mjs` (Storage API; local stack only), and confirm `0 object(s)`.
 3. **Ask Zippy chats and counters** (all roles, not just customers: chats of vendors,
    delivery partners and the admin survive step 2) — one transaction:
    ```sql
@@ -970,28 +985,26 @@ so and stop. Steps, in order:
    db.serialize(()=>{db.run(\"delete from execution_data\");db.run(\"delete from execution_metadata\");db.run(\"delete from execution_annotations\");db.run(\"delete from execution_entity\");
    db.get(\"select count(*) c from execution_entity\",(e,r)=>{console.log(e||JSON.stringify(r));db.close();});});"'
    ```
-   Pending 20-second "Wait" executions are deleted too (their orders are gone anyway).
+   Pending 20-second delivery-fallback Waits and pending 1-hour review-request Waits are deleted too (their orders are gone anyway).
 5. **Android emulator app data** (cart, delivery location and session saved in Expo Go
    on the emulator): if `adb devices` lists an emulator, run
    `adb shell pm clear host.exp.exponent` (adb is `$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe`)
    and expect `Success`. If no emulator is running, do not boot one for this; report that it
    was skipped and that Vishal can run the command whenever the emulator is next started.
 6. **Verify and report** counts: orders, order_items, payments, notifications, customers
-   (public.users role customer and auth.users), zippy_conversations, zippy_messages and
-   zippy_usage all 0; zippy_chunks and zippy_catalog_chunks unchanged; vendors/delivery/admin counts unchanged;
-   n8n executions 0. Tell Vishal that browser-side data (localStorage cart/location in each
+   (public.users role customer and auth.users), carts (all roles), favorite_stores, reviews, review_dishes,
+   review_partner, customer addresses (user_id is null or a customer), zippy_conversations,
+   zippy_messages and zippy_usage all 0; objects in the `review-photos` bucket 0 (`select count(*) from
+   storage.objects where bucket_id = 'review-photos'`, and the purge script's own count);
+   `stores` with `rating_count <> 0` or `rating <> seed_rating` 0, `products` and `delivery_partners`
+   with `rating_count <> 0` 0; zippy_chunks and zippy_catalog_chunks unchanged; vendors/delivery/admin
+   counts unchanged; n8n executions 0. Tell Vishal that browser-side data (localStorage cart/location in each
    browser or app) cannot be cleared from here, and that a fresh customer must sign up.
    How he clears it: web, F12 > Application > Clear site data on each of
    localhost:3000 to 3003 (or the console: `localStorage.clear(); sessionStorage.clear()`);
    iPhone Expo Go, delete and reinstall Expo Go (the Android emulator is cleared by step 5).
    There is no wallet table (the Wallet page is a placeholder); payments live in `payments`.
-   `favorite_stores` (C3) cascades from `users`, so deleting the customers in step 2 clears it; no SQL change.
-   Reviews (C1) cascade from `orders` and `review_dishes`/`review_partner` from `reviews`, and the aggregate
-   triggers reset `stores.rating` to its seed, so step 2 clears the rows. Review PHOTOS are files in the
-   private `review-photos` Storage bucket, which SQL deletes do not remove: after step 2 run
-   `node scripts/purge-review-photos.mjs --dry-run` and then `node scripts/purge-review-photos.mjs`
-   (Storage API; local stack only) and verify 0 objects. Add "reviews and review-photos objects 0" to the
-   step 6 verification list.
+   Favorites and reviews live on the account/server, so they need no browser or phone clean-up.
 
 ## Standing phrase: "Commit Work" — NON-NEGOTIABLE
 
