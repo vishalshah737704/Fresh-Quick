@@ -79,7 +79,7 @@ language plpgsql security definer set search_path = '' as $$
 begin
   -- Lock first, compute in a NEW statement: under READ COMMITTED a concurrent review's
   -- recompute then sees our committed row instead of overwriting it with a stale sum.
-  perform 1 from public.stores where id = p_store_id for update;
+  perform 1 from public.stores where id = p_store_id for no key update;
   update public.stores s set
     rating_sum = coalesce((select sum(r.rating) from public.reviews r where r.store_id = s.id and r.status = 'visible'), 0),
     rating_count = (select count(*) from public.reviews r where r.store_id = s.id and r.status = 'visible')
@@ -92,7 +92,7 @@ end $$;
 create function public.recompute_product_rating(p_product_id uuid) returns void
 language plpgsql security definer set search_path = '' as $$
 begin
-  perform 1 from public.products where id = p_product_id for update;
+  perform 1 from public.products where id = p_product_id for no key update;
   update public.products p set
     rating_sum = coalesce((select sum(rd.stars) from public.review_dishes rd join public.reviews r on r.id = rd.review_id
                            where rd.product_id = p.id and r.status = 'visible'), 0),
@@ -104,7 +104,7 @@ end $$;
 create function public.recompute_partner_rating(p_partner_id uuid) returns void
 language plpgsql security definer set search_path = '' as $$
 begin
-  perform 1 from public.delivery_partners where user_id = p_partner_id for update;
+  perform 1 from public.delivery_partners where user_id = p_partner_id for no key update;
   update public.delivery_partners dp set
     rating_sum = coalesce((select sum(rp.stars) from public.review_partner rp join public.reviews r on r.id = rp.review_id
                            where rp.partner_id = dp.user_id and r.status = 'visible'), 0),
@@ -221,7 +221,8 @@ end $$;
 revoke all on function public.create_review(uuid, uuid, integer, text, text, jsonb, integer, text) from public, anon, authenticated;
 grant execute on function public.create_review(uuid, uuid, integer, text, text, jsonb, integer, text) to service_role;
 revoke all on function public.recompute_store_rating(uuid), public.recompute_product_rating(uuid), public.recompute_partner_rating(uuid),
-  public.reviews_deleted(), public.review_dishes_deleted(), public.review_partner_deleted() from public, anon, authenticated;
+  public.reviews_deleted(), public.review_dishes_deleted(), public.review_partner_deleted(),
+  public.stores_set_seed_rating(), public.reviews_status_changed() from public, anon, authenticated;
 grant execute on function public.recompute_store_rating(uuid), public.recompute_product_rating(uuid), public.recompute_partner_rating(uuid) to service_role;
 revoke all on function public.recompute_review_aggregates(uuid) from public, anon, authenticated;
 grant execute on function public.recompute_review_aggregates(uuid) to service_role;
