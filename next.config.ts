@@ -11,6 +11,7 @@ const nextConfig: NextConfig = {
   // (npm run dev / app:start:dev without --all-roles) are unaffected --
   // the env var is unset, so distDir falls back to the normal ".next".
   distDir: process.env.NEXT_ROLE_DIST_DIR || ".next",
+  allowedDevOrigins: ["*.trycloudflare.com", "*.demoaiprojects.com"],
   images: {
     remotePatterns: [
       {
