@@ -2,7 +2,10 @@
 // limitations (no remote push on Android Expo Go, missing EAS projectId) never crash or show errors.
 import { useEffect } from "react";
 import { Platform } from "react-native";
+import { router } from "expo-router";
 import { apiFetch } from "./api";
+import { supabase } from "./supabase";
+import { pushTapTarget } from "./push-target";
 
 type Fetcher = typeof apiFetch;
 
@@ -76,5 +79,35 @@ export async function unregisterPush(fetcher: Fetcher): Promise<void> {
 export function usePushRegistration(): void {
   useEffect(() => {
     registerForPush(apiFetch);
+  }, []);
+}
+
+// Mount once in the root layout. Opens the right screen when a push is tapped while the app is
+// alive (foreground or background). A cold start after the app was closed is not handled: the root
+// layout signs out on every fresh launch, so there is no session to open an order with.
+export function usePushTapHandler(): void {
+  useEffect(() => {
+    let subscription: { remove: () => void } | null = null;
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const Notifications = require("expo-notifications");
+      subscription = Notifications.addNotificationResponseReceivedListener(
+        async (response: { notification?: { request?: { content?: { data?: unknown } } } }) => {
+          try {
+            const { data: sessionData } = await supabase.auth.getSession();
+            const userId = sessionData.session?.user.id;
+            if (!userId) return;
+            const { data: profile } = await supabase.from("users").select("role").eq("id", userId).maybeSingle();
+            const target = pushTapTarget(profile?.role, response.notification?.request?.content?.data);
+            if (target) router.navigate(target as never);
+          } catch {
+            // ignore: a failed tap just leaves the app where it is
+          }
+        }
+      );
+    } catch {
+      // expo-notifications unavailable: nothing to listen to
+    }
+    return () => subscription?.remove();
   }, []);
 }

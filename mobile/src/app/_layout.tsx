@@ -10,6 +10,7 @@ import { FavoritesProvider } from "../../lib/favorites-store";
 import { LocationProvider } from "../../lib/location-store";
 import { supabase } from "../../lib/supabase";
 import { ZippyFab } from "../../components/ZippyFab";
+import { usePushTapHandler } from "../../lib/push";
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
@@ -30,6 +31,7 @@ export default function RootLayout() {
   useEffect(() => {
     supabase.auth.signOut();
   }, []);
+  usePushTapHandler();
 
   if (!fontsLoaded) {
     return (
