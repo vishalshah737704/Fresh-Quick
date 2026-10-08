@@ -12,7 +12,8 @@ import {
   type RawReviewRow,
 } from "@/lib/reviews-model";
 import { checkPhoto } from "@/lib/review-photo";
-import { deleteReviewPhotos, mapCreateReviewError, uploadReviewPhoto } from "@/lib/reviews-server";
+import { deleteReviewPhotos, uploadReviewPhoto } from "@/lib/reviews-server";
+import { mapCreateReviewError } from "@/lib/review-errors";
 
 type Ctx = { params: Promise<{ id: string }> };
 
