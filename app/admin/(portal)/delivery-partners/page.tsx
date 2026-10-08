@@ -9,6 +9,9 @@ type PartnerRow = {
   is_online: boolean;
   vehicle_type: string | null;
   users: { full_name: string } | null;
+  ratingAverage: number | null;
+  ratingCount: number;
+  lowScore: boolean;
 };
 
 const VEHICLES = ["bike", "scooter", "bicycle", "car"];
@@ -209,6 +212,7 @@ export default function AdminDeliveryPartnersPage() {
               <th className="p-2">Name</th>
               <th className="p-2">Status</th>
               <th className="p-2">Vehicle</th>
+              <th className="p-2">Rating</th>
             </tr>
           </thead>
           <tbody>
@@ -225,18 +229,24 @@ export default function AdminDeliveryPartnersPage() {
                   </span>
                 </td>
                 <td className="break-words p-2">{p.vehicle_type ?? "—"}</td>
+                <td className="p-2">
+                  {p.ratingCount > 0 ? `★ ${p.ratingAverage?.toFixed(1)} (${p.ratingCount})` : "No ratings"}
+                  {p.lowScore && (
+                    <span className="ml-2 rounded-full bg-brand-danger-text-safe px-2 py-0.5 text-xs text-white">Low score</span>
+                  )}
+                </td>
               </tr>
             ))}
             {loaded && partners.length === 0 && (
               <tr>
-                <td colSpan={3} className="p-4 text-center text-brand-ink-muted">
+                <td colSpan={4} className="p-4 text-center text-brand-ink-muted">
                   No delivery partners yet.
                 </td>
               </tr>
             )}
             {!loaded && (
               <tr>
-                <td colSpan={3} className="p-4 text-center text-brand-ink-muted">
+                <td colSpan={4} className="p-4 text-center text-brand-ink-muted">
                   Loading…
                 </td>
               </tr>

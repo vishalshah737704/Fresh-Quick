@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase-server";
 import { resolveAdmin, tokenFromRequest } from "@/lib/admin-auth";
+import { averageOf, isLowPartnerScore } from "@/lib/reviews-model";
 import { validateSignupFields, isValidVehicleType } from "@/lib/signup-validation";
 
 export async function GET(request: NextRequest) {
@@ -10,11 +11,24 @@ export async function GET(request: NextRequest) {
   }
   const { data, error } = await supabaseServer
     .from("delivery_partners")
-    .select("user_id, is_online, current_lat, current_lng, last_ping_at, vehicle_type, users(full_name)");
+    .select("user_id, is_online, current_lat, current_lng, last_ping_at, vehicle_type, rating_sum, rating_count, users(full_name)");
   if (error) {
     return NextResponse.json({ error: "Failed to load delivery partners" }, { status: 500 });
   }
-  return NextResponse.json({ partners: data });
+  return NextResponse.json({
+    partners: (data ?? []).map((row) => ({
+      user_id: row.user_id,
+      is_online: row.is_online,
+      current_lat: row.current_lat,
+      current_lng: row.current_lng,
+      last_ping_at: row.last_ping_at,
+      vehicle_type: row.vehicle_type,
+      users: row.users,
+      ratingAverage: averageOf(row.rating_sum, row.rating_count),
+      ratingCount: row.rating_count,
+      lowScore: isLowPartnerScore(row.rating_sum, row.rating_count),
+    })),
+  });
 }
 
 export async function POST(request: NextRequest) {
