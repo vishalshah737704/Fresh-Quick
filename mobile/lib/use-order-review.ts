@@ -4,7 +4,7 @@ import { orderReviewPath, type OrderReviewState, type ReviewInput } from "./revi
 
 const STATUSES_WITH_STATE = ["assigned", "picked_up", "delivered"];
 
-export type ReviewPhoto = { uri: string; name: string; type: string };
+export type ReviewPhoto = { uri: string; name: string; type: string; base64: string };
 
 type Tagged = { key: string; state: OrderReviewState };
 
@@ -44,7 +44,12 @@ export function useOrderReview(orderId: string, status: string | null) {
         if (photo) {
           const form = new FormData();
           form.append("payload", JSON.stringify(input));
-          form.append("photo", { uri: photo.uri, name: photo.name, type: photo.type } as unknown as Blob);
+          // Expo SDK 57's fetch rejects React Native's {uri} form part, and fetch(file://) cannot read the picker's cache
+          // file, so the picker hands over base64 and the part is an object with name, type and a bytes() method.
+          const raw = atob(photo.base64);
+          const bytes = new Uint8Array(raw.length);
+          for (let index = 0; index < raw.length; index += 1) bytes[index] = raw.charCodeAt(index);
+          form.append("photo", { name: photo.name, type: photo.type, bytes: async () => bytes } as unknown as Blob);
           await apiFetch(orderReviewPath(orderId), { method: "POST", body: form });
         } else {
           await apiFetch(orderReviewPath(orderId), { method: "POST", body: input });

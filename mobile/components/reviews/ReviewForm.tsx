@@ -28,10 +28,21 @@ export function ReviewForm({
 
   async function pickPhoto() {
     setLocalError(null);
-    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["images"], quality: 0.7, allowsEditing: false });
+    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["images"], quality: 0.7, allowsEditing: false, base64: true });
     if (result.canceled) return;
     const asset = result.assets[0];
-    const type = asset.mimeType ?? "image/jpeg";
+    if (!asset.base64) {
+      setLocalError("Could not read that photo, try another one");
+      return;
+    }
+    // With quality set the picker may re-encode (a PNG comes back as JPEG bytes under a .png name), so the bytes decide the type.
+    const type = asset.base64.startsWith("/9j/")
+      ? "image/jpeg"
+      : asset.base64.startsWith("iVBORw0KGgo")
+        ? "image/png"
+        : asset.base64.startsWith("UklGR")
+          ? "image/webp"
+          : (asset.mimeType ?? "unknown");
     if (!(REVIEW_PHOTO_TYPES as readonly string[]).includes(type)) {
       setLocalError("The photo must be a JPEG, PNG or WebP image");
       return;
@@ -40,11 +51,9 @@ export function ReviewForm({
       setLocalError("The photo must be 3 MB or smaller");
       return;
     }
-    setPhoto({
-      uri: asset.uri,
-      name: asset.fileName ?? `review.${type === "image/png" ? "png" : type === "image/webp" ? "webp" : "jpg"}`,
-      type,
-    });
+    const ext = type === "image/png" ? "png" : type === "image/webp" ? "webp" : "jpg";
+    const baseName = (asset.fileName ?? "review").replace(/\.[^.]*$/, "");
+    setPhoto({ base64: asset.base64, uri: asset.uri, name: `${baseName}.${ext}`, type });
   }
 
   async function submit() {
