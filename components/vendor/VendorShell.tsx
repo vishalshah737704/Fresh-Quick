@@ -13,6 +13,7 @@ const NAV_LINKS = [
   { href: "/vendor/dashboard", label: "Dashboard" },
   { href: "/vendor/menu", label: "Menu" },
   { href: "/vendor/orders", label: "Orders" },
+  { href: "/vendor/reviews", label: "Reviews" },
 ];
 
 export default function VendorShell({ children }: { children: React.ReactNode }) {
