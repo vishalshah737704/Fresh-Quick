@@ -2,7 +2,9 @@ import { useState } from "react";
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { BRAND } from "../../theme";
 import { StarInput } from "./StarRow";
-import { REVIEW_LIMITS, type OrderReviewState, type ReviewInput } from "../../lib/reviews-model";
+import * as ImagePicker from "expo-image-picker";
+import { REVIEW_LIMITS, REVIEW_PHOTO_TYPES, type OrderReviewState, type ReviewInput } from "../../lib/reviews-model";
+import type { ReviewPhoto } from "../../lib/use-order-review";
 
 export function ReviewForm({
   state,
@@ -13,7 +15,7 @@ export function ReviewForm({
   state: OrderReviewState;
   submitting: boolean;
   error: string | null;
-  onSubmit: (input: ReviewInput) => Promise<boolean>;
+  onSubmit: (input: ReviewInput, photo: ReviewPhoto | null) => Promise<boolean>;
 }) {
   const [storeStars, setStoreStars] = useState(0);
   const [storeComment, setStoreComment] = useState("");
@@ -22,6 +24,28 @@ export function ReviewForm({
   const [partnerStars, setPartnerStars] = useState(0);
   const [partnerComment, setPartnerComment] = useState("");
   const [localError, setLocalError] = useState<string | null>(null);
+  const [photo, setPhoto] = useState<ReviewPhoto | null>(null);
+
+  async function pickPhoto() {
+    setLocalError(null);
+    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["images"], quality: 0.7, allowsEditing: false });
+    if (result.canceled) return;
+    const asset = result.assets[0];
+    const type = asset.mimeType ?? "image/jpeg";
+    if (!(REVIEW_PHOTO_TYPES as readonly string[]).includes(type)) {
+      setLocalError("The photo must be a JPEG, PNG or WebP image");
+      return;
+    }
+    if (asset.fileSize !== undefined && asset.fileSize > REVIEW_LIMITS.photoBytes) {
+      setLocalError("The photo must be 3 MB or smaller");
+      return;
+    }
+    setPhoto({
+      uri: asset.uri,
+      name: asset.fileName ?? `review.${type === "image/png" ? "png" : type === "image/webp" ? "webp" : "jpg"}`,
+      type,
+    });
+  }
 
   async function submit() {
     if (storeStars === 0) {
@@ -40,7 +64,7 @@ export function ReviewForm({
           comment: (dishComments[dish.productId] ?? "").trim() || null,
         })),
       partner: partnerStars > 0 ? { stars: partnerStars, comment: partnerComment.trim() || null } : null,
-    });
+    }, photo);
   }
 
   const shownError = localError ?? error;
@@ -58,6 +82,18 @@ export function ReviewForm({
         value={storeComment}
         onChangeText={setStoreComment}
       />
+      {photo ? (
+        <View style={styles.photoRow}>
+          <Text style={[styles.body, { flex: 1 }]} numberOfLines={1}>{photo.name}</Text>
+          <Pressable accessibilityRole="button" onPress={() => setPhoto(null)}>
+            <Text style={styles.link}>Remove</Text>
+          </Pressable>
+        </View>
+      ) : (
+        <Pressable accessibilityRole="button" onPress={pickPhoto} style={styles.photoButton}>
+          <Text style={styles.link}>Add a photo</Text>
+        </Pressable>
+      )}
 
       {state.dishes.length > 0 && <Text style={styles.label}>The dishes (optional)</Text>}
       {state.dishes.map((dish) => (
@@ -126,7 +162,11 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: BRAND.colors.ink,
     minHeight: 40,
+    textAlignVertical: "top",
   },
+  photoRow: { flexDirection: "row", alignItems: "center", gap: 12 },
+  photoButton: { alignSelf: "flex-start", paddingVertical: 4 },
+  link: { fontFamily: BRAND.fonts.bodySemiBold, fontSize: 14, color: BRAND.colors.primaryTextSafe },
   error: { fontFamily: BRAND.fonts.body, fontSize: 13, color: BRAND.colors.dangerTextSafe },
   button: { alignSelf: "flex-start", backgroundColor: BRAND.colors.primaryTextSafe, borderRadius: 999, paddingHorizontal: 20, paddingVertical: 10 },
   buttonText: { fontFamily: BRAND.fonts.bodySemiBold, color: BRAND.colors.surface },

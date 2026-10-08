@@ -4,6 +4,8 @@ import { orderReviewPath, type OrderReviewState, type ReviewInput } from "./revi
 
 const STATUSES_WITH_STATE = ["assigned", "picked_up", "delivered"];
 
+export type ReviewPhoto = { uri: string; name: string; type: string };
+
 type Tagged = { key: string; state: OrderReviewState };
 
 // Same shape as the web hook (lib/use-order-review.ts), without photos: the loaded state is tagged with its
@@ -35,11 +37,18 @@ export function useOrderReview(orderId: string, status: string | null) {
   }, [orderId, key, enabled]);
 
   const submit = useCallback(
-    async (input: ReviewInput): Promise<boolean> => {
+    async (input: ReviewInput, photo: ReviewPhoto | null): Promise<boolean> => {
       setSubmitting(true);
       setError(null);
       try {
-        await apiFetch(orderReviewPath(orderId), { method: "POST", body: input });
+        if (photo) {
+          const form = new FormData();
+          form.append("payload", JSON.stringify(input));
+          form.append("photo", { uri: photo.uri, name: photo.name, type: photo.type } as unknown as Blob);
+          await apiFetch(orderReviewPath(orderId), { method: "POST", body: form });
+        } else {
+          await apiFetch(orderReviewPath(orderId), { method: "POST", body: input });
+        }
         const state = await apiFetch<OrderReviewState>(orderReviewPath(orderId));
         setTagged({ key, state });
         return true;

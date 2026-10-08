@@ -40,13 +40,14 @@ export async function apiFetch<T>(
   if (!token) {
     throw new ApiError("Not authenticated", 401);
   }
+  // A FormData body goes as is: React Native sets the multipart boundary itself.
+  const isForm = typeof FormData !== "undefined" && options.body instanceof FormData;
   const res = await fetch(`${API_BASE_URL}${path}`, {
     method: options.method ?? "GET",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
+    headers: isForm
+      ? { Authorization: `Bearer ${token}` }
+      : { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: options.body === undefined ? undefined : isForm ? (options.body as FormData) : JSON.stringify(options.body),
   });
   let json: unknown = null;
   try {

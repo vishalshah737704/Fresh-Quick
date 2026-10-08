@@ -176,7 +176,7 @@ export default function OrderDetailScreen() {
   const phoneIsDialable = order.recipientPhone.startsWith("+");
 
   return (
-    <ScrollView style={styles.scroll} contentContainerStyle={styles.container}>
+    <ScrollView style={styles.scroll} contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
       <DeliveryAnimation
         visible={showAnimation}
         orderId={order.id}
