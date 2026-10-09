@@ -88,3 +88,7 @@ After you sign in, the hamburger icon in the top right opens a menu with your na
 ## Can I create a delivery partner or admin account from the customer app?
 
 No. The customer app cannot create those accounts. Delivery partners sign up on the delivery sign-in page (an administrator can also add them), and store owners sign up on the vendor sign-in page. Admin accounts cannot be created from the app.
+
+## What happens after I register?
+
+A new customer registration is checked by the admin. After you submit the form you see a message that your approval is in progress, and you cannot log in yet. You get an email when the admin approves it, with a link to log in, or when the admin rejects it, with the reason. A rejected email can register again with corrected details.

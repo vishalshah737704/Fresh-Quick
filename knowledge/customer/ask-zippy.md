@@ -31,3 +31,7 @@ Yes, when you are signed in as a customer and your cart is not empty. Ask Zippy 
 ## Why does Zippy take a few seconds to start answering a store question?
 
 Zippy looks up the live store and menu details before it answers, and the answer then appears word by word as it is written. When a lookup is needed, a short lead-in line may appear and then disappear before the real answer, and a question that needs a lookup can take a few seconds to begin. Any card (cart changes or Go to checkout) appears once the answer has finished.
+
+## Why does Zippy ask me to register and log in?
+
+Zippy answers only people who have registered and signed in, so that only validated people use the app and the chat. If you are not signed in, tapping Zippy shows a message asking you to register and log in first.

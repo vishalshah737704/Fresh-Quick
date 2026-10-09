@@ -66,7 +66,7 @@ An administrator action that pauses a store. A suspended store is switched to cl
 
 ## What is Zippy?
 
-Zippy is the in-app help assistant. It answers questions about using the app and also about stores, dishes, prices and whether a store is open (for any visitor, no restriction by role). It can look up a signed-in customer's own orders, but it cannot place, change, cancel or pay for orders. It can also prepare cart changes for a signed-in customer to confirm, and show a Go to checkout card that opens the Checkout page, where you enter your details and pay yourself. It never places orders, pays or cancels.
+Zippy is the in-app help assistant. It answers questions about using the app and also about stores, dishes, prices and whether a store is open (only for people who have registered and signed in). It can look up a signed-in customer's own orders, but it cannot place, change, cancel or pay for orders. It can also prepare cart changes for a signed-in customer to confirm, and show a Go to checkout card that opens the Checkout page, where you enter your details and pay yourself. It never places orders, pays or cancels.
 
 ## What is a review, a reply and a hidden review?
 

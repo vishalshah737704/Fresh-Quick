@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import {
   MAX_HISTORY_MESSAGES,
@@ -22,6 +23,8 @@ import { resolveLocation } from "@/lib/zippy/client-location";
 import { useOptionalCart } from "@/lib/cart-store";
 import { snapshotCart } from "@/lib/zippy/client-cart";
 import { ActionCards } from "./ActionCards";
+import { ZIPPY_LOGIN_REQUIRED_MESSAGE } from "@/lib/registration-model";
+import { isLoginRequiredError } from "@/lib/zippy-gate";
 import type { ActionCard, CardState } from "@/lib/zippy/action-types";
 
 type LocalMessage = ChatMessage & { isError?: boolean; actions?: ActionCard[]; id?: number };
@@ -29,6 +32,8 @@ type LocalMessage = ChatMessage & { isError?: boolean; actions?: ActionCard[]; i
 export function ZippyWidget() {
   const [open, setOpen] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
+  const [authResolved, setAuthResolved] = useState(false);
+  const [showLoginPopup, setShowLoginPopup] = useState(false);
   const [messages, setMessages] = useState<LocalMessage[]>([]);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [input, setInput] = useState("");
@@ -81,6 +86,7 @@ export function ZippyWidget() {
       // undefined = first resolution on mount; nothing to clear yet.
       if (previous !== undefined && previous !== next) reset();
       setUserId(next);
+      setAuthResolved(true);
     };
     supabase.auth.getSession().then(({ data }) => apply(data.session?.user.id ?? null));
     const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -168,6 +174,12 @@ export function ZippyWidget() {
         if (result.conversationId) setConversationId(result.conversationId);
       } catch (error) {
         if (controller.signal.aborted) return;
+        if (error instanceof ZippyError && isLoginRequiredError(error.status, error.message, ZIPPY_LOGIN_REQUIRED_MESSAGE)) {
+          setMessages([]);
+          setOpen(false);
+          setShowLoginPopup(true);
+          return;
+        }
         const message = error instanceof ZippyError ? error.message : ZIPPY_ERROR_MESSAGE;
         setMessages((current) => {
           const copy = [...current];
@@ -214,6 +226,24 @@ export function ZippyWidget() {
   return (
     // z-40 keeps the bubble beneath z-50 modals (item customization bottom bar).
     <div className="zippy-anchor fixed bottom-4 right-4 z-40">
+      {showLoginPopup && (
+        <section
+          role="dialog"
+          aria-modal="true"
+          aria-label="Sign in required"
+          className="mb-3 w-[min(24rem,calc(100vw-2rem))] rounded-[var(--radius-card)] border border-brand-ink-muted/15 bg-brand-surface p-4 shadow-xl"
+        >
+          <p className="mb-3 text-sm text-brand-ink">{ZIPPY_LOGIN_REQUIRED_MESSAGE}</p>
+          <div className="flex justify-end gap-2">
+            <button type="button" onClick={() => setShowLoginPopup(false)} className="rounded-full border border-brand-ink-muted/30 px-4 py-1 text-sm">
+              Close
+            </button>
+            <Link href="/customer/login" onClick={() => setShowLoginPopup(false)} className="rounded-full bg-brand-primary-text-safe px-4 py-1 text-sm font-semibold text-white">
+              Register or log in
+            </Link>
+          </div>
+        </section>
+      )}
       {open && (
         <section
           role="dialog"
@@ -303,7 +333,12 @@ export function ZippyWidget() {
         type="button"
         aria-label={open ? "Close Zippy" : `Open ${ZIPPY_NAME}`}
         aria-expanded={open}
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => {
+          // Wait for the session check, then send signed-out visitors to the popup instead of a chat.
+          if (!authResolved) return;
+          if (!userId) return setShowLoginPopup(true);
+          setOpen((v) => !v);
+        }}
         className="ml-auto flex items-center gap-2 rounded-full bg-brand-primary-text-safe px-5 py-3 text-sm font-bold text-white shadow-lg hover:opacity-90"
       >
         <span aria-hidden>⚡</span>

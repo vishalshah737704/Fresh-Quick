@@ -39,7 +39,7 @@ Fresh & Quick is a demonstration food-ordering app. By using it you agree to the
 - What is collected: the name, email, phone number and delivery address you enter at checkout, your notes, your order history, and your account email and password (the password is held by the sign-in system, not shown to anyone).
 - Why: to place and deliver your order and to send order emails (order accepted and delivered).
 - Who sees it: the store and, while an order is active, its delivery partner (see above). Order emails are sent through Gmail by an n8n automation.
-- Ask Zippy: when you are signed in, your chats are saved so you can continue them on web and mobile. A visitor's chat is temporary. Your questions are sent to Anthropic (Claude) and OpenAI to produce the answer.
+- Ask Zippy: when you are signed in, your chats are saved so you can continue them on web and mobile. Zippy answers only registered, signed-in people; a visitor who opens it is asked to register and log in. Your questions are sent to Anthropic (Claude) and OpenAI to produce the answer.
 - Payment details: none are collected or stored.
 - Retention: saved Zippy chats with no activity for 30 days are deleted by a nightly cleanup. Orders are kept, and may be deleted on request, so to have your orders deleted, contact support.
 
