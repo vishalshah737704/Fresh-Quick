@@ -1,3 +1,4 @@
+import { guardProfile } from "@/lib/registration-guard";
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase-server";
 import { PAYMENT_SUCCESS_RATE } from "@/lib/order-constants";
@@ -29,6 +30,17 @@ export async function POST(request: NextRequest) {
   const { data: userData, error: userError } = await supabaseServer.auth.getUser(token);
   if (userError || !userData.user) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+  }
+  const { data: approvalProfile, error: approvalError } = await supabaseServer
+    .from("users")
+    .select("role, approval_status")
+    .eq("id", userData.user.id)
+    .maybeSingle();
+  if (approvalError) {
+    return NextResponse.json({ error: "Failed to verify account" }, { status: 500 });
+  }
+  if (!guardProfile(approvalProfile).ok) {
+    return NextResponse.json({ error: "Your registration has not been approved" }, { status: 403 });
   }
   const customerId = userData.user.id;
 

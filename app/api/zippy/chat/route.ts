@@ -29,6 +29,7 @@ import {
 
 type ChatTurn = { role: "user" | "assistant"; content: string };
 
+const NOT_APPROVED_MESSAGE = "Your registration has not been approved.";
 const fail = (error: string, status: number) => NextResponse.json({ error }, { status });
 
 // Counts one hit per bucket and stops at the first one over its limit (returned); null = allowed.
@@ -74,6 +75,11 @@ export async function POST(request: NextRequest) {
     return fail(ZIPPY_ERROR_MESSAGE, 502);
   }
 
+  // Visitors (no Authorization header) are refused before the body is read.
+  if (!request.headers.get("authorization")) {
+    return NextResponse.json({ error: ZIPPY_LOGIN_REQUIRED_MESSAGE, code: "login_required" }, { status: 401 });
+  }
+
   if (declaredLengthTooLarge(request.headers.get("content-length"))) return fail(BODY_TOO_LARGE_MESSAGE, 413);
   let raw: unknown;
   try {
@@ -90,6 +96,7 @@ export async function POST(request: NextRequest) {
 
   const resolved = await resolveCaller(request);
   if ("error" in resolved) {
+    if (resolved.status === 403) return fail(NOT_APPROVED_MESSAGE, 403);
     return fail(resolved.status === 401 ? SIGN_IN_AGAIN_MESSAGE : ZIPPY_ERROR_MESSAGE, resolved.status);
   }
   const { caller } = resolved;

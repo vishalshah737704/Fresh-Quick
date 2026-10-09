@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase-server";
+import { guardProfile } from "@/lib/registration-guard";
 import { parseSavedLocation } from "@/lib/saved-location";
 
 async function resolveCustomerId(
@@ -16,7 +17,7 @@ async function resolveCustomerId(
   }
   const { data: profile, error: profileError } = await supabaseServer
     .from("users")
-    .select("role")
+    .select("role, approval_status")
     .eq("id", userData.user.id)
     .maybeSingle();
   if (profileError) {
@@ -24,6 +25,9 @@ async function resolveCustomerId(
   }
   if (!profile || profile.role !== "customer") {
     return { error: "Customers only", status: 403 };
+  }
+  if (!guardProfile(profile).ok) {
+    return { error: "Your registration has not been approved", status: 403 };
   }
   return { userId: userData.user.id };
 }
