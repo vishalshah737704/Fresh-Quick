@@ -42,7 +42,8 @@ export async function GET(
     to = list.join(",");
   }
 
-  const base = (process.env.APP_PUBLIC_URL ?? "http://localhost:3000").replace(/\/+$/, "");
+  const raw = (process.env.PUBLIC_APP_URL || "").replace(/\/+$/, "");
+  const base = /^https?:\/\//.test(raw) ? raw : "http://localhost:3000";
   const address = [row.line1, row.line2, row.city, row.state, row.pincode].filter(Boolean).join(", ");
   const { subject, html } = buildRegistrationEmail({
     event: spec.event,

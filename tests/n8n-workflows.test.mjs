@@ -137,9 +137,11 @@ test("workflow 11 registration events: webhook path, internal call, recipient ch
   assert.equal(hook.parameters.path, "foodhub/registration-event");
   const call = Object.values(byName).find((n) => n.type === "n8n-nodes-base.httpRequest");
   assert.match(call.parameters.url, /\/api\/internal\/registrations\//);
+  assert.match(call.parameters.url, /=== \"pending\" \? \"submitted\"/);
   assert.ok(call.parameters.headerParameters.parameters.some((h) => h.name === "X-Internal-Secret"));
   const gate = byName["Has recipient"];
   assert.match(gate.parameters.conditions.string[0].value1, /^=\{\{String\(/);
+  assert.deepEqual(wf.connections["Has recipient"].main[1], []);
   const gmail = Object.values(byName).find((n) => n.type === "n8n-nodes-base.gmail");
   assert.equal(gmail.parameters.emailType, "html");
   assert.equal(wf.active, false);
