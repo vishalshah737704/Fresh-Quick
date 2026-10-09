@@ -44,9 +44,12 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
     }
     void refresh();
     const timer = setInterval(() => void refresh(), 30000);
+    const onChange = () => void refresh();
+    window.addEventListener("registrations-changed", onChange);
     return () => {
       cancelled = true;
       clearInterval(timer);
+      window.removeEventListener("registrations-changed", onChange);
     };
   }, [adminId, pathname]);
 
@@ -87,7 +90,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
               >
                 {link.label}
                 {link.href === "/admin/registrations" && pending > 0 && (
-                  <span className="ml-2 rounded-full bg-white px-2 py-0.5 text-xs font-bold text-brand-ink">{pending}</span>
+                  <span aria-label={`${pending} pending`} className="ml-2 rounded-full bg-white px-2 py-0.5 text-xs font-bold text-brand-ink">{pending}</span>
                 )}
               </Link>
             );

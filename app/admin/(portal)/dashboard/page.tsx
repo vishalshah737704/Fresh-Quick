@@ -32,8 +32,12 @@ export default function AdminOverviewPage() {
       }
       setOrders(oBody.orders);
       setVendorCount(rBody.stores.length);
-      const sRes = await fetch("/api/admin/registrations/summary", { headers });
-      if (sRes.ok) setPendingRegistrations((await sRes.json()).pending);
+      try {
+        const sRes = await fetch("/api/admin/registrations/summary", { headers });
+        if (sRes.ok) setPendingRegistrations((await sRes.json()).pending);
+      } catch {
+        // The tile keeps its previous value if the summary cannot be read.
+      }
       setError(null);
     } catch {
       setError("Failed to load overview");

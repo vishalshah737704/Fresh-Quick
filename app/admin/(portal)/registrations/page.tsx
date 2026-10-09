@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { REJECTION_REASON_MAX } from "@/lib/registration-model";
 
@@ -25,15 +25,20 @@ export default function RegistrationsPage() {
   const [rejecting, setRejecting] = useState<Row | null>(null);
   const [reason, setReason] = useState("");
   const [reasonError, setReasonError] = useState<string | null>(null);
+  const requestRef = useRef(0);
+  const busyRef = useRef<string | null>(null);
 
   const load = useCallback(async () => {
+    const mine = ++requestRef.current;
     try {
       const res = await fetch(`/api/admin/registrations?view=${view}`, { headers: await authHeader() });
       const body = await res.json();
+      if (mine !== requestRef.current) return;
       if (!res.ok) return setError(body.error ?? "Failed to load registrations");
       setRows(body.requests);
       setError(null);
     } catch {
+      if (mine !== requestRef.current) return;
       setError("Failed to load registrations");
     }
   }, [view]);
@@ -47,6 +52,8 @@ export default function RegistrationsPage() {
   }, [load]);
 
   async function approve(row: Row) {
+    if (busyRef.current) return;
+    busyRef.current = row.id;
     setBusyId(row.id);
     setError(null);
     try {
@@ -54,15 +61,18 @@ export default function RegistrationsPage() {
       const body = await res.json().catch(() => ({}));
       if (!res.ok) setError(body.error ?? "Failed to approve");
     } finally {
+      busyRef.current = null;
       setBusyId(null);
+      window.dispatchEvent(new Event("registrations-changed"));
       await load();
     }
   }
 
   async function confirmReject() {
-    if (!rejecting) return;
+    if (!rejecting || busyRef.current) return;
     const text = reason.trim();
     if (text === "") return setReasonError("A reason is required");
+    busyRef.current = rejecting.id;
     setBusyId(rejecting.id);
     setReasonError(null);
     try {
@@ -76,7 +86,9 @@ export default function RegistrationsPage() {
       setRejecting(null);
       setReason("");
     } finally {
+      busyRef.current = null;
       setBusyId(null);
+      window.dispatchEvent(new Event("registrations-changed"));
       await load();
     }
   }
@@ -91,7 +103,7 @@ export default function RegistrationsPage() {
           <button
             key={tab}
             type="button"
-            onClick={() => setView(tab)}
+            onClick={() => { setRows([]); setView(tab); }}
             className={`rounded-[var(--radius-pill)] px-4 py-1 text-sm ${view === tab ? "bg-brand-primary-text-safe text-white" : "border border-brand-ink-muted/20 text-brand-ink"}`}
           >
             {tab === "pending" ? "Pending" : "History"}
@@ -158,7 +170,7 @@ export default function RegistrationsPage() {
             <p className="mt-1 text-right text-xs text-brand-ink-muted">{reason.length}/{REJECTION_REASON_MAX}</p>
             {reasonError && <p className="mb-2 text-sm text-red-600">{reasonError}</p>}
             <div className="flex justify-end gap-2">
-              <button type="button" onClick={() => setRejecting(null)} className="rounded-[var(--radius-pill)] border border-brand-ink-muted/30 px-4 py-1">Cancel</button>
+              <button type="button" disabled={busyId === rejecting.id} onClick={() => setRejecting(null)} className="rounded-[var(--radius-pill)] border border-brand-ink-muted/30 px-4 py-1">Cancel</button>
               <button type="button" disabled={busyId === rejecting.id} onClick={() => void confirmReject()}
                 className="rounded-[var(--radius-pill)] bg-red-700 px-4 py-1 text-white disabled:opacity-50">Reject</button>
             </div>
