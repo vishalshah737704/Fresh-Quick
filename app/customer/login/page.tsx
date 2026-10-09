@@ -5,6 +5,11 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { validateRecipientPhone } from "@/lib/phone";
 import { validateSignupAddress, MIN_PASSWORD_LENGTH } from "@/lib/signup-validation";
+import {
+  REGISTRATION_PENDING_POPUP,
+  isBannedLoginError,
+  loginBlockMessage,
+} from "@/lib/registration-model";
 
 function getSafeRedirect(raw: string): string {
   try {
@@ -33,6 +38,7 @@ function LoginForm() {
   const [referralCode, setReferralCode] = useState((searchParams.get("ref") ?? "").toUpperCase());
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [showPendingPopup, setShowPendingPopup] = useState(false);
 
   async function handleLogin() {
     setSubmitting(true);
@@ -43,6 +49,17 @@ function LoginForm() {
     });
     setSubmitting(false);
     if (signInError) {
+      if (isBannedLoginError(signInError.message)) {
+        const res = await fetch("/api/auth/registration-status", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email }),
+        }).catch(() => null);
+        const json = res && res.ok ? await res.json().catch(() => null) : null;
+        const blocked = loginBlockMessage(json?.status ?? "none");
+        setError(blocked ?? signInError.message);
+        return;
+      }
       setError(signInError.message);
       return;
     }
@@ -80,11 +97,46 @@ function LoginForm() {
       setError(body.error ?? "Signup failed");
       return;
     }
-    await handleLogin();
+    setSubmitting(false);
+    setShowPendingPopup(true);
+  }
+
+  function closePendingPopup() {
+    setShowPendingPopup(false);
+    setPassword("");
+    setFullName("");
+    setPhone("");
+    setLine1("");
+    setLine2("");
+    setCity("");
+    setState("");
+    setPincode("");
+    setReferralCode("");
+    setError(null);
+    setMode("login");
   }
 
   return (
     <div className="mx-auto max-w-sm rounded-lg border border-brand-ink-muted/10 bg-brand-surface p-6">
+      {showPendingPopup && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Registration submitted"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+        >
+          <div className="w-full max-w-sm rounded-[var(--radius-card)] bg-brand-surface p-6 text-center shadow-xl">
+            <p className="mb-4 text-brand-ink">{REGISTRATION_PENDING_POPUP}</p>
+            <button
+              type="button"
+              onClick={closePendingPopup}
+              className="rounded-[var(--radius-pill)] bg-brand-primary-text-safe px-5 py-2 font-semibold text-white"
+            >
+              OK
+            </button>
+          </div>
+        </div>
+      )}
       <h1 className="mb-4 text-xl font-bold text-brand-ink">
         {mode === "login" ? "Log in" : "Sign up"}
       </h1>
