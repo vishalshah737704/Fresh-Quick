@@ -22,6 +22,12 @@ export async function POST(
     .eq("id", id)
     .maybeSingle();
   if (!row || row.role !== "customer") return NextResponse.json({ error: "Request not found" }, { status: 404 });
+  if (row.approval_status === "approved") {
+    // Heal a ban left behind by an earlier failed or racing approval; a retry must be able to lift it.
+    const { error: healError } = await supabaseServer.auth.admin.updateUserById(id, { ban_duration: "none" });
+    if (healError) console.error("approve: heal unban failed", healError.name ?? "unknown");
+    return NextResponse.json({ error: ALREADY_DECIDED }, { status: 409 });
+  }
   if (row.approval_status !== "pending") return NextResponse.json({ error: ALREADY_DECIDED }, { status: 409 });
 
   // Lift the ban first, then record the decision. If a concurrent decision wins, put the ban back
@@ -38,7 +44,11 @@ export async function POST(
   if (decideError || !Array.isArray(decided) || decided.length === 0) {
     const { data: now } = await supabaseServer.from("users").select("approval_status").eq("id", id).maybeSingle();
     if (now?.approval_status !== "approved") {
-      await supabaseServer.auth.admin.updateUserById(id, { ban_duration: "876000h" });
+      const { error: reBanError } = await supabaseServer.auth.admin.updateUserById(id, { ban_duration: "876000h" });
+      if (reBanError) {
+        console.error("approve: re-ban failed", reBanError.name ?? "unknown");
+        return NextResponse.json({ error: "Failed to approve; please retry or check the account" }, { status: 500 });
+      }
     }
     return decideError
       ? NextResponse.json({ error: "Failed to approve" }, { status: 500 })
