@@ -129,3 +129,18 @@ test("workflow 05: picked_up branch waits 20 s then calls the internal complete-
   assert.deepEqual(wf.connections[isPicked.name].main[0].map((t) => t.node), [wait.name]);
   assert.deepEqual(wf.connections[wait.name].main[0].map((t) => t.node), [post.name]);
 });
+
+test("workflow 11 registration events: webhook path, internal call, recipient check, live Gmail send", () => {
+  const wf = load("11-registration-events.json");
+  const byName = Object.fromEntries(wf.nodes.map((n) => [n.name, n]));
+  const hook = Object.values(byName).find((n) => n.type === "n8n-nodes-base.webhook");
+  assert.equal(hook.parameters.path, "foodhub/registration-event");
+  const call = Object.values(byName).find((n) => n.type === "n8n-nodes-base.httpRequest");
+  assert.match(call.parameters.url, /\/api\/internal\/registrations\//);
+  assert.ok(call.parameters.headerParameters.parameters.some((h) => h.name === "X-Internal-Secret"));
+  const gate = byName["Has recipient"];
+  assert.match(gate.parameters.conditions.string[0].value1, /^=\{\{String\(/);
+  const gmail = Object.values(byName).find((n) => n.type === "n8n-nodes-base.gmail");
+  assert.equal(gmail.parameters.emailType, "html");
+  assert.equal(wf.active, false);
+});

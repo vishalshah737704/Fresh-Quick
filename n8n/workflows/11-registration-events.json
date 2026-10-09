@@ -1,0 +1,89 @@
+{
+  "id": "registrationEvents11",
+  "name": "11 - Registration Events",
+  "nodes": [
+    {
+      "id": "registration-webhook",
+      "name": "Supabase Webhook: users registration status",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 200],
+      "webhookId": "f47ac10b-58cc-4372-a567-0e02b2c3d011",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "foodhub/registration-event",
+        "responseMode": "onReceived"
+      },
+      "notes": "Fired by the n8n_registration_submitted (new pending customer) and n8n_registration_decided (status changed) triggers on public.users. The body carries record.id and record.approval_status."
+    },
+    {
+      "id": "get-registration-email",
+      "name": "GET /api/internal/registrations/:id/email",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [520, 200],
+      "parameters": {
+        "method": "GET",
+        "url": "={{$env.APP_BASE_URL}}/api/internal/registrations/{{$json[\"body\"][\"record\"][\"id\"]}}/email?event={{$json[\"body\"][\"record\"][\"approval_status\"] === \"pending\" ? \"submitted\" : $json[\"body\"][\"record\"][\"approval_status\"]}}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "X-Internal-Secret", "value": "={{$env.N8N_INTERNAL_SECRET}}" }
+          ]
+        },
+        "options": { "response": { "response": { "neverError": true } } }
+      },
+      "notes": "Returns { to, emailSubject, emailHtml }, or an error body (404 no admin email, 409 stale event) which the next node skips."
+    },
+    {
+      "id": "has-recipient",
+      "name": "Has recipient",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [800, 200],
+      "parameters": {
+        "conditions": {
+          "string": [
+            { "value1": "={{String(Boolean($json[\"to\"]))}}", "value2": "true" }
+          ]
+        }
+      }
+    },
+    {
+      "id": "send-registration-email",
+      "name": "Gmail: Send Registration Email",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2,
+      "position": [1080, 160],
+      "parameters": {
+        "resource": "message",
+        "operation": "send",
+        "sendTo": "={{$json[\"to\"]}}",
+        "subject": "={{$json[\"emailSubject\"]}}",
+        "emailType": "html",
+        "message": "={{$json[\"emailHtml\"]}}",
+        "options": {}
+      },
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "PLACEHOLDER_CONNECT_YOUR_GMAIL_CREDENTIAL",
+          "name": "Gmail account (connect in n8n UI)"
+        }
+      },
+      "notes": "Credential intentionally left as a placeholder -- select your own Gmail OAuth2 credential after importing. This send is LIVE once published: it emails the admin on every new registration and the customer on every decision. Test only with addresses you own."
+    }
+  ],
+  "connections": {
+    "Supabase Webhook: users registration status": {
+      "main": [[{ "node": "GET /api/internal/registrations/:id/email", "type": "main", "index": 0 }]]
+    },
+    "GET /api/internal/registrations/:id/email": {
+      "main": [[{ "node": "Has recipient", "type": "main", "index": 0 }]]
+    },
+    "Has recipient": {
+      "main": [[{ "node": "Gmail: Send Registration Email", "type": "main", "index": 0 }], []]
+    }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1", "timezone": "Asia/Kolkata" }
+}
