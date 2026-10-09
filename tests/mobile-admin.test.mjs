@@ -121,3 +121,10 @@ test("admin tabs: Registrations tab with a pending badge that refreshes on the e
 test("overview tile opens the Registrations tab", () => {
   assert.match(read("../mobile/src/app/admin/(tabs)/overview.tsx"), /router\.navigate\("\/admin\/registrations"\)/);
 });
+
+test("admin lists clear the floating Zippy button and a 409 refreshes the pending badge", () => {
+  const screen = read("../mobile/src/app/admin/(tabs)/registrations.tsx");
+  assert.match(screen, /paddingBottom: 160/);
+  assert.match(read("../mobile/src/app/admin/(tabs)/overview.tsx"), /paddingBottom: 160/);
+  assert.match(screen, /err\.status === 409[\s\S]{0,80}notifyAdminPendingChanged\(\)/);
+});

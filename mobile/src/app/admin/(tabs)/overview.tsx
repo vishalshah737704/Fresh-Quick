@@ -114,7 +114,7 @@ export default function AdminOverviewScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 16, gap: 12, flexGrow: 1, backgroundColor: BRAND.colors.background },
+  container: { padding: 16, paddingBottom: 160, gap: 12, flexGrow: 1, backgroundColor: BRAND.colors.background },
   headerRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   heading: { fontFamily: BRAND.fonts.heading, fontSize: 24, color: BRAND.colors.ink },
   signOut: { fontFamily: BRAND.fonts.bodySemiBold, color: BRAND.colors.ink, textDecorationLine: "underline" },

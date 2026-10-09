@@ -73,6 +73,8 @@ export default function AdminRegistrationsScreen() {
       notifyAdminPendingChanged();
       return null;
     } catch (err) {
+      // Already decided elsewhere: the pending count changed even though this tap failed.
+      if (err instanceof ApiError && err.status === 409) notifyAdminPendingChanged();
       return err instanceof ApiError && err.message ? err.message : `Failed to ${kind}`;
     } finally {
       busyRef.current = null;
@@ -244,7 +246,7 @@ const styles = StyleSheet.create({
   segmentText: { fontFamily: BRAND.fonts.bodyMedium, color: BRAND.colors.ink },
   segmentTextActive: { color: "#fff" },
   error: { color: BRAND.colors.dangerTextSafe, fontFamily: BRAND.fonts.body },
-  list: { padding: 16, paddingTop: 0, gap: 12 },
+  list: { padding: 16, paddingTop: 0, paddingBottom: 160, gap: 12 },
   muted: { color: BRAND.colors.inkMuted, fontFamily: BRAND.fonts.body },
   card: { backgroundColor: BRAND.colors.surface, borderRadius: 16, padding: 14, gap: 4 },
   name: { fontFamily: BRAND.fonts.bodySemiBold, fontSize: 16, color: BRAND.colors.ink },
