@@ -42,3 +42,37 @@ test("admin pending event notifies subscribers until they unsubscribe", () => {
 test("session guard accepts the admin login route", () => {
   assert.match(read("../mobile/lib/use-require-session.ts"), /"\/login\/admin"/);
 });
+
+test("role picker has an Admin button to the admin login", () => {
+  const picker = read("../mobile/src/app/index.tsx");
+  assert.match(picker, /router\.push\("\/login\/admin"\)/);
+  assert.match(picker, />Admin</);
+});
+
+test("admin login checks the role, signs a non-admin out, and never shows the raw banned text", () => {
+  const login = read("../mobile/src/app/login/admin.tsx");
+  assert.match(login, /profile\?\.role !== "admin"/);
+  assert.match(login, /This account is not an admin account\./);
+  assert.match(login, /supabase\.auth\.signOut\(\)/);
+  assert.match(login, /resolveLoginErrorText\(signInError\.message, null\)/);
+  assert.doesNotMatch(login, /setError\(signInError\.message\)/);
+  assert.match(login, /router\.replace\("\/admin\/overview"\)/);
+});
+
+test("root layout registers the admin login and admin tabs", () => {
+  const layout = read("../mobile/src/app/_layout.tsx");
+  assert.match(layout, /name="login\/admin"/);
+  assert.match(layout, /name="admin\/\(tabs\)"/);
+});
+
+test("overview loads orders, vendors and the pending count, guards the session, and can sign out", () => {
+  const overview = read("../mobile/src/app/admin/(tabs)/overview.tsx");
+  assert.match(overview, /useRequireSession\("\/login\/admin"\)/);
+  assert.match(overview, /\/api\/admin\/orders/);
+  assert.match(overview, /\/api\/admin\/restaurants/);
+  assert.match(overview, /\/api\/admin\/registrations\/summary/);
+  assert.match(overview, /overviewStats\(/);
+  assert.match(overview, /formatPaise\(/);
+  assert.match(overview, /supabase\.auth\.signOut\(\)/);
+  assert.match(overview, /ApiError/);
+});

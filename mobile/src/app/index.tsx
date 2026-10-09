@@ -23,6 +23,13 @@ export default function RolePickerScreen() {
       >
         <Text style={styles.secondaryButtonText}>Delivery Partner</Text>
       </Pressable>
+
+      <Pressable
+        style={[styles.button, styles.secondaryButton]}
+        onPress={() => router.push("/login/admin")}
+      >
+        <Text style={styles.secondaryButtonText}>Admin</Text>
+      </Pressable>
     </View>
   );
 }

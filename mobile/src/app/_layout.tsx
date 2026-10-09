@@ -64,6 +64,7 @@ export default function RootLayout() {
         <Stack.Screen name="index" options={{ title: BRAND.name, headerShown: false }} />
         <Stack.Screen name="login/customer" options={{ title: "Customer Log In" }} />
         <Stack.Screen name="login/delivery" options={{ title: "Delivery Partner Log In" }} />
+        <Stack.Screen name="login/admin" options={{ title: "Admin Log In" }} />
         {/* title on (tabs) is never shown (headerShown false) but becomes the back-button label on screens pushed from the tabs */}
         <Stack.Screen name="customer/(tabs)" options={{ headerShown: false, title: "Home" }} />
         <Stack.Screen name="customer/store/[id]" options={{ title: "Menu" }} />
@@ -76,6 +77,7 @@ export default function RootLayout() {
         <Stack.Screen name="delivery/notifications" options={{ title: "Notifications" }} />
         <Stack.Screen name="delivery/dashboard" options={{ title: "Dashboard", headerBackVisible: false }} />
         <Stack.Screen name="delivery/history" options={{ title: "History" }} />
+        <Stack.Screen name="admin/(tabs)" options={{ headerShown: false, title: "Admin" }} />
       </Stack>
       <ZippyFab />
       </LocationProvider>
