@@ -16,7 +16,7 @@ import { StatusBar } from "expo-status-bar";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { BRAND } from "../theme";
 import { supabase } from "../lib/supabase";
-import { router } from "expo-router";
+import { router, usePathname } from "expo-router";
 import { ZIPPY_LOGIN_REQUIRED_MESSAGE } from "../lib/registration-model";
 import { isLoginRequiredError } from "../lib/zippy-gate";
 import {
@@ -54,6 +54,7 @@ const headerButton = { minHeight: 44, minWidth: 44, alignItems: "center", justif
 
 export function ZippyFab() {
   const insets = useSafeAreaInsets();
+  const pathname = usePathname();
   const [open, setOpen] = useState(false);
   // Android only: lift the chat box above a DOCKED keyboard. A floating keyboard (the emulator's
   // hardware-keyboard toolbar, split or floating Gboard) does not take up screen space, and letting
@@ -319,7 +320,7 @@ export function ZippyFab() {
                 accessibilityRole="button"
                 onPress={() => {
                   setShowLoginPopup(false);
-                  router.push("/login/customer");
+                  if (pathname !== "/login/customer") router.push("/login/customer");
                 }}
                 style={{ backgroundColor: BRAND.colors.primaryTextSafe, borderRadius: BRAND.radiusPill, paddingHorizontal: 16, paddingVertical: 10 }}
               >

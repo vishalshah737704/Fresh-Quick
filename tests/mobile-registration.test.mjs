@@ -51,3 +51,15 @@ test("Zippy button checks the session before opening and shows the shared popup 
   assert.match(fab, /if \(next\) setShowLoginPopup\(false\)/);
   assert.doesNotMatch(fab, /onPress=\{\(\) => setOpen\(true\)\}/);
 });
+
+test("delivery login shows the friendly blocked text", () => {
+  const delivery = read("../mobile/src/app/login/delivery.tsx");
+  assert.match(delivery, /resolveLoginErrorText\(signInError\.message, null\)/);
+  assert.doesNotMatch(delivery, /setError\(signInError\.message\)/);
+});
+
+test("the Zippy login popup does not push a second login screen when already on it", () => {
+  const fab = read("../mobile/components/ZippyFab.tsx");
+  assert.match(fab, /usePathname/);
+  assert.match(fab, /pathname !== "\/login\/customer"/);
+});

@@ -3,6 +3,7 @@ import { KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, Pressable,
 import { useRouter } from "expo-router";
 import { supabase } from "../../../lib/supabase";
 import { BRAND } from "../../../theme";
+import { resolveLoginErrorText } from "../../../lib/registration-model";
 
 // Mirrors app/delivery/login/page.tsx on the web: sign in, then verify
 // users.role === "delivery" before proceeding — sign back out and show an
@@ -24,7 +25,7 @@ export default function DeliveryLoginScreen() {
     });
     if (signInError) {
       setSubmitting(false);
-      setError(signInError.message);
+      setError(resolveLoginErrorText(signInError.message, null));
       return;
     }
 

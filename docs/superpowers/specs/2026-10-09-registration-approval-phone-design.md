@@ -63,7 +63,7 @@ Login (mode `login`):
   is made.
 - If a chat request answers 401 `login_required` (an expired session), clear the messages, close the
   chat and show the same modal (mirrors `ZippyWidget`'s use of `isLoginRequiredError(status, message,
-  ZIPPY_LOGIN_REQUIRED_MESSAGE)`).
+  ZIPPY_LOGIN_REQUIRED_MESSAGE)`). An expired or invalid session gets a different 401 text (`SIGN_IN_AGAIN_MESSAGE`) and keeps showing it inline, as on the web; only the missing-session `login_required` 401 opens the popup.
 - Signing in while the modal is open closes it (as on web).
 - Delivery-partner users are signed in and unaffected; visitors never reach the delivery FAB.
 
