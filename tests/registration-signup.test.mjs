@@ -81,3 +81,15 @@ test("geocoding still runs before the duplicate checks, so a bad address never r
   assert.equal((await runSignup(body, deps)).status, 400);
   assert.equal(looked, false);
 });
+
+test("createAuthUser receives the trimmed, lower-cased email", async () => {
+  const { deps, calls } = makeDeps({ kind: "none" });
+  await runSignup({ ...body, email: "  Asha@B.co " }, deps);
+  assert.deepEqual(calls.created, ["asha@b.co"]);
+});
+
+test("a throwing lookupByEmail makes runSignup reject (the route turns it into a 500)", async () => {
+  const { deps, calls } = makeDeps({ kind: "none" }, { lookupByEmail: async () => { throw new Error("lookup failed"); } });
+  await assert.rejects(runSignup(body, deps));
+  assert.equal(calls.created.length, 0);
+});

@@ -58,27 +58,16 @@ export async function POST(request: NextRequest) {
           : { kind: "none" };
       },
       async reRegister(row) {
-        // Replace the address first and flip the status LAST, so a failure leaves the request rejected.
-        const { error: delError } = await supabaseServer.from("addresses").delete().eq("user_id", row.userId);
-        if (delError) return "failed";
-        const { error: addrError } = await supabaseServer.from("addresses").insert({
-          user_id: row.userId,
-          label: "Home",
-          line1: row.address.line1,
-          line2: row.address.line2 || null,
-          city: row.address.city,
-          state: row.address.state,
-          pincode: row.address.pincode,
-          lat: row.lat,
-          lng: row.lng,
-          is_default: true,
-        });
-        if (addrError) return "failed";
-        const { error: authError } = await supabaseServer.auth.admin.updateUserById(row.userId, {
-          password: row.password,
-        });
-        if (authError) return "failed";
-        const { error: profileError } = await supabaseServer
+        // 1. Re-check the row is still rejected and capture the decision so a failure can restore it.
+        const { data: current, error: readError } = await supabaseServer
+          .from("users")
+          .select("approval_status, rejection_reason, reviewed_at, reviewed_by")
+          .eq("id", row.userId)
+          .maybeSingle();
+        if (readError || !current || current.approval_status !== "rejected") return "failed";
+
+        // 2. Guarded flip FIRST: if the account is no longer rejected nothing else has changed.
+        const { data: flipped, error: flipError } = await supabaseServer
           .from("users")
           .update({
             full_name: row.fullName,
@@ -92,8 +81,52 @@ export async function POST(request: NextRequest) {
             reviewed_by: null,
           })
           .eq("id", row.userId)
-          .eq("approval_status", "rejected");
-        return profileError ? "failed" : null;
+          .eq("approval_status", "rejected")
+          .select("id");
+        if (flipError || !flipped || flipped.length === 0) return "failed";
+
+        // 3. Replace the address and password; 4. on any failure put the rejection back.
+        const revert = async () => {
+          await supabaseServer
+            .from("users")
+            .update({
+              approval_status: "rejected",
+              rejection_reason: current.rejection_reason,
+              reviewed_at: current.reviewed_at,
+              reviewed_by: current.reviewed_by,
+            })
+            .eq("id", row.userId)
+            .eq("approval_status", "pending");
+        };
+        try {
+          const { error: delError } = await supabaseServer.from("addresses").delete().eq("user_id", row.userId);
+          if (delError) throw new Error("address delete");
+          const { error: addrError } = await supabaseServer.from("addresses").insert({
+            user_id: row.userId,
+            label: "Home",
+            line1: row.address.line1,
+            line2: row.address.line2 || null,
+            city: row.address.city,
+            state: row.address.state,
+            pincode: row.address.pincode,
+            lat: row.lat,
+            lng: row.lng,
+            is_default: true,
+          });
+          if (addrError) throw new Error("address insert");
+          const { error: authError } = await supabaseServer.auth.admin.updateUserById(row.userId, {
+            password: row.password,
+          });
+          if (authError) throw new Error("password");
+        } catch {
+          try {
+            await revert();
+          } catch {
+            // Best effort; the caller still gets the failure.
+          }
+          return "failed";
+        }
+        return null;
       },
       async createAuthUser(email, password) {
         const { data, error } = await supabaseServer.auth.admin.createUser({
@@ -138,7 +171,8 @@ export async function POST(request: NextRequest) {
         await supabaseServer.auth.admin.deleteUser(id);
       },
     });
-  } catch {
+  } catch (error) {
+    console.error("signup failed", error instanceof Error ? error.name : "unknown");
     return NextResponse.json({ error: "Failed to create account" }, { status: 500 });
   }
   if (outcome.status === 200 && referrerId && newUserId) {
