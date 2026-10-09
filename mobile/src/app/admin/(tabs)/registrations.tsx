@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ActivityIndicator, Modal, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { useFocusEffect } from "expo-router";
 import { apiFetch, ApiError } from "../../../../lib/api";
@@ -46,6 +46,12 @@ export default function AdminRegistrationsScreen() {
     }
   }, [segment]);
 
+  // Decisions finish later than the render that started them; reload the segment shown NOW, not the one then.
+  const loadRef = useRef(load);
+  useEffect(() => {
+    loadRef.current = load;
+  }, [load]);
+
   useFocusEffect(
     useCallback(() => {
       void load();
@@ -54,7 +60,7 @@ export default function AdminRegistrationsScreen() {
     }, [load])
   );
 
-  // POSTs /api/admin/registrations/[id]/approve or /reject. Returns an error text, or null on success.
+  // Returns an error text, or null on success.
   async function decide(row: RegistrationRow, kind: "approve" | "reject", reasonText?: string): Promise<string | null> {
     if (busyRef.current) return "Another decision is still being saved.";
     busyRef.current = row.id;
@@ -77,8 +83,9 @@ export default function AdminRegistrationsScreen() {
   async function approve(row: RegistrationRow) {
     setError(null);
     const failure = await decide(row, "approve");
+    await loadRef.current();
+    // After the reload: a successful load clears the error line, which would wipe this text (for example a 409).
     if (failure) setError(failure);
-    await load();
   }
 
   function openReject(row: RegistrationRow) {
@@ -97,11 +104,11 @@ export default function AdminRegistrationsScreen() {
     const failure = await decide(rejecting, "reject", cleaned.value);
     if (failure) {
       setReasonError(failure);
-      await load();
+      await loadRef.current();
       return;
     }
     setRejecting(null);
-    await load();
+    await loadRef.current();
   }
 
   return (
@@ -145,7 +152,7 @@ export default function AdminRegistrationsScreen() {
         {!loaded ? (
           <Text style={styles.muted}>Loading registrations...</Text>
         ) : rows.length === 0 ? (
-          <Text style={styles.muted}>
+          error ? null : <Text style={styles.muted}>
             {segment === "pending" ? "No registrations are waiting for approval." : "No decisions yet."}
           </Text>
         ) : (
@@ -188,7 +195,9 @@ export default function AdminRegistrationsScreen() {
         )}
       </ScrollView>
 
-      <Modal visible={rejecting !== null} transparent animationType="fade" statusBarTranslucent onRequestClose={() => setRejecting(null)}>
+      <Modal visible={rejecting !== null} transparent animationType="fade" statusBarTranslucent onRequestClose={() => {
+          if (busyId === null) setRejecting(null);
+        }}>
         <View style={styles.backdrop}>
           <View style={styles.dialog}>
             <Text style={styles.dialogTitle}>Reject {rejecting?.fullName || rejecting?.email}</Text>

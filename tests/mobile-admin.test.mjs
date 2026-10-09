@@ -95,8 +95,15 @@ test("registrations screen: one decision at a time, reason validated before any 
   assert.match(screen, /busyRef\.current/);
   assert.match(screen, /cleanRejectionReason\(/);
   assert.match(screen, /REJECTION_REASON_MAX/);
-  assert.match(screen, /\/approve/);
-  assert.match(screen, /\/reject/);
+  assert.match(screen, /`\/api\/admin\/registrations\/\$\{row\.id\}\/\$\{kind\}`/);
+  assert.match(screen, /decide\(row, "approve"\)/);
+  assert.match(screen, /decide\(rejecting, "reject", cleaned\.value\)/);
+  assert.match(screen, /body: kind === "reject" \? \{ reason: reasonText \} : undefined/);
+  assert.match(screen, /loadRef\.current = load/);
+  assert.equal((screen.match(/await loadRef\.current\(\)/g) ?? []).length, 3);
+  assert.doesNotMatch(screen, /await load\(\)/);
+  assert.match(screen, /await loadRef\.current\(\);\n\s*\/\/[^\n]*\n\s*if \(failure\) setError\(failure\)/);
+  assert.match(screen, /if \(busyId === null\) setRejecting\(null\)/);
   assert.match(screen, /notifyAdminPendingChanged\(\)/);
   assert.match(screen, /err instanceof ApiError/);
   assert.doesNotMatch(screen, /rejection_reason|\bREASON_MAX\s*=\s*500/);
