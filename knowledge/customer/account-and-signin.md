@@ -12,13 +12,17 @@ No. You can browse every store and category without an account. You need an acco
 
 1. On the customer sign-in page, tap "Need an account? Sign up".
 2. Enter your Full name, Email and Password (at least 6 characters), then your Phone (a 10-digit mobile number) and your address: Address line 1, Address line 2 (optional), City, State and Pincode (6 digits).
-3. Tap the Sign up button.
+3. Tap the Sign up button. Signing up does not sign you in: a message says your registration approval is in progress and that you will be emailed once the admin has reviewed it. You can log in after the admin approves your registration.
 
 Tap "Have an account? Log in" to go back to signing in.
 
 ## Why does sign-up ask for my phone and address?
 
 The phone number and address are required to create a customer account. The address becomes your saved Home address and your starting delivery location, so the store list is sorted nearest first from the moment you sign in. You can change your delivery location at any time.
+
+## Why does sign-up say my registration is already waiting or the account exists?
+
+If you register again with an email that is waiting for approval you see "Your registration is already awaiting approval." If the email already has an approved account you see "An account with this email already exists. Please log in."
 
 ## Why does sign-up say it could not find my address?
 
@@ -33,7 +37,7 @@ Yes. Your sign-up address is only the starting delivery location. On the website
 1. Open the app and choose Customer on the first screen.
 2. Tap "Need an account? Sign up".
 3. Enter your full name, your email and a password of at least 6 characters, then your phone (10-digit mobile number) and your address: Address line 1, Address line 2 (optional), City, State and Pincode (6 digits).
-4. Tap Sign Up. You are signed in automatically.
+4. Tap Sign Up. You are not signed in: a pop-up says "Your registration approval is in progress. We will email you once the admin has reviewed it." Tap OK to return to Log in. You can log in after the admin approves your registration, and you get an email when the admin decides.
 
 Tap "Have an account? Log in" to go back to signing in.
 
@@ -47,7 +51,7 @@ Yes. The same email and password work on both, and an order placed on one shows 
 2. Enter your email and password.
 3. Tap the Log in button.
 
-If your email or password is wrong, an error message appears below the form.
+If your email or password is wrong, an error message ("Invalid login credentials") appears below the form. If your registration has not been approved yet it says "Your registration is still awaiting admin approval." If the admin rejected it, it says "Your registration was rejected. Please check your email for the reason." A rejected email can sign up again.
 
 ## How do I sign in in the mobile app?
 
@@ -55,7 +59,7 @@ If your email or password is wrong, an error message appears below the form.
 2. Enter your email and password.
 3. Tap Log In.
 
-If your email or password is wrong, an error message appears below the form.
+If your email or password is wrong, an error message ("Invalid login credentials") appears below the form. If your registration has not been approved yet it says "Your registration is still awaiting admin approval." If the admin rejected it, it says "Your registration was rejected. Please check your email for the reason." A rejected email can sign up again.
 
 ## Why am I signed out when I open the mobile app?
 
