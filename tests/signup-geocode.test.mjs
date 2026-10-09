@@ -208,7 +208,9 @@ function makeDeps(overrides = {}) {
     validate: (b) => validateSignupPayload(b, normalizeIndianMobile),
     geocode: async () => ({ kind: "found", lat: 19.06, lng: 72.83 }),
     buildLabel: buildSavedLabel,
-    messages: { notFound: GEOCODE_NOT_FOUND_MESSAGE, unavailable: GEOCODE_UNAVAILABLE_MESSAGE },
+    messages: { notFound: GEOCODE_NOT_FOUND_MESSAGE, unavailable: GEOCODE_UNAVAILABLE_MESSAGE, alreadyPending: "pending", alreadyRegistered: "registered" },
+    lookupByEmail: async () => ({ kind: "none" }),
+    reRegister: async () => null,
     createAuthUser: async (email, password) => {
       calls.created.push({ email, password });
       return { id: "u1" };
@@ -232,7 +234,7 @@ function makeDeps(overrides = {}) {
 test("runSignup success writes profile with saved location and the default address", async () => {
   const { deps, calls } = makeDeps();
   const out = await runSignup(goodBody, deps);
-  assert.deepEqual(out, { status: 200, body: { ok: true } });
+  assert.deepEqual(out, { status: 200, body: { ok: true, status: "pending" } });
   assert.equal(calls.profile[0].phone, "+919820012345");
   assert.equal(calls.profile[0].label, "12 Linking Rd, Mumbai");
   assert.equal(calls.profile[0].lat, 19.06);
