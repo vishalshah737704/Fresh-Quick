@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase-server";
 import { BRAND } from "@/lib/branding";
 import { resolveCaller } from "@/lib/zippy/caller";
+import { ZIPPY_LOGIN_REQUIRED_MESSAGE } from "@/lib/registration-model";
 import { parseChatRequest } from "@/lib/zippy/validate";
 import { limitMessage, preAuthPlan, rateLimitPlan, retryAfterSeconds, type Limit } from "@/lib/zippy/rate-limit";
 import { clientIpFromForwarded, parseTrustedHops } from "@/lib/zippy/client-ip";
@@ -92,6 +93,13 @@ export async function POST(request: NextRequest) {
     return fail(resolved.status === 401 ? SIGN_IN_AGAIN_MESSAGE : ZIPPY_ERROR_MESSAGE, resolved.status);
   }
   const { caller } = resolved;
+  // Zippy answers only registered, signed-in people. The widget shows a popup; this is the server-side gate.
+  if (!caller.userId) {
+    return NextResponse.json(
+      { error: ZIPPY_LOGIN_REQUIRED_MESSAGE, code: "login_required" },
+      { status: 401 }
+    );
+  }
 
   try {
     const tripped = await firstTrippedLimit(rateLimitPlan({ userId: caller.userId, ip }));

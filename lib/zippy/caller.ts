@@ -1,5 +1,6 @@
 import "server-only";
 import { supabaseServer } from "@/lib/supabase-server";
+import { guardProfile } from "@/lib/registration-guard";
 import type { ZippyRole } from "./audience";
 import { parseBearer } from "./validate";
 
@@ -20,12 +21,15 @@ export async function resolveCaller(
     if (error || !data.user) return { error: "Not authenticated", status: 401 };
     const { data: profile, error: profileError } = await supabaseServer
       .from("users")
-      .select("role")
+      .select("role, approval_status")
       .eq("id", data.user.id)
       .single();
     if (profileError && profileError.code !== "PGRST116") {
       console.error("zippy: profile lookup failed", profileError);
       return { error: "Could not verify your account", status: 502 };
+    }
+    if (profile && !guardProfile(profile).ok) {
+      return { error: "Your account is not approved", status: 403 };
     }
     const role = profile?.role as ZippyRole | undefined;
     if (!role || !ROLES.includes(role)) return { error: "Not authenticated", status: 401 };

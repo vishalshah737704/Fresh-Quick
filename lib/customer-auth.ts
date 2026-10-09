@@ -1,6 +1,7 @@
 import "server-only";
 import type { NextRequest } from "next/server";
 import { supabaseServer } from "@/lib/supabase-server";
+import { guardProfile } from "@/lib/registration-guard";
 
 // Identity comes only from the verified session token, never from the body.
 export async function resolveCustomer(
@@ -12,10 +13,13 @@ export async function resolveCustomer(
   if (userError || !userData.user) return { error: "Invalid or expired session", status: 401 };
   const { data: profile, error: profileError } = await supabaseServer
     .from("users")
-    .select("role")
+    .select("role, approval_status")
     .eq("id", userData.user.id)
     .maybeSingle();
   if (profileError) return { error: "Failed to verify account", status: 500 };
   if (!profile || profile.role !== "customer") return { error: "Customers only", status: 403 };
+  if (!guardProfile(profile).ok) {
+    return { error: "Your registration has not been approved", status: 403 };
+  }
   return { userId: userData.user.id };
 }
