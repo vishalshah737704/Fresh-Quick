@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase-server";
 import { verifyInternalSecret } from "@/lib/internal-auth";
 import { isUuid } from "@/lib/registration-admin";
-import { buildRegistrationEmail, type RegistrationEmailEvent } from "@/lib/registration-email";
+import { buildRegistrationEmail, isSafeLink, type RegistrationEmailEvent } from "@/lib/registration-email";
 import { BRAND } from "@/lib/branding";
 
 const EVENTS: Record<string, { event: RegistrationEmailEvent; status: string }> = {
@@ -43,7 +43,10 @@ export async function GET(
   }
 
   const raw = (process.env.PUBLIC_APP_URL || "").replace(/\/+$/, "");
-  const base = /^https?:\/\//.test(raw) ? raw : "http://localhost:3000";
+  const base = raw !== "" && isSafeLink(raw) ? raw : "http://localhost:3000";
+  if (raw !== "" && base !== raw) {
+    console.warn("registration email: PUBLIC_APP_URL missing or not https; using localhost links");
+  }
   const address = [row.line1, row.line2, row.city, row.state, row.pincode].filter(Boolean).join(", ");
   const { subject, html } = buildRegistrationEmail({
     event: spec.event,

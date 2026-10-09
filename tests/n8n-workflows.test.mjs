@@ -145,4 +145,9 @@ test("workflow 11 registration events: webhook path, internal call, recipient ch
   const gmail = Object.values(byName).find((n) => n.type === "n8n-nodes-base.gmail");
   assert.equal(gmail.parameters.emailType, "html");
   assert.equal(wf.active, false);
+  const wait = byName["Wait 3 s (address row)"];
+  assert.equal(wait.type, "n8n-nodes-base.wait");
+  assert.equal(wait.parameters.amount, 3);
+  assert.deepEqual(wf.connections[hook.name].main[0].map((t) => t.node), [wait.name]);
+  assert.deepEqual(wf.connections[wait.name].main[0].map((t) => t.node), [call.name]);
 });

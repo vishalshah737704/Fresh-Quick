@@ -20,6 +20,7 @@ const when = (iso: string | null) => (iso ? new Date(iso).toLocaleString() : "")
 export default function RegistrationsPage() {
   const [view, setView] = useState<"pending" | "history">("pending");
   const [rows, setRows] = useState<Row[]>([]);
+  const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [rejecting, setRejecting] = useState<Row | null>(null);
@@ -34,12 +35,18 @@ export default function RegistrationsPage() {
       const res = await fetch(`/api/admin/registrations?view=${view}`, { headers: await authHeader() });
       const body = await res.json();
       if (mine !== requestRef.current) return;
-      if (!res.ok) return setError(body.error ?? "Failed to load registrations");
+      if (!res.ok) {
+        setError(body.error ?? "Failed to load registrations");
+        setLoaded(true);
+        return;
+      }
       setRows(body.requests);
       setError(null);
+      setLoaded(true);
     } catch {
       if (mine !== requestRef.current) return;
       setError("Failed to load registrations");
+      setLoaded(true);
     }
   }, [view]);
 
@@ -103,7 +110,12 @@ export default function RegistrationsPage() {
           <button
             key={tab}
             type="button"
-            onClick={() => { setRows([]); setView(tab); }}
+            onClick={() => {
+              if (tab === view) return;
+              setRows([]);
+              setLoaded(false);
+              setView(tab);
+            }}
             className={`rounded-[var(--radius-pill)] px-4 py-1 text-sm ${view === tab ? "bg-brand-primary-text-safe text-white" : "border border-brand-ink-muted/20 text-brand-ink"}`}
           >
             {tab === "pending" ? "Pending" : "History"}
@@ -111,7 +123,9 @@ export default function RegistrationsPage() {
         ))}
       </div>
       {error && <p className="mb-3 text-sm text-red-600">{error}</p>}
-      {rows.length === 0 ? (
+      {!loaded ? (
+        <p className="text-brand-ink-muted">Loading registrations…</p>
+      ) : rows.length === 0 ? (
         <p className="text-brand-ink-muted">{view === "pending" ? "No registrations are waiting for approval." : "No decisions yet."}</p>
       ) : (
         <div className="overflow-x-auto rounded-[var(--radius-card)] border border-brand-ink-muted/15 bg-brand-surface">

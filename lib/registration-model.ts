@@ -10,6 +10,8 @@ export const REGISTRATION_PENDING_POPUP =
 export const LOGIN_PENDING_MESSAGE = "Your registration is still awaiting admin approval.";
 export const LOGIN_REJECTED_MESSAGE =
   "Your registration was rejected. Please check your email for the reason.";
+export const LOGIN_BLOCKED_MESSAGE =
+  "Your account is not active yet. Please try again later or check your email.";
 export const ALREADY_PENDING_MESSAGE = "Your registration is already awaiting approval.";
 export const ALREADY_REGISTERED_MESSAGE =
   "An account with this email already exists. Please log in.";

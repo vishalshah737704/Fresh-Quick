@@ -3,9 +3,9 @@ import assert from "node:assert/strict";
 import {
   REGISTRATION_PENDING_POPUP, LOGIN_PENDING_MESSAGE, LOGIN_REJECTED_MESSAGE,
   ZIPPY_LOGIN_REQUIRED_MESSAGE, cleanRejectionReason, isBannedLoginError,
-  statusAnswer, loginBlockMessage, isApproved, isApprovalStatus,
+  statusAnswer, loginBlockMessage, isApproved, isApprovalStatus, LOGIN_BLOCKED_MESSAGE,
 } from "../lib/registration-model.ts";
-import { buildRegistrationEmail } from "../lib/registration-email.ts";
+import { buildRegistrationEmail, isSafeLink } from "../lib/registration-email.ts";
 
 test("customer-facing messages are exactly the agreed text", () => {
   assert.equal(REGISTRATION_PENDING_POPUP, "Your registration approval is in progress. We will email you once the admin has reviewed it.");
@@ -86,4 +86,38 @@ test("subjects drop line breaks and unsafe links are not rendered as links", () 
   assert.ok(!/[\r\n]/.test(subject));
   const { html } = buildRegistrationEmail({ ...base, adminUrl: "javascript:alert(1)", event: "submitted" });
   assert.ok(!html.includes("javascript:"));
+});
+
+test("generic blocked-login fallback text is exact", () => {
+  assert.equal(LOGIN_BLOCKED_MESSAGE, "Your account is not active yet. Please try again later or check your email.");
+});
+
+test("only https or local http links are rendered", () => {
+  const unsafe = buildRegistrationEmail({ ...base, adminUrl: "http://example.com/a", loginUrl: "http://example.com/l", event: "submitted" });
+  assert.ok(!unsafe.html.includes("<a "));
+  for (const url of ["ftp://x.com/a", "not a url", "http://[::2]:3000"]) {
+    assert.ok(!buildRegistrationEmail({ ...base, adminUrl: url, event: "submitted" }).html.includes("<a "), url);
+  }
+  for (const url of ["http://localhost:3000/a", "http://127.0.0.1:3000/a", "http://[::1]:3000/a", "https://x.com/a"]) {
+    assert.ok(buildRegistrationEmail({ ...base, adminUrl: url, event: "submitted" }).html.includes("<a "), url);
+  }
+  assert.equal(isSafeLink("https://x.com"), true);
+  assert.equal(isSafeLink("http://example.com"), false);
+});
+
+test("subjects have no line breaks when the brand name has one, and the brand is escaped in the body", () => {
+  for (const event of ["approved", "rejected"]) {
+    const { subject } = buildRegistrationEmail({ ...base, brandName: "Fresh\n& Quick", event, reason: "r" });
+    assert.ok(!/[\r\n]/.test(subject), event);
+  }
+  const { html } = buildRegistrationEmail({ ...base, event: "approved" });
+  assert.ok(html.includes("Fresh &amp; Quick"));
+});
+
+test("email, phone and address are escaped in the submitted email", () => {
+  const { html } = buildRegistrationEmail({ ...base, email: "a<x>&b@c.co", phone: "1<2&3", address: "5 <b>&</b> Rd", event: "submitted" });
+  assert.ok(html.includes("a&lt;x&gt;&amp;b@c.co"));
+  assert.ok(html.includes("1&lt;2&amp;3"));
+  assert.ok(html.includes("5 &lt;b&gt;&amp;&lt;/b&gt; Rd"));
+  assert.ok(!html.includes("<x>") && !html.includes("<b>&"));
 });

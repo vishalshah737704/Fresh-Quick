@@ -2,10 +2,8 @@ import { createHash } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase-server";
 import { statusAnswer } from "@/lib/registration-model";
-import { ipBucket, normalizeEmail } from "@/lib/registration-status-bucket";
+import { ipBucket, normalizeEmail, parseStatusLimit } from "@/lib/registration-status-bucket";
 import { clientIpFromForwarded, parseTrustedHops } from "@/lib/zippy/client-ip";
-
-const LIMIT_PER_MINUTE = 20;
 
 // Tells the login page why a banned account cannot sign in. Reveals only pending / rejected for
 // customers; never the rejection reason (that goes by email). Unknown and approved emails both answer "none".
@@ -18,7 +16,7 @@ export async function POST(request: NextRequest) {
   const { data: allowed, error: limitError } = await supabaseServer.rpc("zippy_hit", {
     p_bucket: bucket,
     p_window_seconds: 60,
-    p_limit: LIMIT_PER_MINUTE,
+    p_limit: parseStatusLimit(process.env.REGISTRATION_STATUS_LIMIT_PER_MINUTE),
   });
   if (limitError) return NextResponse.json({ error: "Please try again in a moment" }, { status: 502 });
   if (allowed === false) {

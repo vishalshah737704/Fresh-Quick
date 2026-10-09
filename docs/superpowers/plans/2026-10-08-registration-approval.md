@@ -1846,7 +1846,7 @@ export async function GET(
     to = list.join(",");
   }
 
-  const base = (process.env.APP_PUBLIC_URL ?? "http://localhost:3000").replace(/\/+$/, "");
+  const base = (process.env.PUBLIC_APP_URL ?? "http://localhost:3000").replace(/\/+$/, "");
   const address = [row.line1, row.line2, row.city, row.state, row.pincode].filter(Boolean).join(", ");
   const { subject, html } = buildRegistrationEmail({
     event: spec.event,
@@ -1985,20 +1985,15 @@ test("workflow 11 registration events: webhook path, internal call, recipient ch
 Run: `node --test tests/n8n-workflows.test.mjs`
 Expected: pass.
 
-- [ ] **Step 5: Add `APP_PUBLIC_URL` to `.env.example`** (append)
-
-```
-# Public address used for links in registration emails (default http://localhost:3000). Set it to the
-# public site address when a tunnel is in use, for example https://freshquick.demoaiprojects.com
-# APP_PUBLIC_URL=
-```
+- [ ] **Step 5: `.env.example`**: no new variable is added here. `PUBLIC_APP_URL` already exists from the C1 review email
+  (default `http://localhost:3000`; set it to the public site address when a tunnel is in use).
 
 - [ ] **Step 6: Append a "Workflow 11" section to `docs/n8n-webhook-setup.md`**
 
 ```markdown
 ## Workflow 11: Registration events (customer approval)
 
-File: `n8n/workflows/11-registration-events.json`. Import it like the others (needs a top-level `id`; publish in the n8n UI, never restart the `--rm` container, connect your Gmail credential in the Gmail node). Trigger: webhook `POST /webhook/foodhub/registration-event`, fired by the `n8n_registration_submitted` and `n8n_registration_decided` triggers on `public.users`. It calls `GET {APP_BASE_URL}/api/internal/registrations/:id/email?event=submitted|approved|rejected` and, when the answer has a recipient, sends it with Gmail: new registration to every admin account's email, approval and rejection to the customer. The Gmail send is LIVE: test only with addresses you own. Links in the emails are built from `APP_PUBLIC_URL` (default `http://localhost:3000`). Until the workflow is published, registrations still work; the emails just do not go out.
+File: `n8n/workflows/11-registration-events.json`. Import it like the others (needs a top-level `id`; publish in the n8n UI, never restart the `--rm` container, connect your Gmail credential in the Gmail node). Trigger: webhook `POST /webhook/foodhub/registration-event`, fired by the `n8n_registration_submitted` and `n8n_registration_decided` triggers on `public.users`. It calls `GET {APP_BASE_URL}/api/internal/registrations/:id/email?event=submitted|approved|rejected` and, when the answer has a recipient, sends it with Gmail: new registration to every admin account's email, approval and rejection to the customer. The Gmail send is LIVE: test only with addresses you own. Links in the emails are built from `PUBLIC_APP_URL` (default `http://localhost:3000`). Until the workflow is published, registrations still work; the emails just do not go out.
 ```
 
 - [ ] **Step 7: Type-check and commit**

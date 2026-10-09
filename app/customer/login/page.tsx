@@ -9,6 +9,7 @@ import {
   REGISTRATION_PENDING_POPUP,
   isBannedLoginError,
   loginBlockMessage,
+  LOGIN_BLOCKED_MESSAGE,
 } from "@/lib/registration-model";
 
 function getSafeRedirect(raw: string): string {
@@ -57,7 +58,7 @@ function LoginForm() {
         }).catch(() => null);
         const json = res && res.ok ? await res.json().catch(() => null) : null;
         const blocked = loginBlockMessage(json?.status ?? "none");
-        setError(blocked ?? signInError.message);
+        setError(blocked ?? LOGIN_BLOCKED_MESSAGE);
         return;
       }
       setError(signInError.message);

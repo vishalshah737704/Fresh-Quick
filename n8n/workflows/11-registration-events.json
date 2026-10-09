@@ -17,6 +17,16 @@
       "notes": "Fired by the n8n_registration_submitted (new pending customer) and n8n_registration_decided (status changed) triggers on public.users. The body carries record.id and record.approval_status."
     },
     {
+      "id": "wait-address-row",
+      "name": "Wait 3 s (address row)",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [380, 200],
+      "webhookId": "5d0c7a52-8e3b-4f1a-9c64-2b7e1a9d4c11",
+      "parameters": { "resume": "timeInterval", "amount": 3, "unit": "seconds" },
+      "notes": "The sign-up route writes the address row just after the users row fires this event; wait so the email context sees the address."
+    },
+    {
       "id": "get-registration-email",
       "name": "GET /api/internal/registrations/:id/email",
       "type": "n8n-nodes-base.httpRequest",
@@ -75,6 +85,9 @@
   ],
   "connections": {
     "Supabase Webhook: users registration status": {
+      "main": [[{ "node": "Wait 3 s (address row)", "type": "main", "index": 0 }]]
+    },
+    "Wait 3 s (address row)": {
       "main": [[{ "node": "GET /api/internal/registrations/:id/email", "type": "main", "index": 0 }]]
     },
     "GET /api/internal/registrations/:id/email": {

@@ -86,6 +86,7 @@ export function ZippyWidget() {
       // undefined = first resolution on mount; nothing to clear yet.
       if (previous !== undefined && previous !== next) reset();
       setUserId(next);
+      if (next) setShowLoginPopup(false);
       setAuthResolved(true);
     };
     supabase.auth.getSession().then(({ data }) => apply(data.session?.user.id ?? null));

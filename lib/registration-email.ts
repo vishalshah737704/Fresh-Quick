@@ -11,10 +11,12 @@ function escapeHtml(value: string): string {
     .replace(/'/g, "&#39;");
 }
 
-function isHttp(url: string): boolean {
+// https links, or http only for a local address; anything else is not rendered as a link.
+export function isSafeLink(url: string): boolean {
   try {
-    const protocol = new URL(url).protocol;
-    return protocol === "http:" || protocol === "https:";
+    const parsed = new URL(url);
+    if (parsed.protocol === "https:") return true;
+    return parsed.protocol === "http:" && ["localhost", "127.0.0.1", "[::1]"].includes(parsed.hostname);
   } catch {
     return false;
   }
@@ -24,7 +26,7 @@ const FONT = "font-family:Arial,Helvetica,sans-serif;";
 const oneLine = (value: string) => value.replace(/[\r\n]+/g, " ").trim();
 
 function button(url: string, label: string): string {
-  if (!isHttp(url)) return "";
+  if (!isSafeLink(url)) return "";
   return `<p><a href="${escapeHtml(url)}" style="display:inline-block;padding:10px 18px;background:#f58220;color:#ffffff;text-decoration:none;border-radius:999px;font-weight:bold;">${escapeHtml(label)}</a></p>`;
 }
 

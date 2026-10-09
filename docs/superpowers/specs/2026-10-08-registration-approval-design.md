@@ -90,8 +90,8 @@ Order stays: validate, referral check, geocode, then create. New steps:
 3. Re-register of a rejected email: `auth.admin.updateUserById` with the new password (ban stays),
    update the `users` row (name, phone, saved location), replace the default address, set
    `approval_status = 'pending'`, clear `rejection_reason`, `reviewed_at`, `reviewed_by`.
-   A rejected account never held orders, wallet or favorites, so nothing is lost. A referral code on a
-   re-register is ignored when a referral link already exists for that user.
+   A rejected account never held orders, wallet or favorites, so nothing is lost. A referral code sent with a
+   re-register is ignored.
 4. Success returns `200 { status: "pending" }`. **No automatic login.** The route no longer implies a
    session.
 
@@ -111,7 +111,7 @@ reaches this endpoint because an approved user is not banned.
 Privacy tradeoff, accepted: the endpoint tells anyone who knows an email that it is pending or rejected.
 It never returns the rejection reason (the reason goes only by email), answers `none` for unknown and for
 approved accounts, and is rate limited per client IP (reuse the Zippy limiter helpers where they fit; the
-plan decides, and sets the limit as an env var with a validated default).
+plan decides, and sets the limit as an env var, `REGISTRATION_STATUS_LIMIT_PER_MINUTE`, with a validated default of 20).
 
 Defence in depth: `lib/customer-auth.ts` and `lib/zippy/caller.ts` also reject a verified session whose
 profile `approval_status` is not `approved`, so an unbanned-by-mistake account still cannot call customer
@@ -149,12 +149,12 @@ returns `{ to, subject, html }`:
 - **submitted** (status became pending): to every admin account's email; subject "New registration
   awaiting approval"; body with the applicant's name, email, phone and address and a button to the admin
   Registrations page.
-- **approved**: to the customer; "You're approved" with a Log in button to `APP_PUBLIC_URL/customer/login`
+- **approved**: to the customer; "You're approved" with a Log in button to `PUBLIC_APP_URL/customer/login`
   and the line that they sign in with the email and password they chose at registration.
 - **rejected**: to the customer; shows the admin's reason and says they may register again.
 
-All dynamic text goes through the existing `escapeHtml`; links are built only from `APP_PUBLIC_URL` (new
-env var, default `http://localhost:3000`, set to the public site address when the tunnel is used) and must be
+All dynamic text goes through the existing `escapeHtml`; links are built only from `PUBLIC_APP_URL` (existing
+env var from the C1 review email, default `http://localhost:3000`, set to the public site address when the tunnel is used) and must be
 https unless it is localhost. The workflow ends in Gmail send nodes. If no admin email exists the route
 returns 404 and the failure is logged; the registration itself is never blocked by an email failure.
 These are LIVE emails from Vishal's Gmail: tests use only addresses he owns, one at a time, and ask first.
@@ -205,8 +205,8 @@ Import and publish workflow 11 in the n8n UI; never restart or stop the `--rm` n
 
 Update `docs/User_Manual.docx` (sign-up, pending popup, admin Registrations page, Zippy sign-in
 requirement), the in-app Help FAQ text where it describes sign-up, `knowledge/` Q&As (re-ingest, eval),
-`docs/n8n-webhook-setup.md` (workflow 11, `APP_PUBLIC_URL`), CLAUDE.md, MEMORY.md and README.md.
-Rollout order: migration 41, app code, import and publish workflow 11, set `APP_PUBLIC_URL`, live checks,
+`docs/n8n-webhook-setup.md` (workflow 11, `PUBLIC_APP_URL`), CLAUDE.md, MEMORY.md and README.md.
+Rollout order: migration 41, app code, import and publish workflow 11, set `PUBLIC_APP_URL`, live checks,
 re-ingest knowledge. The phone manual changes belong to pieces 2 and 3.
 
 ## 13. Out of scope for piece 1
