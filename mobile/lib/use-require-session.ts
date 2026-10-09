@@ -6,7 +6,7 @@ import { supabase } from "./supabase";
 // RLS reads even with no session; without this guard a deep link or a
 // cold-start route restore renders a page that looks logged-in until an
 // authenticated action (checkout, claim, etc.) fails with a 401.
-export function useRequireSession(loginRoute: "/login/customer" | "/login/delivery") {
+export function useRequireSession(loginRoute: "/login/customer" | "/login/delivery" | "/login/admin") {
   const router = useRouter();
 
   useEffect(() => {
