@@ -8,8 +8,8 @@ import { validateSignupAddress, MIN_PASSWORD_LENGTH } from "@/lib/signup-validat
 import {
   REGISTRATION_PENDING_POPUP,
   isBannedLoginError,
-  loginBlockMessage,
-  LOGIN_BLOCKED_MESSAGE,
+  parseStatusAnswer,
+  resolveLoginErrorText,
 } from "@/lib/registration-model";
 
 function getSafeRedirect(raw: string): string {
@@ -50,18 +50,16 @@ function LoginForm() {
     });
     setSubmitting(false);
     if (signInError) {
+      let answer = null;
       if (isBannedLoginError(signInError.message)) {
         const res = await fetch("/api/auth/registration-status", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email }),
         }).catch(() => null);
-        const json = res && res.ok ? await res.json().catch(() => null) : null;
-        const blocked = loginBlockMessage(json?.status ?? "none");
-        setError(blocked ?? LOGIN_BLOCKED_MESSAGE);
-        return;
+        answer = parseStatusAnswer(res && res.ok ? await res.json().catch(() => null) : null);
       }
-      setError(signInError.message);
+      setError(resolveLoginErrorText(signInError.message, answer));
       return;
     }
     router.push(getSafeRedirect(rawRedirectTo));

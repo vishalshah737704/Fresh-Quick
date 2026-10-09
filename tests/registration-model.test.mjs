@@ -4,6 +4,7 @@ import {
   REGISTRATION_PENDING_POPUP, LOGIN_PENDING_MESSAGE, LOGIN_REJECTED_MESSAGE,
   ZIPPY_LOGIN_REQUIRED_MESSAGE, cleanRejectionReason, isBannedLoginError,
   statusAnswer, loginBlockMessage, isApproved, isApprovalStatus, LOGIN_BLOCKED_MESSAGE,
+  resolveLoginErrorText, parseStatusAnswer,
 } from "../lib/registration-model.ts";
 import { buildRegistrationEmail, isSafeLink } from "../lib/registration-email.ts";
 
@@ -120,4 +121,21 @@ test("email, phone and address are escaped in the submitted email", () => {
   assert.ok(html.includes("1&lt;2&amp;3"));
   assert.ok(html.includes("5 &lt;b&gt;&amp;&lt;/b&gt; Rd"));
   assert.ok(!html.includes("<x>") && !html.includes("<b>&"));
+});
+
+test("resolveLoginErrorText keeps non-banned errors and never shows the raw banned text", () => {
+  assert.equal(resolveLoginErrorText("Invalid login credentials", "pending"), "Invalid login credentials");
+  assert.equal(resolveLoginErrorText("User is banned", "pending"), LOGIN_PENDING_MESSAGE);
+  assert.equal(resolveLoginErrorText("User is banned", "rejected"), LOGIN_REJECTED_MESSAGE);
+  assert.equal(resolveLoginErrorText("User is banned", "none"), LOGIN_BLOCKED_MESSAGE);
+  assert.equal(resolveLoginErrorText("User is banned", null), LOGIN_BLOCKED_MESSAGE);
+});
+
+test("parseStatusAnswer accepts only the three known answers", () => {
+  assert.equal(parseStatusAnswer({ status: "pending" }), "pending");
+  assert.equal(parseStatusAnswer({ status: "rejected" }), "rejected");
+  assert.equal(parseStatusAnswer({ status: "none" }), "none");
+  for (const junk of [null, undefined, 5, "pending", {}, { status: "approved" }, { status: 3 }, []]) {
+    assert.equal(parseStatusAnswer(junk), null, JSON.stringify(junk));
+  }
 });

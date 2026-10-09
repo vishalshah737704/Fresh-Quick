@@ -61,6 +61,8 @@ test("shared modules are byte-identical copies of the web files", () => {
   assert.equal(read("../mobile/lib/reviews-model.ts"), read("../lib/reviews-model.ts"));
   assert.equal(read("../mobile/lib/coupon-model.ts"), read("../lib/coupon-model.ts"));
   assert.equal(read("../mobile/lib/notify-model.ts"), read("../lib/notify-model.ts"));
+  assert.equal(read("../mobile/lib/registration-model.ts"), read("../lib/registration-model.ts"));
+  assert.equal(read("../mobile/lib/zippy-gate.ts"), read("../lib/zippy-gate.ts"));
 });
 
 test("phone sign-up screen uses the shared validator, no hand-written pincode regex", () => {
