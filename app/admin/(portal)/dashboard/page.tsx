@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { overviewStats, type AdminOrderRow } from "@/lib/admin-order-view";
 import { formatPaise } from "@/lib/order-detail";
@@ -14,6 +15,7 @@ async function authHeader() {
 export default function AdminOverviewPage() {
   const [orders, setOrders] = useState<AdminOrderRow[]>([]);
   const [vendorCount, setVendorCount] = useState(0);
+  const [pendingRegistrations, setPendingRegistrations] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
   async function load() {
@@ -30,6 +32,8 @@ export default function AdminOverviewPage() {
       }
       setOrders(oBody.orders);
       setVendorCount(rBody.stores.length);
+      const sRes = await fetch("/api/admin/registrations/summary", { headers });
+      if (sRes.ok) setPendingRegistrations((await sRes.json()).pending);
       setError(null);
     } catch {
       setError("Failed to load overview");
@@ -53,6 +57,13 @@ export default function AdminOverviewPage() {
       {error && <p className="mb-4 text-sm text-red-600">{error}</p>}
 
       <AutoOrderCard />
+      <Link
+        href="/admin/registrations"
+        className="mb-6 block rounded-[var(--radius-card)] bg-brand-accent-text-safe p-4 text-white"
+      >
+        <p className="text-sm text-white/80">Registrations awaiting approval</p>
+        <p className="font-heading text-3xl">{pendingRegistrations}</p>
+      </Link>
 
       <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
         <div className="rounded-[var(--radius-card)] bg-brand-primary-text-safe p-4">

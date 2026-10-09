@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useAdminSession } from "@/components/admin/useAdminSession";
 import { AdminSessionContext } from "@/components/admin/AdminSessionContext";
@@ -12,6 +12,7 @@ import { MyProfileSection } from "@/components/MyProfileSection";
 const NAV_LINKS = [
   { href: "/admin/dashboard", label: "Overview" },
   { href: "/admin/orders", label: "Orders" },
+  { href: "/admin/registrations", label: "Registrations" },
   { href: "/admin/vendors", label: "Vendors" },
   { href: "/admin/delivery-partners", label: "Delivery Partners" },
   { href: "/admin/reviews", label: "Reviews" },
@@ -24,6 +25,30 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
   const pathname = usePathname();
   const router = useRouter();
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [pending, setPending] = useState(0);
+
+  useEffect(() => {
+    if (!adminId) return;
+    let cancelled = false;
+    async function refresh() {
+      try {
+        const { data } = await supabase.auth.getSession();
+        const res = await fetch("/api/admin/registrations/summary", {
+          headers: { Authorization: `Bearer ${data.session?.access_token ?? ""}` },
+        });
+        const body = await res.json();
+        if (!cancelled && res.ok) setPending(body.pending);
+      } catch {
+        // The badge is a convenience; a failed refresh keeps the last count.
+      }
+    }
+    void refresh();
+    const timer = setInterval(() => void refresh(), 30000);
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
+  }, [adminId, pathname]);
 
   async function signOut() {
     await supabase.auth.signOut();
@@ -61,6 +86,9 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
                 }`}
               >
                 {link.label}
+                {link.href === "/admin/registrations" && pending > 0 && (
+                  <span className="ml-2 rounded-full bg-white px-2 py-0.5 text-xs font-bold text-brand-ink">{pending}</span>
+                )}
               </Link>
             );
           })}
