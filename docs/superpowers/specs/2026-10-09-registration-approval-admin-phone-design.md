@@ -97,9 +97,7 @@ vendors, partners, coupons, reviews), the auto-acceptance toggle, and any web or
   Metro): admin login; a customer account refused on the admin login; Overview tiles match the web
   Overview; the pending queue shows throwaway registrations created by API; Approve; Reject with an empty
   reason (blocked) and with a reason; History shows decisions; a second admin-side decision on the same
-  row gives the 409 text. Gmail workflow 11 is LIVE: every decision emails `recipient_email`, so use only
-  `@foodhub.local` throwaway addresses (their mail bounces into Vishal's inbox as a handful of notices; or
-  coordinate with Vishal first), one at a time, and delete every throwaway user afterwards.
+  row gives the 409 text. Gmail workflow 11 is LIVE: every decision emails the customer, and every new registration emails the admin account's own address. Vishal's decision (2026-10-09): throwaway customers use plus-addresses of `vishalsshah555@outlook.com`; the admin auth email is temporarily set to that same address for the run (and restored to `admin@foodhub.local` afterwards) so the admin notifications stay in his inbox; one decision at a time; delete every throwaway user afterwards.
   Do not start n8n. The admin demo login is documented in README.
 - Vishal's iPhone Expo Go check remains his step.
 
