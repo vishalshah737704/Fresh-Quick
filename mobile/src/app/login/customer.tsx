@@ -1,17 +1,18 @@
 import { useState } from "react";
-import { KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, Pressable, StyleSheet, ActivityIndicator } from "react-native";
+import { KeyboardAvoidingView, Modal, Platform, View, ScrollView, Text, TextInput, Pressable, StyleSheet, ActivityIndicator } from "react-native";
 import { useRouter } from "expo-router";
 import { supabase } from "../../../lib/supabase";
 import { apiPostPublic, ApiError } from "../../../lib/api";
 import { validateRecipientPhone } from "../../../lib/phone";
 import { MIN_PASSWORD_LENGTH, validateSignupAddress } from "../../../lib/signup-validation";
+import { REGISTRATION_PENDING_POPUP, isBannedLoginError, resolveLoginErrorText } from "../../../lib/registration-model";
+import { fetchRegistrationStatus } from "../../../lib/registration-status";
 import { BRAND } from "../../../theme";
 
-// Mirrors app/customer/login/page.tsx on the web: email/password sign-in
-// against Supabase Auth, plus a Sign up mode that posts to the public
-// /api/auth/signup route and then signs the new user in. Customer role has
-// no extra role-check on login there (any authenticated user can browse as
-// a customer), so this screen matches that.
+// Mirrors app/customer/login/page.tsx on the web: email/password sign-in against Supabase Auth, plus a
+// Sign up mode that posts to the public /api/auth/signup route. Sign-up does not sign the customer in:
+// the account waits for admin approval, so a popup says so (same wording as the web). A refused login
+// asks /api/auth/registration-status why and shows the shared pending / rejected message.
 export default function CustomerLoginScreen() {
   const router = useRouter();
   const [mode, setMode] = useState<"login" | "signup">("login");
@@ -27,6 +28,7 @@ export default function CustomerLoginScreen() {
   const [referralCode, setReferralCode] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [showPendingPopup, setShowPendingPopup] = useState(false);
 
   function switchMode() {
     setMode(mode === "login" ? "signup" : "login");
@@ -39,10 +41,27 @@ export default function CustomerLoginScreen() {
       password,
     });
     if (signInError) {
-      setError(signInError.message);
+      const answer = isBannedLoginError(signInError.message) ? await fetchRegistrationStatus(trimmedEmail) : null;
+      setError(resolveLoginErrorText(signInError.message, answer));
       return;
     }
     router.replace("/customer/home");
+  }
+
+  function dismissPendingPopup() {
+    setShowPendingPopup(false);
+    setFullName("");
+    setEmail("");
+    setPassword("");
+    setPhone("");
+    setLine1("");
+    setLine2("");
+    setCity("");
+    setState("");
+    setPincode("");
+    setReferralCode("");
+    setError(null);
+    setMode("login");
   }
 
   async function handleSubmit() {
@@ -100,8 +119,11 @@ export default function CustomerLoginScreen() {
           }
           return;
         }
+        // The account is pending admin approval: no session, so do not sign in.
+        setShowPendingPopup(true);
+        return;
       }
-      await signIn(mode === "signup" ? trimmedEmail : email);
+      await signIn(email.trim());
     } finally {
       setSubmitting(false);
     }
@@ -109,6 +131,16 @@ export default function CustomerLoginScreen() {
 
   return (
     <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.flex}>
+      <Modal visible={showPendingPopup} transparent animationType="fade" statusBarTranslucent onRequestClose={dismissPendingPopup}>
+        <View style={styles.backdrop}>
+          <View style={styles.popup}>
+            <Text style={styles.popupText}>{REGISTRATION_PENDING_POPUP}</Text>
+            <Pressable style={styles.button} onPress={dismissPendingPopup} accessibilityRole="button">
+              <Text style={styles.buttonText}>OK</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
       <Text style={styles.heading}>
         {mode === "signup" ? "Customer Sign Up" : "Customer Log In"}
@@ -225,6 +257,23 @@ export default function CustomerLoginScreen() {
 }
 
 const styles = StyleSheet.create({
+  backdrop: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.45)",
+    justifyContent: "center",
+    padding: 24,
+  },
+  popup: {
+    backgroundColor: BRAND.colors.surface,
+    borderRadius: BRAND.radius,
+    padding: 20,
+    gap: 12,
+  },
+  popupText: {
+    color: BRAND.colors.ink,
+    fontFamily: BRAND.fonts.body,
+    fontSize: 16,
+  },
   flex: { flex: 1, backgroundColor: BRAND.colors.background },
   container: {
     flexGrow: 1,
