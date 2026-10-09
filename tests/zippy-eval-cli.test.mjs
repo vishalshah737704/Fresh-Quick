@@ -18,7 +18,7 @@ async function withStub(handler, fn) {
     req.on("data", (d) => (body += d));
     req.on("end", () => {
       const parsed = body ? JSON.parse(body) : {};
-      seen.push({ url: req.url, secret: req.headers["x-internal-secret"], body: parsed });
+      seen.push({ url: req.url, secret: req.headers["x-internal-secret"], authorization: req.headers["authorization"], body: parsed });
       const out = handler(req.url, parsed);
       res.setHeader("content-type", "application/json");
       res.end(JSON.stringify(out));
@@ -101,19 +101,34 @@ const factsHandler = (reply) => (url, body) => {
   return { reply: body.message.startsWith("What is the price") ? reply : "Yes, Dosa Corner is open right now" };
 };
 
-test("facts CLI passes when replies match the tool data", async () => {
+const FACTS_TOKEN = "dummy-test-user-token";
+
+test("facts CLI passes when replies match the tool data and sends the user token to chat", async () => {
   await withStub(factsHandler("Cheese Dosa is ₹150 at Dosa Corner"), async (base, seen) => {
-    const r = await run(factsScript, { N8N_INTERNAL_SECRET: SECRET, ZIPPY_BASE_URL: base });
+    const r = await run(factsScript, { N8N_INTERNAL_SECRET: SECRET, ZIPPY_FACTS_TOKEN: FACTS_TOKEN, ZIPPY_BASE_URL: base });
     assert.equal(r.code, 0, r.stdout + r.stderr);
     assert.match(r.stdout, /facts: 2\/2/);
     assert.ok(seen.filter((s) => s.url.includes("/tool")).every((s) => s.secret === SECRET));
+    const chats = seen.filter((s) => s.url === "/api/zippy/chat");
+    assert.equal(chats.length, 2);
+    assert.ok(chats.every((s) => s.authorization === `Bearer ${FACTS_TOKEN}`));
     assert.ok(!(r.stdout + r.stderr).includes(SECRET));
+    assert.ok(!(r.stdout + r.stderr).includes(FACTS_TOKEN));
+  });
+});
+
+test("facts CLI exits 2 without the user token and sends no request", async () => {
+  await withStub(factsHandler("unused"), async (base, seen) => {
+    const r = await run(factsScript, { N8N_INTERNAL_SECRET: SECRET, ZIPPY_BASE_URL: base });
+    assert.equal(r.code, 2);
+    assert.match(r.stderr, /Set ZIPPY_FACTS_TOKEN to a signed-in user's access token/);
+    assert.equal(seen.length, 0);
   });
 });
 
 test("facts CLI exits 1 on a wrong price", async () => {
   await withStub(factsHandler("Cheese Dosa is ₹99 at Dosa Corner"), async (base) => {
-    const r = await run(factsScript, { N8N_INTERNAL_SECRET: SECRET, ZIPPY_BASE_URL: base });
+    const r = await run(factsScript, { N8N_INTERNAL_SECRET: SECRET, ZIPPY_FACTS_TOKEN: FACTS_TOKEN, ZIPPY_BASE_URL: base });
     assert.equal(r.code, 1);
     assert.match(r.stdout, /FAIL/);
     assert.match(r.stdout, /facts: 1\/2/);
