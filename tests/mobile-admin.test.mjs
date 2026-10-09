@@ -76,3 +76,41 @@ test("overview loads orders, vendors and the pending count, guards the session, 
   assert.match(overview, /supabase\.auth\.signOut\(\)/);
   assert.match(overview, /ApiError/);
 });
+
+test("registrations screen: guards, loads both segments, polls with cleanup, drops stale responses", () => {
+  const screen = read("../mobile/src/app/admin/(tabs)/registrations.tsx");
+  assert.match(screen, /useRequireSession\("\/login\/admin"\)/);
+  assert.match(screen, /\/api\/admin\/registrations\?view=\$\{segment\}/);
+  assert.match(screen, /setInterval\(/);
+  assert.match(screen, /clearInterval\(/);
+  assert.match(screen, /requestRef\.current/);
+  assert.match(screen, /if \(tab === segment\) return;/);
+  assert.match(screen, /Loading registrations\.\.\./);
+  assert.match(screen, /No registrations are waiting for approval\./);
+  assert.match(screen, /No decisions yet\./);
+});
+
+test("registrations screen: one decision at a time, reason validated before any request", () => {
+  const screen = read("../mobile/src/app/admin/(tabs)/registrations.tsx");
+  assert.match(screen, /busyRef\.current/);
+  assert.match(screen, /cleanRejectionReason\(/);
+  assert.match(screen, /REJECTION_REASON_MAX/);
+  assert.match(screen, /\/approve/);
+  assert.match(screen, /\/reject/);
+  assert.match(screen, /notifyAdminPendingChanged\(\)/);
+  assert.match(screen, /err instanceof ApiError/);
+  assert.doesNotMatch(screen, /rejection_reason|\bREASON_MAX\s*=\s*500/);
+});
+
+test("admin tabs: Registrations tab with a pending badge that refreshes on the event", () => {
+  const layout = read("../mobile/src/app/admin/(tabs)/_layout.tsx");
+  assert.match(layout, /name="registrations"/);
+  assert.match(layout, /tabBarBadge/);
+  assert.match(layout, /onAdminPendingChanged\(/);
+  assert.match(layout, /\/api\/admin\/registrations\/summary/);
+  assert.match(layout, /clearInterval\(/);
+});
+
+test("overview tile opens the Registrations tab", () => {
+  assert.match(read("../mobile/src/app/admin/(tabs)/overview.tsx"), /router\.navigate\("\/admin\/registrations"\)/);
+});

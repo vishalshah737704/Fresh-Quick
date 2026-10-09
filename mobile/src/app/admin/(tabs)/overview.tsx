@@ -87,10 +87,14 @@ export default function AdminOverviewScreen() {
         <ActivityIndicator color={BRAND.colors.primary} />
       ) : (
         <View style={styles.tiles}>
-          <View style={[styles.tile, { backgroundColor: BRAND.colors.accentTextSafe }]}>
+          <Pressable
+            accessibilityRole="button"
+            style={[styles.tile, { backgroundColor: BRAND.colors.accentTextSafe }]}
+            onPress={() => router.navigate("/admin/registrations")}
+          >
             <Text style={styles.tileLabel}>Registrations awaiting approval</Text>
             <Text style={styles.tileValue}>{pending}</Text>
-          </View>
+          </Pressable>
           <View style={[styles.tile, { backgroundColor: BRAND.colors.primaryTextSafe }]}>
             <Text style={styles.tileLabel}>Active orders</Text>
             <Text style={styles.tileValue}>{stats.activeOrders}</Text>
