@@ -16,6 +16,9 @@ import { StatusBar } from "expo-status-bar";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { BRAND } from "../theme";
 import { supabase } from "../lib/supabase";
+import { router } from "expo-router";
+import { ZIPPY_LOGIN_REQUIRED_MESSAGE } from "../lib/registration-model";
+import { isLoginRequiredError } from "../lib/zippy-gate";
 import {
   MAX_HISTORY_MESSAGES,
   MAX_MESSAGE_CHARS,
@@ -72,6 +75,7 @@ export function ZippyFab() {
     };
   }, []);
   const [userId, setUserId] = useState<string | null>(null);
+  const [showLoginPopup, setShowLoginPopup] = useState(false);
   const [messages, setMessages] = useState<LocalMessage[]>([]);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [input, setInput] = useState("");
@@ -135,6 +139,7 @@ export function ZippyFab() {
       if (previousUserId.current !== undefined && previousUserId.current !== next) reset();
       previousUserId.current = next;
       setUserId(next);
+      if (next) setShowLoginPopup(false);
     };
     supabase.auth.getSession().then(({ data }) => applyUser(data.session?.user.id ?? null));
     const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -205,6 +210,12 @@ export function ZippyFab() {
       if (result.conversationId) setConversationId(result.conversationId);
     } catch (error) {
       if (token !== requestToken.current) return;
+      if (error instanceof ZippyError && isLoginRequiredError(error.status, error.message, ZIPPY_LOGIN_REQUIRED_MESSAGE)) {
+        reset();
+        setOpen(false);
+        setShowLoginPopup(true);
+        return;
+      }
       const message = error instanceof ZippyError ? error.message : ZIPPY_ERROR_MESSAGE;
       const failedId = streamId;
       if (failedId !== null) {
@@ -269,7 +280,11 @@ export function ZippyFab() {
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={`Open ${ZIPPY_NAME}`}
-        onPress={() => setOpen(true)}
+        onPress={async () => {
+          const { data } = await supabase.auth.getSession();
+          if (data.session) setOpen(true);
+          else setShowLoginPopup(true);
+        }}
         style={{
           position: "absolute",
           right: 16,
@@ -287,6 +302,33 @@ export function ZippyFab() {
       >
         <Text style={{ color: "#fff", fontFamily: BRAND.fonts.bodySemiBold }}>⚡ {ZIPPY_NAME}</Text>
       </Pressable>
+
+      <Modal visible={showLoginPopup} transparent animationType="fade" statusBarTranslucent onRequestClose={() => setShowLoginPopup(false)}>
+        <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.45)", justifyContent: "center", padding: 24 }}>
+          <View style={{ backgroundColor: BRAND.colors.surface, borderRadius: BRAND.radius, padding: 20, gap: 14 }}>
+            <Text style={{ color: BRAND.colors.ink, fontFamily: BRAND.fonts.body, fontSize: 16 }}>{ZIPPY_LOGIN_REQUIRED_MESSAGE}</Text>
+            <View style={{ flexDirection: "row", justifyContent: "flex-end", gap: 10 }}>
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => setShowLoginPopup(false)}
+                style={{ borderWidth: 1, borderColor: BRAND.colors.inkMuted, borderRadius: BRAND.radiusPill, paddingHorizontal: 16, paddingVertical: 10 }}
+              >
+                <Text style={{ color: BRAND.colors.ink, fontFamily: BRAND.fonts.bodySemiBold }}>Close</Text>
+              </Pressable>
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => {
+                  setShowLoginPopup(false);
+                  router.push("/login/customer");
+                }}
+                style={{ backgroundColor: BRAND.colors.primaryTextSafe, borderRadius: BRAND.radiusPill, paddingHorizontal: 16, paddingVertical: 10 }}
+              >
+                <Text style={{ color: "#fff", fontFamily: BRAND.fonts.bodySemiBold }}>Register or log in</Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
 
       <Modal visible={open} animationType="slide" statusBarTranslucent onRequestClose={() => setOpen(false)}>
         <KeyboardAvoidingView

@@ -1,6 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { ZIPPY_LOGIN_REQUIRED_MESSAGE } from "../mobile/lib/registration-model.ts";
+import { isLoginRequiredError } from "../mobile/lib/zippy-gate.ts";
 
 const read = (p) => readFileSync(new URL(p, import.meta.url), "utf8").replace(/\r\n/g, "\n");
 
@@ -32,4 +34,20 @@ test("phone login screen has no hand-typed registration wording", () => {
   assert.doesNotMatch(screen, /awaiting admin approval/);
   assert.doesNotMatch(screen, /approval is in progress/);
   assert.doesNotMatch(screen, /\/banned\/i/);
+});
+
+test("only the login-required 401 triggers the popup; an expired session keeps its own message", () => {
+  assert.equal(isLoginRequiredError(401, ZIPPY_LOGIN_REQUIRED_MESSAGE, ZIPPY_LOGIN_REQUIRED_MESSAGE), true);
+  assert.equal(isLoginRequiredError(401, "Please sign in again to keep chatting with Zippy.", ZIPPY_LOGIN_REQUIRED_MESSAGE), false);
+  assert.equal(isLoginRequiredError(500, ZIPPY_LOGIN_REQUIRED_MESSAGE, ZIPPY_LOGIN_REQUIRED_MESSAGE), false);
+});
+
+test("Zippy button checks the session before opening and shows the shared popup text", () => {
+  const fab = read("../mobile/components/ZippyFab.tsx");
+  assert.match(fab, /supabase\.auth\.getSession\(\)/);
+  assert.match(fab, /setShowLoginPopup\(true\)/);
+  assert.match(fab, /ZIPPY_LOGIN_REQUIRED_MESSAGE/);
+  assert.match(fab, /isLoginRequiredError\(error\.status, error\.message, ZIPPY_LOGIN_REQUIRED_MESSAGE\)/);
+  assert.match(fab, /if \(next\) setShowLoginPopup\(false\)/);
+  assert.doesNotMatch(fab, /onPress=\{\(\) => setOpen\(true\)\}/);
 });
