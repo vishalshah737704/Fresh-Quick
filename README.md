@@ -145,6 +145,10 @@ Customer sign-up (web and phone) asks for a 10-digit mobile number and an addres
 - Env var: `GOOGLE_MAPS_SERVER_API_KEY` in `.env.local` (placeholder in `.env.example`). A separate server-only key: restrict it by API to Geocoding only, set its Application restriction to None (the Geocoding web service rejects referrer- and Android-restricted keys), and never prefix it `NEXT_PUBLIC` or put it in the phone app. Without it, sign-up returns 503.
 - All 77 stores have real geocoded Mumbai addresses (many are landmarks, 2 are in Thane). Source addresses: `scripts/data/mumbai-store-addresses.json`. `node scripts/geocode-stores.mjs` (needs the key; resumable, `--force` redoes all) writes `supabase/data/store-locations.json`; `node scripts/apply-store-locations.mjs --apply` writes it to the local database (dry run without `--apply`). `npm run app:seed` applies it automatically after a reset.
 
+## Customer registration approval (2026-10-09)
+
+A new customer account must be approved by an admin before it can sign in. Sign-up shows a popup ("Your registration approval is in progress...") and does not log the customer in; the admin approves or rejects (reason required) on the admin portal Registrations page; n8n workflow 11 (`n8n/workflows/11-registration-events.json`, import and publish it in the n8n UI, connect Gmail) emails the admin on a new registration and the customer on each decision. A rejected email can register again. Ask Zippy now needs a signed-in customer. Links in the emails use `PUBLIC_APP_URL` (https, or http on localhost); the status lookup limit is `REGISTRATION_STATUS_LIMIT_PER_MINUTE` (default 20). The phone app still shows "User is banned" for pending or rejected users until its own update.
+
 ## Ask Zippy (in-app assistant, Z1 built 2026-10-03)
 
 Zippy is a floating chat bubble on every web portal (and a chat button in the
